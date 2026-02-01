@@ -26,7 +26,7 @@ useSeo({
             <div class="mb-6">
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-base-muted hover:text-base-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -46,25 +46,25 @@ useSeo({
                 </Link>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
-                <div class="border-b border-stone-200 p-6 dark:border-stone-700">
-                    <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-stone-100">
+            <div class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50">
+                <div class="border-b border-default p-6">
+                    <h1 class="text-2xl font-bold text-base-primary sm:text-3xl">
                         {{ t('tournaments.public.standings') }}
                     </h1>
-                    <p class="mt-1 text-gray-600 dark:text-stone-400">
+                    <p class="mt-1 text-base-muted">
                         {{ tournament.name }}
                     </p>
                 </div>
 
                 <div class="p-6">
-                    <div v-if="standings.length === 0" class="py-8 text-center text-stone-500 dark:text-stone-400">
+                    <div v-if="standings.length === 0" class="py-8 text-center text-base-muted">
                         {{ t('tournaments.public.no_standings') }}
                     </div>
 
                     <div v-else class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-stone-200 dark:divide-stone-700">
+                        <table class="min-w-full divide-y divide-default">
                             <thead>
-                                <tr class="text-left text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                                <tr class="text-left text-xs font-medium uppercase tracking-wider text-base-muted">
                                     <th class="px-3 py-3">#</th>
                                     <th class="px-3 py-3">{{ t('tournaments.public.player') }}</th>
                                     <th class="px-3 py-3 text-right">{{ t('tournaments.public.points') }}</th>
@@ -80,10 +80,10 @@ useSeo({
                                 <tr
                                     v-for="standing in standings"
                                     :key="standing.participant_id"
-                                    class="text-stone-900 hover:bg-stone-50 dark:text-stone-100 dark:hover:bg-stone-900/30"
+                                    class="text-base-primary hover:bg-muted"
                                     :class="{
-                                        'bg-amber-50 dark:bg-amber-900/10': standing.rank === 1,
-                                        'bg-stone-50 dark:bg-stone-900/20': standing.rank === 2,
+                                        'bg-primary-50 dark:bg-primary-900/10': standing.rank === 1,
+                                        'bg-muted': standing.rank === 2,
                                         'bg-orange-50 dark:bg-orange-900/10': standing.rank === 3,
                                     }"
                                 >
@@ -91,8 +91,8 @@ useSeo({
                                         <span
                                             class="font-bold"
                                             :class="{
-                                                'text-amber-600 dark:text-amber-400': standing.rank === 1,
-                                                'text-stone-500 dark:text-stone-400': standing.rank === 2,
+                                                'text-primary dark:text-primary-400': standing.rank === 1,
+                                                'text-base-muted': standing.rank === 2,
                                                 'text-orange-600 dark:text-orange-400': standing.rank === 3,
                                             }"
                                         >
@@ -103,11 +103,11 @@ useSeo({
                                         {{ standing.participant_name }}
                                     </td>
                                     <td class="px-3 py-3 text-right">
-                                        <span class="font-bold text-amber-600 dark:text-amber-400">
+                                        <span class="font-bold text-primary dark:text-primary-400">
                                             {{ formatPoints(standing.points) }}
                                         </span>
                                     </td>
-                                    <td class="px-3 py-3 text-center text-stone-600 dark:text-stone-400">
+                                    <td class="px-3 py-3 text-center text-base-secondary">
                                         {{ standing.matches_played }}
                                     </td>
                                     <td class="hidden px-3 py-3 text-center text-green-600 md:table-cell dark:text-green-400">
@@ -119,10 +119,10 @@ useSeo({
                                     <td class="hidden px-3 py-3 text-center text-red-600 md:table-cell dark:text-red-400">
                                         {{ standing.losses }}
                                     </td>
-                                    <td class="hidden px-3 py-3 text-right text-sm text-stone-500 lg:table-cell dark:text-stone-400">
+                                    <td class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell">
                                         {{ formatPoints(standing.buchholz) }}
                                     </td>
-                                    <td class="hidden px-3 py-3 text-right text-sm text-stone-500 lg:table-cell dark:text-stone-400">
+                                    <td class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell">
                                         {{ formatPercentage(standing.opponent_win_percentage) }}
                                     </td>
                                 </tr>
@@ -131,11 +131,11 @@ useSeo({
                     </div>
 
                     <!-- Legend -->
-                    <div class="mt-6 border-t border-stone-200 pt-4 dark:border-stone-700">
-                        <h3 class="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+                    <div class="mt-6 border-t border-default pt-4">
+                        <h3 class="mb-2 text-sm font-semibold text-base-secondary">
                             {{ t('tournaments.public.tiebreakers_legend') }}
                         </h3>
-                        <dl class="grid grid-cols-1 gap-2 text-sm text-stone-600 sm:grid-cols-2 lg:grid-cols-3 dark:text-stone-400">
+                        <dl class="grid grid-cols-1 gap-2 text-sm text-base-secondary sm:grid-cols-2 lg:grid-cols-3">
                             <div>
                                 <dt class="font-medium">{{ t('tournaments.public.buchholz') }}</dt>
                                 <dd>{{ t('tournaments.public.buchholz_description') }}</dd>

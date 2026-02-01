@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
-use Tests\TestCase;
+use Tests\Support\Modules\ModuleTestCase;
 
-final class TournamentListControllerTest extends TestCase
+final class TournamentListControllerTest extends ModuleTestCase
 {
-    use LazilyRefreshDatabase;
+    protected ?string $moduleName = 'tournaments';
+    protected bool $autoEnableModule = true;
 
     public function test_index_displays_published_tournaments(): void
     {
@@ -29,7 +29,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 4)
         );
     }
@@ -44,7 +44,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 0)
         );
     }
@@ -61,7 +61,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 12)
                 ->has('tournaments.meta.currentPage')
                 ->has('tournaments.meta.lastPage')
@@ -82,7 +82,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 3)
                 ->where('tournaments.data.0.name', 'In Progress Tournament')
         );
@@ -98,7 +98,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 2)
                 ->where('tournaments.data.0.name', 'In Progress Tournament')
                 ->where('tournaments.data.1.name', 'Upcoming Tournament')
@@ -116,7 +116,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 3)
                 ->where('tournaments.data.2.name', 'Finished Tournament')
         );
@@ -133,7 +133,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 1)
                 ->where('tournaments.data.0.name', 'In Progress')
         );
@@ -151,7 +151,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 2)
         );
     }
@@ -167,7 +167,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 1)
                 ->where('tournaments.data.0.name', 'Finished')
         );
@@ -184,7 +184,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 3)
         );
     }
@@ -196,8 +196,8 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
-                ->where('currentStatus', 'active')
+                ->component('Tournaments/Index', false)
+                ->where('currentFilter', 'active')
         );
     }
 
@@ -211,6 +211,7 @@ final class TournamentListControllerTest extends TestCase
             'description' => 'A test tournament description',
             'status' => 'registration_open',
             'result_reporting' => 'admin_only',
+            'notification_email' => 'test@example.com',
             'max_participants' => 16,
             'registration_opens_at' => now()->subDay(),
             'registration_closes_at' => now()->addWeek(),
@@ -221,7 +222,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 1)
                 ->has('tournaments.data.0.id')
                 ->has('tournaments.data.0.name')
@@ -243,7 +244,7 @@ final class TournamentListControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('Tournaments/Index')
+                ->component('Tournaments/Index', false)
                 ->has('tournaments.data', 2)
         );
     }
@@ -258,6 +259,7 @@ final class TournamentListControllerTest extends TestCase
             'slug' => \Illuminate\Support\Str::slug($name) . '-' . \Illuminate\Support\Str::uuid()->toString(),
             'status' => $status,
             'result_reporting' => 'admin_only',
+            'notification_email' => 'test@example.com',
         ];
 
         if ($status === 'in_progress') {

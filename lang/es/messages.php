@@ -636,4 +636,35 @@ return [
         'finished' => 'Finalizado',
         'cancelled' => 'Cancelado',
     ],
+
+    // My tournaments page
+    'my_tournaments' => [
+        'title' => 'Mis torneos',
+        'subtitle' => 'Tus inscripciones y participaciones en torneos',
+        'browse_tournaments' => 'Explorar torneos',
+        'upcoming' => 'Próximos',
+        'in_progress' => 'En curso',
+        'history' => 'Historial',
+        'empty_title' => 'No estás inscrito en ningún torneo',
+        'empty_description' => 'Explora los torneos disponibles y únete a competir',
+        'no_upcoming' => 'No tienes torneos próximos',
+        'position' => 'Posición',
+        'position_of' => ':positionº de :total',
+        'points' => 'pts',
+        'next_match' => 'Próxima partida',
+        'round' => 'Ronda',
+        'table' => 'Mesa',
+        'vs' => 'vs.',
+        'bye' => 'Descanso',
+        'check_in_now' => 'Hacer check-in',
+        'until' => 'hasta',
+        'view_tournament' => 'Ver torneo',
+        'view_all' => 'Ver todos mis torneos',
+        'load_more' => 'Cargar más ({count})',
+    ],
+
+    // Profile section
+    'profile' => [
+        'tabLabel' => 'Torneos',
+    ],
 ];

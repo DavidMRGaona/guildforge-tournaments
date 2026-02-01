@@ -61,6 +61,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
+use Modules\Tournaments\Infrastructure\Services\ProfileTournamentsDataProvider;
 use Modules\Tournaments\Infrastructure\Services\RoundQueryService;
 use Modules\Tournaments\Infrastructure\Services\StandingCalculatorService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
@@ -94,6 +95,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
         $this->registerEventListeners();
         $this->shareInertiaData();
+        $this->shareProfileTournamentsData();
         $this->registerLivewireComponents();
         $this->registerFilamentExtensions();
     }
@@ -280,6 +282,49 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             'userRegistration' => fn () => $this->getUserRegistrationForCurrentRoute(),
             'canRegister' => fn () => $this->getCanRegisterForCurrentRoute(),
         ]);
+    }
+
+    /**
+     * Share profile tournaments data via Inertia for the profile page.
+     */
+    private function shareProfileTournamentsData(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('profileTournaments', function (): ?array {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileTournamentsDataProvider::class);
+
+            return $provider->getDataForUser((string) $user->id);
+        });
+
+        Inertia::share('profileTournamentsTotal', function (): ?int {
+            $route = request()->route();
+            if ($route?->getName() !== 'profile.show') {
+                return null;
+            }
+
+            $user = auth()->user();
+            if ($user === null) {
+                return null;
+            }
+
+            $provider = app(ProfileTournamentsDataProvider::class);
+            $data = $provider->getDataForUser((string) $user->id);
+
+            return $data['total'] ?? 0;
+        });
     }
 
     /**
@@ -553,6 +598,20 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 order: 20, // After game-tables (10)
                 props: [],
                 dataKeys: ['tournament', 'userRegistration', 'canRegister'],
+            ),
+            new SlotRegistrationDTO(
+                slot: 'profile-sections',
+                component: 'components/profile/ProfileTournamentsSection.vue',
+                module: $this->moduleName(),
+                order: 20, // After game-tables (10, 15)
+                props: [],
+                dataKeys: ['profileTournaments'],
+                profileTab: [
+                    'tabId' => 'tournaments',
+                    'icon' => 'trophy',
+                    'labelKey' => 'tournaments.profile.tabLabel',
+                    'badgeKey' => 'profileTournamentsTotal',
+                ],
             ),
         ];
     }

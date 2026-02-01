@@ -147,7 +147,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
             <div class="mb-6">
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -167,14 +167,14 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 </Link>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
+            <div class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50">
                 <div class="p-6 sm:p-8">
                     <!-- Header -->
                     <div class="mb-6 text-center">
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-stone-100">
+                        <h1 class="text-2xl font-bold text-base-primary">
                             {{ t('tournaments.check_in.title') }}
                         </h1>
-                        <p class="mt-2 text-gray-600 dark:text-stone-400">
+                        <p class="mt-2 text-base-muted">
                             {{ tournament.name }}
                         </p>
                     </div>
@@ -182,10 +182,10 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     <!-- Not Available State -->
                     <div
                         v-if="isNotAvailable"
-                        class="rounded-lg bg-gray-50 p-6 text-center dark:bg-stone-900/30"
+                        class="rounded-lg bg-muted p-6 text-center"
                     >
                         <svg
-                            class="mx-auto h-12 w-12 text-gray-400 dark:text-stone-500"
+                            class="mx-auto h-12 w-12 text-base-muted"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -198,7 +198,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                 d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                             />
                         </svg>
-                        <p class="mt-4 text-gray-600 dark:text-stone-400">
+                        <p class="mt-4 text-base-muted">
                             {{ t('tournaments.check_in.not_allowed') }}
                         </p>
                     </div>
@@ -206,10 +206,10 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     <!-- Window Not Yet Open -->
                     <div
                         v-else-if="isWindowNotYet"
-                        class="rounded-lg bg-amber-50 p-6 text-center dark:bg-amber-900/20"
+                        class="rounded-lg bg-primary-light p-6 text-center dark:bg-primary-900/20"
                     >
                         <svg
-                            class="mx-auto h-12 w-12 text-amber-500 dark:text-amber-400"
+                            class="mx-auto h-12 w-12 text-primary dark:text-primary-400"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -222,7 +222,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
-                        <p class="mt-4 font-medium text-amber-800 dark:text-amber-300">
+                        <p class="mt-4 font-medium text-primary-800 dark:text-primary-300">
                             {{ t('tournaments.check_in.window_opens_at', {
                                 date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
                                 time: formatDateTime(checkInWindow.opens_at)?.split(',')[1]?.trim() || ''
@@ -259,10 +259,10 @@ const handleEmailCheckIn = async (): Promise<void> => {
                         <!-- Already Checked In -->
                         <div
                             v-if="isAlreadyCheckedIn"
-                            class="rounded-lg bg-green-50 p-6 text-center dark:bg-green-900/20"
+                            class="rounded-lg bg-success/10 p-6 text-center"
                         >
                             <svg
-                                class="mx-auto h-12 w-12 text-green-500 dark:text-green-400"
+                                class="mx-auto h-12 w-12 text-success"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -275,17 +275,17 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                                 />
                             </svg>
-                            <p class="mt-4 font-medium text-green-800 dark:text-green-300">
+                            <p class="mt-4 font-medium text-success">
                                 {{ t('tournaments.check_in.success') }}
                             </p>
-                            <p v-if="checkedInTime" class="mt-2 text-sm text-green-600 dark:text-green-400">
+                            <p v-if="checkedInTime" class="mt-2 text-sm text-success">
                                 {{ t('tournaments.check_in.success_time', { time: checkedInTime }) }}
                             </p>
                         </div>
 
                         <!-- Authenticated User - Button to check in -->
                         <div v-else-if="isAuthenticated && isRegistered">
-                            <p class="mb-4 text-center text-gray-600 dark:text-stone-400">
+                            <p class="mb-4 text-center text-base-muted">
                                 {{ t('tournaments.check_in.enter_email') }}
                             </p>
                             <BaseButton
@@ -302,14 +302,14 @@ const handleEmailCheckIn = async (): Promise<void> => {
                         <!-- Authenticated but not registered -->
                         <div
                             v-else-if="isAuthenticated && !isRegistered"
-                            class="rounded-lg bg-amber-50 p-6 text-center dark:bg-amber-900/20"
+                            class="rounded-lg bg-primary-light p-6 text-center dark:bg-primary-900/20"
                         >
-                            <p class="text-amber-800 dark:text-amber-300">
+                            <p class="text-primary-800 dark:text-primary-300">
                                 {{ t('tournaments.check_in.not_registered') }}
                             </p>
                             <Link
                                 :href="`/torneos/${tournament.slug}`"
-                                class="mt-4 inline-block text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                                class="mt-4 inline-block text-primary hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                             >
                                 {{ t('tournaments.public.register') }}
                             </Link>
@@ -317,7 +317,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
 
                         <!-- Guest / Not authenticated - Email form -->
                         <div v-else>
-                            <p class="mb-4 text-center text-gray-600 dark:text-stone-400">
+                            <p class="mb-4 text-center text-base-muted">
                                 {{ t('tournaments.check_in.enter_email') }}
                             </p>
 
@@ -325,7 +325,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                 <div>
                                     <label
                                         for="check-in-email"
-                                        class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                                        class="mb-1 block text-sm font-medium text-base-secondary"
                                     >
                                         {{ t('common.email') }}
                                         <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
@@ -338,7 +338,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                         :disabled="isProcessing"
                                         :aria-invalid="!!formErrors.email"
                                         :aria-describedby="formErrors.email ? 'email-error' : undefined"
-                                        class="w-full rounded-md border border-stone-300 px-4 py-2 shadow-sm transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:border-amber-400 dark:focus:ring-amber-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                        class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-stone-100 bg-surface text-base-primary placeholder-base-muted dark:focus:border-primary-400 dark:focus:ring-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
                                         :class="{
                                             'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400':
                                                 formErrors.email,
@@ -365,17 +365,17 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                             :disabled="isProcessing"
                                             :aria-invalid="!!formErrors.gdpr_consent"
                                             :aria-describedby="formErrors.gdpr_consent ? 'checkin-gdpr-error' : undefined"
-                                            class="mt-1 h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 disabled:cursor-not-allowed dark:border-stone-600 dark:bg-stone-700"
+                                            class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed bg-surface"
                                         />
                                         <label
                                             for="checkin-gdpr"
-                                            class="text-sm text-stone-600 dark:text-stone-400"
+                                            class="text-sm text-base-muted"
                                         >
                                             {{ t('tournaments.check_in.gdpr_consent') }}
                                             <a
                                                 href="/politica-de-privacidad"
                                                 target="_blank"
-                                                class="text-amber-600 underline hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400"
+                                                class="text-primary underline hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                                             >
                                                 {{ t('tournaments.public.privacy_policy') }}
                                             </a>
@@ -405,12 +405,12 @@ const handleEmailCheckIn = async (): Promise<void> => {
 
                             <!-- Login link -->
                             <div class="mt-4 text-center">
-                                <span class="text-sm text-gray-500 dark:text-stone-400">
+                                <span class="text-sm text-base-muted">
                                     {{ t('tournaments.check_in.or_login') }}:
                                 </span>
                                 <Link
                                     href="/iniciar-sesion"
-                                    class="ml-1 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                                    class="ml-1 text-sm font-medium text-primary hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                                 >
                                     {{ t('common.login') }}
                                 </Link>

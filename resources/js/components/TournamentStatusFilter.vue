@@ -46,7 +46,7 @@ function isActive(filter: TournamentStatusFilter): boolean {
 
 <template>
     <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm font-medium text-stone-700 dark:text-stone-300">
+        <span class="text-sm font-medium text-base-secondary">
             {{ t('tournaments.listing.filterBy') }}:
         </span>
 
@@ -57,8 +57,8 @@ function isActive(filter: TournamentStatusFilter): boolean {
             :class="[
                 'rounded-full px-3 py-1 text-sm font-medium transition-colors',
                 isActive(option.value)
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600',
+                    ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200'
+                    : 'bg-stone-100 text-base-muted hover:bg-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600',
             ]"
             @click="selectFilter(option.value)"
         >

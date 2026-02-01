@@ -63,12 +63,12 @@ function handleCancel(): void {
 <template>
     <DefaultLayout>
         <div class="mx-auto max-w-2xl px-4 py-12">
-            <div class="rounded-xl bg-white p-8 shadow-lg dark:bg-stone-800">
+            <div class="rounded-xl bg-surface p-8 shadow-lg">
                 <!-- Header -->
                 <div class="mb-6 text-center">
-                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning-light">
                         <svg
-                            class="h-8 w-8 text-amber-600 dark:text-amber-400"
+                            class="h-8 w-8 text-warning"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -81,27 +81,27 @@ function handleCancel(): void {
                             />
                         </svg>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-stone-100">
+                    <h1 class="text-2xl font-bold text-base-primary">
                         {{ t('tournaments.cancellation.title') }}
                     </h1>
                 </div>
 
                 <!-- Registration info -->
-                <div class="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-stone-700/50">
+                <div class="mb-6 rounded-lg bg-surface-secondary p-4">
                     <dl class="space-y-2">
                         <div class="flex justify-between">
-                            <dt class="text-sm text-gray-500 dark:text-stone-400">
+                            <dt class="text-sm text-base-muted">
                                 {{ t('tournaments.cancellation.participant') }}
                             </dt>
-                            <dd class="text-sm font-medium text-gray-900 dark:text-stone-100">
+                            <dd class="text-sm font-medium text-base-primary">
                                 {{ displayName }}
                             </dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-sm text-gray-500 dark:text-stone-400">
+                            <dt class="text-sm text-base-muted">
                                 {{ t('tournaments.cancellation.tournament') }}
                             </dt>
-                            <dd class="text-sm font-medium text-gray-900 dark:text-stone-100">
+                            <dd class="text-sm font-medium text-base-primary">
                                 {{ tournament.name }}
                             </dd>
                         </div>
@@ -109,10 +109,10 @@ function handleCancel(): void {
                             v-if="formattedDate"
                             class="flex justify-between"
                         >
-                            <dt class="text-sm text-gray-500 dark:text-stone-400">
+                            <dt class="text-sm text-base-muted">
                                 {{ t('tournaments.cancellation.date') }}
                             </dt>
-                            <dd class="text-sm font-medium text-gray-900 dark:text-stone-100">
+                            <dd class="text-sm font-medium text-base-primary">
                                 {{ formattedDate }}
                             </dd>
                         </div>
@@ -121,7 +121,7 @@ function handleCancel(): void {
 
                 <!-- Can cancel -->
                 <template v-if="canCancel">
-                    <p class="mb-6 text-center text-gray-600 dark:text-stone-400">
+                    <p class="mb-6 text-center text-base-secondary">
                         {{ t('tournaments.cancellation.confirm_message', { tournament: tournament.name }) }}
                     </p>
 
@@ -150,8 +150,8 @@ function handleCancel(): void {
 
                 <!-- Cannot cancel -->
                 <template v-else>
-                    <div class="mb-6 rounded-lg bg-yellow-50 p-4 text-center dark:bg-yellow-900/20">
-                        <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                    <div class="mb-6 rounded-lg bg-warning-light p-4 text-center">
+                        <p class="text-sm text-warning-dark">
                             {{ t('tournaments.cancellation.already_cancelled') }}
                         </p>
                     </div>

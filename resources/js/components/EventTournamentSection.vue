@@ -17,20 +17,23 @@ const isRegistered = computed(() =>
 );
 
 const spotsRemaining = computed(() => {
-    if (props.tournament.max_participants === null) {
+    if (props.tournament === null || props.tournament.max_participants === null) {
         return null;
     }
     return Math.max(0, props.tournament.max_participants - props.tournament.participant_count);
 });
 
 const isFull = computed(() => {
-    if (props.tournament.max_participants === null) {
+    if (props.tournament === null || props.tournament.max_participants === null) {
         return false;
     }
     return props.tournament.participant_count >= props.tournament.max_participants;
 });
 
 const canWithdraw = computed(() => {
+    if (props.tournament === null) {
+        return false;
+    }
     return isRegistered.value && props.tournament.is_registration_open;
 });
 
@@ -59,6 +62,10 @@ watch(showGuestModal, async (isOpen) => {
 });
 
 const handleRegister = (): void => {
+    if (props.tournament === null) {
+        return;
+    }
+
     // If not authenticated and tournament allows guests, show guest modal
     if (!isAuthenticated.value && props.tournament.allow_guests) {
         showGuestModal.value = true;
@@ -75,6 +82,10 @@ const handleRegister = (): void => {
 };
 
 const submitGuestRegistration = (): void => {
+    if (props.tournament === null) {
+        return;
+    }
+
     guestForm.post(`/api/torneos/${props.tournament.id}/inscripcion`, {
         preserveScroll: true,
         onSuccess: () => {
@@ -106,6 +117,10 @@ const closeWithdrawModal = (): void => {
 };
 
 const confirmWithdraw = (): void => {
+    if (props.tournament === null) {
+        return;
+    }
+
     withdrawProcessing.value = true;
     router.delete(`/api/torneos/${props.tournament.id}/inscripcion`, {
         preserveScroll: true,
@@ -128,7 +143,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-    <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-900 dark:bg-purple-950/30">
+    <div v-if="tournament" class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-900 dark:bg-purple-950/30">
         <div class="flex items-start justify-between gap-4">
             <div class="flex-1">
                 <!-- Tournament Info Header -->
@@ -268,12 +283,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                 <!-- Modal content -->
                 <div
-                    class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-stone-800"
+                    class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl"
                 >
                     <!-- Close button -->
                     <button
                         type="button"
-                        class="absolute right-4 top-4 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
+                        class="absolute right-4 top-4 text-base-muted hover:text-base-secondary"
                         :aria-label="t('common.close')"
                         @click="closeGuestModal"
                     >
@@ -285,7 +300,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <!-- Modal header -->
                     <h2
                         id="guest-modal-title"
-                        class="mb-4 text-lg font-semibold text-stone-900 dark:text-stone-100"
+                        class="mb-4 text-lg font-semibold text-base-primary"
                     >
                         {{ t('tournaments.public.guest_registration') }}
                     </h2>
@@ -296,7 +311,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <div>
                             <label
                                 for="guest-name"
-                                class="block text-sm font-medium text-stone-700 mb-1 dark:text-stone-300"
+                                class="block text-sm font-medium text-base-secondary mb-1"
                             >
                                 {{ t('tournaments.public.guest_name') }}
                                 <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
@@ -310,7 +325,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 :disabled="guestForm.processing"
                                 :aria-invalid="!!guestForm.errors.guest_name"
                                 :aria-describedby="guestForm.errors.guest_name ? 'guest-name-error' : undefined"
-                                class="w-full px-4 py-2 border border-stone-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-amber-400 dark:focus:border-amber-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
                                 :class="{
                                     'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
                                         guestForm.errors.guest_name,
@@ -330,7 +345,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <div>
                             <label
                                 for="guest-email"
-                                class="block text-sm font-medium text-stone-700 mb-1 dark:text-stone-300"
+                                class="block text-sm font-medium text-base-secondary mb-1"
                             >
                                 {{ t('tournaments.public.guest_email') }}
                                 <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
@@ -343,7 +358,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 :disabled="guestForm.processing"
                                 :aria-invalid="!!guestForm.errors.guest_email"
                                 :aria-describedby="guestForm.errors.guest_email ? 'guest-email-error' : undefined"
-                                class="w-full px-4 py-2 border border-stone-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-amber-400 dark:focus:border-amber-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
                                 :class="{
                                     'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
                                         guestForm.errors.guest_email,
@@ -370,17 +385,17 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     :disabled="guestForm.processing"
                                     :aria-invalid="!!guestForm.errors.gdpr_consent"
                                     :aria-describedby="guestForm.errors.gdpr_consent ? 'event-guest-gdpr-error' : undefined"
-                                    class="mt-1 h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 disabled:cursor-not-allowed dark:border-stone-600 dark:bg-stone-700"
+                                    class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed dark:bg-stone-700"
                                 />
                                 <label
                                     for="event-guest-gdpr"
-                                    class="text-sm text-stone-600 dark:text-stone-400"
+                                    class="text-sm text-base-muted"
                                 >
                                     {{ t('tournaments.public.gdpr_consent') }}
                                     <a
                                         href="/politica-de-privacidad"
                                         target="_blank"
-                                        class="text-amber-600 underline hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400"
+                                        class="text-primary underline hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                                     >
                                         {{ t('tournaments.public.privacy_policy') }}
                                     </a>
@@ -448,7 +463,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                 <!-- Modal content -->
                 <div
-                    class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-stone-800"
+                    class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl"
                 >
                     <!-- Warning icon -->
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
@@ -471,13 +486,13 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <!-- Modal header -->
                     <h2
                         id="withdraw-modal-title"
-                        class="mt-4 text-center text-lg font-semibold text-stone-900 dark:text-stone-100"
+                        class="mt-4 text-center text-lg font-semibold text-base-primary"
                     >
                         {{ t('tournaments.public.withdraw_title') }}
                     </h2>
 
                     <!-- Confirmation message -->
-                    <p class="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
+                    <p class="mt-2 text-center text-sm text-base-muted">
                         {{ t('tournaments.public.withdraw_confirm') }}
                     </p>
 

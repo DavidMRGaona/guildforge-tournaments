@@ -41,7 +41,7 @@ final class TournamentListController extends Controller
 
     public function index(Request $request): Response
     {
-        $page = $this->getCurrentPage();
+        $page = max(1, (int) $request->query('page', 1));
         $statusParam = $request->query('status');
         $currentStatus = $this->parseStatusFilter($statusParam);
         $statusFilter = $this->mapStatusFilter($currentStatus);

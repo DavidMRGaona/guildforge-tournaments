@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Tournaments\Http\Controllers\GuestCancellationController;
+use Modules\Tournaments\Http\Controllers\MyTournamentsController;
 use Modules\Tournaments\Http\Controllers\TournamentCheckInController;
 use Modules\Tournaments\Http\Controllers\TournamentController;
 use Modules\Tournaments\Http\Controllers\TournamentListController;
-use Modules\Tournaments\Http\Controllers\GuestCancellationController;
 use Modules\Tournaments\Http\Controllers\TournamentRegistrationController;
 
 /*
@@ -22,6 +23,11 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->name('cancel-confirmation');
     Route::delete('/cancelar/{token}', [GuestCancellationController::class, 'destroy'])
         ->name('cancel-by-token');
+
+    // My tournaments (authenticated users only)
+    Route::get('/mis-torneos', MyTournamentsController::class)
+        ->middleware('auth')
+        ->name('my-tournaments');
 
     // Index route MUST be before {slug} to avoid being matched as a slug
     Route::get('/', [TournamentListController::class, 'index'])

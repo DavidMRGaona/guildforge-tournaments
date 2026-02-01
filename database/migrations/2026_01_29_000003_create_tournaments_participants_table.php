@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('user_id')->nullable();
             $table->string('guest_name')->nullable();
             $table->string('guest_email')->nullable();
+            $table->string('cancellation_token', 64)->nullable()->unique();
             $table->string('status')->default('registered');
             $table->integer('seed')->nullable();
             $table->boolean('has_received_bye')->default(false);

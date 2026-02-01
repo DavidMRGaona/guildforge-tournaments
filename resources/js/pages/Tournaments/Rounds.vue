@@ -43,7 +43,7 @@ const isExpanded = (roundId: string): boolean => {
     return expandedRounds.value.has(roundId);
 };
 
-const defaultBadgeClass = 'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-300';
+const defaultBadgeClass = 'bg-muted text-base-secondary';
 
 const getResultBadgeClass = (match: Match): string => {
     const color = getMatchResultColor(match.result);
@@ -69,7 +69,7 @@ const sortedRounds = computed(() => {
             <div class="mb-6">
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-stone-400 dark:hover:text-stone-300 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-base-muted hover:text-base-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -89,18 +89,18 @@ const sortedRounds = computed(() => {
                 </Link>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-white shadow dark:bg-stone-800 dark:shadow-stone-900/50">
-                <div class="border-b border-stone-200 p-6 dark:border-stone-700">
-                    <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-stone-100">
+            <div class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50">
+                <div class="border-b border-default p-6">
+                    <h1 class="text-2xl font-bold text-base-primary sm:text-3xl">
                         {{ t('tournaments.public.rounds') }}
                     </h1>
-                    <p class="mt-1 text-gray-600 dark:text-stone-400">
+                    <p class="mt-1 text-base-muted">
                         {{ tournament.name }}
                     </p>
                 </div>
 
                 <div class="p-6">
-                    <div v-if="rounds.length === 0" class="py-8 text-center text-stone-500 dark:text-stone-400">
+                    <div v-if="rounds.length === 0" class="py-8 text-center text-base-muted">
                         {{ t('tournaments.public.no_rounds') }}
                     </div>
 
@@ -109,25 +109,25 @@ const sortedRounds = computed(() => {
                         <div
                             v-for="roundData in sortedRounds"
                             :key="roundData.round.id"
-                            class="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700"
+                            class="overflow-hidden rounded-lg border border-default"
                         >
                             <!-- Round Header (clickable) -->
                             <button
                                 type="button"
-                                class="flex w-full items-center justify-between p-4 text-left hover:bg-stone-50 dark:hover:bg-stone-900/30"
+                                class="flex w-full items-center justify-between p-4 text-left hover:bg-muted"
                                 :class="{
                                     'bg-blue-50 dark:bg-blue-900/20': roundData.round.status === 'in_progress',
                                 }"
                                 @click="toggleRound(roundData.round.id)"
                             >
                                 <div class="flex items-center gap-3">
-                                    <span class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                                    <span class="text-lg font-semibold text-base-primary">
                                         {{ t('tournaments.public.round_number', { number: roundData.round.round_number }) }}
                                     </span>
                                     <span
                                         class="rounded-full px-2 py-0.5 text-xs font-medium"
                                         :class="{
-                                            'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-300': roundData.round.status === 'pending',
+                                            'bg-muted text-base-secondary': roundData.round.status === 'pending',
                                             'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': roundData.round.status === 'in_progress',
                                             'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': roundData.round.status === 'finished',
                                         }"
@@ -137,7 +137,7 @@ const sortedRounds = computed(() => {
                                 </div>
 
                                 <div class="flex items-center gap-4">
-                                    <span class="text-sm text-stone-500 dark:text-stone-400">
+                                    <span class="text-sm text-base-muted">
                                         {{ roundData.round.completed_match_count }} / {{ roundData.round.match_count }}
                                         {{ t('tournaments.public.matches_label') }}
                                     </span>
@@ -162,9 +162,9 @@ const sortedRounds = computed(() => {
                             <!-- Round Matches (collapsible) -->
                             <div
                                 v-show="isExpanded(roundData.round.id)"
-                                class="border-t border-stone-200 dark:border-stone-700"
+                                class="border-t border-default"
                             >
-                                <div v-if="roundData.matches.length === 0" class="p-4 text-center text-stone-500 dark:text-stone-400">
+                                <div v-if="roundData.matches.length === 0" class="p-4 text-center text-base-muted">
                                     {{ t('tournaments.public.no_matches') }}
                                 </div>
 
@@ -179,7 +179,7 @@ const sortedRounds = computed(() => {
                                             <!-- Table Number -->
                                             <div
                                                 v-if="match.table_number"
-                                                class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-stone-100 text-sm font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300"
+                                                class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-muted text-sm font-medium text-base-secondary"
                                             >
                                                 {{ match.table_number }}
                                             </div>
@@ -188,7 +188,7 @@ const sortedRounds = computed(() => {
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex items-center gap-2">
                                                     <span
-                                                        class="font-medium text-stone-900 dark:text-stone-100"
+                                                        class="font-medium text-base-primary"
                                                         :class="{
                                                             'text-green-600 dark:text-green-400': match.result === 'player1_win',
                                                         }"
@@ -197,7 +197,7 @@ const sortedRounds = computed(() => {
                                                     </span>
                                                     <span
                                                         v-if="match.player_1_score !== null"
-                                                        class="rounded bg-stone-100 px-1.5 py-0.5 text-sm font-semibold text-stone-700 dark:bg-stone-700 dark:text-stone-300"
+                                                        class="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
                                                     >
                                                         {{ match.player_1_score }}
                                                     </span>
@@ -205,7 +205,7 @@ const sortedRounds = computed(() => {
 
                                                 <div v-if="match.player_2_name" class="mt-1 flex items-center gap-2">
                                                     <span
-                                                        class="font-medium text-stone-900 dark:text-stone-100"
+                                                        class="font-medium text-base-primary"
                                                         :class="{
                                                             'text-green-600 dark:text-green-400': match.result === 'player2_win',
                                                         }"
@@ -214,13 +214,13 @@ const sortedRounds = computed(() => {
                                                     </span>
                                                     <span
                                                         v-if="match.player_2_score !== null"
-                                                        class="rounded bg-stone-100 px-1.5 py-0.5 text-sm font-semibold text-stone-700 dark:bg-stone-700 dark:text-stone-300"
+                                                        class="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
                                                     >
                                                         {{ match.player_2_score }}
                                                     </span>
                                                 </div>
 
-                                                <div v-else class="mt-1 text-sm italic text-stone-500 dark:text-stone-400">
+                                                <div v-else class="mt-1 text-sm italic text-base-muted">
                                                     {{ t('tournaments.public.bye') }}
                                                 </div>
                                             </div>

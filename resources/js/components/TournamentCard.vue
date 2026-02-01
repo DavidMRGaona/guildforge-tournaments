@@ -18,11 +18,11 @@ const tournamentImageUrl = computed(() => buildCardImageUrl(props.tournament.ima
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
-        green: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
-        blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-        amber: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
-        gray: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200',
-        red: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+        green: 'bg-success-light text-success',
+        blue: 'bg-info-light text-info',
+        amber: 'bg-warning-light text-warning',
+        gray: 'bg-muted text-base-secondary',
+        red: 'bg-error-light text-error',
     };
     return colorMap[props.tournament.statusColor] || colorMap.gray;
 });
@@ -89,7 +89,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
     <Link
         :href="`/torneos/${props.tournament.slug}`"
         :aria-label="t('tournaments.listing.viewTournament', { name: props.tournament.name })"
-        class="block transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+        class="block transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
     >
         <BaseCard :padding="false">
             <!-- Image section -->
@@ -103,7 +103,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
             </template>
             <template v-else #header>
                 <div
-                    class="flex aspect-video h-40 w-full items-center justify-center bg-gradient-to-br from-amber-500 to-stone-600 dark:from-amber-600 dark:to-stone-700"
+                    class="flex aspect-video h-40 w-full items-center justify-center bg-gradient-to-br from-primary-500 to-stone-600 dark:from-primary-600 dark:to-stone-700"
                 >
                     <svg
                         class="h-12 w-12 text-white/50"
@@ -136,7 +136,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
 
                     <span
                         v-if="props.tournament.maxParticipants || props.tournament.participantCount > 0"
-                        class="flex items-center text-sm text-stone-500 dark:text-stone-400"
+                        class="flex items-center text-sm text-base-muted"
                     >
                         <svg
                             class="mr-1 h-4 w-4"
@@ -158,7 +158,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
 
                 <!-- Tournament name -->
                 <h3
-                    class="mb-2 line-clamp-2 text-lg font-semibold text-stone-900 dark:text-stone-100"
+                    class="mb-2 line-clamp-2 text-lg font-semibold text-base-primary"
                 >
                     {{ props.tournament.name }}
                 </h3>
@@ -166,7 +166,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
                 <!-- Round progress (if in progress) -->
                 <p
                     v-if="roundInfo"
-                    class="mb-2 text-sm font-medium text-amber-600 dark:text-amber-500"
+                    class="mb-2 text-sm font-medium text-primary"
                 >
                     {{ roundInfo }}
                 </p>
@@ -174,7 +174,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
                 <!-- Date info -->
                 <p
                     v-if="formattedDate"
-                    class="mb-2 flex items-center text-sm text-stone-500 dark:text-stone-400"
+                    class="mb-2 flex items-center text-sm text-base-muted"
                 >
                     <svg
                         class="mr-1.5 h-4 w-4 flex-shrink-0"
@@ -200,7 +200,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
                     class="mb-3"
                 >
                     <span
-                        class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/50 dark:text-green-200"
+                        class="inline-flex items-center rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-success"
                     >
                         <svg
                             class="mr-1 h-3 w-3"
@@ -221,7 +221,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
                 <!-- Description excerpt -->
                 <p
                     v-if="props.tournament.description"
-                    class="line-clamp-3 text-sm text-stone-600 dark:text-stone-300"
+                    class="line-clamp-3 text-sm text-base-secondary"
                 >
                     {{ getExcerpt(props.tournament.description, 150) }}
                 </p>

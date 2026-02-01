@@ -231,7 +231,7 @@ export interface TournamentRoundsProps {
  * Props for the event tournament section component.
  */
 export interface EventTournamentSectionProps {
-    tournament: Tournament;
+    tournament: Tournament | null;
     userRegistration: Participant | null;
     canRegister: boolean;
 }
@@ -257,4 +257,68 @@ export interface TournamentCheckInProps {
     tournament: Tournament;
     userRegistration: Participant | null;
     checkInWindow: CheckInWindow;
+}
+
+/**
+ * Next match information for user tournaments.
+ */
+export interface NextMatch {
+    matchId: string;
+    roundNumber: number;
+    tableNumber: number | null;
+    opponentId: string | null;
+    opponentName: string | null;
+    isBye: boolean;
+}
+
+/**
+ * User's tournament participation data.
+ */
+export interface UserTournament {
+    id: string;
+    name: string;
+    slug: string;
+    imagePublicId: string | null;
+    status: TournamentStatus;
+    statusLabel: string;
+    statusColor: string;
+    startsAt: string | null;
+    eventName: string | null;
+    totalParticipants: number;
+    // Participant data
+    participantId: string;
+    participantStatus: ParticipantStatus;
+    participantStatusLabel: string;
+    participantStatusColor: string;
+    // Standings data
+    position: number | null;
+    points: number;
+    // Next match
+    nextMatch: NextMatch | null;
+    // Check-in
+    canCheckIn: boolean;
+    checkInDeadline: string | null;
+    // Classification
+    isUpcoming: boolean;
+    isInProgress: boolean;
+    isPast: boolean;
+}
+
+/**
+ * Props for the Tournaments/MyTournaments page.
+ */
+export interface MyTournamentsPageProps {
+    upcoming: UserTournament[];
+    inProgress: UserTournament[];
+    past: UserTournament[];
+}
+
+/**
+ * Profile tournaments data from Inertia shared props.
+ */
+export interface ProfileTournamentsData {
+    upcoming: UserTournament[];
+    inProgress: UserTournament[];
+    past: UserTournament[];
+    total: number;
 }
