@@ -1,0 +1,33 @@
+{
+    "name": "tournaments",
+    "displayName": "Torneos",
+    "version": "1.0.0",
+    "namespace": "Modules\\Tournaments",
+    "provider": "TournamentsServiceProvider",
+    "description": "Sistema de torneos con emparejamiento suizo para eventos",
+    "author": "GuildForge",
+    "requires": {
+        "php": ">=8.2",
+        "laravel": ">=12.0"
+    },
+    "dependencies": [],
+    "provides": {
+        "permissions": [
+            "tournaments.view_any",
+            "tournaments.view",
+            "tournaments.create",
+            "tournaments.update",
+            "tournaments.delete",
+            "tournaments.manage_config",
+            "tournaments.report_results",
+            "tournaments.manage_participants"
+        ],
+        "routes": [
+            "api",
+            "web"
+        ],
+        "filament": true,
+        "frontend": true,
+        "inertia_share": true
+    }
+}
