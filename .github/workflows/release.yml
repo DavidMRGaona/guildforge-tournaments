@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    uses: DavidMRGaona/runesword/.github/workflows/reusable-module-release.yml@main
+    uses: DavidMRGaona/GuildForge/.github/workflows/reusable-module-release.yml@main
     with:
       module_name: 'tournaments'
     permissions:
