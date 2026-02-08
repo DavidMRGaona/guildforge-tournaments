@@ -6,10 +6,13 @@ import { readdirSync, statSync, existsSync } from 'fs';
 const MODULE_NAME = 'tournaments';
 
 /**
- * Auto-discover Vue components in the components directory.
- * Returns an object mapping component names to their file paths.
+ * Auto-discover Vue files in a directory.
+ * Returns an object mapping entry names to their file paths.
+ *
+ * @param dir      Absolute path to the directory to scan
+ * @param basePath The base path prefix for entry keys (e.g. 'resources/js/components')
  */
-function discoverComponents(dir: string): Record<string, string> {
+function discoverEntries(dir: string, basePath: string): Record<string, string> {
     if (!existsSync(dir)) {
         return {};
     }
@@ -24,12 +27,10 @@ function discoverComponents(dir: string): Record<string, string> {
             const stat = statSync(filePath);
 
             if (stat.isDirectory()) {
-                // Recurse into subdirectories
                 scanDir(filePath, prefix ? `${prefix}/${file}` : file);
             } else if (file.endsWith('.vue')) {
-                // Add Vue component
                 const relativePath = prefix ? `${prefix}/${file}` : file;
-                entries[`resources/js/components/${relativePath}`] = filePath;
+                entries[`${basePath}/${relativePath}`] = filePath;
             }
         }
     }
@@ -39,11 +40,14 @@ function discoverComponents(dir: string): Record<string, string> {
 }
 
 const componentsDir = resolve(__dirname, 'resources/js/components');
-const componentEntries = discoverComponents(componentsDir);
+const pagesDir = resolve(__dirname, 'resources/js/pages');
 
-// Exit early if no components to build
-if (Object.keys(componentEntries).length === 0) {
-    console.warn(`[${MODULE_NAME}] No Vue components found in resources/js/components/`);
+const componentEntries = discoverEntries(componentsDir, 'resources/js/components');
+const pageEntries = discoverEntries(pagesDir, 'resources/js/pages');
+const allEntries = { ...componentEntries, ...pageEntries };
+
+if (Object.keys(allEntries).length === 0) {
+    console.warn(`[${MODULE_NAME}] No Vue files found in resources/js/components/ or resources/js/pages/`);
 }
 
 // Detect if running in standalone repo (no ../../public) or inside main app (src/modules/)
@@ -57,41 +61,37 @@ export default defineConfig({
     plugins: [vue()],
     publicDir: isStandalone ? false : 'public',
     build: {
-        // Output to public/build/modules/{moduleName}/
         outDir,
         emptyOutDir: true,
         manifest: 'manifest.json',
         rollupOptions: {
-            input: componentEntries,
+            input: allEntries,
             output: {
                 format: 'es',
-                // Use content hashing for cache busting
                 entryFileNames: 'assets/[name]-[hash].js',
                 chunkFileNames: 'assets/[name]-[hash].js',
                 assetFileNames: 'assets/[name]-[hash].[ext]',
-                // Preserve exports from entry points
                 preserveModules: false,
             },
-            // Preserve entry point exports
             preserveEntrySignatures: 'exports-only',
-            // Mark framework dependencies and main app imports as external - they're provided by the main app
+            // Framework singletons must remain external (shared runtime instances via import maps).
+            // @/ imports are bundled when inside the main app, external only in standalone mode.
             external: (id) => {
-                // Framework dependencies
                 if (['vue', 'vue-i18n', 'pinia', '@inertiajs/vue3'].includes(id)) {
                     return true;
                 }
-                // Main app imports (composables, utils, components from @/)
-                if (id.startsWith('@/')) {
+                if (isStandalone && id.startsWith('@/')) {
                     return true;
                 }
                 return false;
             },
         },
     },
-    // Resolve aliases to match the main app
     resolve: {
         alias: {
-            '@': resolve(__dirname, 'resources/js'),
+            '@': isStandalone
+                ? resolve(__dirname, 'resources/js')
+                : resolve(__dirname, '../../resources/js'),
         },
     },
 });
