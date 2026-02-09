@@ -58,7 +58,8 @@ const mainPublicDir = [
 ].find((d) => existsSync(d));
 
 const isStandalone = !mainPublicDir;
-const outDir = isStandalone
+const forceStandaloneOutput = process.env.MODULE_STANDALONE_OUTPUT === 'true';
+const outDir = (isStandalone || forceStandaloneOutput)
     ? 'public/build'
     : `${mainPublicDir}/build/modules/${MODULE_NAME}`;
 
