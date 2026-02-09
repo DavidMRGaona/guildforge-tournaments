@@ -50,12 +50,17 @@ if (Object.keys(allEntries).length === 0) {
     console.warn(`[${MODULE_NAME}] No Vue files found in resources/js/components/ or resources/js/pages/`);
 }
 
-// Detect if running in standalone repo (no ../../public) or inside main app (src/modules/)
-// Standalone mode outputs to public/build/ - nginx will route /build/modules/{name}/ to this path
-const isStandalone = !existsSync(resolve(__dirname, '../../public'));
+// Detect if running in standalone repo or inside main app.
+// Dev: src/modules/X → ../../public. Prod Docker: modules/X → ../public.
+const mainPublicDir = [
+    resolve(__dirname, '../../public'),
+    resolve(__dirname, '../public'),
+].find((d) => existsSync(d));
+
+const isStandalone = !mainPublicDir;
 const outDir = isStandalone
     ? 'public/build'
-    : `../../public/build/modules/${MODULE_NAME}`;
+    : `${mainPublicDir}/build/modules/${MODULE_NAME}`;
 
 export default defineConfig({
     plugins: [vue()],
@@ -91,7 +96,9 @@ export default defineConfig({
         alias: {
             '@': isStandalone
                 ? resolve(__dirname, 'resources/js')
-                : resolve(__dirname, '../../resources/js'),
+                : existsSync(resolve(__dirname, '../../resources/js'))
+                    ? resolve(__dirname, '../../resources/js')
+                    : resolve(__dirname, '../resources/js'),
         },
     },
 });
