@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
-use Tests\TestCase;
+use Tests\Support\Modules\ModuleTestCase;
 
-final class TournamentQueryServiceListingTest extends TestCase
+final class TournamentQueryServiceListingTest extends ModuleTestCase
 {
-    use LazilyRefreshDatabase;
+    protected ?string $moduleName = 'tournaments';
+
+    protected bool $autoEnableModule = true;
 
     private TournamentQueryServiceInterface $service;
 

@@ -21,9 +21,9 @@ final class ByeAssignmentTest extends TestCase
 
     public function test_all_bye_assignments_have_correct_values(): void
     {
-        $this->assertEquals('lowest', ByeAssignment::LowestRanked->value);
+        $this->assertEquals('lowest_ranked', ByeAssignment::LowestRanked->value);
         $this->assertEquals('random', ByeAssignment::Random->value);
-        $this->assertEquals('highest', ByeAssignment::HighestRanked->value);
+        $this->assertEquals('highest_ranked', ByeAssignment::HighestRanked->value);
     }
 
     public function test_values_returns_string_values(): void
@@ -32,9 +32,9 @@ final class ByeAssignmentTest extends TestCase
 
         $this->assertIsArray($values);
         $this->assertCount(3, $values);
-        $this->assertContains('lowest', $values);
+        $this->assertContains('lowest_ranked', $values);
         $this->assertContains('random', $values);
-        $this->assertContains('highest', $values);
+        $this->assertContains('highest_ranked', $values);
     }
 
     public function test_options_returns_label_value_pairs(): void
@@ -43,9 +43,9 @@ final class ByeAssignmentTest extends TestCase
 
         $this->assertIsArray($options);
         $this->assertCount(3, $options);
-        $this->assertArrayHasKey('lowest', $options);
+        $this->assertArrayHasKey('lowest_ranked', $options);
         $this->assertArrayHasKey('random', $options);
-        $this->assertArrayHasKey('highest', $options);
+        $this->assertArrayHasKey('highest_ranked', $options);
     }
 
     public function test_label_returns_translated_string_for_lowest_ranked(): void

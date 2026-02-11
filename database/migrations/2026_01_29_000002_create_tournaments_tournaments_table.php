@@ -30,7 +30,7 @@ return new class extends Migration
             $table->json('tiebreaker_config')->nullable();
             $table->json('pairing_config')->nullable();
             $table->boolean('show_participants')->default(true);
-            $table->string('notification_email');
+            $table->string('notification_email')->default('');
             $table->boolean('self_check_in_allowed')->default(false);
             $table->json('allowed_roles')->nullable();
             $table->boolean('requires_check_in')->default(false);

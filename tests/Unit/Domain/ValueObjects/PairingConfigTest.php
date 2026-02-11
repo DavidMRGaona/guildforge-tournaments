@@ -71,7 +71,7 @@ final class PairingConfigTest extends TestCase
             'sort_by_stat' => null,
             'avoid_rematches' => true,
             'max_byes_per_player' => 1,
-            'bye_assignment' => 'lowest',
+            'bye_assignment' => 'lowest_ranked',
         ]);
 
         $this->assertEquals(PairingMethod::Swiss, $config->method);
@@ -120,7 +120,7 @@ final class PairingConfigTest extends TestCase
             'sort_by_stat' => null,
             'avoid_rematches' => true,
             'max_byes_per_player' => 1,
-            'bye_assignment' => 'lowest',
+            'bye_assignment' => 'lowest_ranked',
         ], $array);
     }
 
