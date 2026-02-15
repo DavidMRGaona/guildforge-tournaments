@@ -6,10 +6,8 @@ namespace Modules\Tournaments\Filament\Resources;
 
 use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Group;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
@@ -25,6 +23,7 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Modules\Tournaments\Domain\Enums\ByeAssignment;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\PairingMethod;
@@ -174,55 +173,61 @@ final class GameProfileResource extends BaseResource
                                             ->numeric()
                                             ->default(0),
 
-                                        Select::make('condition.type')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_type'))
-                                            ->options(ConditionType::options())
-                                            ->required()
-                                            ->native(false)
-                                            ->live(),
+                                        Group::make()
+                                            ->statePath('condition')
+                                            ->schema([
+                                                Select::make('type')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_type'))
+                                                    ->options(ConditionType::options())
+                                                    ->required()
+                                                    ->native(false)
+                                                    ->live(),
 
-                                        Select::make('condition.result_value')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_value'))
-                                            ->options([
-                                                'win' => __('tournaments::messages.condition_result.win'),
-                                                'draw' => __('tournaments::messages.condition_result.draw'),
-                                                'loss' => __('tournaments::messages.condition_result.loss'),
-                                                'bye' => __('tournaments::messages.condition_result.bye'),
+                                                Select::make('result_value')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_value'))
+                                                    ->options([
+                                                        'win' => __('tournaments::messages.condition_result.win'),
+                                                        'draw' => __('tournaments::messages.condition_result.draw'),
+                                                        'loss' => __('tournaments::messages.condition_result.loss'),
+                                                        'bye' => __('tournaments::messages.condition_result.bye'),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => $get('type') === ConditionType::Result->value)
+                                                    ->native(false),
+
+                                                TextInput::make('stat')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_stat'))
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatComparison->value,
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true)),
+
+                                                Select::make('operator')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_operator'))
+                                                    ->options([
+                                                        '>' => __('tournaments::messages.condition_operator.greater_than'),
+                                                        '>=' => __('tournaments::messages.condition_operator.greater_or_equal'),
+                                                        '<' => __('tournaments::messages.condition_operator.less_than'),
+                                                        '<=' => __('tournaments::messages.condition_operator.less_or_equal'),
+                                                        '==' => __('tournaments::messages.condition_operator.equal'),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatComparison->value,
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true))
+                                                    ->native(false),
+
+                                                TextInput::make('value')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_threshold'))
+                                                    ->numeric()
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true)),
                                             ])
-                                            ->visible(fn (Get $get): bool => $get('condition.type') === ConditionType::Result->value)
-                                            ->native(false),
-
-                                        TextInput::make('condition.stat')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_stat'))
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatComparison->value,
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true)),
-
-                                        Select::make('condition.operator')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_operator'))
-                                            ->options([
-                                                '>' => __('tournaments::messages.condition_operator.greater_than'),
-                                                '>=' => __('tournaments::messages.condition_operator.greater_or_equal'),
-                                                '<' => __('tournaments::messages.condition_operator.less_than'),
-                                                '<=' => __('tournaments::messages.condition_operator.less_or_equal'),
-                                                '==' => __('tournaments::messages.condition_operator.equal'),
-                                            ])
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatComparison->value,
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true))
-                                            ->native(false),
-
-                                        TextInput::make('condition.value')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_threshold'))
-                                            ->numeric()
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true)),
+                                            ->columns(3)
+                                            ->columnSpanFull(),
                                     ])
                                     ->columns(3)
                                     ->addActionLabel(__('tournaments::messages.scoring_rules.add'))

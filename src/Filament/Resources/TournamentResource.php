@@ -8,6 +8,7 @@ use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -23,11 +24,11 @@ use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
 use Modules\Tournaments\Domain\Enums\ByeAssignment;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\PairingMethod;
@@ -106,9 +107,9 @@ final class TournamentResource extends BaseResource
                                     ->label(__('tournaments::messages.fields.image'))
                                     ->image()
                                     ->disk('images')
-                                    ->directory(fn (): string => 'tournaments/' . now()->format('Y/m'))
+                                    ->directory(fn (): string => 'tournaments/'.now()->format('Y/m'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString() . '.' . $file->getClientOriginalExtension()
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
                                     )
                                     ->maxSize(2048)
                                     ->nullable()
@@ -177,14 +178,14 @@ final class TournamentResource extends BaseResource
                                 Placeholder::make('stat_definitions_info')
                                     ->label('')
                                     ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">' .
+                                        '<div class="flex flex-wrap items-center gap-2">'.
                                         ($get('game_profile_id')
                                             ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                ' . e(__('tournaments::messages.advanced_config.inherit_from_profile')) . '
+                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
                                                </span>'
-                                            : '') .
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">' . e(__('tournaments::messages.stat_definitions.help')) . '</span>' .
+                                            : '').
+                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.stat_definitions.help')).'</span>'.
                                         '</div>'
                                     ))
                                     ->columnSpanFull(),
@@ -239,14 +240,14 @@ final class TournamentResource extends BaseResource
                                 Placeholder::make('scoring_rules_info')
                                     ->label('')
                                     ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">' .
+                                        '<div class="flex flex-wrap items-center gap-2">'.
                                         ($get('game_profile_id')
                                             ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                ' . e(__('tournaments::messages.advanced_config.inherit_from_profile')) . '
+                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
                                                </span>'
-                                            : '') .
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">' . e(__('tournaments::messages.scoring_rules.help')) . '</span>' .
+                                            : '').
+                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.scoring_rules.help')).'</span>'.
                                         '</div>'
                                     ))
                                     ->columnSpanFull(),
@@ -271,57 +272,63 @@ final class TournamentResource extends BaseResource
                                             ->numeric()
                                             ->default(0),
 
-                                        Select::make('condition.type')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_type'))
-                                            ->helperText(__('tournaments::messages.scoring_rules.condition_type_help'))
-                                            ->hintIcon('heroicon-o-information-circle', tooltip: __('tournaments::messages.scoring_rules.condition_type_hint'))
-                                            ->options(ConditionType::options())
-                                            ->required()
-                                            ->native(false)
-                                            ->live(),
+                                        Group::make()
+                                            ->statePath('condition')
+                                            ->schema([
+                                                Select::make('type')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_type'))
+                                                    ->helperText(__('tournaments::messages.scoring_rules.condition_type_help'))
+                                                    ->hintIcon('heroicon-o-information-circle', tooltip: __('tournaments::messages.scoring_rules.condition_type_hint'))
+                                                    ->options(ConditionType::options())
+                                                    ->required()
+                                                    ->native(false)
+                                                    ->live(),
 
-                                        Select::make('condition.result_value')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_value'))
-                                            ->options([
-                                                'win' => __('tournaments::messages.condition_result.win'),
-                                                'draw' => __('tournaments::messages.condition_result.draw'),
-                                                'loss' => __('tournaments::messages.condition_result.loss'),
-                                                'bye' => __('tournaments::messages.condition_result.bye'),
+                                                Select::make('result_value')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_value'))
+                                                    ->options([
+                                                        'win' => __('tournaments::messages.condition_result.win'),
+                                                        'draw' => __('tournaments::messages.condition_result.draw'),
+                                                        'loss' => __('tournaments::messages.condition_result.loss'),
+                                                        'bye' => __('tournaments::messages.condition_result.bye'),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => $get('type') === ConditionType::Result->value)
+                                                    ->native(false),
+
+                                                TextInput::make('stat')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_stat'))
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatComparison->value,
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true)),
+
+                                                Select::make('operator')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_operator'))
+                                                    ->options([
+                                                        '>' => __('tournaments::messages.condition_operator.greater_than'),
+                                                        '>=' => __('tournaments::messages.condition_operator.greater_or_equal'),
+                                                        '<' => __('tournaments::messages.condition_operator.less_than'),
+                                                        '<=' => __('tournaments::messages.condition_operator.less_or_equal'),
+                                                        '==' => __('tournaments::messages.condition_operator.equal'),
+                                                    ])
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatComparison->value,
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true))
+                                                    ->native(false),
+
+                                                TextInput::make('value')
+                                                    ->label(__('tournaments::messages.scoring_rules.condition_threshold'))
+                                                    ->numeric()
+                                                    ->visible(fn (Get $get): bool => in_array($get('type'), [
+                                                        ConditionType::StatThreshold->value,
+                                                        ConditionType::MarginDifference->value,
+                                                    ], true)),
                                             ])
-                                            ->visible(fn (Get $get): bool => $get('condition.type') === ConditionType::Result->value)
-                                            ->native(false),
-
-                                        TextInput::make('condition.stat')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_stat'))
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatComparison->value,
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true)),
-
-                                        Select::make('condition.operator')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_operator'))
-                                            ->options([
-                                                '>' => __('tournaments::messages.condition_operator.greater_than'),
-                                                '>=' => __('tournaments::messages.condition_operator.greater_or_equal'),
-                                                '<' => __('tournaments::messages.condition_operator.less_than'),
-                                                '<=' => __('tournaments::messages.condition_operator.less_or_equal'),
-                                                '==' => __('tournaments::messages.condition_operator.equal'),
-                                            ])
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatComparison->value,
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true))
-                                            ->native(false),
-
-                                        TextInput::make('condition.value')
-                                            ->label(__('tournaments::messages.scoring_rules.condition_threshold'))
-                                            ->numeric()
-                                            ->visible(fn (Get $get): bool => in_array($get('condition.type'), [
-                                                ConditionType::StatThreshold->value,
-                                                ConditionType::MarginDifference->value,
-                                            ], true)),
+                                            ->columns(3)
+                                            ->columnSpanFull(),
                                     ])
                                     ->columns(3)
                                     ->addActionLabel(__('tournaments::messages.scoring_rules.add'))
@@ -338,14 +345,14 @@ final class TournamentResource extends BaseResource
                                 Placeholder::make('tiebreaker_config_info')
                                     ->label('')
                                     ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">' .
+                                        '<div class="flex flex-wrap items-center gap-2">'.
                                         ($get('game_profile_id')
                                             ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                ' . e(__('tournaments::messages.advanced_config.inherit_from_profile')) . '
+                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
                                                </span>'
-                                            : '') .
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">' . e(__('tournaments::messages.tiebreaker_config.help')) . '</span>' .
+                                            : '').
+                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.tiebreaker_config.help')).'</span>'.
                                         '</div>'
                                     ))
                                     ->columnSpanFull(),
