@@ -1,7 +1,7 @@
 {
   "name": "tournaments",
   "displayName": "Torneos",
-  "version": "1.0.4-beta",
+  "version": "1.0.5-beta",
   "namespace": "Modules\\Tournaments",
   "provider": "TournamentsServiceProvider",
   "description": "Sistema de torneos con emparejamiento suizo para eventos",

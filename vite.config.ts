@@ -64,6 +64,9 @@ const outDir = (isStandalone || forceStandaloneOutput)
     : `${mainPublicDir}/build/modules/${MODULE_NAME}`;
 
 export default defineConfig({
+    base: (isStandalone || forceStandaloneOutput)
+        ? '/'
+        : `/build/modules/${MODULE_NAME}/`,
     plugins: [vue()],
     publicDir: isStandalone ? false : 'public',
     build: {
