@@ -86,7 +86,7 @@ export default defineConfig({
             // Framework singletons must remain external (shared runtime instances via import maps).
             // @/ imports are bundled when inside the main app, external only in standalone mode.
             external: (id) => {
-                if (['vue', 'vue-i18n', 'pinia', '@inertiajs/vue3'].includes(id)) {
+                if (['vue', 'vue-i18n', 'pinia', '@inertiajs/vue3', '@unhead/vue'].includes(id)) {
                     return true;
                 }
                 if (isStandalone && id.startsWith('@/')) {
