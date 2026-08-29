@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { UserTournament } from '../../types/tournaments';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     tournament: UserTournament;
@@ -28,6 +29,7 @@ const statusColorClasses = computed(() => {
 const formattedDate = computed(() => {
     if (!props.tournament.startsAt) return null;
     return new Date(props.tournament.startsAt).toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'short',
         year: 'numeric',

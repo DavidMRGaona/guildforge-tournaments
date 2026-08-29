@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { UserTournament } from '../types/tournaments';
 import { buildCardImageUrl } from '@/utils/cloudinary';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     tournament: UserTournament;
@@ -41,6 +42,7 @@ const participantStatusColorClasses = computed(() => {
 const formattedDate = computed(() => {
     if (!props.tournament.startsAt) return null;
     return new Date(props.tournament.startsAt).toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -50,6 +52,7 @@ const formattedDate = computed(() => {
 const formattedTime = computed(() => {
     if (!props.tournament.startsAt) return null;
     return new Date(props.tournament.startsAt).toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });
@@ -66,6 +69,7 @@ const positionText = computed(() => {
 const checkInDeadlineFormatted = computed(() => {
     if (!props.tournament.checkInDeadline) return null;
     return new Date(props.tournament.checkInDeadline).toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });

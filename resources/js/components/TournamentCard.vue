@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import type { TournamentListItem } from '../types/tournaments';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import { buildCardImageUrl } from '@/utils/cloudinary';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     tournament: TournamentListItem;
@@ -39,6 +40,7 @@ const participantInfo = computed(() => {
 
 function formatShortDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'short',
         year: 'numeric',

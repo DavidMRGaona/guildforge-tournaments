@@ -8,6 +8,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import { useSeo } from '@/composables/useSeo';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface FormErrors {
     email?: string;
@@ -52,6 +53,7 @@ const checkedInTime = computed(() => {
     if (!props.userRegistration?.checked_in_at) return null;
     const date = new Date(props.userRegistration.checked_in_at);
     return date.toLocaleTimeString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         hour: '2-digit',
         minute: '2-digit',
     });
@@ -61,6 +63,7 @@ const formatDateTime = (dateString: string | null): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',

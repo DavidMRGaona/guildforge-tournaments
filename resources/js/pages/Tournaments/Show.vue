@@ -9,6 +9,7 @@ import { useSeo } from '@/composables/useSeo';
 import { useTournaments } from '../../composables/useTournaments';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
+import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface FormErrors {
     guest_name?: string;
@@ -85,6 +86,7 @@ const formatDate = (dateString: string | null): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
         day: 'numeric',
         month: 'long',
         year: 'numeric',
