@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
 import { readdirSync, statSync, existsSync } from 'fs';
 
@@ -67,14 +68,18 @@ export default defineConfig({
     base: (isStandalone || forceStandaloneOutput)
         ? '/'
         : `/build/modules/${MODULE_NAME}/`,
-    plugins: [vue()],
+    plugins: [vue(), tailwindcss()],
     publicDir: isStandalone ? false : 'public',
     build: {
         outDir,
         emptyOutDir: true,
         manifest: 'manifest.json',
         rollupOptions: {
-            input: allEntries,
+            input: {
+                ...allEntries,
+                // Utilities the core stylesheet cannot generate for this module
+                'module-styles': resolve(__dirname, 'resources/css/module.css'),
+            },
             output: {
                 format: 'es',
                 entryFileNames: 'assets/[name]-[hash].js',

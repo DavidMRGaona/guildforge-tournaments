@@ -418,9 +418,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 {{ currentRound.completion_percentage.toFixed(0) }}%
                             </span>
                         </div>
-                        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-blue-900">
+                        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
                             <div
-                                class="h-full bg-blue-500 transition-all"
+                                class="h-full bg-info transition-all"
                                 :style="{ width: `${currentRound.completion_percentage}%` }"
                             />
                         </div>

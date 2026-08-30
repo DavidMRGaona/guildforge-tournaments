@@ -16,12 +16,12 @@ const tournamentUrl = computed(() => `/torneos/${props.tournament.slug}`);
 
 const statusColorClasses = computed(() => {
     const colorMap: Record<string, string> = {
-        success: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
-        info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-        warning: 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200',
-        gray: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200',
-        danger: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
-        primary: 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200',
+        success: 'bg-success-light text-success',
+        info: 'bg-info-light text-info',
+        warning: 'bg-warning-light text-warning',
+        gray: 'bg-muted text-base-secondary',
+        danger: 'bg-error-light text-error',
+        primary: 'bg-primary-light text-primary',
     };
     return colorMap[props.tournament.statusColor] || colorMap.gray;
 });

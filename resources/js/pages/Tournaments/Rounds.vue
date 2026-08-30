@@ -49,10 +49,10 @@ const getResultBadgeClass = (match: Match): string => {
     const color = getMatchResultColor(match.result);
     const colorClasses: Record<string, string> = {
         gray: defaultBadgeClass,
-        green: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-        yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-        red: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-        purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+        green: 'bg-success-light text-success',
+        yellow: 'bg-warning-light text-warning',
+        red: 'bg-error-light text-error',
+        purple: 'bg-info-light text-info',
     };
     return colorClasses[color] ?? defaultBadgeClass;
 };
