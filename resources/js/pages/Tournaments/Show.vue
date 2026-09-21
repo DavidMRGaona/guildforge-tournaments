@@ -10,6 +10,7 @@ import { useTournaments } from '../../composables/useTournaments';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
+import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
 interface FormErrors {
     guest_name?: string;
@@ -63,10 +64,6 @@ const guestForm = reactive({
 const showWithdrawConfirm = ref(false);
 const withdrawProcessing = ref(false);
 
-const getCsrfToken = (): string => {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-};
-
 // Focus management for modal
 watch(showGuestModal, async (isOpen) => {
     if (isOpen) {
@@ -115,9 +112,14 @@ const handleRegister = async (): Promise<void> => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                ...csrfHeaders(),
             },
         });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
 
         if (response.ok) {
             notifySuccess(t('tournaments.public.registered_successfully'));
@@ -143,7 +145,7 @@ const submitGuestRegistration = async (): Promise<void> => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                ...csrfHeaders(),
             },
             body: JSON.stringify({
                 guest_name: guestForm.guest_name,
@@ -151,6 +153,11 @@ const submitGuestRegistration = async (): Promise<void> => {
                 gdpr_consent: guestForm.gdpr_consent,
             }),
         });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
 
         const data = await response.json();
 
@@ -209,9 +216,14 @@ const confirmWithdraw = async (): Promise<void> => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                ...csrfHeaders(),
             },
         });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
 
         if (response.ok) {
             showWithdrawConfirm.value = false;

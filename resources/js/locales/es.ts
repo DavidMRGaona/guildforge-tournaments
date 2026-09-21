@@ -153,6 +153,7 @@ export default {
             registered_successfully: 'Te has inscrito correctamente',
             withdrawn_successfully: 'Has cancelado tu inscripción correctamente',
             registration_error: 'Error al inscribirse',
+            session_expired: 'Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.',
         },
     },
 };

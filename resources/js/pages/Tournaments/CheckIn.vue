@@ -9,6 +9,7 @@ import { useSeo } from '@/composables/useSeo';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
+import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
 interface FormErrors {
     email?: string;
@@ -72,10 +73,6 @@ const formatDateTime = (dateString: string | null): string => {
     });
 };
 
-const getCsrfToken = (): string => {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-};
-
 // Handle check-in for authenticated user
 const handleAuthenticatedCheckIn = async (): Promise<void> => {
     isProcessing.value = true;
@@ -86,9 +83,14 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                ...csrfHeaders(),
             },
         });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
 
         if (response.ok) {
             notifySuccess(t('tournaments.check_in.success'));
@@ -116,13 +118,18 @@ const handleEmailCheckIn = async (): Promise<void> => {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                ...csrfHeaders(),
             },
             body: JSON.stringify({
                 email: emailForm.email,
                 gdpr_consent: emailForm.gdpr_consent,
             }),
         });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
 
         const data = await response.json();
 

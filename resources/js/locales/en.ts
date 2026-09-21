@@ -122,6 +122,7 @@ export default {
             registered_successfully: 'You have registered successfully',
             withdrawn_successfully: 'You have cancelled your registration successfully',
             registration_error: 'Registration error',
+            session_expired: 'Your session has expired. Reload the page and try again.',
         },
     },
 };
