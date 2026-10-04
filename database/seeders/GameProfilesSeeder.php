@@ -19,14 +19,14 @@ final class GameProfilesSeeder extends Seeder
         $profiles = $this->getProfiles();
 
         foreach ($profiles as $profile) {
-            $existing = GameProfileModel::query()->where('slug', $profile['slug'])->first();
-            if ($existing) {
-                $existing->update($profile);
-            } else {
-                GameProfileModel::query()->create(
-                    array_merge($profile, ['id' => Str::uuid()->toString()]),
-                );
+            // Only add missing profiles: never overwrite what an admin edited
+            if (GameProfileModel::query()->where('slug', $profile['slug'])->exists()) {
+                continue;
             }
+
+            GameProfileModel::query()->create(
+                array_merge($profile, ['id' => Str::uuid()->toString()]),
+            );
         }
     }
 
