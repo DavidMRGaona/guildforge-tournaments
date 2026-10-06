@@ -1,13 +1,15 @@
 {
   "name": "tournaments",
   "displayName": "Torneos",
-  "version": "1.0.11-beta",
+  "version": "1.1.0",
   "repository": "DavidMRGaona/guildforge-tournaments",
   "namespace": "Modules\\Tournaments",
   "provider": "TournamentsServiceProvider",
   "description": "Sistema de torneos con emparejamiento suizo para eventos",
   "author": "GuildForge",
   "requires": {
+    "core": "^2.6",
+    "filament": "^3.3",
     "php": ">=8.2",
     "laravel": ">=12.0"
   },
