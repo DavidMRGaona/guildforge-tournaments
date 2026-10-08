@@ -39,7 +39,6 @@ use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
-use Modules\Tournaments\Filament\RelationManagers\ParticipantsRelationManager;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\EditGameProfile;
@@ -209,11 +208,6 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             TournamentConfigRelationManager::class
         );
 
-        Livewire::component(
-            'modules.tournaments.filament.relation-managers.participants-relation-manager',
-            ParticipantsRelationManager::class
-        );
-
         // TournamentResource pages
         Livewire::component(
             'modules.tournaments.filament.resources.tournament-resource.pages.list-tournaments',
@@ -271,7 +265,6 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
         EventResource::extendRelations([
             TournamentConfigRelationManager::class,
-            ParticipantsRelationManager::class,
         ]);
     }
 
