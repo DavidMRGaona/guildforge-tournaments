@@ -9,5 +9,7 @@ jobs:
     uses: DavidMRGaona/GuildForge/.github/workflows/reusable-module-release.yml@main
     with:
       module_name: 'tournaments'
+      # Host branch, tag or SHA to test and build against (main when the variable is unset)
+      host_ref: ${{ vars.GUILDFORGE_HOST_REF || 'main' }}
     permissions:
       contents: write
