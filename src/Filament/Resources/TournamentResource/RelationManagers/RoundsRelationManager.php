@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
-use Filament\Forms\Components\Component;
+use Filament\Actions\Action;
+use Filament\Support\Enums\Width;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -130,12 +130,12 @@ final class RoundsRelationManager extends RelationManager
                             ->send();
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('manageMatches')
                     ->label(__('tournaments::messages.actions.manage_matches'))
                     ->icon('heroicon-o-table-cells')
                     ->color('gray')
-                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalWidth(Width::SevenExtraLarge)
                     ->slideOver()
                     ->fillForm(function (RoundModel $record): array {
                         $matches = $record->matches()->with(['player1', 'player2'])->orderBy('table_number')->get();
@@ -157,7 +157,7 @@ final class RoundsRelationManager extends RelationManager
 
                         return ['matches' => $matchesData];
                     })
-                    ->form(fn (RoundModel $record): array => [
+                    ->schema(fn (RoundModel $record): array => [
                         Repeater::make('matches')
                             ->label(__('tournaments::messages.resource.fields.matches_count'))
                             ->schema(function () use ($record): array {
@@ -256,7 +256,7 @@ final class RoundsRelationManager extends RelationManager
     /**
      * Get the match form schema with dynamic stat fields.
      *
-     * @return array<Component>
+     * @return array<\Filament\Schemas\Components\Component>
      */
     private function getMatchFormSchema(TournamentModel $tournament): array
     {

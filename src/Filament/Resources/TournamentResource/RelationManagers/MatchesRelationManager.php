@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
-use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Section;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -73,13 +73,13 @@ final class MatchesRelationManager extends RelationManager
                     ->default('-')
                     ->toggleable(),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('reportResult')
                     ->label(__('tournaments::messages.actions.report_result'))
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
                     ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
-                    ->form(function (MatchModel $record): array {
+                    ->schema(function (MatchModel $record): array {
                         $fields = [
                             Select::make('result')
                                 ->label(__('tournaments::messages.fields.status'))

@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Group;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -47,7 +50,7 @@ final class TournamentResource extends BaseResource
 {
     protected static ?string $model = TournamentModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-trophy';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-trophy';
 
     protected static ?int $navigationSort = 1;
 
@@ -71,10 +74,10 @@ final class TournamentResource extends BaseResource
         return __('tournaments::messages.resource.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('TournamentTabs')
                     ->tabs([
                         Tab::make(__('tournaments::messages.config.general'))
@@ -693,10 +696,10 @@ final class TournamentResource extends BaseResource
                     )
                     ->searchable(),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -715,9 +718,9 @@ final class TournamentResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTournaments::route('/'),
-            'create' => Pages\CreateTournament::route('/create'),
-            'edit' => Pages\EditTournament::route('/{record}/edit'),
+            'index' => ListTournaments::route('/'),
+            'create' => CreateTournament::route('/create'),
+            'edit' => EditTournament::route('/{record}/edit'),
         ];
     }
 }

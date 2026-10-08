@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -37,10 +37,10 @@ final class ParticipantsRelationManager extends RelationManager
         return __('tournaments::messages.participants.title');
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Select::make('user_id')
                     ->label(__('tournaments::messages.participants.user'))
                     ->relationship('user', 'name')
@@ -171,7 +171,7 @@ final class ParticipantsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label(__('tournaments::messages.participants.add'))
-                    ->mutateFormDataUsing(function (array $data): array {
+                    ->mutateDataUsing(function (array $data): array {
                         /** @var TournamentModel $tournament */
                         $tournament = $this->getOwnerRecord();
                         $data['tournament_id'] = $tournament->id;
@@ -180,7 +180,7 @@ final class ParticipantsRelationManager extends RelationManager
                         return $data;
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('confirm')
                     ->label(__('tournaments::messages.participants.confirm'))
                     ->icon('heroicon-o-check-badge')
@@ -267,7 +267,7 @@ final class ParticipantsRelationManager extends RelationManager
                     }),
                 DeleteAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     BulkAction::make('confirm_selected')
                         ->label(__('tournaments::messages.participants.confirm_selected'))

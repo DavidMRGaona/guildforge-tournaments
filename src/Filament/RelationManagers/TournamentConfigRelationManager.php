@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\RelationManagers;
 
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Fieldset;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +21,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 /**
- * @property Form $configForm
+ * @property \Filament\Schemas\Schema $configForm
  */
 final class TournamentConfigRelationManager extends RelationManager
 {
@@ -30,7 +29,7 @@ final class TournamentConfigRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static string $view = 'tournaments::filament.relation-managers.tournament-config-form';
+    protected string $view = 'tournaments::filament.relation-managers.tournament-config-form';
 
     /** @var array<string, mixed> */
     public array $configData = [];
@@ -85,19 +84,19 @@ final class TournamentConfigRelationManager extends RelationManager
     }
 
     /**
-     * @return array<string, Form>
+     * @return array<string, \Filament\Schemas\Schema>
      */
     protected function getForms(): array
     {
         return [
             'configForm' => $this->makeForm()
-                ->schema($this->getFormSchema())
+                ->components($this->getFormSchema())
                 ->statePath('configData'),
         ];
     }
 
     /**
-     * @return array<\Filament\Forms\Components\Component>
+     * @return array<\Filament\Schemas\Components\Component>
      */
     protected function getFormSchema(): array
     {

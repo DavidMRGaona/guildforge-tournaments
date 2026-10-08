@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Domain\Enums;
 
+use Throwable;
+
 enum ConditionType: string
 {
     case Result = 'result';
@@ -25,7 +27,7 @@ enum ConditionType: string
 
         try {
             return __($key);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return $key;
         }
     }

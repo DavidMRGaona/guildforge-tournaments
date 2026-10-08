@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\ListGameProfiles;
+use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
+use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\EditGameProfile;
 use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -38,7 +41,7 @@ final class GameProfileResource extends BaseResource
 {
     protected static ?string $model = GameProfileModel::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
 
     protected static ?int $navigationSort = 2;
 
@@ -62,10 +65,10 @@ final class GameProfileResource extends BaseResource
         return __('tournaments::messages.game_profile.plural');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('GameProfileTabs')
                     ->tabs([
                         Tab::make(__('tournaments::messages.config.general'))
@@ -375,11 +378,11 @@ final class GameProfileResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('duplicate')
                     ->label(__('tournaments::messages.game_profile.actions.duplicate'))
                     ->icon('heroicon-o-document-duplicate')
-                    ->form([
+                    ->schema([
                         TextInput::make('name')
                             ->label(__('tournaments::messages.game_profile.fields.name'))
                             ->required()
@@ -396,7 +399,7 @@ final class GameProfileResource extends BaseResource
 
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->before(function (DeleteBulkAction $action): void {
@@ -415,9 +418,9 @@ final class GameProfileResource extends BaseResource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGameProfiles::route('/'),
-            'create' => Pages\CreateGameProfile::route('/create'),
-            'edit' => Pages\EditGameProfile::route('/{record}/edit'),
+            'index' => ListGameProfiles::route('/'),
+            'create' => CreateGameProfile::route('/create'),
+            'edit' => EditGameProfile::route('/{record}/edit'),
         ];
     }
 
