@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -29,7 +30,8 @@ final class TournamentConfigRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected string $view = 'tournaments::filament.relation-managers.tournament-config-form';
+    // The module registers its view namespace at runtime, so Larastan cannot resolve it as a view-string
+    protected string $view = 'tournaments::filament.relation-managers.tournament-config-form'; // @phpstan-ignore property.defaultValue
 
     /** @var array<string, mixed> */
     public array $configData = [];
@@ -83,16 +85,11 @@ final class TournamentConfigRelationManager extends RelationManager
         }
     }
 
-    /**
-     * @return array<string, \Filament\Schemas\Schema>
-     */
-    protected function getForms(): array
+    public function configForm(Schema $schema): Schema
     {
-        return [
-            'configForm' => $this->makeForm()
-                ->components($this->getFormSchema())
-                ->statePath('configData'),
-        ];
+        return $schema
+            ->components($this->getFormSchema())
+            ->statePath('configData');
     }
 
     /**

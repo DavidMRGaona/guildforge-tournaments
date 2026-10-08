@@ -403,7 +403,7 @@ final class GameProfileResource extends BaseResource
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->before(function (DeleteBulkAction $action): void {
-                            $systemProfiles = $action->getRecords()
+                            $systemProfiles = $action->getSelectedRecords()
                                 ->filter(fn (GameProfileModel $record): bool => $record->is_system);
 
                             if ($systemProfiles->isNotEmpty()) {

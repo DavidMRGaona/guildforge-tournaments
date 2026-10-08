@@ -10,6 +10,9 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Text;
+use Filament\Support\Icons\Heroicon;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -20,7 +23,6 @@ use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -29,7 +31,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\Tournaments\Domain\Enums\ByeAssignment;
@@ -178,20 +179,7 @@ final class TournamentResource extends BaseResource
                         Tab::make(__('tournaments::messages.stat_definitions.title'))
                             ->icon('heroicon-o-chart-bar')
                             ->schema([
-                                Placeholder::make('stat_definitions_info')
-                                    ->label('')
-                                    ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">'.
-                                        ($get('game_profile_id')
-                                            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
-                                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
-                                               </span>'
-                                            : '').
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.stat_definitions.help')).'</span>'.
-                                        '</div>'
-                                    ))
-                                    ->columnSpanFull(),
+                                self::advancedConfigNotice('tournaments::messages.stat_definitions.help'),
 
                                 Repeater::make('stat_definitions')
                                     ->label('')
@@ -240,20 +228,7 @@ final class TournamentResource extends BaseResource
                         Tab::make(__('tournaments::messages.scoring_rules.title'))
                             ->icon('heroicon-o-calculator')
                             ->schema([
-                                Placeholder::make('scoring_rules_info')
-                                    ->label('')
-                                    ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">'.
-                                        ($get('game_profile_id')
-                                            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
-                                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
-                                               </span>'
-                                            : '').
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.scoring_rules.help')).'</span>'.
-                                        '</div>'
-                                    ))
-                                    ->columnSpanFull(),
+                                self::advancedConfigNotice('tournaments::messages.scoring_rules.help'),
 
                                 Repeater::make('scoring_rules')
                                     ->label('')
@@ -345,20 +320,7 @@ final class TournamentResource extends BaseResource
                         Tab::make(__('tournaments::messages.tiebreaker_config.title'))
                             ->icon('heroicon-o-scale')
                             ->schema([
-                                Placeholder::make('tiebreaker_config_info')
-                                    ->label('')
-                                    ->content(fn (Get $get): HtmlString => new HtmlString(
-                                        '<div class="flex flex-wrap items-center gap-2">'.
-                                        ($get('game_profile_id')
-                                            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md dark:bg-primary-900/50 dark:text-primary-300">
-                                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                                                '.e(__('tournaments::messages.advanced_config.inherit_from_profile')).'
-                                               </span>'
-                                            : '').
-                                        '<span class="text-sm text-gray-500 dark:text-gray-400">'.e(__('tournaments::messages.tiebreaker_config.help')).'</span>'.
-                                        '</div>'
-                                    ))
-                                    ->columnSpanFull(),
+                                self::advancedConfigNotice('tournaments::messages.tiebreaker_config.help'),
 
                                 Repeater::make('tiebreaker_config')
                                     ->label('')
@@ -705,6 +667,24 @@ final class TournamentResource extends BaseResource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * Help line of an advanced configuration tab, with a badge when the values come from the game profile.
+     */
+    private static function advancedConfigNotice(string $helpKey): Flex
+    {
+        return Flex::make([
+            Text::make(__('tournaments::messages.advanced_config.inherit_from_profile'))
+                ->badge()
+                ->color('primary')
+                ->icon(Heroicon::OutlinedLink)
+                ->visible(fn (Get $get): bool => filled($get('game_profile_id')))
+                ->grow(false),
+            Text::make(__($helpKey)),
+        ])
+            ->verticallyAlignCenter()
+            ->columnSpanFull();
     }
 
     public static function getRelations(): array
