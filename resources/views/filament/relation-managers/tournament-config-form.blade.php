@@ -1,11 +1,11 @@
 <div>
-    <form wire:submit="save">
+    <form wire:submit="save" class="fi-sc-form">
         {{ $this->configForm }}
 
-        <div class="mt-6 flex justify-end">
+        <x-filament::actions alignment="end">
             <x-filament::button type="submit">
                 {{ __('tournaments::messages.config.save') }}
             </x-filament::button>
-        </div>
+        </x-filament::actions>
     </form>
 </div>
