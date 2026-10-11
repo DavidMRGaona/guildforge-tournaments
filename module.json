@@ -1,7 +1,7 @@
 {
   "name": "tournaments",
   "displayName": "Torneos",
-  "version": "2.0.0-rc.1",
+  "version": "2.0.0",
   "repository": "DavidMRGaona/guildforge-tournaments",
   "namespace": "Modules\\Tournaments",
   "provider": "TournamentsServiceProvider",
