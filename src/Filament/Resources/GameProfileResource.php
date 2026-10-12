@@ -388,7 +388,8 @@ final class GameProfileResource extends BaseResource
                             ->maxLength(255),
                     ])
                     ->action(function (GameProfileModel $record, array $data): void {
-                        $copy = $record->replicate(['id', 'slug']);
+                        // tournaments_count is the list's aggregate, not a column
+                        $copy = $record->replicate(['id', 'slug', 'tournaments_count']);
                         $copy->name = $data['name'];
                         $copy->is_system = false;
                         $copy->save();

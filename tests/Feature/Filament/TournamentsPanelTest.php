@@ -92,6 +92,20 @@ final class TournamentsPanelTest extends ModuleTestCase
         $this->assertNull(GameProfileModel::query()->find($custom->getKey()));
     }
 
+    public function test_a_game_profile_is_duplicated_from_the_list(): void
+    {
+        $profile = $this->systemProfile();
+
+        // The list loads each profile with its tournaments count, which is not a column
+        Livewire::test(ListGameProfiles::class)
+            ->callTableAction('duplicate', $profile, data: ['name' => 'Copia del perfil'])
+            ->assertHasNoErrors();
+
+        $copy = GameProfileModel::query()->where('name', 'Copia del perfil')->first();
+        $this->assertNotNull($copy);
+        $this->assertFalse($copy->is_system);
+    }
+
     public function test_game_profile_forms_show_their_notices(): void
     {
         Livewire::test(EditGameProfile::class, ['record' => $this->systemProfile()->getRouteKey()])
