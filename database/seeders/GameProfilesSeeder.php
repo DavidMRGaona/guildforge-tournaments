@@ -5,28 +5,32 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 
 /**
- * Seeds system game profiles for tournaments.
- * Safe to run in production - creates foundational data.
+ * Creates the system game profiles and keeps their rules current; never touches
+ * admin-made profiles or descriptions.
  */
 final class GameProfilesSeeder extends Seeder
 {
     public function run(): void
     {
-        $profiles = $this->getProfiles();
+        foreach ($this->getProfiles() as $profile) {
+            $existing = GameProfileModel::query()->where('slug', $profile['slug'])->first();
 
-        foreach ($profiles as $profile) {
-            // Only add missing profiles: never overwrite what an admin edited
-            if (GameProfileModel::query()->where('slug', $profile['slug'])->exists()) {
+            if ($existing === null) {
+                GameProfileModel::query()->create(array_merge($profile, ['id' => Str::uuid()->toString()]));
+
                 continue;
             }
 
-            GameProfileModel::query()->create(
-                array_merge($profile, ['id' => Str::uuid()->toString()]),
-            );
+            // The panel does not let admins edit a system profile's rules, so the seeder keeps
+            // them current; name and description stay as they are
+            if ($existing->is_system) {
+                $existing->update(Arr::only($profile, ['stat_definitions', 'scoring_rules', 'tiebreaker_config', 'pairing_config']));
+            }
         }
     }
 
@@ -46,14 +50,14 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'VP cedidos', 'key' => 'vp_against', 'type' => 'integer'],
                 ],
                 'scoring_rules' => [
-                    ['result' => 'win', 'points' => 3.0],
-                    ['result' => 'draw', 'points' => 1.0],
-                    ['result' => 'loss', 'points' => 0.0],
+                    ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
-                    ['type' => 'buchholz', 'priority' => 1],
-                    ['type' => 'stat_differential', 'priority' => 2, 'stat' => 'vp'],
-                    ['type' => 'opponent_win_percentage', 'priority' => 3],
+                    ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'stat_diff_vp', 'name' => 'Diferencia de estadísticas (vp)', 'type' => 'stat_diff', 'stat' => 'vp', 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'owp', 'name' => 'Porcentaje de victorias de oponentes', 'type' => 'owp', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
                 ],
                 'pairing_config' => [
                     'method' => 'swiss',
@@ -71,14 +75,14 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Derrotas de juego', 'key' => 'game_losses', 'type' => 'integer'],
                 ],
                 'scoring_rules' => [
-                    ['result' => 'win', 'points' => 3.0],
-                    ['result' => 'draw', 'points' => 1.0],
-                    ['result' => 'loss', 'points' => 0.0],
+                    ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
-                    ['type' => 'opponent_win_percentage', 'priority' => 1],
-                    ['type' => 'stat_percentage', 'priority' => 2, 'stat' => 'game_wins', 'against' => 'game_losses'],
-                    ['type' => 'buchholz', 'priority' => 3],
+                    ['key' => 'owp', 'name' => 'Porcentaje de victorias de oponentes', 'type' => 'owp', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'gwp', 'name' => 'Porcentaje de victorias de partidas', 'type' => 'gwp', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
                 ],
                 'pairing_config' => [
                     'method' => 'swiss',
@@ -96,14 +100,14 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Kill Points', 'key' => 'kp', 'type' => 'integer'],
                 ],
                 'scoring_rules' => [
-                    ['result' => 'win', 'points' => 3.0],
-                    ['result' => 'draw', 'points' => 1.0],
-                    ['result' => 'loss', 'points' => 0.0],
+                    ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
-                    ['type' => 'buchholz', 'priority' => 1],
-                    ['type' => 'stat_sum', 'priority' => 2, 'stat' => 'bp'],
-                    ['type' => 'stat_sum', 'priority' => 3, 'stat' => 'kp'],
+                    ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'stat_sum_bp', 'name' => 'Suma de estadísticas (bp)', 'type' => 'stat_sum', 'stat' => 'bp', 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'stat_sum_kp', 'name' => 'Suma de estadísticas (kp)', 'type' => 'stat_sum', 'stat' => 'kp', 'direction' => 'desc', 'min_value' => null],
                 ],
                 'pairing_config' => [
                     'method' => 'swiss',
@@ -118,14 +122,14 @@ final class GameProfilesSeeder extends Seeder
                 'is_system' => true,
                 'stat_definitions' => [],
                 'scoring_rules' => [
-                    ['result' => 'win', 'points' => 3.0],
-                    ['result' => 'draw', 'points' => 1.0],
-                    ['result' => 'loss', 'points' => 0.0],
+                    ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
-                    ['type' => 'buchholz', 'priority' => 1],
-                    ['type' => 'opponent_win_percentage', 'priority' => 2],
-                    ['type' => 'progressive', 'priority' => 3],
+                    ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'owp', 'name' => 'Porcentaje de victorias de oponentes', 'type' => 'owp', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+                    ['key' => 'progressive', 'name' => 'Progresivo', 'type' => 'progressive', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
                 ],
                 'pairing_config' => [
                     'method' => 'swiss',

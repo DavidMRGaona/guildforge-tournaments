@@ -88,6 +88,25 @@ final class TournamentsPanelTest extends ModuleTestCase
             ->assertSee(__('tournaments::messages.advanced_config.inherit_from_profile'));
     }
 
+    public function test_a_tournament_is_created_from_a_seeded_system_profile(): void
+    {
+        $profile = $this->systemProfile();
+
+        Livewire::test(CreateTournament::class)
+            ->fillForm([
+                'event_id' => EventModel::factory()->create(['is_published' => true])->id,
+                'name' => 'Torneo de prueba',
+                'notification_email' => 'torneos@example.com',
+                'game_profile_id' => $profile->id,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $tournament = TournamentModel::query()->where('name', 'Torneo de prueba')->firstOrFail();
+        $this->assertSame($profile->id, $tournament->game_profile_id);
+        $this->assertSame('result', $tournament->scoring_rules[0]['condition']['type'] ?? null);
+    }
+
     public function test_tournament_relation_managers_render(): void
     {
         $tournament = $this->tournament();
