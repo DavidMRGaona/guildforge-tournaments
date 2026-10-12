@@ -158,4 +158,73 @@ final class ParticipantRegistrationRulesTest extends TestCase
 
         $this->service->withdrawByToken('finished-token');
     }
+
+    public function test_withdrawing_twice_by_token_is_rejected(): void
+    {
+        $tournament = $this->tournament();
+        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com', 'cancellation_token' => 'twice-token']);
+        $this->service->withdrawByToken('twice-token');
+
+        $this->expectException(CannotWithdrawException::class);
+        $this->expectExceptionMessage('already withdrawn');
+
+        $this->service->withdrawByToken('twice-token');
+    }
+
+    public function test_withdrawing_twice_is_rejected(): void
+    {
+        $tournament = $this->tournament();
+        $participant = $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
+        $this->service->withdraw($participant->id);
+
+        $this->expectException(CannotWithdrawException::class);
+        $this->expectExceptionMessage('already withdrawn');
+
+        $this->service->withdraw($participant->id);
+    }
+
+    public function test_a_disqualified_participant_cannot_withdraw(): void
+    {
+        $tournament = $this->tournament();
+        $participant = $this->participant($tournament, [
+            'user_id' => UserModel::factory()->create()->id,
+            'status' => ParticipantStatus::Disqualified->value,
+        ]);
+
+        $this->expectException(CannotWithdrawException::class);
+        $this->expectExceptionMessage('disqualified');
+
+        $this->service->withdraw($participant->id);
+    }
+
+    public function test_a_disqualified_user_cannot_register_again(): void
+    {
+        $tournament = $this->tournament();
+        $user = UserModel::factory()->create();
+        $this->participant($tournament, ['user_id' => $user->id, 'status' => ParticipantStatus::Disqualified->value]);
+
+        $this->expectException(AlreadyRegisteredException::class);
+        $this->expectExceptionMessage('disqualified');
+
+        $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
+    }
+
+    public function test_a_disqualified_guest_cannot_register_again(): void
+    {
+        $tournament = $this->tournament();
+        $this->participant($tournament, [
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'status' => ParticipantStatus::Disqualified->value,
+        ]);
+
+        try {
+            $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
+            $this->fail('A disqualified guest registered again');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertStringContainsString('disqualified', $e->getMessage());
+        }
+
+        $this->assertSame(1, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
 }

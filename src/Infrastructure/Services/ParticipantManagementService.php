@@ -76,6 +76,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                     $dto->tournamentId
                 );
                 if ($existingGuest !== null) {
+                    $this->rejectDisqualified($existingGuest);
+
                     if ($this->isActiveParticipant($existingGuest)) {
                         throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $dto->guestEmail);
                     }
@@ -90,6 +92,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                 $dto->tournamentId
             );
             if ($existingParticipant !== null) {
+                $this->rejectDisqualified($existingParticipant);
+
                 if ($this->isActiveParticipant($existingParticipant)) {
                     throw AlreadyRegisteredException::userAlreadyRegistered($dto->tournamentId, $dto->userId);
                 }
@@ -178,6 +182,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw ParticipantNotFoundException::withId($participantId);
         }
 
+        $this->ensureCanWithdraw($participant);
+
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
         if ($tournament === null) {
@@ -229,6 +235,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         if ($participant === null) {
             throw ParticipantNotFoundException::byToken($token);
         }
+
+        $this->ensureCanWithdraw($participant);
 
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
@@ -398,6 +406,33 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         if ($now > $eventStartDate) {
             throw CheckInWindowClosedException::alreadyClosed($tournament->id()->value);
+        }
+    }
+
+    /**
+     * @throws AlreadyRegisteredException
+     */
+    private function rejectDisqualified(Participant $participant): void
+    {
+        if ($participant->status() === ParticipantStatus::Disqualified) {
+            throw AlreadyRegisteredException::disqualified($participant->tournamentId(), $participant->id()->value);
+        }
+    }
+
+    /**
+     * A second submit of the cancel form, or a disqualified participant, gets the
+     * domain error the controllers show instead of an invalid state transition (500).
+     *
+     * @throws CannotWithdrawException
+     */
+    private function ensureCanWithdraw(Participant $participant): void
+    {
+        if ($participant->status() === ParticipantStatus::Disqualified) {
+            throw CannotWithdrawException::disqualified($participant->id()->value);
+        }
+
+        if (! $this->isActiveParticipant($participant)) {
+            throw CannotWithdrawException::alreadyWithdrawn($participant->id()->value);
         }
     }
 
