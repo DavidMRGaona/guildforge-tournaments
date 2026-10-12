@@ -92,6 +92,16 @@ final class TournamentsPanelTest extends ModuleTestCase
         $this->assertNull(GameProfileModel::query()->find($custom->getKey()));
     }
 
+    public function test_bulk_delete_asks_the_policy_for_each_profile(): void
+    {
+        // Filament already drops unselectable records; the policy is the second guard
+        $action = Livewire::test(ListGameProfiles::class)->instance()->getTable()->getBulkAction('delete');
+
+        $this->assertNotNull($action);
+        $this->assertTrue($action->shouldAuthorizeIndividualRecords());
+        $this->assertFalse($action->getIndividualRecordAuthorizationResponse($this->systemProfile())->allowed());
+    }
+
     public function test_a_game_profile_is_duplicated_from_the_list(): void
     {
         $profile = $this->systemProfile();
