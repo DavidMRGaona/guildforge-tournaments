@@ -54,8 +54,12 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_system_game_profile_cannot_be_deleted_from_the_edit_page(): void
     {
-        Livewire::test(EditGameProfile::class, ['record' => $this->systemProfile()->getRouteKey()])
+        $profile = $this->systemProfile();
+
+        Livewire::test(EditGameProfile::class, ['record' => $profile->getRouteKey()])
             ->assertActionHidden('delete');
+        // The page hides its action on its own: the panel-wide rule is the policy's
+        $this->assertFalse(GameProfileResource::canDelete($profile));
     }
 
     public function test_bulk_delete_keeps_system_game_profiles(): void

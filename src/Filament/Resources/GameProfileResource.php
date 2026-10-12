@@ -26,7 +26,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use Modules\Tournaments\Domain\Enums\ByeAssignment;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\PairingMethod;
@@ -422,14 +421,5 @@ final class GameProfileResource extends BaseResource
             'create' => CreateGameProfile::route('/create'),
             'edit' => EditGameProfile::route('/{record}/edit'),
         ];
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        if ($record instanceof GameProfileModel) {
-            return ! $record->is_system;
-        }
-
-        return true;
     }
 }
