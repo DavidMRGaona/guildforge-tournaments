@@ -71,6 +71,27 @@ final class TournamentsPanelTest extends ModuleTestCase
         $this->assertNotNull(GameProfileModel::query()->find($profile->getKey()));
     }
 
+    public function test_system_game_profiles_cannot_be_selected_for_bulk_actions(): void
+    {
+        $table = Livewire::test(ListGameProfiles::class)->instance()->getTable();
+
+        $this->assertFalse($table->isRecordSelectable($this->systemProfile()));
+    }
+
+    public function test_bulk_delete_removes_the_other_profiles_when_a_system_one_is_selected(): void
+    {
+        $system = $this->systemProfile();
+        $custom = $system->replicate(['id', 'slug']);
+        $custom->name = 'Perfil propio';
+        $custom->is_system = false;
+        $custom->save();
+
+        Livewire::test(ListGameProfiles::class)->callTableBulkAction('delete', [$system, $custom]);
+
+        $this->assertNotNull(GameProfileModel::query()->find($system->getKey()));
+        $this->assertNull(GameProfileModel::query()->find($custom->getKey()));
+    }
+
     public function test_game_profile_forms_show_their_notices(): void
     {
         Livewire::test(EditGameProfile::class, ['record' => $this->systemProfile()->getRouteKey()])

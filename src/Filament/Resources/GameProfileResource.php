@@ -400,17 +400,12 @@ final class GameProfileResource extends BaseResource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    // The policy refuses system profiles: the rest are deleted and Filament reports the skipped ones
                     DeleteBulkAction::make()
-                        ->before(function (DeleteBulkAction $action): void {
-                            $systemProfiles = $action->getSelectedRecords()
-                                ->filter(fn (GameProfileModel $record): bool => $record->is_system);
-
-                            if ($systemProfiles->isNotEmpty()) {
-                                $action->cancel();
-                            }
-                        }),
+                        ->authorizeIndividualRecords('delete'),
                 ]),
             ])
+            ->checkIfRecordIsSelectableUsing(fn (GameProfileModel $record): bool => ! $record->is_system)
             ->defaultSort('name');
     }
 
