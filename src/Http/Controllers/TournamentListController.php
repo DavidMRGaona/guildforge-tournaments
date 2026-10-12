@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Concerns\BuildsPaginatedResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -37,6 +39,7 @@ final class TournamentListController extends Controller
 
     public function __construct(
         private readonly TournamentQueryServiceInterface $tournamentQuery,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     public function index(Request $request): Response
@@ -58,6 +61,10 @@ final class TournamentListController extends Controller
                 resourceClass: TournamentResource::class,
             ),
             'currentFilter' => $currentStatus ?? 'all',
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('tournaments::messages.seo.index_title'),
+                description: (string) __('tournaments::messages.seo.index_description'),
+            ))->toArray(),
         ]);
     }
 

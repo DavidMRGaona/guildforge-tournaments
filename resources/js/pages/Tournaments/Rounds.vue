@@ -4,20 +4,12 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentRoundsProps, Match } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
-import { useSeo } from '@/composables/useSeo';
 import { useTournaments } from '../../composables/useTournaments';
 
 const props = defineProps<TournamentRoundsProps>();
 
 const { t } = useI18n();
 const { getMatchResultColor } = useTournaments();
-
-useSeo({
-    title: `${t('tournaments.public.rounds')} - ${props.tournament.name}`,
-    description: t('tournaments.public.rounds_description', { name: props.tournament.name }),
-    type: 'article',
-    canonical: `/torneos/${props.tournament.slug}/rondas`,
-});
 
 // Track which rounds are expanded
 const expandedRounds = ref<Set<string>>(new Set());

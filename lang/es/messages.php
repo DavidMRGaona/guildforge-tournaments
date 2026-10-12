@@ -667,4 +667,17 @@ return [
     'profile' => [
         'tabLabel' => 'Torneos',
     ],
+
+    // Server-rendered page metadata (link previews and search engines)
+    'seo' => [
+        'index_title' => 'Torneos',
+        'index_description' => 'Compite en nuestros torneos',
+        'standings_title' => 'Clasificación - :name',
+        'standings_description' => 'Clasificación del torneo :name',
+        'rounds_title' => 'Rondas - :name',
+        'rounds_description' => 'Rondas y partidas del torneo :name',
+        'my_tournaments_title' => 'Mis torneos',
+        'check_in_title' => 'Check-in - :name',
+        'cancel_registration_title' => 'Cancelar inscripción',
+    ],
 ];

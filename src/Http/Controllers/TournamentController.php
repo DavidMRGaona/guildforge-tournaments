@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\DTOs\SeoScheduleDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\EventQueryServiceInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -24,6 +28,8 @@ final class TournamentController extends Controller
         private readonly ParticipantManagementServiceInterface $participantManagement,
         private readonly MatchQueryServiceInterface $matchQuery,
         private readonly UserDataProviderInterface $userDataProvider,
+        private readonly SeoMetadataFactoryInterface $seo,
+        private readonly EventQueryServiceInterface $events,
     ) {}
 
     public function show(string $identifier): Response|RedirectResponse
@@ -85,6 +91,7 @@ final class TournamentController extends Controller
             'currentRound' => $currentRound?->toArray(),
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
+            'seo' => $this->showSeo($tournament),
         ]);
     }
 
@@ -105,6 +112,7 @@ final class TournamentController extends Controller
         return Inertia::render('Tournaments/Standings', [
             'tournament' => $tournament->toArray(),
             'standings' => array_map(fn ($s) => $s->toArray(), $standings),
+            'seo' => $this->subpageSeo($tournament, 'standings'),
         ]);
     }
 
@@ -134,7 +142,42 @@ final class TournamentController extends Controller
         return Inertia::render('Tournaments/Rounds', [
             'tournament' => $tournament->toArray(),
             'rounds' => $roundsWithMatches,
+            'seo' => $this->subpageSeo($tournament, 'rounds'),
         ]);
+    }
+
+    /**
+     * The tournament's own image and text, with the date and place of the event it belongs to.
+     *
+     * @return array<string, mixed>
+     */
+    private function showSeo(TournamentResponseDTO $tournament): array
+    {
+        $event = $this->events->findById($tournament->eventId);
+
+        return $this->seo->forPage(new SeoPageDTO(
+            title: $tournament->name,
+            description: $tournament->description ?? $event?->description,
+            imagePublicId: $tournament->imagePublicId ?? $event?->imagePublicId,
+            schedule: $event !== null
+                ? new SeoScheduleDTO($event->startDate, $event->endDate, $event->location)
+                : null,
+        ))->toArray();
+    }
+
+    /**
+     * @param  'standings'|'rounds'  $page
+     * @return array<string, mixed>
+     */
+    private function subpageSeo(TournamentResponseDTO $tournament, string $page): array
+    {
+        $event = $this->events->findById($tournament->eventId);
+
+        return $this->seo->forPage(new SeoPageDTO(
+            title: (string) __("tournaments::messages.seo.{$page}_title", ['name' => $tournament->name]),
+            description: (string) __("tournaments::messages.seo.{$page}_description", ['name' => $tournament->name]),
+            imagePublicId: $tournament->imagePublicId ?? $event?->imagePublicId,
+        ))->toArray();
     }
 
     private function findTournament(string $identifier): ?TournamentResponseDTO

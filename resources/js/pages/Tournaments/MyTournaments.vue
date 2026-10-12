@@ -6,15 +6,10 @@ import type { MyTournamentsPageProps } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import MyTournamentCard from '../../components/MyTournamentCard.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
-import { useSeo } from '@/composables/useSeo';
 
 const props = defineProps<MyTournamentsPageProps>();
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('tournaments.my_tournaments.title'),
-});
 
 const INITIAL_PAST_COUNT = 5;
 const LOAD_MORE_COUNT = 5;
