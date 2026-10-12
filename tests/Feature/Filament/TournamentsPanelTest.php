@@ -113,6 +113,12 @@ final class TournamentsPanelTest extends ModuleTestCase
         Livewire::test(CreateGameProfile::class)->assertDontSee('Stat definitions')->assertDontSee('Scoring rules');
     }
 
+    public function test_the_tiebreaker_repeater_shows_no_fallback_label(): void
+    {
+        Livewire::test(CreateTournament::class)->assertDontSee('Tiebreaker config');
+        Livewire::test(CreateGameProfile::class)->assertDontSee('Tiebreaker config');
+    }
+
     public function test_game_profile_forms_show_their_notices(): void
     {
         Livewire::test(EditGameProfile::class, ['record' => $this->systemProfile()->getRouteKey()])

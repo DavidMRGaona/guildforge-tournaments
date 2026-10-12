@@ -325,7 +325,8 @@ final class TournamentResource extends BaseResource
                                 self::advancedConfigNotice('tournaments::messages.tiebreaker_config.help'),
 
                                 Repeater::make('tiebreaker_config')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.tiebreaker_config.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('key')
                                             ->label(__('tournaments::messages.tiebreaker_config.key'))

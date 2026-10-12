@@ -247,12 +247,14 @@ final class GameProfileResource extends BaseResource
                             ->icon('heroicon-o-scale')
                             ->schema([
                                 TextEntry::make('tiebreaker_config_info')
+                                    ->label(__('tournaments::messages.tiebreaker_config.title'))
                                     ->hiddenLabel()
                                     ->state(__('tournaments::messages.tiebreaker_config.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('tiebreaker_config')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.tiebreaker_config.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('key')
                                             ->label(__('tournaments::messages.tiebreaker_config.key'))
