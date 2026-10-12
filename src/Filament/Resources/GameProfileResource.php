@@ -102,12 +102,14 @@ final class GameProfileResource extends BaseResource
                             ->icon('heroicon-o-chart-bar')
                             ->schema([
                                 TextEntry::make('stat_definitions_info')
+                                    ->label(__('tournaments::messages.stat_definitions.title'))
                                     ->hiddenLabel()
                                     ->state(__('tournaments::messages.stat_definitions.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('stat_definitions')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.stat_definitions.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('key')
                                             ->label(__('tournaments::messages.stat_definitions.key'))
@@ -152,12 +154,14 @@ final class GameProfileResource extends BaseResource
                             ->icon('heroicon-o-calculator')
                             ->schema([
                                 TextEntry::make('scoring_rules_info')
+                                    ->label(__('tournaments::messages.scoring_rules.title'))
                                     ->hiddenLabel()
                                     ->state(__('tournaments::messages.scoring_rules.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('scoring_rules')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.scoring_rules.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('name')
                                             ->label(__('tournaments::messages.scoring_rules.name'))

@@ -182,7 +182,8 @@ final class TournamentResource extends BaseResource
                                 self::advancedConfigNotice('tournaments::messages.stat_definitions.help'),
 
                                 Repeater::make('stat_definitions')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.stat_definitions.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('key')
                                             ->label(__('tournaments::messages.stat_definitions.key'))
@@ -231,7 +232,8 @@ final class TournamentResource extends BaseResource
                                 self::advancedConfigNotice('tournaments::messages.scoring_rules.help'),
 
                                 Repeater::make('scoring_rules')
-                                    ->label('')
+                                    ->label(__('tournaments::messages.scoring_rules.title'))
+                                    ->hiddenLabel()
                                     ->schema([
                                         TextInput::make('name')
                                             ->label(__('tournaments::messages.scoring_rules.name'))
