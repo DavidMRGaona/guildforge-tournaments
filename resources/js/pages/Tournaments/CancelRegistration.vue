@@ -4,16 +4,15 @@ import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
     participant: {
         id: string;
         status: string;
-        isGuest: boolean;
-        guestName: string | null;
-        guestEmail: string | null;
+        is_guest: boolean;
+        guest_name: string | null;
+        guest_email: string | null;
     };
     tournament: {
         id: string;
@@ -28,13 +27,8 @@ const props = defineProps<Props>();
 
 const { t, locale } = useI18n();
 
-useSeo({
-    title: t('tournaments.cancellation.title'),
-    description: t('tournaments.cancellation.title'),
-});
-
 const displayName = computed(() => {
-    return props.participant.guestName || t('tournaments.cancellation.guest');
+    return props.participant.guest_name || t('tournaments.cancellation.guest');
 });
 
 const formattedDate = computed(() => {
