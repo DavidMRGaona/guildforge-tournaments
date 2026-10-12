@@ -67,6 +67,16 @@ final class TournamentsPanelTest extends ModuleTestCase
         $this->assertNotNull(GameProfileModel::query()->find($profile->getKey()));
     }
 
+    public function test_game_profile_forms_show_their_notices(): void
+    {
+        Livewire::test(EditGameProfile::class, ['record' => $this->systemProfile()->getRouteKey()])
+            ->assertSee(__('tournaments::messages.game_profile.system_warning'));
+        Livewire::test(CreateGameProfile::class)
+            ->assertSee(__('tournaments::messages.stat_definitions.help'))
+            ->assertSee(__('tournaments::messages.scoring_rules.help'))
+            ->assertSee(__('tournaments::messages.tiebreaker_config.help'));
+    }
+
     public function test_tournament_pages_render(): void
     {
         $tournament = $this->tournament();

@@ -17,7 +17,7 @@ use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\ListGamePro
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\EditGameProfile;
 use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Placeholder;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -74,9 +74,9 @@ final class GameProfileResource extends BaseResource
                         Tab::make(__('tournaments::messages.config.general'))
                             ->icon('heroicon-o-document-text')
                             ->schema([
-                                Placeholder::make('system_profile_warning')
+                                TextEntry::make('system_profile_warning')
                                     ->hiddenLabel()
-                                    ->content(__('tournaments::messages.game_profile.system_warning'))
+                                    ->state(__('tournaments::messages.game_profile.system_warning'))
                                     ->visible(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
                                     ->columnSpanFull(),
 
@@ -102,9 +102,9 @@ final class GameProfileResource extends BaseResource
                         Tab::make(__('tournaments::messages.stat_definitions.title'))
                             ->icon('heroicon-o-chart-bar')
                             ->schema([
-                                Placeholder::make('stat_definitions_info')
+                                TextEntry::make('stat_definitions_info')
                                     ->hiddenLabel()
-                                    ->content(__('tournaments::messages.stat_definitions.help'))
+                                    ->state(__('tournaments::messages.stat_definitions.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('stat_definitions')
@@ -152,9 +152,9 @@ final class GameProfileResource extends BaseResource
                         Tab::make(__('tournaments::messages.scoring_rules.title'))
                             ->icon('heroicon-o-calculator')
                             ->schema([
-                                Placeholder::make('scoring_rules_info')
+                                TextEntry::make('scoring_rules_info')
                                     ->hiddenLabel()
-                                    ->content(__('tournaments::messages.scoring_rules.help'))
+                                    ->state(__('tournaments::messages.scoring_rules.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('scoring_rules')
@@ -243,9 +243,9 @@ final class GameProfileResource extends BaseResource
                         Tab::make(__('tournaments::messages.tiebreaker_config.title'))
                             ->icon('heroicon-o-scale')
                             ->schema([
-                                Placeholder::make('tiebreaker_config_info')
+                                TextEntry::make('tiebreaker_config_info')
                                     ->hiddenLabel()
-                                    ->content(__('tournaments::messages.tiebreaker_config.help'))
+                                    ->state(__('tournaments::messages.tiebreaker_config.help'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('tiebreaker_config')
