@@ -74,6 +74,7 @@ final class GameProfileResource extends BaseResource
                             ->icon('heroicon-o-document-text')
                             ->schema([
                                 TextEntry::make('system_profile_warning')
+                                    ->label(__('tournaments::messages.game_profile.fields.is_system'))
                                     ->hiddenLabel()
                                     ->state(__('tournaments::messages.game_profile.system_warning'))
                                     ->visible(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
