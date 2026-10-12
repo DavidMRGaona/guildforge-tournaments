@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 import type { TournamentShowProps, Standing } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 import { useTournaments } from '../../composables/useTournaments';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
@@ -27,13 +26,6 @@ const { error: notifyError, success: notifySuccess } = useNotifications();
 
 const tournamentHasStarted = computed(() => hasStarted(props.tournament));
 const showParticipantsList = computed(() => shouldShowParticipants(props.tournament) && props.participants.length > 0);
-
-useSeo({
-    title: props.tournament.name,
-    description: props.tournament.description || t('tournaments.description'),
-    type: 'article',
-    canonical: `/torneos/${props.tournament.slug}`,
-});
 
 const statusInfo = computed(() => formatStatus(props.tournament.status));
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Controllers;
 
+use App\Application\Seo\DTOs\SeoPageDTO;
+use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +28,7 @@ final class TournamentCheckInController extends Controller
         private readonly TournamentQueryServiceInterface $tournamentQuery,
         private readonly ParticipantManagementServiceInterface $participantManagement,
         private readonly UserDataProviderInterface $userDataProvider,
+        private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
     public function show(string $slug): Response|RedirectResponse
@@ -60,6 +63,10 @@ final class TournamentCheckInController extends Controller
             'userRegistration' => $userRegistration,
             'checkInWindow' => $checkInWindow,
             'eventStartDate' => $eventStartDate?->format('c'),
+            'seo' => $this->seo->forPage(new SeoPageDTO(
+                title: (string) __('tournaments::messages.seo.check_in_title', ['name' => $tournament->name]),
+                noindex: true,
+            ))->toArray(),
         ]);
     }
 

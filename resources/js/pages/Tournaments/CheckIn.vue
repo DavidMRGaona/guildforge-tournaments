@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 import type { TournamentCheckInProps } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -21,12 +20,6 @@ const props = defineProps<TournamentCheckInProps>();
 const { t, locale } = useI18n();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
-
-useSeo({
-    title: `${t('tournaments.check_in.title')} - ${props.tournament.name}`,
-    description: t('tournaments.check_in.title'),
-    canonical: `/torneos/${props.tournament.slug}/check-in`,
-});
 
 // Form state
 const emailForm = reactive({

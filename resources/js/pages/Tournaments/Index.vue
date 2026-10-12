@@ -7,7 +7,6 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import TournamentList from '../../components/TournamentList.vue';
 import TournamentStatusFilter from '../../components/TournamentStatusFilter.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useSeo } from '@/composables/useSeo';
 import { usePagination } from '@/composables/usePagination';
 
 interface Props {
@@ -20,11 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
-
-useSeo({
-    title: t('tournaments.title'),
-    description: t('tournaments.listing.subtitle'),
-});
 
 const isNavigating = ref(false);
 

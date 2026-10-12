@@ -3,20 +3,12 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentStandingsProps } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
-import { useSeo } from '@/composables/useSeo';
 import { useTournaments } from '../../composables/useTournaments';
 
 const props = defineProps<TournamentStandingsProps>();
 
 const { t } = useI18n();
 const { formatPoints, formatPercentage } = useTournaments();
-
-useSeo({
-    title: `${t('tournaments.public.standings')} - ${props.tournament.name}`,
-    description: t('tournaments.public.standings_description', { name: props.tournament.name }),
-    type: 'article',
-    canonical: `/torneos/${props.tournament.slug}/clasificacion`,
-});
 </script>
 
 <template>
