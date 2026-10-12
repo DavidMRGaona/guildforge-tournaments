@@ -49,19 +49,25 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         if ($tournament->status() !== TournamentStatus::RegistrationOpen) {
-            throw TournamentNotOpenException::withId($dto->tournamentId);
+            throw match ($tournament->status()) {
+                TournamentStatus::Draft => TournamentNotOpenException::notYetOpen($dto->tournamentId),
+                TournamentStatus::InProgress => TournamentNotOpenException::inProgress($dto->tournamentId),
+                TournamentStatus::Finished => TournamentNotOpenException::finished($dto->tournamentId),
+                TournamentStatus::Cancelled => TournamentNotOpenException::cancelled($dto->tournamentId),
+                default => TournamentNotOpenException::alreadyClosed($dto->tournamentId),
+            };
         }
 
         if ($tournament->maxParticipants() !== null) {
             $currentCount = $this->participantRepository->countActiveByTournament($dto->tournamentId);
             if ($currentCount >= $tournament->maxParticipants()) {
-                throw TournamentFullException::withId($dto->tournamentId);
+                throw TournamentFullException::maxParticipantsReached($dto->tournamentId, $tournament->maxParticipants());
             }
         }
 
         if ($dto->isGuest()) {
             if (! $tournament->allowGuests()) {
-                throw GuestRegistrationNotAllowedException::forTournament($dto->tournamentId);
+                throw GuestRegistrationNotAllowedException::guestsNotAllowed($dto->tournamentId);
             }
 
             if ($dto->guestEmail !== null) {
@@ -71,7 +77,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                 );
                 if ($existingGuest !== null) {
                     if ($this->isActiveParticipant($existingGuest)) {
-                        throw AlreadyRegisteredException::forGuest($dto->guestEmail, $dto->tournamentId);
+                        throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $dto->guestEmail);
                     }
                     if ($existingGuest->status() === ParticipantStatus::Withdrawn) {
                         return $this->reactivateParticipant($existingGuest);
@@ -94,7 +100,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
             $allowedRoles = $tournament->allowedRoles();
             if ($allowedRoles !== [] && ! $this->userDataProvider->userHasAnyRole($dto->userId, $allowedRoles)) {
-                throw UserNotAllowedToRegisterException::missingRole($dto->userId);
+                throw UserNotAllowedToRegisterException::missingRequiredRole($dto->tournamentId, $dto->userId, $allowedRoles);
             }
         }
 

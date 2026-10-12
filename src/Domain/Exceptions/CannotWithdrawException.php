@@ -23,6 +23,11 @@ final class CannotWithdrawException extends DomainException
         return new self("Participant {$participantId} cannot withdraw while the tournament is in progress.");
     }
 
+    public static function tournamentFinished(string $participantId): self
+    {
+        return new self("Participant {$participantId} cannot withdraw from a tournament that has finished.");
+    }
+
     public static function disqualified(string $participantId): self
     {
         return new self("Participant {$participantId} has been disqualified and cannot withdraw.");
