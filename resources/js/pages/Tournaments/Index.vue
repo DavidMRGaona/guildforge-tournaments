@@ -2,10 +2,10 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
-import type { TournamentListItem, TournamentStatusFilter as TournamentStatusFilterType } from '../types/tournaments';
+import type { TournamentListItem, TournamentStatusFilter as TournamentStatusFilterType } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
-import TournamentList from '../components/TournamentList.vue';
-import TournamentStatusFilter from '../components/TournamentStatusFilter.vue';
+import TournamentList from '../../components/TournamentList.vue';
+import TournamentStatusFilter from '../../components/TournamentStatusFilter.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useSeo } from '@/composables/useSeo';
 import { usePagination } from '@/composables/usePagination';
