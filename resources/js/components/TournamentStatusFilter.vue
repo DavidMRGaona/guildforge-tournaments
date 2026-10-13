@@ -44,6 +44,10 @@ function isActive(filter: TournamentStatusFilter): boolean {
 }
 </script>
 
+<!-- Same chips as the core's TagFilter.vue. Colours are semantic tokens on purpose: a
+     `dark:` variant that only this module compiles loses to the core's light half of the
+     pair (the core stylesheet outranks module utilities), which rendered the active chip
+     light-on-light in dark mode. -->
 <template>
     <div class="flex flex-wrap items-center gap-2">
         <span class="text-sm font-medium text-base-secondary">
@@ -57,8 +61,8 @@ function isActive(filter: TournamentStatusFilter): boolean {
             :class="[
                 'rounded-full px-3 py-1 text-sm font-medium transition-colors',
                 isActive(option.value)
-                    ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200'
-                    : 'bg-stone-100 text-base-muted hover:bg-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600',
+                    ? 'bg-primary-light text-primary font-semibold'
+                    : 'bg-muted text-base-secondary hover:bg-neutral-200 dark:hover:bg-neutral-700',
             ]"
             @click="selectFilter(option.value)"
         >
