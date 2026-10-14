@@ -371,7 +371,8 @@ final class TournamentConfigRelationManager extends RelationManager
     }
 
     /**
-     * The tournament's tiebreakers as the tab's choices, or null when one has no choice here.
+     * The tournament's tiebreakers as the tab's choices, or null when one has no choice here
+     * or carries settings the tab cannot show.
      *
      * @param  array<mixed>|null  $config
      * @return list<string>|null
@@ -386,7 +387,12 @@ final class TournamentConfigRelationManager extends RelationManager
         foreach ($config as $definition) {
             $type = is_array($definition) && is_string($definition['type'] ?? null) ? TiebreakerType::tryFrom($definition['type']) : null;
             $tiebreaker = $type !== null ? Tiebreaker::fromType($type) : null;
-            if ($tiebreaker === null || (($definition['direction'] ?? 'desc') !== 'desc')) {
+            // Anything the tab cannot show (direction, floor, stat, own key) would be lost on save
+            if ($tiebreaker === null
+                || ($definition['direction'] ?? 'desc') !== 'desc'
+                || ($definition['min_value'] ?? null) !== null
+                || ($definition['stat'] ?? null) !== null
+                || ($definition['key'] ?? $tiebreaker->type()->value) !== $tiebreaker->type()->value) {
                 return null;
             }
 

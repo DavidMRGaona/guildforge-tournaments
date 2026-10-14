@@ -94,6 +94,32 @@ final class EventTournamentTabTest extends ModuleTestCase
         $this->assertEquals($advancedTiebreakers, $tournament->tiebreaker_config);
     }
 
+    public function test_a_floored_tiebreaker_round_trips_unchanged(): void
+    {
+        $rules = [$this->resultRule('Victoria', 'win', 3)];
+        $floored = [['key' => 'owp', 'name' => 'OMW%', 'type' => 'owp', 'stat' => null, 'direction' => 'desc', 'min_value' => 0.33]];
+        $tournament = $this->tournament(['scoring_rules' => $rules, 'tiebreaker_config' => $floored]);
+
+        $this->tab($tournament->event)
+            ->assertSee(__('tournaments::messages.config.advanced_rules_notice'))
+            ->set('configData.name', 'Nuevo nombre')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertEquals($floored, $tournament->refresh()->tiebreaker_config);
+        $this->assertEquals($rules, $tournament->scoring_rules);
+    }
+
+    public function test_a_tiebreaker_with_a_stat_round_trips_unchanged(): void
+    {
+        $withStat = [['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => 'vp', 'direction' => 'desc', 'min_value' => null]];
+        $tournament = $this->tournament(['scoring_rules' => [$this->resultRule('Victoria', 'win', 3)], 'tiebreaker_config' => $withStat]);
+
+        $this->tab($tournament->event)->set('configData.name', 'Nuevo nombre')->call('save')->assertHasNoErrors();
+
+        $this->assertEquals($withStat, $tournament->refresh()->tiebreaker_config);
+    }
+
     /**
      * @return Testable<TournamentConfigRelationManager>
      */
