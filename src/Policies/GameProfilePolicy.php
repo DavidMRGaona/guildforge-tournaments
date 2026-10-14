@@ -14,22 +14,22 @@ final class GameProfilePolicy
 
     public function viewAny(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function view(UserModel $user, GameProfileModel $gameProfile): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function create(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function update(UserModel $user, GameProfileModel $gameProfile): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function delete(UserModel $user, GameProfileModel $gameProfile): bool
@@ -39,17 +39,17 @@ final class GameProfilePolicy
             return false;
         }
 
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function deleteAny(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function restore(UserModel $user, GameProfileModel $gameProfile): bool
     {
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 
     public function forceDelete(UserModel $user, GameProfileModel $gameProfile): bool
@@ -59,6 +59,6 @@ final class GameProfilePolicy
             return false;
         }
 
-        return $this->authorize($user, 'tournaments.manage_config');
+        return $this->authorize($user, 'tournaments:tournaments.manage_config');
     }
 }
