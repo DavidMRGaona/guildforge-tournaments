@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
@@ -272,6 +273,51 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $tournament = $this->tournament(['scoring_rules' => null, 'tiebreaker_config' => null]);
 
         $this->assertSame(3.0, $this->pointsOfAWinner($tournament));
+    }
+
+    public function test_standings_follow_head_to_head_then_a_random_order_kept_across_recalculations(): void
+    {
+        $tournament = $this->tournament(['tiebreaker_config' => [
+            ['key' => 'h2h', 'name' => 'Enfrentamiento directo', 'type' => 'head_to_head', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+            ['key' => 'random', 'name' => 'Aleatorio', 'type' => 'random', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
+        ]]);
+        [$e, $f, $g, $h] = $this->participants($tournament, 4);
+        // E beats F, then F beats G and H beats E: E, F and H on 3 points; F lost to E, E and H split
+        $this->playRound($tournament, 1, [[$e, $f, MatchResult::PlayerOneWin], [$g, $h, MatchResult::PlayerTwoWin]]);
+        $this->playRound($tournament, 2, [[$f, $g, MatchResult::PlayerOneWin], [$h, $e, MatchResult::PlayerOneWin]]);
+
+        $standings = app(StandingsServiceInterface::class);
+        $first = $this->ranks($standings->recalculate($tournament->id));
+        $seed = $tournament->refresh()->random_seed;
+        $second = $this->ranks($standings->recalculate($tournament->id));
+
+        // H has 6 points; E (h2h 3: beat F) before F (h2h 0); G last
+        $this->assertSame([$h->id, $e->id, $f->id, $g->id], $first);
+        $this->assertNotNull($seed);
+        $this->assertSame($seed, $tournament->refresh()->random_seed);
+        $this->assertSame($first, $second);
+    }
+
+    /**
+     * @param  list<array{ParticipantModel, ParticipantModel, MatchResult}>  $results
+     */
+    private function playRound(TournamentModel $tournament, int $number, array $results): void
+    {
+        $round = RoundModel::create(['id' => (string) Str::uuid(), 'tournament_id' => $tournament->id, 'round_number' => $number, 'status' => RoundStatus::Finished->value]);
+        foreach ($results as $table => [$player1, $player2, $result]) {
+            MatchModel::create(['id' => (string) Str::uuid(), 'round_id' => $round->id, 'player_1_id' => $player1->id, 'player_2_id' => $player2->id, 'table_number' => $table + 1, 'result' => $result->value]);
+        }
+    }
+
+    /**
+     * @param  array<\Modules\Tournaments\Domain\Entities\Standing>  $standings
+     * @return list<string>
+     */
+    private function ranks(array $standings): array
+    {
+        usort($standings, static fn ($a, $b): int => $a->rank() <=> $b->rank());
+
+        return array_map(static fn ($standing): string => $standing->participantId(), $standings);
     }
 
     private function pointsOfAWinner(TournamentModel $tournament): float

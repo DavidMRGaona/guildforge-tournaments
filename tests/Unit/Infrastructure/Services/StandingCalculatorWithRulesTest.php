@@ -123,6 +123,20 @@ final class StandingCalculatorWithRulesTest extends TestCase
         $this->assertSame($c->id()->value, $standings[2]->participantId());
     }
 
+    public function test_numeric_match_stats_are_accumulated_per_player(): void
+    {
+        [$a, $b] = $this->participants(2);
+        $matches = [
+            $this->match('r1', $a, $b, MatchResult::PlayerOneWin, ['vp' => 80, 'painted' => true], ['vp' => 40]),
+            $this->match('r2', $b, $a, MatchResult::PlayerOneWin, ['vp' => 70], ['vp' => '55']),
+        ];
+
+        $standings = $this->byParticipant($this->service->calculateWithRules([$a, $b], $matches, $this->rules(), []));
+
+        $this->assertSame(['vp' => 135.0], $standings[$a->id()->value]->accumulatedStats());
+        $this->assertSame(['vp' => 110.0], $standings[$b->id()->value]->accumulatedStats());
+    }
+
     public function test_it_returns_nothing_without_participants(): void
     {
         $this->assertSame([], $this->service->calculateWithRules([], [], $this->rules(), []));

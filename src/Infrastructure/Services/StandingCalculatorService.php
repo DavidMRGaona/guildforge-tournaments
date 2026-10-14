@@ -16,6 +16,7 @@ use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerContext;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Ramsey\Uuid\Uuid;
 
@@ -32,6 +33,7 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
      * @param  array<TournamentMatch>  $matches
      * @param  array<ScoringRule>  $scoringRules
      * @param  array<TiebreakerDefinition>  $tiebreakerConfig
+     * @param  array<string, int>  $roundNumbers
      * @return array<Standing>
      */
     public function calculateWithRules(
@@ -39,6 +41,8 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
         array $matches,
         array $scoringRules,
         array $tiebreakerConfig,
+        array $roundNumbers = [],
+        string $randomSeed = '',
     ): array {
         if ($participants === []) {
             return [];
@@ -68,9 +72,11 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
             static fn (TournamentMatch $match): bool => $match->result() !== MatchResult::NotPlayed,
         ));
 
+        $matchPoints = [];
         foreach ($playedMatches as $match) {
-            $this->recordMatchWithRules($match, $standings, $scoringRules);
+            $matchPoints[$match->id()->value] = $this->recordMatchWithRules($match, $standings, $scoringRules);
         }
+        $context = new TiebreakerContext($matchPoints, $roundNumbers, $randomSeed);
 
         $standingsArray = array_values($standings);
 
@@ -84,8 +90,8 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
 
         foreach ($standingsArray as $standing) {
             $participantId = $standing->participantId();
-            $shown = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $displayed);
-            $configured = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $tiebreakerConfig);
+            $shown = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $displayed, $context);
+            $configured = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $tiebreakerConfig, $context);
 
             $standing->updateTiebreakers(
                 buchholz: $shown['buchholz'] ?? 0.0,
@@ -442,12 +448,13 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
     }
 
     /**
-     * Add a played match to the standings, with the points the scoring rules award.
+     * Add a played match to the standings, with the points the scoring rules award and its numeric stats.
      *
      * @param  array<string, Standing>  $standings
      * @param  array<ScoringRule>  $scoringRules
+     * @return array<string, float> Points per participant id
      */
-    private function recordMatchWithRules(TournamentMatch $match, array $standings, array $scoringRules): void
+    private function recordMatchWithRules(TournamentMatch $match, array $standings, array $scoringRules): array
     {
         $result = $match->result();
         $points = $this->scoringRuleEvaluator->evaluate(
@@ -484,6 +491,21 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
             case MatchResult::NotPlayed:
                 break;
         }
+
+        foreach ([[$player1, $match->player1Stats()], [$player2, $match->player2Stats()]] as [$standing, $stats]) {
+            foreach ($stats ?? [] as $key => $value) {
+                if ($standing !== null && is_numeric($value)) {
+                    $standing->addToAccumulatedStat((string) $key, (float) $value);
+                }
+            }
+        }
+
+        $perParticipant = [$match->player1Id() => $points['player1']];
+        if ($player2Id !== null) {
+            $perParticipant[$player2Id] = $points['player2'];
+        }
+
+        return $perParticipant;
     }
 
     /**

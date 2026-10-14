@@ -40,13 +40,17 @@ interface StandingCalculatorServiceInterface
      * @param  array<TournamentMatch>  $matches  All matches of the tournament (unplayed ones are ignored)
      * @param  array<ScoringRule>  $scoringRules
      * @param  array<TiebreakerDefinition>  $tiebreakerConfig
-     * @return array<Standing>  Standings sorted by rank
+     * @param  array<string, int>  $roundNumbers  round id => round number (progressive follows it)
+     * @param  string  $randomSeed  Seed of the random tiebreaker
+     * @return array<Standing>  Standings sorted by rank, with the numeric match stats accumulated
      */
     public function calculateWithRules(
         array $participants,
         array $matches,
         array $scoringRules,
         array $tiebreakerConfig,
+        array $roundNumbers = [],
+        string $randomSeed = '',
     ): array;
 
     /**

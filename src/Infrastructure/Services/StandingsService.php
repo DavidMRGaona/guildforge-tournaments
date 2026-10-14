@@ -22,6 +22,7 @@ use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final readonly class StandingsService implements StandingsServiceInterface
 {
@@ -42,13 +43,21 @@ final readonly class StandingsService implements StandingsServiceInterface
     public function recalculate(string $tournamentId): array
     {
         $tournament = $this->tournaments->findOrFail(TournamentId::fromString($tournamentId));
-        $matches = $this->tournamentMatches($tournamentId);
+        $rounds = $this->rounds->findByTournament($tournamentId);
+        $matches = [];
+        $roundNumbers = [];
+        foreach ($rounds as $round) {
+            $roundNumbers[$round->id()->value] = $round->roundNumber();
+            array_push($matches, ...$this->matches->findByRound($round->id()->value));
+        }
 
         $standings = $this->calculator->calculateWithRules(
             $this->rankedParticipants($tournamentId, $matches),
             $matches,
             $this->scoringRules($tournament),
             $this->tiebreakers($tournament),
+            $roundNumbers,
+            $this->randomSeed($tournamentId),
         );
 
         DB::transaction(function () use ($tournamentId, $standings): void {
@@ -60,16 +69,19 @@ final readonly class StandingsService implements StandingsServiceInterface
     }
 
     /**
-     * @return array<TournamentMatch>
+     * The tournament's seed for the random tiebreaker, created and stored the first time.
      */
-    private function tournamentMatches(string $tournamentId): array
+    private function randomSeed(string $tournamentId): string
     {
-        $matches = [];
-        foreach ($this->rounds->findByTournament($tournamentId) as $round) {
-            array_push($matches, ...$this->matches->findByRound($round->id()->value));
+        $seed = TournamentModel::query()->whereKey($tournamentId)->value('random_seed');
+        if (is_string($seed) && $seed !== '') {
+            return $seed;
         }
 
-        return $matches;
+        $seed = bin2hex(random_bytes(16));
+        TournamentModel::query()->whereKey($tournamentId)->update(['random_seed' => $seed]);
+
+        return $seed;
     }
 
     /**
