@@ -10,6 +10,7 @@ use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
@@ -26,34 +27,66 @@ final readonly class MatchResultService implements MatchResultServiceInterface
 
     public function recordResult(RecordMatchResultDTO $dto): void
     {
-        DB::transaction(function () use ($dto): void {
-            $match = $this->matches->findOrFail(MatchId::fromString($dto->matchId));
+        $this->recordResults([$dto]);
+    }
 
-            if ($match->isBye() && $dto->result !== MatchResult::Bye) {
-                throw InvalidMatchResultException::byeMatchOnlyAcceptsBye($dto->matchId);
+    /**
+     * @param  array<RecordMatchResultDTO>  $dtos
+     */
+    public function recordResults(array $dtos): void
+    {
+        DB::transaction(function () use ($dtos): void {
+            $tournamentIds = [];
+            foreach ($dtos as $dto) {
+                $tournamentIds[$this->apply($dto)] = true;
             }
 
-            if (! $match->isBye() && $dto->result === MatchResult::Bye) {
-                throw InvalidMatchResultException::byeOnlyForByeMatches($dto->matchId);
+            foreach (array_keys($tournamentIds) as $tournamentId) {
+                $this->standings->recalculate($tournamentId);
             }
-
-            if ($dto->result === MatchResult::NotPlayed) {
-                $match->resetResult();
-            } else {
-                $match->reportResult(
-                    result: $dto->result,
-                    reportedById: $dto->reportedById,
-                    player1Score: $match->isBye() ? null : $dto->player1Score,
-                    player2Score: $match->isBye() ? null : $dto->player2Score,
-                    player1Stats: $dto->player1Stats,
-                    player2Stats: $match->isBye() ? null : $dto->player2Stats,
-                );
-            }
-
-            $this->matches->save($match);
-
-            $round = $this->rounds->findOrFail(RoundId::fromString($match->roundId()));
-            $this->standings->recalculate($round->tournamentId());
         });
+    }
+
+    /**
+     * Validate and store one result.
+     *
+     * @return string The match's tournament id
+     */
+    private function apply(RecordMatchResultDTO $dto): string
+    {
+        $match = $this->matches->findOrFail(MatchId::fromString($dto->matchId));
+        $round = $this->rounds->findOrFail(RoundId::fromString($match->roundId()));
+
+        if ($match->isBye() && $dto->result !== MatchResult::Bye) {
+            throw InvalidMatchResultException::byeMatchOnlyAcceptsBye($dto->matchId);
+        }
+
+        if (! $match->isBye() && $dto->result === MatchResult::Bye) {
+            throw InvalidMatchResultException::byeOnlyForByeMatches($dto->matchId);
+        }
+
+        if ($dto->result === MatchResult::NotPlayed) {
+            // The next round was paired from this result: it may change, not disappear
+            if ($match->isCompleted()
+                && $round->isFinished()
+                && $this->rounds->findByTournamentAndNumber($round->tournamentId(), $round->roundNumber() + 1) !== null) {
+                throw MatchResultLockedException::laterRoundExists($dto->matchId);
+            }
+
+            $match->resetResult();
+        } else {
+            $match->reportResult(
+                result: $dto->result,
+                reportedById: $dto->reportedById,
+                player1Score: $match->isBye() ? null : $dto->player1Score,
+                player2Score: $match->isBye() ? null : $dto->player2Score,
+                player1Stats: $dto->player1Stats,
+                player2Stats: $match->isBye() ? null : $dto->player2Stats,
+            );
+        }
+
+        $this->matches->save($match);
+
+        return $round->tournamentId();
     }
 }

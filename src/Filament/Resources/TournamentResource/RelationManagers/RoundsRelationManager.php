@@ -30,6 +30,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
@@ -175,6 +176,7 @@ final class RoundsRelationManager extends RelationManager
                             ->columnSpanFull(),
                     ])
                     ->action(function (RoundModel $record, array $data, MatchResultServiceInterface $results): void {
+                        $changes = [];
                         foreach ($data['matches'] as $matchData) {
                             $match = $record->matches()->find($matchData['match_id']);
                             if (! $match instanceof MatchModel) {
@@ -186,7 +188,7 @@ final class RoundsRelationManager extends RelationManager
                             $player1Score = self::score($matchData['player_1_score'] ?? null);
                             $player2Score = self::score($matchData['player_2_score'] ?? null);
 
-                            // Only record what changed: recording recalculates the standings
+                            // Only record what changed
                             if ($match->result->value === $matchData['result']
                                 && $match->player_1_score === $player1Score
                                 && $match->player_2_score === $player2Score
@@ -195,24 +197,29 @@ final class RoundsRelationManager extends RelationManager
                                 continue;
                             }
 
-                            try {
-                                $results->recordResult(new RecordMatchResultDTO(
-                                    matchId: $match->id,
-                                    result: MatchResult::from($matchData['result']),
-                                    reportedById: (string) auth()->id(),
-                                    player1Stats: $player1Stats ?: null,
-                                    player2Stats: $player2Stats ?: null,
-                                    player1Score: $player1Score,
-                                    player2Score: $player2Score,
-                                ));
-                            } catch (InvalidMatchResultException) {
-                                Notification::make()
-                                    ->title(__('tournaments::messages.errors.invalid_match_result'))
-                                    ->danger()
-                                    ->send();
+                            $changes[] = new RecordMatchResultDTO(
+                                matchId: $match->id,
+                                result: MatchResult::from($matchData['result']),
+                                reportedById: (string) auth()->id(),
+                                player1Stats: $player1Stats ?: null,
+                                player2Stats: $player2Stats ?: null,
+                                player1Score: $player1Score,
+                                player2Score: $player2Score,
+                            );
+                        }
 
-                                return;
-                            }
+                        // All or nothing, with one standings recalculation
+                        try {
+                            $results->recordResults($changes);
+                        } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                            Notification::make()
+                                ->title($exception instanceof MatchResultLockedException
+                                    ? __('tournaments::messages.errors.result_locked_by_next_round')
+                                    : __('tournaments::messages.errors.invalid_match_result'))
+                                ->danger()
+                                ->send();
+
+                            return;
                         }
 
                         Notification::make()

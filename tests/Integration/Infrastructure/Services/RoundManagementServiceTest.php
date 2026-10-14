@@ -18,6 +18,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
@@ -258,6 +259,77 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->assertSame(MatchResult::NotPlayed, $match->result);
         $this->assertNull($match->reported_by_id);
         $this->assertSame(0, StandingModel::query()->where('participant_id', $match->player_1_id)->sole()->matches_played);
+    }
+
+    public function test_a_batch_of_results_recalculates_the_standings_once(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $admin = $this->admin();
+        $counter = new class(app(StandingsServiceInterface::class)) implements StandingsServiceInterface
+        {
+            public int $calls = 0;
+
+            public function __construct(private readonly StandingsServiceInterface $inner) {}
+
+            public function recalculate(string $tournamentId): array
+            {
+                $this->calls++;
+
+                return $this->inner->recalculate($tournamentId);
+            }
+        };
+        $this->app->instance(StandingsServiceInterface::class, $counter);
+
+        $this->results()->recordResults(MatchModel::query()->where('round_id', $round->id)->get()
+            ->map(static fn (MatchModel $m): RecordMatchResultDTO => new RecordMatchResultDTO($m->id, MatchResult::PlayerOneWin, $admin->id))
+            ->all());
+
+        $this->assertSame(1, $counter->calls);
+        $this->assertSame(0, MatchModel::query()->where('round_id', $round->id)->where('result', MatchResult::NotPlayed->value)->count());
+    }
+
+    public function test_an_invalid_result_in_a_batch_saves_none_of_it(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        [$first, $second] = MatchModel::query()->where('round_id', $round->id)->orderBy('table_number')->get()->all();
+        $admin = $this->admin();
+
+        try {
+            $this->results()->recordResults([
+                new RecordMatchResultDTO($first->id, MatchResult::PlayerOneWin, $admin->id),
+                new RecordMatchResultDTO($second->id, MatchResult::Bye, $admin->id),
+            ]);
+            $this->fail('The bye on a two-player match must be rejected');
+        } catch (InvalidMatchResultException) {
+        }
+
+        $this->assertSame(MatchResult::NotPlayed, $first->refresh()->result);
+    }
+
+    public function test_a_finished_round_cannot_lose_a_result_once_a_later_round_exists(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $first = $this->rounds()->generateNextRound($tournament->id);
+        $this->reportAll($first->id);
+        RoundModel::query()->whereKey($first->id)->update(['status' => RoundStatus::Finished->value]);
+        $this->rounds()->generateNextRound($tournament->id);
+        $match = MatchModel::query()->where('round_id', $first->id)->firstOrFail();
+
+        try {
+            $this->results()->recordResult(new RecordMatchResultDTO($match->id, MatchResult::NotPlayed, $this->admin()->id));
+            $this->fail('Clearing the result must be rejected');
+        } catch (MatchResultLockedException) {
+        }
+
+        $this->assertSame(MatchResult::PlayerOneWin, $match->refresh()->result);
+        // Correcting it to another result is still allowed
+        $this->results()->recordResult(new RecordMatchResultDTO($match->id, MatchResult::Draw, $this->admin()->id));
+        $this->assertSame(MatchResult::Draw, $match->refresh()->result);
     }
 
     public function test_a_bye_cannot_be_recorded_for_a_match_between_two_players(): void

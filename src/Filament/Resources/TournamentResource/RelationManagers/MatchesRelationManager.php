@@ -19,6 +19,7 @@ use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 
@@ -150,9 +151,11 @@ final class MatchesRelationManager extends RelationManager
                                 player1Score: is_numeric($data['player_1_score'] ?? null) ? (int) $data['player_1_score'] : null,
                                 player2Score: is_numeric($data['player_2_score'] ?? null) ? (int) $data['player_2_score'] : null,
                             ));
-                        } catch (InvalidMatchResultException) {
+                        } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
                             Notification::make()
-                                ->title(__('tournaments::messages.errors.invalid_match_result'))
+                                ->title($exception instanceof MatchResultLockedException
+                                    ? __('tournaments::messages.errors.result_locked_by_next_round')
+                                    : __('tournaments::messages.errors.invalid_match_result'))
                                 ->danger()
                                 ->send();
 
