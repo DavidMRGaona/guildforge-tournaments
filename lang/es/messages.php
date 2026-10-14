@@ -493,7 +493,6 @@ return [
     'pairing_method' => [
         'swiss' => 'Swiss estándar',
         'random' => 'Aleatorio',
-        'accelerated' => 'Swiss acelerado',
     ],
 
     // Advanced configuration tab

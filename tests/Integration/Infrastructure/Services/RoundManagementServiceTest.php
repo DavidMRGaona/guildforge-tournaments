@@ -177,6 +177,22 @@ final class RoundManagementServiceTest extends ModuleTestCase
         }
     }
 
+    public function test_round_generation_follows_the_tournament_pairing_options(): void
+    {
+        $tournament = $this->tournament(['pairing_config' => ['method' => 'swiss', 'bye_assignment' => 'highest_ranked']]);
+        $this->participants($tournament, 3);
+        $first = $this->rounds()->generateNextRound($tournament->id);
+        $match = MatchModel::query()->where('round_id', $first->id)->whereNotNull('player_2_id')->sole();
+        $this->results()->recordResult(new RecordMatchResultDTO($match->id, MatchResult::PlayerOneWin, $this->admin()->id));
+        RoundModel::query()->whereKey($first->id)->update(['status' => RoundStatus::Finished->value]);
+
+        $second = $this->rounds()->generateNextRound($tournament->id);
+
+        // The round 1 winner is the best placed player who has not had a bye yet
+        $bye = MatchModel::query()->where('round_id', $second->id)->whereNull('player_2_id')->sole();
+        $this->assertSame($match->player_1_id, $bye->player_1_id);
+    }
+
     public function test_recording_a_result_recalculates_the_standings(): void
     {
         $tournament = $this->tournament();

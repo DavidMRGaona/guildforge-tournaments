@@ -10,17 +10,21 @@ use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Round;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
+use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
+use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
+use Modules\Tournaments\Domain\ValueObjects\PairingConfig;
 use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -36,6 +40,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         private MatchRepositoryInterface $matches,
         private SwissPairingServiceInterface $pairing,
         private StandingsServiceInterface $standings,
+        private GameProfileRepositoryInterface $gameProfiles,
     ) {
     }
 
@@ -72,6 +77,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
                 $this->standings->recalculate($tournamentId),
                 $this->previousMatchups($rounds),
                 $roundNumber,
+                $this->pairingConfig($tournament),
             );
 
             $round = new Round(RoundId::generate(), $tournamentId, $roundNumber, RoundStatus::Pending);
@@ -151,6 +157,21 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         $round = $this->rounds->findCurrentRound($tournamentId);
 
         return $round !== null ? $this->toResponse($round) : null;
+    }
+
+    /**
+     * The tournament's pairing options, else its game profile's, else the defaults.
+     */
+    private function pairingConfig(Tournament $tournament): PairingConfig
+    {
+        if ($tournament->pairingConfig() !== null) {
+            return $tournament->pairingConfig();
+        }
+
+        $profileId = $tournament->gameProfileId();
+        $profile = $profileId !== null ? $this->gameProfiles->find(GameProfileId::fromString($profileId)) : null;
+
+        return $profile?->pairingConfig() ?? new PairingConfig();
     }
 
     /**

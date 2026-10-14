@@ -8,7 +8,6 @@ enum PairingMethod: string
 {
     case Swiss = 'swiss';
     case Random = 'random';
-    case Accelerated = 'accelerated';
 
     /**
      * Get human-readable label for the pairing method.
@@ -18,7 +17,6 @@ enum PairingMethod: string
         return match ($this) {
             self::Swiss => __('tournaments::messages.pairing_method.swiss'),
             self::Random => __('tournaments::messages.pairing_method.random'),
-            self::Accelerated => __('tournaments::messages.pairing_method.accelerated'),
         };
     }
 
