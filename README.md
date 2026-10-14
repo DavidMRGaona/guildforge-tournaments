@@ -147,7 +147,7 @@ Se aplican en orden.
 | Tipo | Sí | Ver tipos |
 | Estadística | Según el tipo | Para los tipos basados en estadísticas |
 | Dirección | No | Mayor es mejor / menor es mejor |
-| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 da el OMW% estándar) |
+| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 es el suelo habitual del OMW%; el módulo cuenta el empate como 0,5 y la fórmula de MTG como 1/3, así que solo dan lo mismo sin empates) |
 
 | Tipo | Descripción |
 |------|-------------|
@@ -170,7 +170,7 @@ Se aplican en orden.
 
 El bye no cuenta como rival en los desempates basados en oponentes, pero sí como victoria en el porcentaje propio de quien lo recibe. El valor mínimo se aplica también al resultado final de cada desempate.
 
-Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665.
+Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665. Con la fórmula de MTG, que cuenta el empate como 1/3, ese segundo rival tendría un 17 % (1 punto de 6), que también cuenta como 33 %.
 
 Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 
