@@ -30,7 +30,7 @@ El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 4. Pulsa **Habilitar** en el módulo: la primera vez ejecuta sus migraciones y seeders.
 5. Desactiva el modo mantenimiento.
 
-Los perfiles del sistema (Warhammer 40.000, Magic: The Gathering, Warhammer Age of Sigmar y Genérico) se cargan al habilitar el módulo con `GameProfilesSeeder`.
+Los perfiles del sistema (Warhammer 40.000, Magic: The Gathering, Warhammer Age of Sigmar y Genérico) se cargan al habilitar el módulo con `GameProfilesSeeder`; todos puntúan victoria 3, empate 1, derrota 0 y bye 3.
 
 Las versiones nuevas se aplican desde **Actualizaciones de módulos** (también con el modo mantenimiento activo) o con `php artisan module:update tournaments`.
 
@@ -76,7 +76,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
                        [Finalizar] ← [Rondas: generar, iniciar, resultados, completar] ← [Iniciar]
 ```
 
-También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. Si el torneo ya tiene reglas que la pestaña no puede mostrar (condiciones por estadísticas, otros tipos o direcciones de desempate), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
+También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. Si el torneo ya tiene reglas que la pestaña no puede mostrar (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
 
 ### Pestañas del formulario
 
@@ -146,16 +146,16 @@ Se aplican en orden.
 | Tipo | Sí | Ver tipos |
 | Estadística | Según el tipo | Para los tipos basados en estadísticas |
 | Dirección | No | Mayor es mejor / menor es mejor |
-| Valor mínimo | No | Suelo del valor (por ejemplo 0,33 en OMW%) |
+| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 da el OMW% estándar) |
 
 | Tipo | Descripción |
 |------|-------------|
 | `buchholz` | Suma de puntos de los oponentes |
 | `median_buchholz` | Buchholz sin el mejor ni el peor oponente (con 3 o más oponentes) |
 | `progressive` | Suma de los puntos acumulados tras cada ronda, en orden de ronda y con las reglas de puntuación del torneo |
-| `owp` | Media del porcentaje de victorias (victorias / partidas jugadas) de los oponentes |
+| `owp` | Media del porcentaje de victorias de los oponentes: puntos de partida / partidas jugadas, con victoria 1, empate 0,5 y bye como victoria |
 | `oowp` | Media del `owp` de los oponentes |
-| `gwp` | Juegos ganados / juegos jugados, con las puntuaciones de cada partida (una partida sin puntuación cuenta como un juego; el empate, medio) |
+| `gwp` | Juegos ganados / juegos jugados, con las puntuaciones de cada partida (una partida sin puntuación cuenta como un juego, el empate como medio y el bye como un juego ganado) |
 | `ogwp` | Media del `gwp` de los oponentes |
 | `head_to_head` | Puntos ganados en las partidas contra los jugadores empatados a puntos |
 | `sonneborn_berger` | Puntos de los oponentes derrotados más la mitad de los puntos de los empatados |
@@ -167,7 +167,9 @@ Se aplican en orden.
 | `mov` | Suma de las diferencias de puntuación a favor del jugador |
 | `random` | Orden aleatorio fijo para cada torneo (se guarda una semilla, así no cambia al recalcular) |
 
-Los byes no cuentan como rival en los desempates basados en oponentes ni como juegos en `gwp`. El valor mínimo de cada desempate se aplica al resultado final.
+El bye no cuenta como rival en los desempates basados en oponentes, pero sí como victoria en el porcentaje propio de quien lo recibe. El valor mínimo se aplica también al resultado final de cada desempate.
+
+Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665.
 
 Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 
@@ -180,7 +182,7 @@ Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 | Método | `swiss` (empareja jugadores de puntuación similar), `random` (empareja al azar en todas las rondas) | `swiss` |
 | Ordenar por | `points` (puntos y, a igualdad, posición en la clasificación), `stat` (total acumulado de una estadística, luego puntos), `random` | `points` |
 | Estadística para ordenar | Obligatoria si se ordena por estadística | — |
-| Evitar repeticiones | Sí: no repite rivales mientras haya alternativa; No: empareja en orden aunque ya se hayan enfrentado | Sí |
+| Evitar repeticiones | Sí: busca una ronda sin rivales repetidos y solo repite si no existe; No: empareja en orden aunque ya se hayan enfrentado | Sí |
 | Máximo de byes por jugador | Número de byes que puede recibir un jugador; si todos lo han alcanzado, el bye se asigna igualmente | 1 |
 | Asignación de bye | `lowest_ranked` (el peor clasificado), `highest_ranked` (el mejor), `random` (al azar), siempre entre quienes no han alcanzado el máximo | `lowest_ranked` |
 
@@ -244,11 +246,11 @@ Al generarla:
 2. Con un número impar de jugadores, uno recibe bye según la configuración (por defecto, el peor clasificado que aún no lo haya tenido): su partida queda con resultado `bye` y puntúa al momento.
 3. Las partidas se numeran por mesa y la ronda queda **Pendiente**.
 
-Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Con el resultado se pueden anotar la puntuación de cada jugador (juegos o puntos ganados en la partida, que usan `gwp`, `ogwp` y `mov`) y sus estadísticas. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra. Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
+Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Con el resultado se pueden anotar la puntuación de cada jugador (juegos o puntos ganados en la partida, que usan `gwp`, `ogwp` y `mov`) y sus estadísticas. Los cambios de **Gestionar partidas** se guardan todos o ninguno, con un solo recálculo. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra, salvo en una ronda completada que ya tiene una ronda posterior (ahí solo se puede corregir). Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
 
 La clasificación se calcula así:
 
-- **Puntos**: las reglas de puntuación del torneo; si no tiene, las de su perfil; si tampoco, Victoria 3, Empate 1, Derrota 0 y Bye 3. Un bye sin regla `bye` vale 0 puntos.
+- **Puntos**: las reglas de puntuación del torneo; si no tiene, las de su perfil; si tampoco, Victoria 3, Empate 1, Derrota 0 y Bye 3. Un bye sin regla `bye` puntúa como una victoria.
 - **Orden**: puntos y, a igualdad, los desempates configurados en su orden y dirección (si el torneo no tiene, los del perfil; si tampoco, Buchholz y Progresivo).
 - La página pública **Clasificación** muestra además Buchholz y el porcentaje de victorias de los oponentes de cada jugador.
 
