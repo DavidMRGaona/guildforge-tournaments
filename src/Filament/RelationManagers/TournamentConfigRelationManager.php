@@ -17,6 +17,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -78,9 +79,10 @@ final class TournamentConfigRelationManager extends RelationManager
                 'score_weights' => $this->getDefaultScoreWeights(),
                 'tiebreakers' => ['buchholz', 'progressive'],
                 'min_participants' => 2,
-                'allow_guests' => false,
-                'requires_check_in' => false,
-                'result_reporting' => 'admin_only',
+                'allow_guests' => TournamentFormDefaults::allowGuests(),
+                'requires_check_in' => TournamentFormDefaults::requiresCheckIn(),
+                'check_in_starts_before' => TournamentFormDefaults::checkInStartsBefore(),
+                'result_reporting' => TournamentFormDefaults::resultReporting(),
             ]);
         }
     }
