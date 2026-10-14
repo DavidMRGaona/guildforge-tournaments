@@ -160,6 +160,7 @@ return [
         'table_number' => 'Mesa',
         'player_1_score' => 'Puntos jugador 1',
         'player_2_score' => 'Puntos jugador 2',
+        'score_help' => 'Juegos (o puntos) ganados en la partida; los usan los desempates GWP, OGWP y margen de victoria',
         'rank' => 'Posición',
         'matches_played' => 'Partidas jugadas',
         'wins' => 'Victorias',

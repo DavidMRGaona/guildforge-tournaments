@@ -43,6 +43,8 @@ final readonly class MatchResultService implements MatchResultServiceInterface
                 $match->reportResult(
                     result: $dto->result,
                     reportedById: $dto->reportedById,
+                    player1Score: $match->isBye() ? null : $dto->player1Score,
+                    player2Score: $match->isBye() ? null : $dto->player2Score,
                     player1Stats: $dto->player1Stats,
                     player2Stats: $match->isBye() ? null : $dto->player2Stats,
                 );

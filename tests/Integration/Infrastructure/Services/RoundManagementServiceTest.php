@@ -199,6 +199,19 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->assertSame([2, 1, 0.0], [$loser->rank, $loser->losses, (float) $loser->points]);
     }
 
+    public function test_recording_a_result_stores_the_match_scores(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        $this->results()->recordResult(new RecordMatchResultDTO($match->id, MatchResult::PlayerOneWin, $this->admin()->id, player1Score: 2, player2Score: 1));
+
+        $match->refresh();
+        $this->assertSame([2, 1], [$match->player_1_score, $match->player_2_score]);
+    }
+
     public function test_correcting_a_result_replaces_the_previous_one_in_the_standings(): void
     {
         $tournament = $this->tournament();

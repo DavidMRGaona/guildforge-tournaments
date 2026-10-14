@@ -147,6 +147,8 @@ final class RoundsRelationManager extends RelationManager
                                 'player1_name' => $match->player1?->participant_name ?? 'Desconocido',
                                 'player2_name' => $match->player_2_id === null ? 'Bye' : ($match->player2?->participant_name ?? 'Desconocido'),
                                 'result' => $match->result->value,
+                                'player_1_score' => $match->player_1_score,
+                                'player_2_score' => $match->player_2_score,
                                 'player_1_stats' => $match->player_1_stats ?? [],
                                 'player_2_stats' => $match->player_2_stats ?? [],
                                 'is_bye' => $match->player_2_id === null,
@@ -181,9 +183,13 @@ final class RoundsRelationManager extends RelationManager
 
                             $player1Stats = $matchData['player_1_stats'] ?? null;
                             $player2Stats = $matchData['player_2_stats'] ?? null;
+                            $player1Score = self::score($matchData['player_1_score'] ?? null);
+                            $player2Score = self::score($matchData['player_2_score'] ?? null);
 
                             // Only record what changed: recording recalculates the standings
                             if ($match->result->value === $matchData['result']
+                                && $match->player_1_score === $player1Score
+                                && $match->player_2_score === $player2Score
                                 && $match->player_1_stats == ($player1Stats ?: null)
                                 && $match->player_2_stats == ($player2Stats ?: null)) {
                                 continue;
@@ -196,6 +202,8 @@ final class RoundsRelationManager extends RelationManager
                                     reportedById: (string) auth()->id(),
                                     player1Stats: $player1Stats ?: null,
                                     player2Stats: $player2Stats ?: null,
+                                    player1Score: $player1Score,
+                                    player2Score: $player2Score,
                                 ));
                             } catch (InvalidMatchResultException) {
                                 Notification::make()
@@ -284,6 +292,11 @@ final class RoundsRelationManager extends RelationManager
         return $options;
     }
 
+    private static function score(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) $value : null;
+    }
+
     private static function generationErrorMessage(DomainException $exception): string
     {
         return match (true) {
@@ -329,6 +342,21 @@ final class RoundsRelationManager extends RelationManager
                 ->live(),
 
             Hidden::make('is_bye'),
+
+            TextInput::make('player_1_score')
+                ->label(__('tournaments::messages.fields.player_1_score'))
+                ->helperText(__('tournaments::messages.fields.score_help'))
+                ->integer()
+                ->minValue(0)
+                ->nullable()
+                ->visible(fn (Get $get): bool => ! $get('is_bye')),
+
+            TextInput::make('player_2_score')
+                ->label(__('tournaments::messages.fields.player_2_score'))
+                ->integer()
+                ->minValue(0)
+                ->nullable()
+                ->visible(fn (Get $get): bool => ! $get('is_bye')),
         ];
 
         if (count($statDefinitions) > 0) {

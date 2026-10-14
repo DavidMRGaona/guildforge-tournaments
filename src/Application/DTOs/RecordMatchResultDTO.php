@@ -8,6 +8,7 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
 
 /**
  * A match result recorded from the panel; NotPlayed clears a recorded result.
+ * The scores are the games (or points) each player won in the match.
  */
 final readonly class RecordMatchResultDTO
 {
@@ -21,6 +22,8 @@ final readonly class RecordMatchResultDTO
         public string $reportedById,
         public ?array $player1Stats = null,
         public ?array $player2Stats = null,
+        public ?int $player1Score = null,
+        public ?int $player2Score = null,
     ) {
     }
 }

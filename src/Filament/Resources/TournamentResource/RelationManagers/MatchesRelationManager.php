@@ -91,6 +91,20 @@ final class MatchesRelationManager extends RelationManager
                                 ->native(false),
                         ];
 
+                        if ($record->player_2_id !== null) {
+                            $fields[] = TextInput::make('player_1_score')
+                                ->label(__('tournaments::messages.fields.player_1_score'))
+                                ->helperText(__('tournaments::messages.fields.score_help'))
+                                ->integer()
+                                ->minValue(0)
+                                ->nullable();
+                            $fields[] = TextInput::make('player_2_score')
+                                ->label(__('tournaments::messages.fields.player_2_score'))
+                                ->integer()
+                                ->minValue(0)
+                                ->nullable();
+                        }
+
                         // Get tournament's stat_definitions through round relationship
                         $tournament = $record->round->tournament;
                         $statDefinitions = $tournament->stat_definitions ?? [];
@@ -133,6 +147,8 @@ final class MatchesRelationManager extends RelationManager
                                 reportedById: (string) auth()->id(),
                                 player1Stats: ($data['player_1_stats'] ?? null) ?: null,
                                 player2Stats: ($data['player_2_stats'] ?? null) ?: null,
+                                player1Score: is_numeric($data['player_1_score'] ?? null) ? (int) $data['player_1_score'] : null,
+                                player2Score: is_numeric($data['player_2_score'] ?? null) ? (int) $data['player_2_score'] : null,
                             ));
                         } catch (InvalidMatchResultException) {
                             Notification::make()

@@ -92,7 +92,7 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->roundsManager($tournament)
             ->mountTableAction('manageMatches', $round)
             ->setTableActionData(['matches' => [
-                $this->matchRow($played, MatchResult::PlayerTwoWin),
+                [...$this->matchRow($played, MatchResult::PlayerTwoWin), 'player_1_score' => 0, 'player_2_score' => 2],
                 $this->matchRow($pending, MatchResult::NotPlayed),
             ]])
             ->callMountedTableAction()
@@ -100,6 +100,7 @@ final class RoundsPanelTest extends ModuleTestCase
             ->assertNotified(__('tournaments::messages.messages.results_updated'));
 
         $this->assertSame(MatchResult::PlayerTwoWin, $played->refresh()->result);
+        $this->assertSame([0, 2], [$played->player_1_score, $played->player_2_score]);
         $this->assertSame(MatchResult::NotPlayed, $pending->refresh()->result);
         $winner = StandingModel::query()->where('participant_id', $played->player_2_id)->sole();
         $this->assertSame([1, 1], [$winner->rank, $winner->wins]);
@@ -115,10 +116,11 @@ final class RoundsPanelTest extends ModuleTestCase
         $match = MatchModel::query()->where('round_id', $round->id)->sole();
 
         Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $round, 'pageClass' => EditTournament::class])
-            ->callTableAction('reportResult', $match, data: ['result' => MatchResult::Draw->value])
+            ->callTableAction('reportResult', $match, data: ['result' => MatchResult::Draw->value, 'player_1_score' => 1, 'player_2_score' => 1])
             ->assertHasNoTableActionErrors();
 
         $this->assertSame(MatchResult::Draw, $match->refresh()->result);
+        $this->assertSame([1, 1], [$match->player_1_score, $match->player_2_score]);
         $this->assertSame(1, StandingModel::query()->where('participant_id', $match->player_1_id)->sole()->draws);
     }
 
