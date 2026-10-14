@@ -94,7 +94,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             TiebreakerType::OpponentOpponentWinPercentage => $this->calculateOpponentOpponentWinPercentage(
                 $participantId,
                 $allMatches,
-                $standingsByParticipant
+                $definition->minValue
             ),
             TiebreakerType::GameWinPercentage => $this->calculateGameWinPercentage(
                 $participantId,
@@ -102,7 +102,8 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             ),
             TiebreakerType::OpponentGameWinPercentage => $this->calculateOpponentGameWinPercentage(
                 $participantId,
-                $allMatches
+                $allMatches,
+                $definition->minValue
             ),
             TiebreakerType::HeadToHead => $this->calculateHeadToHead(
                 $participantId,
@@ -118,8 +119,8 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             TiebreakerType::Random => $this->calculateRandom($participantId, $context),
             TiebreakerType::OpponentWinPercentage => $this->calculateOpponentWinPercentage(
                 $participantId,
-                $participantMatches,
-                $standingsByParticipant
+                $allMatches,
+                $definition->minValue
             ),
             TiebreakerType::StrengthOfSchedule => $this->calculateStrengthOfSchedule(
                 $participantId,
@@ -287,23 +288,42 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
     }
 
     /**
-     * Opponents' opponents win percentage: average of the opponents' OWP.
+     * Match win rate: match points over matches played, a win 1, a draw half, a bye a win.
      *
      * @param  array<TournamentMatch>  $allMatches
-     * @param  array<string, Standing>  $standingsByParticipant
+     */
+    private function calculateMatchWinRate(string $participantId, array $allMatches): float
+    {
+        $points = 0.0;
+        $played = 0;
+
+        foreach ($this->getParticipantMatches($participantId, $allMatches) as $match) {
+            if (! $match->result()->isCompleted()) {
+                continue;
+            }
+
+            $played++;
+            $points += $match->player1Id() === $participantId
+                ? $match->result()->player1Points()
+                : $match->result()->player2Points();
+        }
+
+        return $played > 0 ? $points / $played : 0.0;
+    }
+
+    /**
+     * Opponents' opponents win percentage: average of the opponents' OWP, each floored.
+     *
+     * @param  array<TournamentMatch>  $allMatches
      */
     private function calculateOpponentOpponentWinPercentage(
         string $participantId,
         array $allMatches,
-        array $standingsByParticipant,
+        ?float $floor,
     ): float {
         $values = [];
         foreach ($this->getPlayedOpponentIds($participantId, $allMatches) as $opponentId) {
-            $values[] = $this->calculateOpponentWinPercentage(
-                $opponentId,
-                $this->getParticipantMatches($opponentId, $allMatches),
-                $standingsByParticipant,
-            );
+            $values[] = $this->floor($this->calculateOpponentWinPercentage($opponentId, $allMatches, $floor), $floor);
         }
 
         return $values === [] ? 0.0 : array_sum($values) / count($values);
@@ -311,7 +331,8 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
 
     /**
      * Game win percentage: games won over games played. The match scores are the games
-     * (2-1); a match without scores counts as one game (a draw as half a game won). Byes do not count.
+     * (2-1); a match without scores counts as one game (a draw as half a game won) and a bye
+     * as one game won.
      *
      * @param  array<TournamentMatch>  $participantMatches
      */
@@ -321,7 +342,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
         $played = 0.0;
 
         foreach ($participantMatches as $match) {
-            if ($match->isBye() || ! $match->result()->isCompleted()) {
+            if (! $match->result()->isCompleted()) {
                 continue;
             }
 
@@ -329,7 +350,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             $own = $isPlayer1 ? $match->player1Score() : $match->player2Score();
             $opponent = $isPlayer1 ? $match->player2Score() : $match->player1Score();
 
-            if ($own !== null && $opponent !== null && $own + $opponent > 0) {
+            if (! $match->isBye() && $own !== null && $opponent !== null && $own + $opponent > 0) {
                 $won += $own;
                 $played += $own + $opponent;
 
@@ -344,18 +365,26 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
     }
 
     /**
-     * Opponents' game win percentage: average of the opponents' GWP.
+     * Opponents' game win percentage: average of the opponents' GWP, each floored.
      *
      * @param  array<TournamentMatch>  $allMatches
      */
-    private function calculateOpponentGameWinPercentage(string $participantId, array $allMatches): float
+    private function calculateOpponentGameWinPercentage(string $participantId, array $allMatches, ?float $floor): float
     {
         $values = [];
         foreach ($this->getPlayedOpponentIds($participantId, $allMatches) as $opponentId) {
-            $values[] = $this->calculateGameWinPercentage($opponentId, $this->getParticipantMatches($opponentId, $allMatches));
+            $values[] = $this->floor(
+                $this->calculateGameWinPercentage($opponentId, $this->getParticipantMatches($opponentId, $allMatches)),
+                $floor,
+            );
         }
 
         return $values === [] ? 0.0 : array_sum($values) / count($values);
+    }
+
+    private function floor(float $value, ?float $floor): float
+    {
+        return $floor !== null && $value < $floor ? $floor : $value;
     }
 
     /**
@@ -459,41 +488,21 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
     }
 
     /**
-     * Opponent Win Percentage: Average opponent win rate.
+     * Opponent win percentage: average of the opponents' match win rates, each floored.
      *
-     * @param  array<TournamentMatch>  $participantMatches
-     * @param  array<string, Standing>  $standingsByParticipant
+     * @param  array<TournamentMatch>  $allMatches
      */
     private function calculateOpponentWinPercentage(
         string $participantId,
-        array $participantMatches,
-        array $standingsByParticipant,
+        array $allMatches,
+        ?float $floor,
     ): float {
-        $winPercentages = [];
-
-        foreach ($participantMatches as $match) {
-            // Skip bye matches
-            if ($match->isBye()) {
-                continue;
-            }
-
-            $opponentId = $this->getOpponentId($participantId, $match);
-            if ($opponentId === null) {
-                continue;
-            }
-
-            $opponentStanding = $standingsByParticipant[$opponentId] ?? null;
-            if ($opponentStanding !== null && $opponentStanding->matchesPlayed() > 0) {
-                $winPercentage = (float) $opponentStanding->wins() / $opponentStanding->matchesPlayed();
-                $winPercentages[] = $winPercentage;
-            }
+        $rates = [];
+        foreach ($this->getPlayedOpponentIds($participantId, $allMatches) as $opponentId) {
+            $rates[] = $this->floor($this->calculateMatchWinRate($opponentId, $allMatches), $floor);
         }
 
-        if (empty($winPercentages)) {
-            return 0.0;
-        }
-
-        return array_sum($winPercentages) / count($winPercentages);
+        return $rates === [] ? 0.0 : array_sum($rates) / count($rates);
     }
 
     /**

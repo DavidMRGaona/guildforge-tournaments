@@ -51,9 +51,90 @@ final class StandardTiebreakersTest extends TestCase
 
     public function test_opponents_opponents_win_percentage_averages_the_opponents_owp(): void
     {
-        // OWP: A 0.25, B 0.5, C 0.5, D 0.25
-        $this->assertEqualsWithDelta(0.5, $this->value('A', TiebreakerType::OpponentOpponentWinPercentage), 0.0001);
-        $this->assertEqualsWithDelta(0.25, $this->value('C', TiebreakerType::OpponentOpponentWinPercentage), 0.0001);
+        // Match win rate (draw = half): A 1, B 0.5, C 0.25, D 0.25
+        // OWP: A 0.375, B 0.625, C 0.625, D 0.375
+        $this->assertEqualsWithDelta(0.625, $this->value('A', TiebreakerType::OpponentOpponentWinPercentage), 0.0001);
+        $this->assertEqualsWithDelta(0.375, $this->value('C', TiebreakerType::OpponentOpponentWinPercentage), 0.0001);
+    }
+
+    /**
+     * The README example: OWP family floored at 0,33 per opponent.
+     *
+     * Round 1: A beats B 2-1, C draws D, E has a bye. Round 2: A beats E, B beats C, D has a bye.
+     * Match win rate (bye = win, draw = half): A 1, B 0.5, C 0.25, D 0.75, E 0.5.
+     *
+     * @return array<TournamentMatch>
+     */
+    private function readmeFixture(): array
+    {
+        return [
+            $this->match('round-1', 'A', 'B', MatchResult::PlayerOneWin, 2, 1),
+            $this->match('round-1', 'C', 'D', MatchResult::Draw),
+            $this->bye('round-1', 'E'),
+            $this->match('round-2', 'A', 'E', MatchResult::PlayerOneWin),
+            $this->match('round-2', 'B', 'C', MatchResult::PlayerOneWin),
+            $this->bye('round-2', 'D'),
+        ];
+    }
+
+    public function test_owp_floors_each_opponent_before_averaging(): void
+    {
+        // B met A (1) and C (0.25, floored to 0.33)
+        $this->assertEqualsWithDelta(0.665, $this->floored('B', TiebreakerType::OpponentWinPercentage), 0.0001);
+        // Without a floor: (1 + 0.25) / 2
+        $this->assertEqualsWithDelta(0.625, $this->floored('B', TiebreakerType::OpponentWinPercentage, null), 0.0001);
+        // D's only opponent is C (0.25): its bye is not an opponent
+        $this->assertEqualsWithDelta(0.33, $this->floored('D', TiebreakerType::OpponentWinPercentage), 0.0001);
+    }
+
+    public function test_owp_counts_byes_as_wins_and_draws_as_half_in_each_opponent_record(): void
+    {
+        // C met D (draw and bye: 0.75) and B (0.5)
+        $this->assertEqualsWithDelta(0.625, $this->floored('C', TiebreakerType::OpponentWinPercentage), 0.0001);
+        // A met B (0.5) and E (bye and loss: 0.5)
+        $this->assertEqualsWithDelta(0.5, $this->floored('A', TiebreakerType::OpponentWinPercentage), 0.0001);
+    }
+
+    public function test_oowp_averages_the_floored_owp_of_the_opponents(): void
+    {
+        // A met B (OWP 0.665) and E (OWP 1: E only met A)
+        $this->assertEqualsWithDelta(0.8325, $this->floored('A', TiebreakerType::OpponentOpponentWinPercentage), 0.0001);
+    }
+
+    public function test_gwp_counts_a_bye_as_a_game_won(): void
+    {
+        // A: 2-1 and a win without scores = 3 of 4; D: a drawn game and a bye = 1.5 of 2
+        $this->assertEqualsWithDelta(0.75, $this->floored('A', TiebreakerType::GameWinPercentage), 0.0001);
+        $this->assertEqualsWithDelta(0.75, $this->floored('D', TiebreakerType::GameWinPercentage), 0.0001);
+        // C: a drawn game and a lost one = 0.25, floored for itself
+        $this->assertEqualsWithDelta(0.33, $this->floored('C', TiebreakerType::GameWinPercentage), 0.0001);
+    }
+
+    public function test_ogwp_floors_each_opponent_before_averaging(): void
+    {
+        // B met A (GWP 0.75) and C (0.25, floored to 0.33)
+        $this->assertEqualsWithDelta(0.54, $this->floored('B', TiebreakerType::OpponentGameWinPercentage), 0.0001);
+    }
+
+    private function floored(string $participantId, TiebreakerType $type, ?float $floor = 0.33): float
+    {
+        return $this->calculator->calculate(
+            $participantId,
+            $this->readmeFixture(),
+            [],
+            [new TiebreakerDefinition('t', $type->value, $type, minValue: $floor)],
+        )['t'];
+    }
+
+    private function bye(string $roundId, string $player): TournamentMatch
+    {
+        return new TournamentMatch(
+            id: MatchId::generate(),
+            roundId: $roundId,
+            player1Id: $player,
+            player2Id: null,
+            result: MatchResult::Bye,
+        );
     }
 
     public function test_game_win_percentage_counts_games_from_the_match_scores(): void

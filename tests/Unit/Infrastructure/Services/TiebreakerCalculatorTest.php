@@ -161,6 +161,10 @@ final class TiebreakerCalculatorTest extends TestCase
         $matches = [
             $this->createMatch('round-1', $participantId, $opponent1Id, MatchResult::PlayerOneWin),
             $this->createMatch('round-2', $participantId, $opponent2Id, MatchResult::PlayerOneWin),
+            // The opponents' own records come from their matches
+            $this->createMatch('round-2', $opponent1Id, 'player-4', MatchResult::PlayerOneWin),
+            $this->createMatch('round-3', $opponent1Id, 'player-5', MatchResult::PlayerOneWin),
+            $this->createMatch('round-3', $opponent2Id, 'player-6', MatchResult::PlayerOneWin),
         ];
 
         $standings = [
@@ -431,6 +435,7 @@ final class TiebreakerCalculatorTest extends TestCase
         // But minValue is 0.33, so OWP should be 0.33
         $matches = [
             $this->createMatch('round-1', $participantId, $opponent1Id, MatchResult::PlayerOneWin),
+            $this->createMatch('round-2', 'player-3', $opponent1Id, MatchResult::PlayerOneWin),
         ];
 
         $standings = [
@@ -477,6 +482,8 @@ final class TiebreakerCalculatorTest extends TestCase
                 ['points_painted' => 20],
                 ['points_painted' => 12]
             ),
+            // Player 2's other match: one win, one loss; player 3 lost both
+            $this->createMatch('round-2', $opponent1Id, $opponent2Id, MatchResult::PlayerOneWin),
         ];
 
         $standings = [
@@ -550,6 +557,7 @@ final class TiebreakerCalculatorTest extends TestCase
         $matches = [
             $this->createByeMatch('round-1', $participantId),
             $this->createMatch('round-2', $participantId, $opponent1Id, MatchResult::PlayerOneWin),
+            $this->createMatch('round-1', $opponent1Id, 'player-3', MatchResult::PlayerOneWin),
         ];
 
         $standings = [
