@@ -116,6 +116,7 @@ export default {
             registered_status: 'Estado: {status}',
             registration_open: 'Inscripción abierta',
             cannot_register: 'No puedes inscribirte',
+            cannot_withdraw: 'No puedes cancelar tu inscripción',
             login_to_register: 'Inicia sesión para inscribirte',
             started_at: 'Iniciado',
             current_round_title: 'Ronda {round} en curso',
