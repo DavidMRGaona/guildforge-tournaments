@@ -18,7 +18,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 ## Requisitos
 
-- GuildForge core `^3.1`
+- GuildForge core `^3.8`
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
