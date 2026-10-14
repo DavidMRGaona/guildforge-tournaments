@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Filament\RelationManagers;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Text;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
@@ -18,8 +19,12 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
+use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
+use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 /**
@@ -36,6 +41,12 @@ final class TournamentConfigRelationManager extends RelationManager
 
     /** @var array<string, mixed> */
     public array $configData = [];
+
+    /**
+     * The tournament has rules the tab cannot show (stat conditions, other tiebreaker types):
+     * the tab leaves them alone and points to the tournament form.
+     */
+    public bool $hasAdvancedRules = false;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -55,6 +66,9 @@ final class TournamentConfigRelationManager extends RelationManager
         $tournament = TournamentModel::where('event_id', $eventId)->first();
 
         if ($tournament) {
+            $this->hasAdvancedRules = ($tournament->scoring_rules !== null && $this->scoreWeightsFrom($tournament->scoring_rules) === null)
+                || ($tournament->tiebreaker_config !== null && $this->tiebreakersFrom($tournament->tiebreaker_config) === null);
+
             $this->configForm->fill([
                 'tournament_enabled' => true,
                 'name' => $tournament->name,
@@ -62,8 +76,8 @@ final class TournamentConfigRelationManager extends RelationManager
                 'max_rounds' => $tournament->max_rounds,
                 'max_participants' => $tournament->max_participants,
                 'min_participants' => $tournament->min_participants,
-                'score_weights' => $tournament->score_weights,
-                'tiebreakers' => $tournament->tiebreakers,
+                'score_weights' => $this->scoreWeightsFrom($tournament->scoring_rules) ?? $this->getDefaultScoreWeights(),
+                'tiebreakers' => $this->tiebreakersFrom($tournament->tiebreaker_config) ?? ['buchholz', 'progressive'],
                 'allow_guests' => $tournament->allow_guests,
                 'requires_check_in' => $tournament->requires_check_in,
                 'check_in_starts_before' => $tournament->check_in_starts_before,
@@ -161,16 +175,25 @@ final class TournamentConfigRelationManager extends RelationManager
 
             Section::make(__('tournaments::messages.config.scoring'))
                 ->schema([
+                    Text::make(__('tournaments::messages.config.advanced_rules_notice'))
+                        ->visible(fn (): bool => $this->hasAdvancedRules),
                     Repeater::make('score_weights')
+                        ->visible(fn (): bool => ! $this->hasAdvancedRules)
                         ->label(__('tournaments::messages.config.score_weights'))
                         ->schema([
                             TextInput::make('name')
                                 ->label(__('tournaments::messages.config.score_weight_name'))
                                 ->required(),
-                            TextInput::make('key')
+                            Select::make('key')
                                 ->label(__('tournaments::messages.config.score_weight_key'))
-                                ->required()
-                                ->regex('/^[a-z_]+$/'),
+                                ->options([
+                                    'win' => __('tournaments::messages.condition_result.win'),
+                                    'draw' => __('tournaments::messages.condition_result.draw'),
+                                    'loss' => __('tournaments::messages.condition_result.loss'),
+                                    'bye' => __('tournaments::messages.condition_result.bye'),
+                                ])
+                                ->native(false)
+                                ->required(),
                             TextInput::make('points')
                                 ->label(__('tournaments::messages.config.score_weight_points'))
                                 ->numeric()
@@ -182,6 +205,7 @@ final class TournamentConfigRelationManager extends RelationManager
                         ->reorderable(false)
                         ->addActionLabel(__('tournaments::messages.config.add_score_weight')),
                     Select::make('tiebreakers')
+                        ->visible(fn (): bool => ! $this->hasAdvancedRules)
                         ->label(__('tournaments::messages.config.tiebreakers'))
                         ->helperText(__('tournaments::messages.config.tiebreakers_help'))
                         ->multiple()
@@ -247,8 +271,6 @@ final class TournamentConfigRelationManager extends RelationManager
             'max_rounds' => $formData['max_rounds'] ?? null,
             'max_participants' => $formData['max_participants'] ?? null,
             'min_participants' => $formData['min_participants'] ?? 2,
-            'score_weights' => $formData['score_weights'] ?? $this->getDefaultScoreWeights(),
-            'tiebreakers' => $formData['tiebreakers'] ?? ['buchholz', 'progressive'],
             'allow_guests' => $formData['allow_guests'] ?? false,
             'requires_check_in' => $formData['requires_check_in'] ?? false,
             'check_in_starts_before' => $formData['check_in_starts_before'] ?? null,
@@ -256,6 +278,11 @@ final class TournamentConfigRelationManager extends RelationManager
             'registration_opens_at' => $formData['registration_opens_at'] ?? null,
             'registration_closes_at' => $formData['registration_closes_at'] ?? null,
         ];
+
+        if (! $this->hasAdvancedRules) {
+            $data['scoring_rules'] = $this->scoringRulesFrom($formData['score_weights'] ?? $this->getDefaultScoreWeights());
+            $data['tiebreaker_config'] = $this->tiebreakerConfigFrom($formData['tiebreakers'] ?? ['buchholz', 'progressive']);
+        }
 
         if ($tournament) {
             $tournament->update($data);
@@ -268,6 +295,105 @@ final class TournamentConfigRelationManager extends RelationManager
             ->title(__('tournaments::messages.config.saved'))
             ->success()
             ->send();
+    }
+
+    /**
+     * Points per result as the tournament's scoring rules.
+     *
+     * @param  array<mixed>  $weights
+     * @return list<array<string, mixed>>
+     */
+    private function scoringRulesFrom(array $weights): array
+    {
+        $rules = [];
+        foreach ($weights as $weight) {
+            if (! is_array($weight) || ! isset($weight['key'], $weight['name'])) {
+                continue;
+            }
+
+            $rules[] = ScoringRule::fromArray([
+                'name' => (string) $weight['name'],
+                'points' => (float) ($weight['points'] ?? 0),
+                'priority' => 0,
+                'condition' => ['type' => ConditionType::Result->value, 'result_value' => (string) $weight['key'], 'stat' => null, 'operator' => null, 'value' => null],
+            ])->toArray();
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Chosen tiebreakers as the tournament's tiebreaker definitions, in order.
+     *
+     * @param  array<mixed>  $tiebreakers
+     * @return list<array<string, mixed>>
+     */
+    private function tiebreakerConfigFrom(array $tiebreakers): array
+    {
+        $config = [];
+        foreach ($tiebreakers as $value) {
+            $tiebreaker = is_string($value) ? Tiebreaker::tryFrom($value) : null;
+            if ($tiebreaker !== null) {
+                $config[] = (new TiebreakerDefinition($tiebreaker->type()->value, $tiebreaker->label(), $tiebreaker->type()))->toArray();
+            }
+        }
+
+        return $config;
+    }
+
+    /**
+     * The tournament's rules as points per result, or null when a rule is not a plain result rule.
+     *
+     * @param  array<mixed>|null  $rules
+     * @return list<array{name: string, key: string, points: float}>|null
+     */
+    private function scoreWeightsFrom(?array $rules): ?array
+    {
+        if ($rules === null || $rules === []) {
+            return null;
+        }
+
+        $weights = [];
+        foreach ($rules as $rule) {
+            $condition = is_array($rule) ? ($rule['condition'] ?? null) : null;
+            if (! is_array($condition) || ($condition['type'] ?? null) !== ConditionType::Result->value) {
+                return null;
+            }
+
+            $weights[] = [
+                'name' => (string) ($rule['name'] ?? ''),
+                'key' => (string) ($condition['result_value'] ?? ''),
+                'points' => (float) ($rule['points'] ?? 0),
+            ];
+        }
+
+        return $weights;
+    }
+
+    /**
+     * The tournament's tiebreakers as the tab's choices, or null when one has no choice here.
+     *
+     * @param  array<mixed>|null  $config
+     * @return list<string>|null
+     */
+    private function tiebreakersFrom(?array $config): ?array
+    {
+        if ($config === null || $config === []) {
+            return null;
+        }
+
+        $values = [];
+        foreach ($config as $definition) {
+            $type = is_array($definition) && is_string($definition['type'] ?? null) ? TiebreakerType::tryFrom($definition['type']) : null;
+            $tiebreaker = $type !== null ? Tiebreaker::fromType($type) : null;
+            if ($tiebreaker === null || (($definition['direction'] ?? 'desc') !== 'desc')) {
+                return null;
+            }
+
+            $values[] = $tiebreaker->value;
+        }
+
+        return $values;
     }
 
     /**

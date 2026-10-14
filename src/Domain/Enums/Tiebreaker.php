@@ -27,6 +27,34 @@ enum Tiebreaker: string
     }
 
     /**
+     * The tiebreaker type this simple choice stands for.
+     */
+    public function type(): TiebreakerType
+    {
+        return match ($this) {
+            self::Buchholz => TiebreakerType::Buchholz,
+            self::MedianBuchholz => TiebreakerType::MedianBuchholz,
+            self::Progressive => TiebreakerType::Progressive,
+            self::HeadToHead => TiebreakerType::HeadToHead,
+            self::OpponentWinPercentage => TiebreakerType::OpponentWinPercentage,
+        };
+    }
+
+    /**
+     * The simple choice for a tiebreaker type, if it has one.
+     */
+    public static function fromType(TiebreakerType $type): ?self
+    {
+        foreach (self::cases() as $case) {
+            if ($case->type() === $type) {
+                return $case;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get all tiebreaker values.
      *
      * @return array<string>

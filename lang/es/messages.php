@@ -277,6 +277,7 @@ return [
         'add_score_weight' => 'Añadir puntuación',
         'tiebreakers' => 'Criterios de desempate',
         'tiebreakers_help' => 'Se aplicarán en el orden seleccionado',
+        'advanced_rules_notice' => 'Este torneo usa reglas de puntuación o desempates avanzados: se editan en Torneos y aquí no se modifican',
         'options' => 'Opciones',
         'result_reporting' => 'Reporte de resultados',
         'result_reporting_help' => 'Define quién puede reportar los resultados de las partidas',
