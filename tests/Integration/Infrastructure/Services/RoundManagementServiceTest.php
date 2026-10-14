@@ -303,6 +303,51 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->assertSame([2, 1], [$match->player_1_score, $match->player_2_score]);
     }
 
+    /**
+     * @return array<string, array{MatchResult, int, int}>
+     */
+    public static function scoresAgainstTheResult(): array
+    {
+        return [
+            'player one wins with the lower score' => [MatchResult::PlayerOneWin, 1, 2],
+            'player two wins with the lower score' => [MatchResult::PlayerTwoWin, 3, 0],
+            'a draw with different scores' => [MatchResult::Draw, 2, 1],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('scoresAgainstTheResult')]
+    public function test_scores_that_contradict_the_result_are_rejected(MatchResult $result, int $player1Score, int $player2Score): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        try {
+            $this->results()->recordResult(new RecordMatchResultDTO($match->id, $result, $this->admin()->id, player1Score: $player1Score, player2Score: $player2Score));
+            $this->fail('The scores must agree with the result');
+        } catch (InvalidMatchResultException $exception) {
+            $this->assertSame(InvalidMatchResultException::SCORES_CONTRADICT_RESULT, $exception->reason());
+        }
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
+    public function test_scores_that_agree_with_the_result_or_are_partial_are_accepted(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+        $admin = $this->admin();
+
+        // A win on equal scores (decided by a tiebreak), a draw on equal scores, a single score
+        foreach ([[MatchResult::PlayerTwoWin, 2, 2], [MatchResult::Draw, 1, 1], [MatchResult::PlayerOneWin, null, 3], [MatchResult::DoubleLoss, 0, 4]] as [$result, $score1, $score2]) {
+            $this->results()->recordResult(new RecordMatchResultDTO($match->id, $result, $admin->id, player1Score: $score1, player2Score: $score2));
+            $this->assertSame($result, $match->refresh()->result);
+        }
+    }
+
     public function test_correcting_a_result_replaces_the_previous_one_in_the_standings(): void
     {
         $tournament = $this->tournament();

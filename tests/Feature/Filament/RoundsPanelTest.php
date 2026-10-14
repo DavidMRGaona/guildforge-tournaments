@@ -141,6 +141,21 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->assertSame(1, StandingModel::query()->where('participant_id', $match->player_1_id)->sole()->draws);
     }
 
+    public function test_report_result_explains_scores_that_contradict_the_result(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $round, 'pageClass' => EditTournament::class])
+            ->callTableAction('reportResult', $match, data: ['result' => MatchResult::PlayerOneWin->value, 'player_1_score' => 0, 'player_2_score' => 2])
+            ->assertNotified(__('tournaments::messages.errors.scores_contradict_result'));
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
     /**
      * @return Testable<RoundsRelationManager>
      */

@@ -233,6 +233,7 @@ return [
         'cannot_generate_pairings' => 'No se pueden generar los emparejamientos: el torneo debe estar en curso y sin superar el máximo de rondas',
         'not_enough_players_for_round' => 'Hacen falta al menos 2 participantes confirmados o presentados para generar una ronda',
         'invalid_match_result' => 'El resultado no es válido para este enfrentamiento',
+        'scores_contradict_result' => 'Las puntuaciones no cuadran con el resultado: quien gana no puede puntuar menos y un empate necesita puntuaciones iguales',
         'round_already_generated' => 'La ronda acaba de generarse desde otra sesión: recarga la lista de rondas',
         'result_locked_by_next_round' => 'La ronda ya está completada y tiene una ronda posterior: el resultado se puede corregir, pero no dejar sin jugar',
         'unauthorized_to_report' => 'No tienes permiso para reportar este resultado',

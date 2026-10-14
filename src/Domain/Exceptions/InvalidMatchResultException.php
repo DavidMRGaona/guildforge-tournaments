@@ -8,18 +8,35 @@ use DomainException;
 
 final class InvalidMatchResultException extends DomainException
 {
-    private function __construct(string $message)
+    public const string BYE_MISMATCH = 'bye_mismatch';
+
+    public const string SCORES_CONTRADICT_RESULT = 'scores_contradict_result';
+
+    private function __construct(string $message, private readonly string $reason)
     {
         parent::__construct($message);
     }
 
     public static function byeOnlyForByeMatches(string $matchId): self
     {
-        return new self("Match {$matchId} has two players and cannot be recorded as a bye.");
+        return new self("Match {$matchId} has two players and cannot be recorded as a bye.", self::BYE_MISMATCH);
     }
 
     public static function byeMatchOnlyAcceptsBye(string $matchId): self
     {
-        return new self("Match {$matchId} is a bye and only accepts the bye result.");
+        return new self("Match {$matchId} is a bye and only accepts the bye result.", self::BYE_MISMATCH);
+    }
+
+    public static function scoresContradictResult(string $matchId): self
+    {
+        return new self("The scores of match {$matchId} contradict its result.", self::SCORES_CONTRADICT_RESULT);
+    }
+
+    /**
+     * Why the result was rejected: one of the class constants.
+     */
+    public function reason(): string
+    {
+        return $this->reason;
     }
 }

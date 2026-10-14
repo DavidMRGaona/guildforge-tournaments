@@ -216,7 +216,7 @@ final class RoundsRelationManager extends RelationManager
                             Notification::make()
                                 ->title($exception instanceof MatchResultLockedException
                                     ? __('tournaments::messages.errors.result_locked_by_next_round')
-                                    : __('tournaments::messages.errors.invalid_match_result'))
+                                    : self::invalidResultMessage($exception))
                                 ->danger()
                                 ->send();
 
@@ -425,5 +425,13 @@ final class RoundsRelationManager extends RelationManager
                 ->numeric()
                 ->required($required),
         };
+    }
+
+    private static function invalidResultMessage(\DomainException $exception): string
+    {
+        return $exception instanceof InvalidMatchResultException
+            && $exception->reason() === InvalidMatchResultException::SCORES_CONTRADICT_RESULT
+            ? __('tournaments::messages.errors.scores_contradict_result')
+            : __('tournaments::messages.errors.invalid_match_result');
     }
 }
