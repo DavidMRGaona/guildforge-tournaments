@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { computed, ref, reactive, watch, nextTick } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
+import { useNotifications } from '@/composables/useNotifications';
+import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import type { EventTournamentSectionProps } from '../types/tournaments';
+
+interface FormErrors {
+    guest_name?: string;
+    guest_email?: string;
+    gdpr_consent?: string;
+}
 
 const props = defineProps<EventTournamentSectionProps>();
 
 const { t } = useI18n();
 const { isAuthenticated } = useAuth();
+const { error: notifyError, success: notifySuccess } = useNotifications();
 
 const activeStatuses = ['registered', 'confirmed', 'checked_in'];
 const isRegistered = computed(() =>
@@ -40,7 +49,9 @@ const canWithdraw = computed(() => {
 // Guest registration modal state
 const showGuestModal = ref(false);
 const guestNameInput = ref<HTMLInputElement | null>(null);
-const guestForm = useForm({
+const guestFormProcessing = ref(false);
+const guestFormErrors = reactive<FormErrors>({});
+const guestForm = reactive({
     guest_name: '',
     guest_email: '',
     gdpr_consent: false,
@@ -61,7 +72,10 @@ watch(showGuestModal, async (isOpen) => {
     }
 });
 
-const handleRegister = (): void => {
+// Same routes and responses as the tournament page (Tournaments/Show.vue)
+const registrationUrl = (tournamentId: string): string => `/torneos/${tournamentId}/inscripcion`;
+
+const handleRegister = async (): Promise<void> => {
     if (props.tournament === null) {
         return;
     }
@@ -72,34 +86,106 @@ const handleRegister = (): void => {
         return;
     }
 
-    // Otherwise, attempt regular registration (will redirect to login if not authenticated)
-    router.post(`/api/torneos/${props.tournament.id}/inscripcion`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
+    // If not authenticated and no guests allowed, redirect to login
+    if (!isAuthenticated.value) {
+        router.visit('/iniciar-sesion');
+        return;
+    }
+
+    // Authenticated user registration via fetch
+    try {
+        const response = await fetch(registrationUrl(props.tournament.id), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...csrfHeaders(),
+            },
+        });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        if (response.ok) {
+            notifySuccess(t('tournaments.public.registered_successfully'));
             router.reload();
-        },
-    });
+        } else {
+            const data = await response.json();
+            notifyError(data.message || t('tournaments.public.cannot_register'));
+        }
+    } catch {
+        notifyError(t('tournaments.public.registration_error'));
+    }
 };
 
-const submitGuestRegistration = (): void => {
+const resetGuestForm = (): void => {
+    guestForm.guest_name = '';
+    guestForm.guest_email = '';
+    guestForm.gdpr_consent = false;
+};
+
+const clearGuestFormErrors = (): void => {
+    delete guestFormErrors.guest_name;
+    delete guestFormErrors.guest_email;
+    delete guestFormErrors.gdpr_consent;
+};
+
+const submitGuestRegistration = async (): Promise<void> => {
     if (props.tournament === null) {
         return;
     }
 
-    guestForm.post(`/api/torneos/${props.tournament.id}/inscripcion`, {
-        preserveScroll: true,
-        onSuccess: () => {
+    guestFormProcessing.value = true;
+    clearGuestFormErrors();
+
+    try {
+        const response = await fetch(registrationUrl(props.tournament.id), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...csrfHeaders(),
+            },
+            body: JSON.stringify({
+                guest_name: guestForm.guest_name,
+                guest_email: guestForm.guest_email,
+                gdpr_consent: guestForm.gdpr_consent,
+            }),
+        });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        const data = await response.json();
+
+        if (response.ok) {
             showGuestModal.value = false;
-            guestForm.reset();
+            resetGuestForm();
+            notifySuccess(t('tournaments.public.registered_successfully'));
             router.reload();
-        },
-    });
+        } else if (response.status === 422 && data.errors) {
+            // Validation errors
+            guestFormErrors.guest_name = data.errors.guest_name?.[0];
+            guestFormErrors.guest_email = data.errors.guest_email?.[0];
+            guestFormErrors.gdpr_consent = data.errors.gdpr_consent?.[0];
+        } else {
+            notifyError(data.message || t('tournaments.public.cannot_register'));
+        }
+    } catch {
+        notifyError(t('tournaments.public.registration_error'));
+    } finally {
+        guestFormProcessing.value = false;
+    }
 };
 
 const closeGuestModal = (): void => {
     showGuestModal.value = false;
-    guestForm.reset();
-    guestForm.clearErrors();
+    resetGuestForm();
+    clearGuestFormErrors();
 };
 
 const handleKeydown = (event: KeyboardEvent): void => {
@@ -116,23 +202,41 @@ const closeWithdrawModal = (): void => {
     showWithdrawConfirm.value = false;
 };
 
-const confirmWithdraw = (): void => {
+const confirmWithdraw = async (): Promise<void> => {
     if (props.tournament === null) {
         return;
     }
 
     withdrawProcessing.value = true;
-    router.delete(`/api/torneos/${props.tournament.id}/inscripcion`, {
-        preserveScroll: true,
-        onSuccess: () => {
+
+    try {
+        const response = await fetch(registrationUrl(props.tournament.id), {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...csrfHeaders(),
+            },
+        });
+
+        if (isCsrfFailure(response)) {
+            notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        if (response.ok) {
             showWithdrawConfirm.value = false;
-            withdrawProcessing.value = false;
+            notifySuccess(t('tournaments.public.withdrawn_successfully'));
             router.reload();
-        },
-        onError: () => {
-            withdrawProcessing.value = false;
-        },
-    });
+        } else {
+            const data = await response.json();
+            notifyError(data.message || t('tournaments.public.cannot_register'));
+        }
+    } catch {
+        notifyError(t('tournaments.public.registration_error'));
+    } finally {
+        withdrawProcessing.value = false;
+    }
 };
 
 const handleWithdrawKeydown = (event: KeyboardEvent): void => {
@@ -322,22 +426,22 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 v-model="guestForm.guest_name"
                                 type="text"
                                 required
-                                :disabled="guestForm.processing"
-                                :aria-invalid="!!guestForm.errors.guest_name"
-                                :aria-describedby="guestForm.errors.guest_name ? 'guest-name-error' : undefined"
+                                :disabled="guestFormProcessing"
+                                :aria-invalid="!!guestFormErrors.guest_name"
+                                :aria-describedby="guestFormErrors.guest_name ? 'guest-name-error' : undefined"
                                 class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
                                 :class="{
                                     'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
-                                        guestForm.errors.guest_name,
+                                        guestFormErrors.guest_name,
                                 }"
                             />
                             <p
-                                v-if="guestForm.errors.guest_name"
+                                v-if="guestFormErrors.guest_name"
                                 id="guest-name-error"
                                 class="mt-1 text-sm text-red-600 dark:text-red-400"
                                 role="alert"
                             >
-                                {{ guestForm.errors.guest_name }}
+                                {{ guestFormErrors.guest_name }}
                             </p>
                         </div>
 
@@ -355,22 +459,22 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 v-model="guestForm.guest_email"
                                 type="email"
                                 required
-                                :disabled="guestForm.processing"
-                                :aria-invalid="!!guestForm.errors.guest_email"
-                                :aria-describedby="guestForm.errors.guest_email ? 'guest-email-error' : undefined"
+                                :disabled="guestFormProcessing"
+                                :aria-invalid="!!guestFormErrors.guest_email"
+                                :aria-describedby="guestFormErrors.guest_email ? 'guest-email-error' : undefined"
                                 class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
                                 :class="{
                                     'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
-                                        guestForm.errors.guest_email,
+                                        guestFormErrors.guest_email,
                                 }"
                             />
                             <p
-                                v-if="guestForm.errors.guest_email"
+                                v-if="guestFormErrors.guest_email"
                                 id="guest-email-error"
                                 class="mt-1 text-sm text-red-600 dark:text-red-400"
                                 role="alert"
                             >
-                                {{ guestForm.errors.guest_email }}
+                                {{ guestFormErrors.guest_email }}
                             </p>
                         </div>
 
@@ -382,9 +486,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     v-model="guestForm.gdpr_consent"
                                     type="checkbox"
                                     required
-                                    :disabled="guestForm.processing"
-                                    :aria-invalid="!!guestForm.errors.gdpr_consent"
-                                    :aria-describedby="guestForm.errors.gdpr_consent ? 'event-guest-gdpr-error' : undefined"
+                                    :disabled="guestFormProcessing"
+                                    :aria-invalid="!!guestFormErrors.gdpr_consent"
+                                    :aria-describedby="guestFormErrors.gdpr_consent ? 'event-guest-gdpr-error' : undefined"
                                     class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed dark:bg-stone-700"
                                 />
                                 <label
@@ -403,12 +507,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 </label>
                             </div>
                             <p
-                                v-if="guestForm.errors.gdpr_consent"
+                                v-if="guestFormErrors.gdpr_consent"
                                 id="event-guest-gdpr-error"
                                 class="mt-1 text-sm text-red-600 dark:text-red-400"
                                 role="alert"
                             >
-                                {{ guestForm.errors.gdpr_consent }}
+                                {{ guestFormErrors.gdpr_consent }}
                             </p>
                         </div>
 
@@ -417,7 +521,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             <BaseButton
                                 type="button"
                                 variant="secondary"
-                                :disabled="guestForm.processing"
+                                :disabled="guestFormProcessing"
                                 @click="closeGuestModal"
                             >
                                 {{ t('common.cancel') }}
@@ -425,8 +529,8 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             <BaseButton
                                 type="submit"
                                 variant="primary"
-                                :loading="guestForm.processing"
-                                :disabled="guestForm.processing"
+                                :loading="guestFormProcessing"
+                                :disabled="guestFormProcessing"
                             >
                                 {{ t('tournaments.public.register') }}
                             </BaseButton>
