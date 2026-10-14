@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -121,7 +122,10 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->assertSame(1, StandingModel::query()->where('participant_id', $match->player_1_id)->sole()->draws);
     }
 
-    private function roundsManager(TournamentModel $tournament): \Livewire\Features\SupportTesting\Testable
+    /**
+     * @return Testable<RoundsRelationManager>
+     */
+    private function roundsManager(TournamentModel $tournament): Testable
     {
         return Livewire::test(RoundsRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class]);
     }

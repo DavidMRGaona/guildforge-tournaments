@@ -259,10 +259,9 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $profile = GameProfileModel::query()->where('is_system', true)->firstOrFail()->replicate(['id', 'slug']);
         $profile->name = 'Perfil propio';
         $profile->is_system = false;
-        $profile->scoring_rules = [
+        $profile->forceFill(['scoring_rules' => [
             ['name' => 'Victoria', 'points' => 2, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
-        ];
-        $profile->save();
+        ]])->save();
         $tournament = $this->tournament(['scoring_rules' => null, 'tiebreaker_config' => null, 'game_profile_id' => $profile->id]);
 
         $this->assertSame(2.0, $this->pointsOfAWinner($tournament));
