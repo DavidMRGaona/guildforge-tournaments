@@ -160,18 +160,25 @@ final class TournamentMatch
 
     /**
      * Report the match result.
+     *
+     * @param  array<string, mixed>|null  $player1Stats
+     * @param  array<string, mixed>|null  $player2Stats
      */
     public function reportResult(
         MatchResult $result,
         string $reportedById,
         ?int $player1Score = null,
         ?int $player2Score = null,
+        ?array $player1Stats = null,
+        ?array $player2Stats = null,
     ): void {
         $this->result = $result;
         $this->reportedById = $reportedById;
         $this->reportedAt = new DateTimeImmutable();
         $this->player1Score = $player1Score;
         $this->player2Score = $player2Score;
+        $this->player1Stats = $player1Stats;
+        $this->player2Stats = $player2Stats;
     }
 
     /**
@@ -200,6 +207,8 @@ final class TournamentMatch
         $this->result = MatchResult::NotPlayed;
         $this->player1Score = null;
         $this->player2Score = null;
+        $this->player1Stats = null;
+        $this->player2Stats = null;
         $this->reportedById = null;
         $this->reportedAt = null;
         $this->confirmedById = null;

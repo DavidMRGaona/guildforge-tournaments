@@ -4,17 +4,126 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
+use Modules\Tournaments\Domain\Enums\SortDirection;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
+use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
+use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
+use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Ramsey\Uuid\Uuid;
 
 final readonly class StandingCalculatorService implements StandingCalculatorServiceInterface
 {
+    public function __construct(
+        private ScoringRuleEvaluatorInterface $scoringRuleEvaluator = new ScoringRuleEvaluator(),
+        private TiebreakerCalculatorInterface $tiebreakerCalculator = new TiebreakerCalculator(),
+    ) {
+    }
+
+    /**
+     * @param  array<Participant>  $participants
+     * @param  array<TournamentMatch>  $matches
+     * @param  array<ScoringRule>  $scoringRules
+     * @param  array<TiebreakerDefinition>  $tiebreakerConfig
+     * @return array<Standing>
+     */
+    public function calculateWithRules(
+        array $participants,
+        array $matches,
+        array $scoringRules,
+        array $tiebreakerConfig,
+    ): array {
+        if ($participants === []) {
+            return [];
+        }
+
+        $tournamentId = $participants[0]->tournamentId();
+
+        /** @var array<string, Standing> $standings */
+        $standings = [];
+        foreach ($participants as $participant) {
+            $standings[$participant->id()->value] = new Standing(
+                id: Uuid::uuid4()->toString(),
+                tournamentId: $tournamentId,
+                participantId: $participant->id()->value,
+                rank: 0,
+                matchesPlayed: 0,
+                wins: 0,
+                draws: 0,
+                losses: 0,
+                byes: 0,
+                points: 0.0,
+            );
+        }
+
+        $playedMatches = array_values(array_filter(
+            $matches,
+            static fn (TournamentMatch $match): bool => $match->result() !== MatchResult::NotPlayed,
+        ));
+
+        foreach ($playedMatches as $match) {
+            $this->recordMatchWithRules($match, $standings, $scoringRules);
+        }
+
+        $standingsArray = array_values($standings);
+
+        // The standings table always shows these four; the configured ones decide the order
+        $displayed = [
+            new TiebreakerDefinition('buchholz', 'Buchholz', TiebreakerType::Buchholz),
+            new TiebreakerDefinition('median_buchholz', 'Median Buchholz', TiebreakerType::MedianBuchholz),
+            new TiebreakerDefinition('progressive', 'Progressive', TiebreakerType::Progressive),
+            new TiebreakerDefinition('owp', 'OWP', TiebreakerType::OpponentWinPercentage),
+        ];
+
+        foreach ($standingsArray as $standing) {
+            $participantId = $standing->participantId();
+            $shown = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $displayed);
+            $configured = $this->tiebreakerCalculator->calculate($participantId, $playedMatches, $standingsArray, $tiebreakerConfig);
+
+            $standing->updateTiebreakers(
+                buchholz: $shown['buchholz'] ?? 0.0,
+                medianBuchholz: $shown['median_buchholz'] ?? 0.0,
+                progressive: $shown['progressive'] ?? 0.0,
+                opponentWinPercentage: $shown['owp'] ?? 0.0,
+            );
+            $standing->updateCalculatedTiebreakers($configured);
+        }
+
+        usort($standingsArray, static function (Standing $a, Standing $b) use ($tiebreakerConfig): int {
+            $pointsComparison = $b->points() <=> $a->points();
+            if ($pointsComparison !== 0) {
+                return $pointsComparison;
+            }
+
+            foreach ($tiebreakerConfig as $definition) {
+                $valueA = $a->getTiebreaker($definition->key);
+                $valueB = $b->getTiebreaker($definition->key);
+                $comparison = $definition->direction === SortDirection::Ascending
+                    ? $valueA <=> $valueB
+                    : $valueB <=> $valueA;
+
+                if ($comparison !== 0) {
+                    return $comparison;
+                }
+            }
+
+            return 0;
+        });
+
+        foreach ($standingsArray as $index => $standing) {
+            $standing->updateRank($index + 1);
+        }
+
+        return $standingsArray;
+    }
+
     /**
      * @param  array<Participant>  $participants
      * @param  array<TournamentMatch>  $matches
@@ -329,6 +438,51 @@ final readonly class StandingCalculatorService implements StandingCalculatorServ
             if ($player2Id !== null && isset($standings[$player2Id])) {
                 $standings[$player2Id]->recordWin($winPoints);
             }
+        }
+    }
+
+    /**
+     * Add a played match to the standings, with the points the scoring rules award.
+     *
+     * @param  array<string, Standing>  $standings
+     * @param  array<ScoringRule>  $scoringRules
+     */
+    private function recordMatchWithRules(TournamentMatch $match, array $standings, array $scoringRules): void
+    {
+        $result = $match->result();
+        $points = $this->scoringRuleEvaluator->evaluate(
+            $result,
+            $scoringRules,
+            $match->player1Stats() ?? [],
+            $match->player2Stats() ?? [],
+        );
+
+        $player1 = $standings[$match->player1Id()] ?? null;
+        $player2Id = $match->player2Id();
+        $player2 = $player2Id !== null ? ($standings[$player2Id] ?? null) : null;
+
+        switch ($result) {
+            case MatchResult::Bye:
+                $player1?->recordBye($points['player1']);
+                break;
+            case MatchResult::Draw:
+                $player1?->recordDraw($points['player1']);
+                $player2?->recordDraw($points['player2']);
+                break;
+            case MatchResult::DoubleLoss:
+                $player1?->recordLoss($points['player1']);
+                $player2?->recordLoss($points['player2']);
+                break;
+            case MatchResult::PlayerOneWin:
+                $player1?->recordWin($points['player1']);
+                $player2?->recordLoss($points['player2']);
+                break;
+            case MatchResult::PlayerTwoWin:
+                $player1?->recordLoss($points['player1']);
+                $player2?->recordWin($points['player2']);
+                break;
+            case MatchResult::NotPlayed:
+                break;
         }
     }
 

@@ -15,7 +15,10 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
+use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
+use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 
@@ -122,14 +125,23 @@ final class MatchesRelationManager extends RelationManager
 
                         return $fields;
                     })
-                    ->action(function (MatchModel $record, array $data): void {
-                        $record->update([
-                            'result' => $data['result'],
-                            'player_1_stats' => $data['player_1_stats'] ?? null,
-                            'player_2_stats' => $data['player_2_stats'] ?? null,
-                            'reported_by_id' => auth()->id(),
-                            'reported_at' => now(),
-                        ]);
+                    ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
+                        try {
+                            $results->recordResult(new RecordMatchResultDTO(
+                                matchId: $record->id,
+                                result: MatchResult::from($data['result']),
+                                reportedById: (string) auth()->id(),
+                                player1Stats: ($data['player_1_stats'] ?? null) ?: null,
+                                player2Stats: ($data['player_2_stats'] ?? null) ?: null,
+                            ));
+                        } catch (InvalidMatchResultException) {
+                            Notification::make()
+                                ->title(__('tournaments::messages.errors.invalid_match_result'))
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('tournaments::messages.messages.result_reported'))
@@ -154,8 +166,8 @@ final class MatchesRelationManager extends RelationManager
             ];
         }
 
-        // Otherwise show all options except NotPlayed
-        return MatchResult::options();
+        // Otherwise every played result except the bye
+        return array_diff_key(MatchResult::options(), [MatchResult::Bye->value => true]);
     }
 
     /**

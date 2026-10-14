@@ -78,18 +78,24 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
             return $shuffled;
         }
 
-        // Create a map of participantId -> score for quick lookup
+        // Create maps of participantId -> score and rank for quick lookup
         $scoreMap = [];
+        $rankMap = [];
         foreach ($standings as $standing) {
             $scoreMap[$standing->participantId()] = $standing->points();
+            $rankMap[$standing->participantId()] = $standing->rank();
         }
 
-        // Sort by score descending
-        usort($participants, function (Participant $a, Participant $b) use ($scoreMap): int {
+        // Sort by score descending; equal scores keep the standings order (tiebreakers)
+        usort($participants, function (Participant $a, Participant $b) use ($scoreMap, $rankMap): int {
             $scoreA = $scoreMap[$a->id()->value] ?? 0.0;
             $scoreB = $scoreMap[$b->id()->value] ?? 0.0;
 
-            return $scoreB <=> $scoreA;
+            if ($scoreA !== $scoreB) {
+                return $scoreB <=> $scoreA;
+            }
+
+            return ($rankMap[$a->id()->value] ?? PHP_INT_MAX) <=> ($rankMap[$b->id()->value] ?? PHP_INT_MAX);
         });
 
         return $participants;

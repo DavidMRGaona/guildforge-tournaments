@@ -461,6 +461,31 @@ final class SwissPairingServiceTest extends TestCase
         }
     }
 
+    public function test_participants_tied_on_points_are_paired_in_standings_rank_order(): void
+    {
+        [$a, $b, $c, $d] = $this->createParticipants(4);
+        $tournamentId = 'tournament-id';
+
+        // A, B and C share 3 points; the tiebreakers rank them C, B, A
+        $standings = [
+            $this->createStanding($c->id()->value, $tournamentId, rank: 1, points: 3.0),
+            $this->createStanding($b->id()->value, $tournamentId, rank: 2, points: 3.0),
+            $this->createStanding($a->id()->value, $tournamentId, rank: 3, points: 3.0),
+            $this->createStanding($d->id()->value, $tournamentId, rank: 4, points: 0.0),
+        ];
+
+        $matches = $this->service->generatePairings([$a, $b, $c, $d], $standings, [], roundNumber: 2);
+
+        $pairs = array_map(
+            static fn ($match): array => [$match->player1Id(), $match->player2Id()],
+            $matches
+        );
+        $this->assertSame([
+            [$c->id()->value, $b->id()->value],
+            [$a->id()->value, $d->id()->value],
+        ], $pairs);
+    }
+
     /**
      * @return array<Participant>
      */

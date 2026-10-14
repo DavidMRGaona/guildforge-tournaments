@@ -9,6 +9,8 @@ use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
+use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 
 interface StandingCalculatorServiceInterface
 {
@@ -26,6 +28,25 @@ interface StandingCalculatorServiceInterface
         array $matches,
         array $scoreWeights,
         array $tiebreakers,
+    ): array;
+
+    /**
+     * Calculate standings from a tournament's scoring rules and tiebreaker definitions.
+     *
+     * Points per match come from the scoring rules (result and stat conditions); ties on
+     * points are broken by the tiebreakers in the given order, each with its direction.
+     *
+     * @param  array<Participant>  $participants  Participants to rank
+     * @param  array<TournamentMatch>  $matches  All matches of the tournament (unplayed ones are ignored)
+     * @param  array<ScoringRule>  $scoringRules
+     * @param  array<TiebreakerDefinition>  $tiebreakerConfig
+     * @return array<Standing>  Standings sorted by rank
+     */
+    public function calculateWithRules(
+        array $participants,
+        array $matches,
+        array $scoringRules,
+        array $tiebreakerConfig,
     ): array;
 
     /**
