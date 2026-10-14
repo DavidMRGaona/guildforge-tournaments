@@ -85,6 +85,7 @@ export default {
             registered_status: 'Status: {status}',
             registration_open: 'Registration open',
             cannot_register: 'Cannot register',
+            cannot_withdraw: 'Cannot cancel registration',
             login_to_register: 'Login to register',
             started_at: 'Started',
             current_round_title: 'Round {round} in progress',

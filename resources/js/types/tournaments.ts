@@ -228,6 +228,20 @@ export interface TournamentRoundsProps {
 }
 
 /**
+ * Fields of the guest registration form.
+ */
+export type GuestRegistrationField = 'guest_name' | 'guest_email' | 'gdpr_consent';
+
+/**
+ * JSON body of the registration and withdrawal endpoints
+ * (`/torneos/{tournamentId}/inscripcion`): a message, plus per-field errors on a 422.
+ */
+export interface RegistrationJsonResponse {
+    message?: string;
+    errors?: Partial<Record<GuestRegistrationField, string[]>>;
+}
+
+/**
  * Props for the event tournament section component.
  */
 export interface EventTournamentSectionProps {

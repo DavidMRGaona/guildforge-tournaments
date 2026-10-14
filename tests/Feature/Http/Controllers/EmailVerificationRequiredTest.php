@@ -148,7 +148,8 @@ final class EmailVerificationRequiredTest extends ModuleTestCase
 
         $this->actingAs($user)
             ->postJson($this->checkInUrl($tournament))
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertJson(['message' => __('auth.email_verification_required')]);
 
         $this->assertNotCheckedIn($participant);
     }

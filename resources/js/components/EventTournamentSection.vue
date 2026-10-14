@@ -6,13 +6,14 @@ import { useAuth } from '@/composables/useAuth';
 import { useNotifications } from '@/composables/useNotifications';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import type { EventTournamentSectionProps } from '../types/tournaments';
+import type {
+    EventTournamentSectionProps,
+    GuestRegistrationField,
+    RegistrationJsonResponse,
+} from '../types/tournaments';
 
-interface FormErrors {
-    guest_name?: string;
-    guest_email?: string;
-    gdpr_consent?: string;
-}
+// A missing message in a 422 clears the field error, hence `undefined`
+type FormErrors = Partial<Record<GuestRegistrationField, string | undefined>>;
 
 const props = defineProps<EventTournamentSectionProps>();
 
@@ -112,7 +113,7 @@ const handleRegister = async (): Promise<void> => {
             notifySuccess(t('tournaments.public.registered_successfully'));
             router.reload();
         } else {
-            const data = await response.json();
+            const data: RegistrationJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.public.cannot_register'));
         }
     } catch {
@@ -160,7 +161,7 @@ const submitGuestRegistration = async (): Promise<void> => {
             return;
         }
 
-        const data = await response.json();
+        const data: RegistrationJsonResponse = await response.json();
 
         if (response.ok) {
             showGuestModal.value = false;
@@ -229,8 +230,8 @@ const confirmWithdraw = async (): Promise<void> => {
             notifySuccess(t('tournaments.public.withdrawn_successfully'));
             router.reload();
         } else {
-            const data = await response.json();
-            notifyError(data.message || t('tournaments.public.cannot_register'));
+            const data: RegistrationJsonResponse = await response.json();
+            notifyError(data.message || t('tournaments.public.cannot_withdraw'));
         }
     } catch {
         notifyError(t('tournaments.public.registration_error'));
