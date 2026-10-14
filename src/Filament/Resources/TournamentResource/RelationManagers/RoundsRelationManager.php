@@ -145,8 +145,8 @@ final class RoundsRelationManager extends RelationManager
                             $matchesData[] = [
                                 'match_id' => $match->id,
                                 'table_number' => $match->table_number,
-                                'player1_name' => $match->player1?->participant_name ?? 'Desconocido',
-                                'player2_name' => $match->player_2_id === null ? 'Bye' : ($match->player2?->participant_name ?? 'Desconocido'),
+                                'player1_name' => $match->player1?->participant_name ?? __('tournaments::messages.participants.unknown'),
+                                'player2_name' => $match->player_2_id === null ? __('tournaments::messages.fields.bye_opponent') : ($match->player2?->participant_name ?? __('tournaments::messages.participants.unknown')),
                                 'result' => $match->result->value,
                                 'player_1_score' => $match->player_1_score,
                                 'player_2_score' => $match->player_2_score,
@@ -332,11 +332,11 @@ final class RoundsRelationManager extends RelationManager
                 ->disabled(),
 
             TextInput::make('player1_name')
-                ->label('Jugador 1')
+                ->label(__('tournaments::messages.fields.player_1'))
                 ->disabled(),
 
             TextInput::make('player2_name')
-                ->label('Jugador 2')
+                ->label(__('tournaments::messages.fields.player_2'))
                 ->disabled(),
 
             Select::make('result')
@@ -376,13 +376,13 @@ final class RoundsRelationManager extends RelationManager
             }
 
             $schema[] = Section::make('player_1_stats_section')
-                ->heading('Estadísticas jugador 1')
+                ->heading(__('tournaments::messages.fields.player_1_stats'))
                 ->schema($player1StatFields)
                 ->columns(2)
                 ->visible(fn (Get $get): bool => $get('result') !== MatchResult::NotPlayed->value && $get('result') !== null);
 
             $schema[] = Section::make('player_2_stats_section')
-                ->heading('Estadísticas jugador 2')
+                ->heading(__('tournaments::messages.fields.player_2_stats'))
                 ->schema($player2StatFields)
                 ->columns(2)
                 ->visible(fn (Get $get): bool => ! $get('is_bye') && $get('result') !== MatchResult::NotPlayed->value && $get('result') !== null);

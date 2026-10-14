@@ -45,19 +45,19 @@ final class MatchesRelationManager extends RelationManager
                     ->default('-'),
 
                 TextColumn::make('player1.participant_name')
-                    ->label('Jugador 1')
+                    ->label(__('tournaments::messages.fields.player_1'))
                     ->getStateUsing(function (MatchModel $record): string {
-                        return $record->player1?->participant_name ?? 'Desconocido';
+                        return $record->player1?->participant_name ?? __('tournaments::messages.participants.unknown');
                     }),
 
                 TextColumn::make('player2.participant_name')
-                    ->label('Jugador 2')
+                    ->label(__('tournaments::messages.fields.player_2'))
                     ->getStateUsing(function (MatchModel $record): string {
                         if ($record->player_2_id === null) {
-                            return 'Bye';
+                            return __('tournaments::messages.fields.bye_opponent');
                         }
 
-                        return $record->player2?->participant_name ?? 'Desconocido';
+                        return $record->player2?->participant_name ?? __('tournaments::messages.participants.unknown');
                     }),
 
                 TextColumn::make('result')
@@ -119,7 +119,7 @@ final class MatchesRelationManager extends RelationManager
                             }
 
                             $fields[] = Section::make('player_1_section')
-                                ->heading($record->player1?->participant_name ?? 'Jugador 1')
+                                ->heading($record->player1?->participant_name ?? __('tournaments::messages.fields.player_1'))
                                 ->schema($player1Fields)
                                 ->columns(2);
 
@@ -132,7 +132,7 @@ final class MatchesRelationManager extends RelationManager
                                 }
 
                                 $fields[] = Section::make('player_2_section')
-                                    ->heading($record->player2?->participant_name ?? 'Jugador 2')
+                                    ->heading($record->player2?->participant_name ?? __('tournaments::messages.fields.player_2'))
                                     ->schema($player2Fields)
                                     ->columns(2);
                             }

@@ -408,10 +408,10 @@ final class TournamentConfigRelationManager extends RelationManager
     private function getDefaultScoreWeights(): array
     {
         return [
-            ['name' => 'Victoria', 'key' => 'win', 'points' => 3],
-            ['name' => 'Empate', 'key' => 'draw', 'points' => 1],
-            ['name' => 'Derrota', 'key' => 'loss', 'points' => 0],
-            ['name' => 'Bye', 'key' => 'bye', 'points' => 3],
+            ['name' => __('tournaments::messages.condition_result.win'), 'key' => 'win', 'points' => 3],
+            ['name' => __('tournaments::messages.condition_result.draw'), 'key' => 'draw', 'points' => 1],
+            ['name' => __('tournaments::messages.condition_result.loss'), 'key' => 'loss', 'points' => 0],
+            ['name' => __('tournaments::messages.condition_result.bye'), 'key' => 'bye', 'points' => 3],
         ];
     }
 }

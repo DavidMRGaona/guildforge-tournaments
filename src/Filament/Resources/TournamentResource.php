@@ -528,7 +528,7 @@ final class TournamentResource extends BaseResource
     {
         return [
             [
-                'name' => 'Victoria',
+                'name' => __('tournaments::messages.condition_result.win'),
                 'points' => 3,
                 'priority' => 5,
                 'condition' => [
@@ -540,7 +540,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Empate',
+                'name' => __('tournaments::messages.condition_result.draw'),
                 'points' => 1,
                 'priority' => 5,
                 'condition' => [
@@ -552,7 +552,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Derrota',
+                'name' => __('tournaments::messages.condition_result.loss'),
                 'points' => 0,
                 'priority' => 5,
                 'condition' => [
@@ -564,7 +564,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Bye',
+                'name' => __('tournaments::messages.condition_result.bye'),
                 'points' => 3,
                 'priority' => 5,
                 'condition' => [
@@ -586,13 +586,13 @@ final class TournamentResource extends BaseResource
         return [
             [
                 'key' => 'buchholz',
-                'name' => 'Buchholz',
+                'name' => __('tournaments::messages.tiebreaker.buchholz'),
                 'type' => TiebreakerType::Buchholz->value,
                 'direction' => SortDirection::Descending->value,
             ],
             [
                 'key' => 'progressive',
-                'name' => 'Progresivo',
+                'name' => __('tournaments::messages.tiebreaker.progressive'),
                 'type' => TiebreakerType::Progressive->value,
                 'direction' => SortDirection::Descending->value,
             ],
