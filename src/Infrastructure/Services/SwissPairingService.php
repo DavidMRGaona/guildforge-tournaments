@@ -17,6 +17,9 @@ use Modules\Tournaments\Domain\ValueObjects\PairingConfig;
 
 final readonly class SwissPairingService implements SwissPairingServiceInterface
 {
+    /** Steps the rematch-free search may take before falling back to greedy pairing */
+    private const int BACKTRACKING_BUDGET = 20000;
+
     /**
      * Generate pairings for a new round using the Swiss pairing algorithm.
      *
@@ -183,11 +186,27 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
      */
     private function pairParticipants(array $participants, array $previousMatchups, int $roundNumber): array
     {
-        $matches = [];
-        $paired = [];
-
         // Convert previousMatchups to a more efficient lookup structure
         $matchupMap = $this->buildMatchupMap($previousMatchups);
+
+        // Prefer a round without rematches, keeping the order as far as possible
+        $budget = self::BACKTRACKING_BUDGET;
+        $pairs = $this->pairWithoutRematches(array_values($participants), $matchupMap, $budget);
+        if ($pairs !== null) {
+            return array_map(
+                static fn (array $pair): TournamentMatch => new TournamentMatch(
+                    id: MatchId::generate(),
+                    roundId: '',  // Will be set by caller
+                    player1Id: $pair[0]->id()->value,
+                    player2Id: $pair[1]->id()->value,
+                    result: MatchResult::NotPlayed,
+                ),
+                $pairs,
+            );
+        }
+
+        $matches = [];
+        $paired = [];
 
         $count = count($participants);
 
@@ -243,6 +262,45 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         }
 
         return $matches;
+    }
+
+    /**
+     * Pair the players in order, each with the first later player not met yet, backtracking
+     * when the rest cannot be paired without a rematch. Null when no such round exists
+     * (or the search budget runs out).
+     *
+     * @param  list<Participant>  $remaining
+     * @param  array<string, array<string, bool>>  $matchupMap
+     * @return list<array{Participant, Participant}>|null
+     */
+    private function pairWithoutRematches(array $remaining, array $matchupMap, int &$budget): ?array
+    {
+        if ($remaining === []) {
+            return [];
+        }
+
+        $first = $remaining[0];
+        $count = count($remaining);
+
+        for ($j = 1; $j < $count; $j++) {
+            if (--$budget < 0) {
+                return null;
+            }
+
+            $candidate = $remaining[$j];
+            if ($this->havePlayed($first->id()->value, $candidate->id()->value, $matchupMap)) {
+                continue;
+            }
+
+            $rest = $remaining;
+            unset($rest[0], $rest[$j]);
+            $restPairs = $this->pairWithoutRematches(array_values($rest), $matchupMap, $budget);
+            if ($restPairs !== null) {
+                return [[$first, $candidate], ...$restPairs];
+            }
+        }
+
+        return null;
     }
 
     /**

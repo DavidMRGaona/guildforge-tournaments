@@ -47,6 +47,23 @@ final class PairingConfigOptionsTest extends TestCase
         $this->assertSame([['A', 'C'], ['B', 'D']], $pairs);
     }
 
+    public function test_the_last_pair_is_not_forced_into_a_rematch_when_another_pairing_exists(): void
+    {
+        // Greedy would pair A-B and leave C-D, who already met; A-C and B-D avoid it
+        $pairs = $this->pairs(['A', 'B', 'C', 'D'], ['A' => 3, 'B' => 3, 'C' => 0, 'D' => 0], [['C', 'D']], new PairingConfig());
+
+        $this->assertSame([['A', 'C'], ['B', 'D']], $pairs);
+    }
+
+    public function test_a_rematch_is_accepted_when_no_pairing_avoids_it(): void
+    {
+        // Three of the six possible pairs already met: no rematch-free round remains for A
+        $pairs = $this->pairs(['A', 'B', 'C', 'D'], ['A' => 3, 'B' => 3, 'C' => 0, 'D' => 0], [['A', 'B'], ['A', 'C'], ['A', 'D']], new PairingConfig());
+
+        $this->assertCount(2, $pairs);
+        $this->assertSame(['A', 'B', 'C', 'D'], $this->sortedPlayers($pairs));
+    }
+
     public function test_rematches_are_allowed_when_the_option_is_off(): void
     {
         $pairs = $this->pairs(['A', 'B', 'C', 'D'], ['A' => 3, 'B' => 3, 'C' => 0, 'D' => 0], [['A', 'B']], new PairingConfig(avoidRematches: false));
@@ -113,6 +130,18 @@ final class PairingConfigOptionsTest extends TestCase
 
         $this->assertSame([], array_intersect(['D', 'E'], array_keys($receivers)));
         $this->assertGreaterThan(1, count($receivers));
+    }
+
+    /**
+     * @param  list<array{string, ?string}>  $pairs
+     * @return list<string>
+     */
+    private function sortedPlayers(array $pairs): array
+    {
+        $players = array_values(array_filter(array_merge(...$pairs), static fn (?string $name): bool => $name !== null));
+        sort($players);
+
+        return $players;
     }
 
     /**
