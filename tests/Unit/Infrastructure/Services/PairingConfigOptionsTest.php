@@ -30,7 +30,7 @@ final class PairingConfigOptionsTest extends TestCase
     {
         parent::setUp();
         $this->service = new SwissPairingService();
-        foreach (['A', 'B', 'C', 'D', 'E'] as $name) {
+        foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $name) {
             $this->players[$name] = new Participant(
                 id: ParticipantId::generate(),
                 tournamentId: 'tournament-id',
@@ -62,6 +62,30 @@ final class PairingConfigOptionsTest extends TestCase
 
         $this->assertCount(2, $pairs);
         $this->assertSame(['A', 'B', 'C', 'D'], $this->sortedPlayers($pairs));
+    }
+
+    public function test_a_score_group_pairs_its_top_half_against_its_bottom_half(): void
+    {
+        // All on 3 points, ranked A to D: 1 v 3 and 2 v 4
+        $pairs = $this->pairs(['A', 'B', 'C', 'D'], ['A' => 3, 'B' => 3, 'C' => 3, 'D' => 3], [], new PairingConfig());
+
+        $this->assertSame([['A', 'C'], ['B', 'D']], $pairs);
+    }
+
+    public function test_the_lowest_player_of_an_odd_score_group_floats_down(): void
+    {
+        // A, B, C on 3 points and D, E, F on 0: C drops into the lower group, which pairs C v E and D v F
+        $pairs = $this->pairs(['A', 'B', 'C', 'D', 'E', 'F'], ['A' => 3, 'B' => 3, 'C' => 3, 'D' => 0, 'E' => 0, 'F' => 0], [], new PairingConfig());
+
+        $this->assertSame([['A', 'B'], ['C', 'E'], ['D', 'F']], $pairs);
+    }
+
+    public function test_a_rematch_inside_a_score_group_moves_to_the_next_opponent(): void
+    {
+        // A already met C: A takes the next one in line and B meets C
+        $pairs = $this->pairs(['A', 'B', 'C', 'D'], ['A' => 3, 'B' => 3, 'C' => 3, 'D' => 3], [['A', 'C']], new PairingConfig());
+
+        $this->assertSame([['A', 'B'], ['C', 'D']], $pairs);
     }
 
     public function test_rematches_are_allowed_when_the_option_is_off(): void

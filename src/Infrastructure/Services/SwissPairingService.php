@@ -56,6 +56,10 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
             ));
         }
 
+        if ($this->pairsByScoreGroups($standings, $roundNumber, $config)) {
+            $sortedParticipants = $this->scoreGroupOrder($sortedParticipants, $standings);
+        }
+
         $matches = $this->pairParticipants(
             $sortedParticipants,
             $config->avoidRematches ? $previousMatchups : [],
@@ -124,6 +128,68 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         });
 
         return $participants;
+    }
+
+    /**
+     * Swiss pairing by points (not the first round, random pairings or stat ordering) pairs
+     * inside score groups.
+     *
+     * @param  array<Standing>  $standings
+     */
+    private function pairsByScoreGroups(array $standings, int $roundNumber, PairingConfig $config): bool
+    {
+        return $roundNumber > 1
+            && $standings !== []
+            && $config->method === PairingMethod::Swiss
+            && $config->sortBy === PairingSortCriteria::Points;
+    }
+
+    /**
+     * Reorder players, already sorted by points and rank, so that pairing them in order sets the
+     * top half of each score group against its bottom half (1 v k+1, 2 v k+2...). The lowest
+     * player of an odd group floats down to the top of the next one.
+     *
+     * @param  array<Participant>  $participants
+     * @param  array<Standing>  $standings
+     * @return list<Participant>
+     */
+    private function scoreGroupOrder(array $participants, array $standings): array
+    {
+        $points = [];
+        foreach ($standings as $standing) {
+            $points[$standing->participantId()] = $standing->points();
+        }
+
+        $groups = [];
+        foreach ($participants as $participant) {
+            $groups[(string) ($points[$participant->id()->value] ?? 0.0)][] = $participant;
+        }
+
+        $order = [];
+        $floaters = [];
+        $groupCount = count($groups);
+        $index = 0;
+        foreach ($groups as $group) {
+            $index++;
+            $group = [...$floaters, ...$group];
+            $floaters = [];
+
+            if (count($group) % 2 !== 0 && $index < $groupCount) {
+                $floaters[] = array_pop($group);
+            }
+
+            $half = intdiv(count($group), 2);
+            for ($i = 0; $i < $half; $i++) {
+                $order[] = $group[$i];
+                $order[] = $group[$i + $half];
+            }
+
+            if (count($group) % 2 !== 0) {
+                $order[] = $group[count($group) - 1];
+            }
+        }
+
+        return [...$order, ...$floaters];
     }
 
     /**
