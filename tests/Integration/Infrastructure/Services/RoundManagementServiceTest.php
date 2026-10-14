@@ -534,6 +534,16 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->assertSame($first, $second);
     }
 
+    public function test_no_random_seed_is_stored_without_a_random_tiebreaker(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+
+        $this->rounds()->generateNextRound($tournament->id);
+
+        $this->assertNull($tournament->refresh()->random_seed);
+    }
+
     /**
      * @param  list<array{ParticipantModel, ParticipantModel, MatchResult}>  $results
      */

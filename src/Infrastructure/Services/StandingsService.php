@@ -51,13 +51,19 @@ final readonly class StandingsService implements StandingsServiceInterface
             array_push($matches, ...$this->matches->findByRound($round->id()->value));
         }
 
+        $tiebreakers = $this->tiebreakers($tournament);
+        $usesRandom = array_filter(
+            $tiebreakers,
+            static fn (TiebreakerDefinition $definition): bool => $definition->type === TiebreakerType::Random,
+        ) !== [];
+
         $standings = $this->calculator->calculateWithRules(
             $this->rankedParticipants($tournamentId, $matches),
             $matches,
             $this->scoringRules($tournament),
-            $this->tiebreakers($tournament),
+            $tiebreakers,
             $roundNumbers,
-            $this->randomSeed($tournamentId),
+            $usesRandom ? $this->randomSeed($tournamentId) : '',
         );
 
         DB::transaction(function () use ($tournamentId, $standings): void {
@@ -69,7 +75,7 @@ final readonly class StandingsService implements StandingsServiceInterface
     }
 
     /**
-     * The tournament's seed for the random tiebreaker, created and stored the first time.
+     * The tournament's seed for the random tiebreaker, created and stored the first time it is needed.
      */
     private function randomSeed(string $tournamentId): string
     {
