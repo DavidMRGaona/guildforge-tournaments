@@ -6,6 +6,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 - **Un torneo por evento**: cada torneo pertenece a un evento publicado (relación 1:1).
 - **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas.
+  Con la verificación de email obligatoria activa en el sitio, las cuentas a las que el core se la exige deben verificar su email antes de inscribirse o de hacer check-in; los invitados no se ven afectados.
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
 - **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública.
 - **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.

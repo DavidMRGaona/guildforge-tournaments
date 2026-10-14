@@ -50,8 +50,11 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->where('slug', '[a-z0-9-]+')
         ->name('check-in.show');
 
+    // Open to guests; a signed-in user checks in as themselves, so the core's
+    // "email verification required" rule applies to them
     Route::post('/{slug}/check-in', [TournamentCheckInController::class, 'store'])
         ->where('slug', '[a-z0-9-]+')
+        ->middleware('email.verified-if-required')
         ->name('check-in.store');
 });
 
@@ -63,8 +66,10 @@ Route::prefix('torneos/{tournamentId}')
         Route::get('/inscripcion', [TournamentRegistrationController::class, 'show'])
             ->name('tournaments.registration.show');
 
-        // Public: register (authenticated user or guest if allowed)
+        // Public: register (authenticated user or guest if allowed). A signed-in user
+        // registers as themselves, so the core's "email verification required" rule applies
         Route::post('/inscripcion', [TournamentRegistrationController::class, 'store'])
+            ->middleware('email.verified-if-required')
             ->name('tournaments.registration.store');
 
         // Only authenticated users can withdraw
