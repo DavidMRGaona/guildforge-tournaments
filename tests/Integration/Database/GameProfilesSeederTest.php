@@ -78,4 +78,10 @@ final class GameProfilesSeederTest extends ModuleTestCase
         $this->assertSame('result', $profile->scoring_rules[0]['condition']['type'] ?? null);
         $this->assertSame('buchholz', $profile->tiebreaker_config[0]['key'] ?? null);
     }
+
+    public function test_the_legacy_game_profile_seeder_is_gone(): void
+    {
+        // Its nine profiles were never seeded: only database/seeders runs on enable
+        $this->assertFalse(class_exists('Modules\\Tournaments\\Database\\Seeders\\GameProfileSeeder'));
+    }
 }
