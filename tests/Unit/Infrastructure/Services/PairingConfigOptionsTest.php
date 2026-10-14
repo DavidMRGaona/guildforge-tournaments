@@ -198,10 +198,10 @@ final class PairingConfigOptionsTest extends TestCase
             $config,
         );
 
-        return array_map(fn (TournamentMatch $match): array => [
+        return array_values(array_map(fn (TournamentMatch $match): array => [
             $this->playerName($match->player1Id()),
             $match->player2Id() !== null ? $this->playerName($match->player2Id()) : null,
-        ], $matches);
+        ], $matches));
     }
 
     private function playerName(string $participantId): string

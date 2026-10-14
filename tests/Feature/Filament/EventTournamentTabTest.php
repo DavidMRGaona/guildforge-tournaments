@@ -53,7 +53,7 @@ final class EventTournamentTabTest extends ModuleTestCase
             [['win', 2.0], ['draw', 1.0], ['loss', 0.0]],
             array_map(static fn (array $rule): array => [$rule['condition']['result_value'], (float) $rule['points']], $tournament->scoring_rules ?? [])
         );
-        $this->assertSame('result', $tournament->scoring_rules[0]['condition']['type'] ?? null);
+        $this->assertSame('result', data_get($tournament->scoring_rules, '0.condition.type'));
         $this->assertSame(['owp', 'median_buchholz'], array_column($tournament->tiebreaker_config ?? [], 'type'));
     }
 

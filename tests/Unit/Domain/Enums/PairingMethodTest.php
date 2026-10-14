@@ -31,7 +31,7 @@ final class PairingMethodTest extends TestCase
     public function test_accelerated_is_no_longer_offered(): void
     {
         // It had no pairing rules of its own
-        $this->assertNull(PairingMethod::tryFrom('accelerated'));
+        $this->assertNotContains('accelerated', PairingMethod::values());
         $this->assertArrayNotHasKey('accelerated', PairingMethod::options());
     }
 
