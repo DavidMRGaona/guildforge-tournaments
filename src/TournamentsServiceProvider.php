@@ -20,12 +20,13 @@ use Filament\Forms\Components\Toggle;
 use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
 use Livewire\Livewire;
-use Modules\Tournaments\Application\Services\MatchManagementServiceInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
+use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
-use Modules\Tournaments\Application\Services\TournamentManagementServiceInterface;
+use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
@@ -39,6 +40,7 @@ use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
+use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\EditGameProfile;
@@ -59,11 +61,16 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
+use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
 use Modules\Tournaments\Infrastructure\Services\ProfileTournamentsDataProvider;
+use Modules\Tournaments\Infrastructure\Services\RoundManagementService;
 use Modules\Tournaments\Infrastructure\Services\RoundQueryService;
+use Modules\Tournaments\Infrastructure\Services\ScoringRuleEvaluator;
 use Modules\Tournaments\Infrastructure\Services\StandingCalculatorService;
+use Modules\Tournaments\Infrastructure\Services\StandingsService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
+use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
@@ -161,6 +168,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             StandingCalculatorServiceInterface::class,
             StandingCalculatorService::class
         );
+
+        $this->app->bind(
+            TiebreakerCalculatorInterface::class,
+            TiebreakerCalculator::class
+        );
     }
 
     private function registerApplicationServices(): void
@@ -190,10 +202,25 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             MatchQueryService::class
         );
 
-        // TODO: Implement when needed
-        // $this->app->bind(TournamentManagementServiceInterface::class, TournamentManagementService::class);
-        // $this->app->bind(RoundManagementServiceInterface::class, RoundManagementService::class);
-        // $this->app->bind(MatchManagementServiceInterface::class, MatchManagementService::class);
+        $this->app->bind(
+            StandingsServiceInterface::class,
+            StandingsService::class
+        );
+
+        $this->app->bind(
+            RoundManagementServiceInterface::class,
+            RoundManagementService::class
+        );
+
+        $this->app->bind(
+            MatchResultServiceInterface::class,
+            MatchResultService::class
+        );
+
+        $this->app->bind(
+            ScoringRuleEvaluatorInterface::class,
+            ScoringRuleEvaluator::class
+        );
     }
 
     private function registerLivewireComponents(): void

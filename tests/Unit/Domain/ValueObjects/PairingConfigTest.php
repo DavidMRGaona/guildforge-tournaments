@@ -47,7 +47,7 @@ final class PairingConfigTest extends TestCase
     public function test_it_creates_with_custom_values(): void
     {
         $config = new PairingConfig(
-            method: PairingMethod::Accelerated,
+            method: PairingMethod::Random,
             sortBy: PairingSortCriteria::Stat,
             sortByStat: 'strength_of_schedule',
             avoidRematches: false,
@@ -55,7 +55,7 @@ final class PairingConfigTest extends TestCase
             byeAssignment: ByeAssignment::Random,
         );
 
-        $this->assertEquals(PairingMethod::Accelerated, $config->method);
+        $this->assertEquals(PairingMethod::Random, $config->method);
         $this->assertEquals(PairingSortCriteria::Stat, $config->sortBy);
         $this->assertEquals('strength_of_schedule', $config->sortByStat);
         $this->assertFalse($config->avoidRematches);
@@ -85,7 +85,7 @@ final class PairingConfigTest extends TestCase
     public function test_it_creates_from_array_with_stat_sorting(): void
     {
         $config = PairingConfig::fromArray([
-            'method' => 'accelerated',
+            'method' => 'random',
             'sort_by' => 'stat',
             'sort_by_stat' => 'wins',
             'avoid_rematches' => false,
@@ -93,12 +93,19 @@ final class PairingConfigTest extends TestCase
             'bye_assignment' => 'random',
         ]);
 
-        $this->assertEquals(PairingMethod::Accelerated, $config->method);
+        $this->assertEquals(PairingMethod::Random, $config->method);
         $this->assertEquals(PairingSortCriteria::Stat, $config->sortBy);
         $this->assertEquals('wins', $config->sortByStat);
         $this->assertFalse($config->avoidRematches);
         $this->assertEquals(2, $config->maxByesPerPlayer);
         $this->assertEquals(ByeAssignment::Random, $config->byeAssignment);
+    }
+
+    public function test_a_stored_accelerated_method_reads_as_swiss(): void
+    {
+        $config = PairingConfig::fromArray(['method' => 'accelerated']);
+
+        $this->assertEquals(PairingMethod::Swiss, $config->method);
     }
 
     public function test_it_converts_to_array(): void
@@ -127,7 +134,7 @@ final class PairingConfigTest extends TestCase
     public function test_it_converts_to_array_with_stat_sorting(): void
     {
         $config = new PairingConfig(
-            method: PairingMethod::Accelerated,
+            method: PairingMethod::Random,
             sortBy: PairingSortCriteria::Stat,
             sortByStat: 'strength_of_schedule',
             avoidRematches: false,
@@ -138,7 +145,7 @@ final class PairingConfigTest extends TestCase
         $array = $config->toArray();
 
         $this->assertEquals([
-            'method' => 'accelerated',
+            'method' => 'random',
             'sort_by' => 'stat',
             'sort_by_stat' => 'strength_of_schedule',
             'avoid_rematches' => false,

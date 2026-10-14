@@ -14,41 +14,41 @@ final class TournamentPolicy
 
     public function viewAny(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.view_any');
+        return $this->authorize($user, 'tournaments:tournaments.view_any');
     }
 
     public function view(UserModel $user, TournamentModel $tournament): bool
     {
-        return $this->authorize($user, 'tournaments.view');
+        return $this->authorize($user, 'tournaments:tournaments.view');
     }
 
     public function create(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.create');
+        return $this->authorize($user, 'tournaments:tournaments.create');
     }
 
     public function update(UserModel $user, TournamentModel $tournament): bool
     {
-        return $this->authorize($user, 'tournaments.update');
+        return $this->authorize($user, 'tournaments:tournaments.update');
     }
 
     public function delete(UserModel $user, TournamentModel $tournament): bool
     {
-        return $this->authorize($user, 'tournaments.delete');
+        return $this->authorize($user, 'tournaments:tournaments.delete');
     }
 
     public function deleteAny(UserModel $user): bool
     {
-        return $this->authorize($user, 'tournaments.delete');
+        return $this->authorize($user, 'tournaments:tournaments.delete');
     }
 
     public function restore(UserModel $user, TournamentModel $tournament): bool
     {
-        return $this->authorize($user, 'tournaments.delete');
+        return $this->authorize($user, 'tournaments:tournaments.delete');
     }
 
     public function forceDelete(UserModel $user, TournamentModel $tournament): bool
     {
-        return $this->authorize($user, 'tournaments.delete');
+        return $this->authorize($user, 'tournaments:tournaments.delete');
     }
 }

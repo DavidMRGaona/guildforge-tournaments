@@ -7,12 +7,19 @@ namespace Modules\Tournaments\Infrastructure\Services;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
+use Modules\Tournaments\Domain\Enums\ByeAssignment;
 use Modules\Tournaments\Domain\Enums\MatchResult;
+use Modules\Tournaments\Domain\Enums\PairingMethod;
+use Modules\Tournaments\Domain\Enums\PairingSortCriteria;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
+use Modules\Tournaments\Domain\ValueObjects\PairingConfig;
 
 final readonly class SwissPairingService implements SwissPairingServiceInterface
 {
+    /** Steps the rematch-free search may take before falling back to greedy pairing */
+    private const int BACKTRACKING_BUDGET = 20000;
+
     /**
      * Generate pairings for a new round using the Swiss pairing algorithm.
      *
@@ -26,18 +33,20 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         array $standings,
         array $previousMatchups,
         int $roundNumber,
+        ?PairingConfig $config = null,
     ): array {
         if (count($participants) === 0) {
             return [];
         }
 
-        // Sort participants by standings (or randomly for round 1)
-        $sortedParticipants = $this->sortParticipantsByScore($participants, $standings, $roundNumber);
+        $config ??= new PairingConfig();
+
+        $sortedParticipants = $this->orderParticipants($participants, $standings, $roundNumber, $config);
 
         // Handle odd number of participants - assign bye first
         $byeMatch = null;
         if (count($sortedParticipants) % 2 !== 0) {
-            $byeParticipant = $this->selectByeParticipant($sortedParticipants);
+            $byeParticipant = $this->selectByeParticipant($sortedParticipants, $previousMatchups, $config);
             $byeMatch = $this->createByeMatch($byeParticipant);
 
             // Remove bye participant from the pool
@@ -47,8 +56,15 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
             ));
         }
 
-        // Generate pairings using Swiss algorithm
-        $matches = $this->pairParticipants($sortedParticipants, $previousMatchups, $roundNumber);
+        if ($this->pairsByScoreGroups($standings, $roundNumber, $config)) {
+            $sortedParticipants = $this->scoreGroupOrder($sortedParticipants, $standings);
+        }
+
+        $matches = $this->pairParticipants(
+            $sortedParticipants,
+            $config->avoidRematches ? $previousMatchups : [],
+            $roundNumber,
+        );
 
         // Add bye match at the end if exists
         if ($byeMatch !== null) {
@@ -62,57 +78,154 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
     }
 
     /**
-     * Sort participants by score for pairing purposes.
+     * Order participants for pairing: at random for the first round, the random method or random
+     * sorting; otherwise by points (or the accumulated stat), ties kept in standings order.
      *
      * @param  array<Participant>  $participants
      * @param  array<Standing>  $standings
      * @return array<Participant>
      */
-    private function sortParticipantsByScore(array $participants, array $standings, int $roundNumber): array
+    private function orderParticipants(array $participants, array $standings, int $roundNumber, PairingConfig $config): array
     {
-        // For round 1 or when no standings exist, shuffle randomly
-        if ($roundNumber === 1 || count($standings) === 0) {
-            $shuffled = $participants;
+        if ($roundNumber === 1
+            || count($standings) === 0
+            || $config->method === PairingMethod::Random
+            || $config->sortBy === PairingSortCriteria::Random) {
+            $shuffled = array_values($participants);
             shuffle($shuffled);
 
             return $shuffled;
         }
 
-        // Create a map of participantId -> score for quick lookup
         $scoreMap = [];
+        $rankMap = [];
+        $statMap = [];
         foreach ($standings as $standing) {
             $scoreMap[$standing->participantId()] = $standing->points();
+            $rankMap[$standing->participantId()] = $standing->rank();
+            $statMap[$standing->participantId()] = $config->sortByStat !== null
+                ? $standing->getAccumulatedStat($config->sortByStat)
+                : 0.0;
         }
 
-        // Sort by score descending
-        usort($participants, function (Participant $a, Participant $b) use ($scoreMap): int {
-            $scoreA = $scoreMap[$a->id()->value] ?? 0.0;
-            $scoreB = $scoreMap[$b->id()->value] ?? 0.0;
+        $byStat = $config->sortBy === PairingSortCriteria::Stat;
 
-            return $scoreB <=> $scoreA;
+        usort($participants, function (Participant $a, Participant $b) use ($scoreMap, $rankMap, $statMap, $byStat): int {
+            $idA = $a->id()->value;
+            $idB = $b->id()->value;
+
+            if ($byStat && ($statMap[$idA] ?? 0.0) !== ($statMap[$idB] ?? 0.0)) {
+                return ($statMap[$idB] ?? 0.0) <=> ($statMap[$idA] ?? 0.0);
+            }
+
+            $scoreA = $scoreMap[$idA] ?? 0.0;
+            $scoreB = $scoreMap[$idB] ?? 0.0;
+            if ($scoreA !== $scoreB) {
+                return $scoreB <=> $scoreA;
+            }
+
+            return ($rankMap[$idA] ?? PHP_INT_MAX) <=> ($rankMap[$idB] ?? PHP_INT_MAX);
         });
 
         return $participants;
     }
 
     /**
-     * Select participant to receive bye (lowest ranked without previous bye).
+     * Swiss pairing by points (not the first round, random pairings or stat ordering) pairs
+     * inside score groups.
      *
-     * @param  array<Participant>  $participants  Sorted by score descending
+     * @param  array<Standing>  $standings
      */
-    private function selectByeParticipant(array $participants): Participant
+    private function pairsByScoreGroups(array $standings, int $roundNumber, PairingConfig $config): bool
     {
-        // Start from the end (lowest ranked) and find first without bye
-        $reversed = array_reverse($participants);
+        return $roundNumber > 1
+            && $standings !== []
+            && $config->method === PairingMethod::Swiss
+            && $config->sortBy === PairingSortCriteria::Points;
+    }
 
-        foreach ($reversed as $participant) {
-            if (! $participant->hasReceivedBye()) {
-                return $participant;
+    /**
+     * Reorder players, already sorted by points and rank, so that pairing them in order sets the
+     * top half of each score group against its bottom half (1 v k+1, 2 v k+2...). The lowest
+     * player of an odd group floats down to the top of the next one.
+     *
+     * @param  array<Participant>  $participants
+     * @param  array<Standing>  $standings
+     * @return list<Participant>
+     */
+    private function scoreGroupOrder(array $participants, array $standings): array
+    {
+        $points = [];
+        foreach ($standings as $standing) {
+            $points[$standing->participantId()] = $standing->points();
+        }
+
+        $groups = [];
+        foreach ($participants as $participant) {
+            $groups[(string) ($points[$participant->id()->value] ?? 0.0)][] = $participant;
+        }
+
+        $order = [];
+        $floaters = [];
+        $groupCount = count($groups);
+        $index = 0;
+        foreach ($groups as $group) {
+            $index++;
+            $group = [...$floaters, ...$group];
+            $floaters = [];
+
+            if (count($group) % 2 !== 0 && $index < $groupCount) {
+                $floaters[] = array_pop($group);
+            }
+
+            $half = intdiv(count($group), 2);
+            for ($i = 0; $i < $half; $i++) {
+                $order[] = $group[$i];
+                $order[] = $group[$i + $half];
+            }
+
+            if (count($group) % 2 !== 0) {
+                $order[] = $group[count($group) - 1];
             }
         }
 
-        // If everyone has had a bye, give it to the lowest ranked anyway
-        return $reversed[0];
+        return [...$order, ...$floaters];
+    }
+
+    /**
+     * Select the participant who sits out: among those below the bye limit (everyone if nobody is),
+     * the lowest ranked, the highest ranked or one at random, as configured.
+     *
+     * @param  array<Participant>  $participants  In pairing order
+     * @param  array<array{player1Id: string, player2Id: ?string}>  $previousMatchups
+     */
+    private function selectByeParticipant(array $participants, array $previousMatchups, PairingConfig $config): Participant
+    {
+        $byes = [];
+        foreach ($previousMatchups as $matchup) {
+            if (($matchup['player2Id'] ?? null) === null) {
+                $byes[$matchup['player1Id']] = ($byes[$matchup['player1Id']] ?? 0) + 1;
+            }
+        }
+
+        $eligible = array_values(array_filter(
+            $participants,
+            static function (Participant $participant) use ($byes, $config): bool {
+                $received = max($byes[$participant->id()->value] ?? 0, $participant->hasReceivedBye() ? 1 : 0);
+
+                return $received < $config->maxByesPerPlayer;
+            },
+        ));
+
+        if ($eligible === []) {
+            $eligible = array_values($participants);
+        }
+
+        return match ($config->byeAssignment) {
+            ByeAssignment::LowestRanked => $eligible[count($eligible) - 1],
+            ByeAssignment::HighestRanked => $eligible[0],
+            ByeAssignment::Random => $eligible[array_rand($eligible)],
+        };
     }
 
     /**
@@ -139,11 +252,27 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
      */
     private function pairParticipants(array $participants, array $previousMatchups, int $roundNumber): array
     {
-        $matches = [];
-        $paired = [];
-
         // Convert previousMatchups to a more efficient lookup structure
         $matchupMap = $this->buildMatchupMap($previousMatchups);
+
+        // Prefer a round without rematches, keeping the order as far as possible
+        $budget = self::BACKTRACKING_BUDGET;
+        $pairs = $this->pairWithoutRematches(array_values($participants), $matchupMap, $budget);
+        if ($pairs !== null) {
+            return array_map(
+                static fn (array $pair): TournamentMatch => new TournamentMatch(
+                    id: MatchId::generate(),
+                    roundId: '',  // Will be set by caller
+                    player1Id: $pair[0]->id()->value,
+                    player2Id: $pair[1]->id()->value,
+                    result: MatchResult::NotPlayed,
+                ),
+                $pairs,
+            );
+        }
+
+        $matches = [];
+        $paired = [];
 
         $count = count($participants);
 
@@ -199,6 +328,45 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         }
 
         return $matches;
+    }
+
+    /**
+     * Pair the players in order, each with the first later player not met yet, backtracking
+     * when the rest cannot be paired without a rematch. Null when no such round exists
+     * (or the search budget runs out).
+     *
+     * @param  list<Participant>  $remaining
+     * @param  array<string, array<string, bool>>  $matchupMap
+     * @return list<array{Participant, Participant}>|null
+     */
+    private function pairWithoutRematches(array $remaining, array $matchupMap, int &$budget): ?array
+    {
+        if ($remaining === []) {
+            return [];
+        }
+
+        $first = $remaining[0];
+        $count = count($remaining);
+
+        for ($j = 1; $j < $count; $j++) {
+            if (--$budget < 0) {
+                return null;
+            }
+
+            $candidate = $remaining[$j];
+            if ($this->havePlayed($first->id()->value, $candidate->id()->value, $matchupMap)) {
+                continue;
+            }
+
+            $rest = $remaining;
+            unset($rest[0], $rest[$j]);
+            $restPairs = $this->pairWithoutRematches(array_values($rest), $matchupMap, $budget);
+            if ($restPairs !== null) {
+                return [[$first, $candidate], ...$restPairs];
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -15,7 +15,11 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
+use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
+use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 
@@ -41,19 +45,19 @@ final class MatchesRelationManager extends RelationManager
                     ->default('-'),
 
                 TextColumn::make('player1.participant_name')
-                    ->label('Jugador 1')
+                    ->label(__('tournaments::messages.fields.player_1'))
                     ->getStateUsing(function (MatchModel $record): string {
-                        return $record->player1?->participant_name ?? 'Desconocido';
+                        return $record->player1?->participant_name ?? __('tournaments::messages.participants.unknown');
                     }),
 
                 TextColumn::make('player2.participant_name')
-                    ->label('Jugador 2')
+                    ->label(__('tournaments::messages.fields.player_2'))
                     ->getStateUsing(function (MatchModel $record): string {
                         if ($record->player_2_id === null) {
-                            return 'Bye';
+                            return __('tournaments::messages.fields.bye_opponent');
                         }
 
-                        return $record->player2?->participant_name ?? 'Desconocido';
+                        return $record->player2?->participant_name ?? __('tournaments::messages.participants.unknown');
                     }),
 
                 TextColumn::make('result')
@@ -88,6 +92,20 @@ final class MatchesRelationManager extends RelationManager
                                 ->native(false),
                         ];
 
+                        if ($record->player_2_id !== null) {
+                            $fields[] = TextInput::make('player_1_score')
+                                ->label(__('tournaments::messages.fields.player_1_score'))
+                                ->helperText(__('tournaments::messages.fields.score_help'))
+                                ->integer()
+                                ->minValue(0)
+                                ->nullable();
+                            $fields[] = TextInput::make('player_2_score')
+                                ->label(__('tournaments::messages.fields.player_2_score'))
+                                ->integer()
+                                ->minValue(0)
+                                ->nullable();
+                        }
+
                         // Get tournament's stat_definitions through round relationship
                         $tournament = $record->round->tournament;
                         $statDefinitions = $tournament->stat_definitions ?? [];
@@ -101,7 +119,7 @@ final class MatchesRelationManager extends RelationManager
                             }
 
                             $fields[] = Section::make('player_1_section')
-                                ->heading($record->player1?->participant_name ?? 'Jugador 1')
+                                ->heading($record->player1?->participant_name ?? __('tournaments::messages.fields.player_1'))
                                 ->schema($player1Fields)
                                 ->columns(2);
 
@@ -114,7 +132,7 @@ final class MatchesRelationManager extends RelationManager
                                 }
 
                                 $fields[] = Section::make('player_2_section')
-                                    ->heading($record->player2?->participant_name ?? 'Jugador 2')
+                                    ->heading($record->player2?->participant_name ?? __('tournaments::messages.fields.player_2'))
                                     ->schema($player2Fields)
                                     ->columns(2);
                             }
@@ -122,14 +140,27 @@ final class MatchesRelationManager extends RelationManager
 
                         return $fields;
                     })
-                    ->action(function (MatchModel $record, array $data): void {
-                        $record->update([
-                            'result' => $data['result'],
-                            'player_1_stats' => $data['player_1_stats'] ?? null,
-                            'player_2_stats' => $data['player_2_stats'] ?? null,
-                            'reported_by_id' => auth()->id(),
-                            'reported_at' => now(),
-                        ]);
+                    ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
+                        try {
+                            $results->recordResult(new RecordMatchResultDTO(
+                                matchId: $record->id,
+                                result: MatchResult::from($data['result']),
+                                reportedById: (string) auth()->id(),
+                                player1Stats: ($data['player_1_stats'] ?? null) ?: null,
+                                player2Stats: ($data['player_2_stats'] ?? null) ?: null,
+                                player1Score: is_numeric($data['player_1_score'] ?? null) ? (int) $data['player_1_score'] : null,
+                                player2Score: is_numeric($data['player_2_score'] ?? null) ? (int) $data['player_2_score'] : null,
+                            ));
+                        } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                            Notification::make()
+                                ->title($exception instanceof MatchResultLockedException
+                                    ? __('tournaments::messages.errors.result_locked_by_next_round')
+                                    : self::invalidResultMessage($exception))
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('tournaments::messages.messages.result_reported'))
@@ -154,8 +185,8 @@ final class MatchesRelationManager extends RelationManager
             ];
         }
 
-        // Otherwise show all options except NotPlayed
-        return MatchResult::options();
+        // Otherwise every played result except the bye
+        return array_diff_key(MatchResult::options(), [MatchResult::Bye->value => true]);
     }
 
     /**
@@ -190,5 +221,13 @@ final class MatchesRelationManager extends RelationManager
                 ->numeric()
                 ->required($required),
         };
+    }
+
+    private static function invalidResultMessage(\DomainException $exception): string
+    {
+        return $exception instanceof InvalidMatchResultException
+            && $exception->reason() === InvalidMatchResultException::SCORES_CONTRADICT_RESULT
+            ? __('tournaments::messages.errors.scores_contradict_result')
+            : __('tournaments::messages.errors.invalid_match_result');
     }
 }

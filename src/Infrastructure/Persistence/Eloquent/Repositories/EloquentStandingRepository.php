@@ -28,6 +28,8 @@ final readonly class EloquentStandingRepository implements StandingRepositoryInt
                 'median_buchholz' => $standing->medianBuchholz(),
                 'progressive' => $standing->progressive(),
                 'opponent_win_percentage' => $standing->opponentWinPercentage(),
+                'accumulated_stats' => $standing->accumulatedStats(),
+                'calculated_tiebreakers' => $standing->calculatedTiebreakers(),
             ]
         );
     }
@@ -110,6 +112,8 @@ final readonly class EloquentStandingRepository implements StandingRepositoryInt
             medianBuchholz: $model->median_buchholz,
             progressive: $model->progressive,
             opponentWinPercentage: $model->opponent_win_percentage,
+            accumulatedStats: $model->accumulated_stats ?? [],
+            calculatedTiebreakers: $model->calculated_tiebreakers ?? [],
             createdAt: $model->created_at?->toDateTimeImmutable(),
             updatedAt: $model->updated_at?->toDateTimeImmutable(),
         );

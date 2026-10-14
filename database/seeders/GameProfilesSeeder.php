@@ -18,19 +18,26 @@ final class GameProfilesSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->getProfiles() as $profile) {
-            $existing = GameProfileModel::query()->where('slug', $profile['slug'])->first();
-
-            if ($existing === null) {
+            if (! GameProfileModel::query()->where('slug', $profile['slug'])->exists()) {
                 GameProfileModel::query()->create(array_merge($profile, ['id' => Str::uuid()->toString()]));
-
-                continue;
             }
+        }
 
-            // The panel does not let admins edit a system profile's rules, so the seeder keeps
-            // them current; name and description stay as they are
-            if ($existing->is_system) {
-                $existing->update(Arr::only($profile, ['stat_definitions', 'scoring_rules', 'tiebreaker_config', 'pairing_config']));
-            }
+        $this->refreshSystemProfiles();
+    }
+
+    /**
+     * Bring the rules of the existing system profiles up to date, creating nothing.
+     *
+     * The panel does not let admins edit a system profile's rules, so they follow the module;
+     * name and description stay as they are, and admin-made profiles are never touched.
+     */
+    public function refreshSystemProfiles(): void
+    {
+        foreach ($this->getProfiles() as $profile) {
+            $existing = GameProfileModel::query()->where('slug', $profile['slug'])->where('is_system', true)->first();
+
+            $existing?->update(Arr::only($profile, ['stat_definitions', 'scoring_rules', 'tiebreaker_config', 'pairing_config']));
         }
     }
 
@@ -53,6 +60,7 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Bye', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'bye', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
                     ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
@@ -78,6 +86,7 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Bye', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'bye', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
                     ['key' => 'owp', 'name' => 'Porcentaje de victorias de oponentes', 'type' => 'owp', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
@@ -103,6 +112,7 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Bye', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'bye', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
                     ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],
@@ -125,6 +135,7 @@ final class GameProfilesSeeder extends Seeder
                     ['name' => 'Victoria', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Empate', 'points' => 1.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],
                     ['name' => 'Derrota', 'points' => 0.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]],
+                    ['name' => 'Bye', 'points' => 3.0, 'priority' => 5, 'condition' => ['type' => 'result', 'result_value' => 'bye', 'stat' => null, 'operator' => null, 'value' => null]],
                 ],
                 'tiebreaker_config' => [
                     ['key' => 'buchholz', 'name' => 'Buchholz', 'type' => 'buchholz', 'stat' => null, 'direction' => 'desc', 'min_value' => null],

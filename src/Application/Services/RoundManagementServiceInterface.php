@@ -8,6 +8,7 @@ use Modules\Tournaments\Application\DTOs\Response\RoundResponseDTO;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
+use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Domain\Exceptions\RoundNotFoundException;
 use Modules\Tournaments\Domain\Exceptions\TournamentNotFoundException;
 
@@ -19,6 +20,7 @@ interface RoundManagementServiceInterface
      * @throws TournamentNotFoundException
      * @throws PreviousRoundNotCompletedException
      * @throws CannotGeneratePairingsException
+     * @throws RoundAlreadyGeneratedException When another request generated the same round first
      */
     public function generateNextRound(string $tournamentId): RoundResponseDTO;
 

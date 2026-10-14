@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
@@ -433,13 +434,13 @@ final class TournamentResource extends BaseResource
                                         'players_with_confirmation' => __('tournaments::messages.result_reporting.players_with_confirmation'),
                                         'players_trusted' => __('tournaments::messages.result_reporting.players_trusted'),
                                     ])
-                                    ->default('admin_only')
+                                    ->default(fn (): string => TournamentFormDefaults::resultReporting())
                                     ->required(),
 
                                 Toggle::make('allow_guests')
                                     ->label(__('tournaments::messages.config.allow_guests'))
                                     ->helperText(__('tournaments::messages.config.allow_guests_help'))
-                                    ->default(false),
+                                    ->default(fn (): bool => TournamentFormDefaults::allowGuests()),
 
                                 Toggle::make('show_participants')
                                     ->label(__('tournaments::messages.config.show_participants'))
@@ -449,7 +450,7 @@ final class TournamentResource extends BaseResource
                                 Toggle::make('requires_check_in')
                                     ->label(__('tournaments::messages.config.requires_check_in'))
                                     ->live()
-                                    ->default(false),
+                                    ->default(fn (): bool => TournamentFormDefaults::requiresCheckIn()),
 
                                 Toggle::make('requires_manual_confirmation')
                                     ->label(__('tournaments::messages.config.requires_manual_confirmation'))
@@ -461,7 +462,7 @@ final class TournamentResource extends BaseResource
                                     ->helperText(__('tournaments::messages.config.check_in_starts_before_help'))
                                     ->numeric()
                                     ->suffix(__('tournaments::messages.minutes'))
-                                    ->default(30)
+                                    ->default(fn (): int => TournamentFormDefaults::checkInStartsBefore())
                                     ->visible(fn (Get $get): bool => (bool) $get('requires_check_in')),
 
                                 Toggle::make('self_check_in_allowed')
@@ -527,7 +528,7 @@ final class TournamentResource extends BaseResource
     {
         return [
             [
-                'name' => 'Victoria',
+                'name' => __('tournaments::messages.condition_result.win'),
                 'points' => 3,
                 'priority' => 5,
                 'condition' => [
@@ -539,7 +540,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Empate',
+                'name' => __('tournaments::messages.condition_result.draw'),
                 'points' => 1,
                 'priority' => 5,
                 'condition' => [
@@ -551,7 +552,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Derrota',
+                'name' => __('tournaments::messages.condition_result.loss'),
                 'points' => 0,
                 'priority' => 5,
                 'condition' => [
@@ -563,7 +564,7 @@ final class TournamentResource extends BaseResource
                 ],
             ],
             [
-                'name' => 'Bye',
+                'name' => __('tournaments::messages.condition_result.bye'),
                 'points' => 3,
                 'priority' => 5,
                 'condition' => [
@@ -585,13 +586,13 @@ final class TournamentResource extends BaseResource
         return [
             [
                 'key' => 'buchholz',
-                'name' => 'Buchholz',
+                'name' => __('tournaments::messages.tiebreaker.buchholz'),
                 'type' => TiebreakerType::Buchholz->value,
                 'direction' => SortDirection::Descending->value,
             ],
             [
                 'key' => 'progressive',
-                'name' => 'Progresivo',
+                'name' => __('tournaments::messages.tiebreaker.progressive'),
                 'type' => TiebreakerType::Progressive->value,
                 'direction' => SortDirection::Descending->value,
             ],

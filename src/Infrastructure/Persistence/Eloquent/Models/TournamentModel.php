@@ -40,6 +40,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
  * @property bool $show_participants
  * @property string $notification_email
  * @property bool $self_check_in_allowed
+ * @property string|null $random_seed
  * @property \Carbon\Carbon|null $registration_opens_at
  * @property \Carbon\Carbon|null $registration_closes_at
  * @property \Carbon\Carbon|null $started_at
@@ -93,6 +94,7 @@ final class TournamentModel extends Model
         'show_participants',
         'notification_email',
         'self_check_in_allowed',
+        'random_seed',
         'registration_opens_at',
         'registration_closes_at',
         'started_at',

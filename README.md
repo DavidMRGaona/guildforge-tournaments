@@ -1,503 +1,403 @@
 # Módulo de torneos
 
-Sistema de gestión de torneos con algoritmo de emparejamiento suizo, sistema de puntuación flexible, soporte para invitados y panel de administración completo.
+Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción de usuarios e invitados, check-in, rondas con emparejamiento suizo, resultados con estadísticas por jugador, clasificación con reglas de puntuación y desempates configurables y perfiles de juego reutilizables.
 
 ## Características
 
-- **Emparejamiento suizo**: Algoritmo Swiss pairing con soporte para acelerado y aleatorio
-- **Sistema de puntuación flexible**: Reglas configurables por resultado o estadísticas
-- **Múltiples criterios de desempate**: Buchholz, Median, Head-to-Head, OMW%, y más (17 tipos)
-- **Registro de participantes**: Usuarios autenticados e invitados sin cuenta
-- **Sistema de check-in**: Ventana de check-in configurable antes del torneo
-- **Reporte de resultados**: Admin, jugadores con confirmación o jugadores confiables
-- **Perfiles de juego**: Templates predefinidos con estadísticas, reglas y desempates
-- **Notificaciones por email**: Registro, cancelación, confirmación
-- **Integración con eventos**: Un evento puede tener un torneo asociado (1:1)
-- **Cancelación de invitados**: Vía token único sin necesidad de login
-- **Panel de administración**: Recursos Filament completos con relation managers
-- **Estadísticas de partida**: Stats configurables por jugador en cada match
+- **Un torneo por evento**: cada torneo pertenece a un evento publicado (relación 1:1).
+- **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas.
+- **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
+- **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública.
+- **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.
+- **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel; cada resultado recalcula la clasificación.
+- **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
+- **Perfiles de juego**: plantillas con estadísticas, reglas, desempates y emparejamiento; incluye perfiles del sistema.
+- **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción.
+- **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
+
+## Requisitos
+
+- GuildForge core `^3.1`
+- PHP >= 8.5, Laravel >= 13, Filament 5
+
+El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
 
 ## Instalación
 
+1. Descarga `tournaments-X.Y.Z.zip` de la última release de `DavidMRGaona/guildforge-tournaments` en GitHub.
+2. En el panel, activa el modo mantenimiento (**Configuración del sitio** → pestaña **Mantenimiento**).
+3. En **Módulos**, pulsa **Instalar**, sube el ZIP y confirma con **Instalar / actualizar**.
+4. Pulsa **Habilitar** en el módulo: la primera vez ejecuta sus migraciones y seeders.
+5. Desactiva el modo mantenimiento.
+
+Los perfiles del sistema (Warhammer 40.000, Magic: The Gathering, Warhammer Age of Sigmar y Genérico) se cargan al habilitar el módulo con `GameProfilesSeeder`; todos puntúan victoria 3, empate 1, derrota 0 y bye 3.
+
+Las versiones nuevas se aplican desde **Actualizaciones de módulos** (también con el modo mantenimiento activo) o con `php artisan module:update tournaments`.
+
+### En desarrollo
+
+Con el repositorio clonado en `src/modules/tournaments`:
+
 ```bash
-# Descubrir y habilitar el módulo
 php artisan module:discover
 php artisan module:enable tournaments
-
-# Ejecutar migraciones
-php artisan migrate
-
-# Opcional: Cargar perfiles de juego predefinidos
-php artisan db:seed --class="Modules\\Tournaments\\Database\\Seeders\\GameProfileSeeder"
+php artisan module:build tournaments   # compila los componentes Vue (--force para recompilar)
 ```
 
-## Configuración
+En las releases los assets los compila el CI y van dentro del ZIP.
 
-### Configuración global
+## Configuración del módulo
 
-Valores por defecto en `config/settings.php`:
+En **Módulos**, la acción **Configuración** del módulo guarda los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
 
 | Opción | Descripción | Por defecto |
 |--------|-------------|-------------|
-| `default_result_reporting` | Quién puede reportar resultados | `admin_only` |
-| `default_allow_guests` | Permitir inscripción de invitados | `false` |
-| `default_requires_check_in` | Requerir check-in antes del torneo | `true` |
-| `default_check_in_starts_before` | Minutos antes para abrir check-in | `60` |
+| `default_result_reporting` | Modo de reporte de resultados | `admin_only` |
+| `default_allow_guests` | Permitir invitados | No |
+| `default_requires_check_in` | Requiere check-in | No |
+| `default_check_in_starts_before` | Minutos antes para check-in | 30 |
 
-## Proceso de creación de torneos
+## Gestión de torneos
 
-### Flujo de creación
+En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 
-1. **Crear evento** (requisito previo): El torneo debe estar vinculado a un evento existente
-2. **Acceder al panel**: Panel admin → Torneos → Crear torneo
-3. **Completar pestañas**: 8 pestañas de configuración
-4. **Guardar**: El torneo se crea en estado `Borrador`
-5. **Abrir inscripción**: Manualmente o automáticamente según fechas configuradas
+### Flujo
 
-### Diagrama del proceso
+1. **Crear el evento** y publicarlo: el torneo se asocia a un evento publicado.
+2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
+3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Las fechas de inscripción se muestran en la web, pero no abren ni cierran la inscripción por sí solas.
+4. **Cerrar inscripción** e **Iniciar torneo** (comprueba el mínimo de participantes).
+5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
+6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
 
 ```
-[Evento publicado] → [Crear torneo] → [Configurar 8 pestañas] → [Guardar]
-                                                                    ↓
-[Torneo en Borrador] → [Abrir inscripción] → [Cerrar inscripción] → [Iniciar]
-                                                                         ↓
-                                           [Generar rondas] → [Reportar resultados] → [Finalizar]
+[Evento publicado] → [Crear torneo: Borrador] → [Abrir inscripción] → [Cerrar inscripción]
+                                                                              ↓
+                       [Finalizar] ← [Rondas: generar, iniciar, resultados, completar] ← [Iniciar]
 ```
 
-## Pestañas de configuración del torneo
+También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. Si el torneo ya tiene reglas que la pestaña no puede mostrar (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
 
-El formulario de creación/edición contiene **8 pestañas**:
+### Pestañas del formulario
 
-### Pestaña 1: General 📄
+#### General
 
-Información básica del torneo.
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Evento asociado | Sí | Evento publicado al que pertenece; un evento solo puede tener un torneo |
+| Nombre del torneo | Sí | Máximo 255 caracteres |
+| Descripción | No | Máximo 1000 caracteres |
+| Imagen | No | Máximo 2 MB |
+| Perfil de torneo | No | Al elegirlo rellena las pestañas Estadísticas, Reglas de puntuación, Configuración de desempates y Configuración de emparejamientos; los perfiles del sistema llevan ⭐ |
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Evento asociado | Select | ✅ | Evento al que pertenece el torneo (1:1). Solo eventos publicados |
-| Nombre del torneo | Texto | ✅ | Nombre visible del torneo (máx. 255 caracteres) |
-| Descripción | Texto | ❌ | Descripción breve (máx. 1000 caracteres) |
-| Imagen | Archivo | ❌ | Imagen representativa (máx. 2MB) |
-| Perfil de torneo | Select | ❌ | Perfil predefinido que carga estadísticas, reglas y desempates |
+#### Capacidad
 
-**Nota sobre perfiles**: Al seleccionar un perfil (ej: "Warhammer 40K"), se cargan automáticamente las configuraciones de las pestañas 4-7. Los perfiles del sistema aparecen con ⭐.
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Máximo de participantes | No | Vacío = ilimitado |
+| Mínimo de participantes | Sí | Necesarios para iniciar (por defecto 2) |
+| Número de rondas | No | Rondas previstas |
 
-### Pestaña 2: Capacidad 👥
+#### Fechas
 
-Límites de participantes y rondas.
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Apertura de inscripción | No | Informativa |
+| Cierre de inscripción | No | Informativa; posterior a la apertura |
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Máximo de participantes | Número | ❌ | Límite de plazas. Vacío = ilimitado |
-| Mínimo de participantes | Número | ✅ | Mínimo para iniciar (por defecto: 2) |
-| Número de rondas | Número | ❌ | Rondas a jugar. Vacío = calcula automáticamente |
+#### Estadísticas
 
-**Cálculo automático de rondas**: Para N participantes, se recomiendan `ceil(log2(N))` rondas. Ej: 16 participantes = 4 rondas.
+Valores que se registran por jugador en cada partida.
 
-### Pestaña 3: Fechas 📅
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Clave | Sí | Identificador (`snake_case`), por ejemplo `victory_points` |
+| Nombre | Sí | Nombre visible |
+| Tipo | Sí | `integer` (entero), `float` (decimal) o `boolean` (sí/no) |
+| Valor mínimo / máximo | No | Límites aceptados |
+| Obligatoria | No | Si hay que rellenarla al reportar |
 
-Ventanas de inscripción.
+#### Reglas de puntuación
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Apertura de inscripción | Fecha/hora | ❌ | Cuándo se permite inscribirse. Vacío = manualmente desde admin |
-| Cierre de inscripción | Fecha/hora | ❌ | Cuándo se cierra la inscripción. Debe ser posterior a apertura |
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Nombre | Sí | Por ejemplo «Victoria» |
+| Puntos | Sí | Puntos que otorga (admite decimales) |
+| Prioridad | No | Mayor = se evalúa antes (por defecto 0) |
+| Condición | Sí | Ver tipos |
 
-### Pestaña 4: Estadísticas 📊
+| Condición | Descripción | Campos |
+|-----------|-------------|--------|
+| `result` | Resultado de la partida | `win`, `draw`, `loss` o `bye` |
+| `stat_comparison` | Una estadística frente a la del oponente | Estadística, operador |
+| `stat_threshold` | Una estadística alcanza un umbral | Estadística, operador, valor |
+| `margin_diff` | Diferencia de una estadística entre ambos jugadores | Estadística, operador, valor |
 
-Valores numéricos que se registran en cada partida.
+Valores iniciales: Victoria 3, Empate 1, Derrota 0, Bye 3.
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Clave | Texto | ✅ | Identificador único (`snake_case`). Ej: `victory_points` |
-| Nombre | Texto | ✅ | Nombre visible. Ej: "Puntos de victoria" |
-| Tipo | Select | ✅ | `Entero`, `Decimal` o `Sí/No` |
-| Valor mínimo | Número | ❌ | Validación: valor mínimo aceptado |
-| Valor máximo | Número | ❌ | Validación: valor máximo aceptado |
-| Obligatoria | Toggle | ❌ | Si es obligatorio al reportar partidas |
+#### Configuración de desempates
 
-**Tipos de estadística**:
+Se aplican en orden.
+
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Clave | Sí | Identificador (`snake_case`) |
+| Nombre | Sí | Nombre visible |
+| Tipo | Sí | Ver tipos |
+| Estadística | Según el tipo | Para los tipos basados en estadísticas |
+| Dirección | No | Mayor es mejor / menor es mejor |
+| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 da el OMW% estándar) |
 
 | Tipo | Descripción |
 |------|-------------|
-| `integer` | Número entero |
-| `float` | Número decimal |
-| `boolean` | Sí/No (verdadero/falso) |
-
-**Ejemplo para Warhammer 40K**:
-- `victory_points` - Puntos de victoria (0-100)
-- `kill_points` - Puntos de bajas (entero)
-- `painted` - Ejército pintado (sí/no)
-
-### Pestaña 5: Reglas de puntuación 🧮
-
-Cómo se calculan los puntos del torneo según el resultado de cada partida.
-
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Nombre | Texto | ✅ | Nombre de la regla. Ej: "Victoria" |
-| Puntos | Número | ✅ | Puntos otorgados. Ej: 3, 1, 0.5 |
-| Prioridad | Número | ❌ | Mayor = se evalúa primero (default: 0) |
-| Tipo de condición | Select | ✅ | Ver tipos abajo |
-| Campos adicionales | Variable | Depende del tipo de condición |
-
-**Tipos de condición**:
-
-| Tipo | Descripción | Campos adicionales |
-|------|-------------|--------------------|
-| `result` | Resultado de partida (victoria/empate/derrota/bye) | Valor: `win`, `draw`, `loss`, `bye` |
-| `stat_comparison` | Un stat vs otro stat del oponente | Estadística, operador |
-| `stat_threshold` | Stat alcanza cierto valor | Estadística, operador, umbral |
-| `margin_diff` | Diferencia entre stats | Estadística, operador, valor |
-
-**Ejemplo estándar** (configuración por defecto):
-- Victoria: 3 puntos (condición: resultado = `win`)
-- Empate: 1 punto (condición: resultado = `draw`)
-- Derrota: 0 puntos (condición: resultado = `loss`)
-- Bye: 3 puntos (condición: resultado = `bye`)
-
-### Pestaña 6: Configuración de desempates ⚖️
-
-Criterios para resolver empates en puntos. Se aplican en orden.
-
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Clave | Texto | ✅ | Identificador único (`snake_case`) |
-| Nombre | Texto | ✅ | Nombre visible |
-| Tipo | Select | ✅ | Método de cálculo (ver tipos) |
-| Estadística | Texto | Según tipo | Para tipos basados en stats |
-| Dirección | Select | ❌ | "Mayor es mejor" o "Menor es mejor" |
-| Valor mínimo | Número | ❌ | Valor mínimo garantizado (ej: 0.33 para OMW%) |
-
-**Tipos de desempate**:
-
-| Tipo | Descripción |
-|------|-------------|
-| `buchholz` | Suma de puntos de todos los oponentes |
-| `median_buchholz` | Buchholz excluyendo mejor y peor oponente |
-| `progressive` | Suma acumulativa de puntos ronda a ronda |
-| `owp` | Porcentaje de victorias de los oponentes |
-| `oowp` | OMW% de los oponentes (segundo nivel) |
-| `gwp` | Porcentaje de victorias del jugador en partidas |
-| `ogwp` | GWP% de los oponentes |
-| `head_to_head` | Resultado del enfrentamiento directo |
-| `sonneborn_berger` | Suma de puntos de oponentes derrotados |
+| `buchholz` | Suma de puntos de los oponentes |
+| `median_buchholz` | Buchholz sin el mejor ni el peor oponente (con 3 o más oponentes) |
+| `progressive` | Suma de los puntos acumulados tras cada ronda, en orden de ronda y con las reglas de puntuación del torneo |
+| `owp` | Media del porcentaje de victorias de los oponentes: puntos de partida / partidas jugadas, con victoria 1, empate 0,5 y bye como victoria |
+| `oowp` | Media del `owp` de los oponentes |
+| `gwp` | Juegos ganados / juegos jugados, con las puntuaciones de cada partida (una partida sin puntuación cuenta como un juego, el empate como medio y el bye como un juego ganado) |
+| `ogwp` | Media del `gwp` de los oponentes |
+| `head_to_head` | Puntos ganados en las partidas contra los jugadores empatados a puntos |
+| `sonneborn_berger` | Puntos de los oponentes derrotados más la mitad de los puntos de los empatados |
 | `stat_sum` | Suma de una estadística |
 | `stat_diff` | Diferencia de una estadística |
 | `stat_average` | Media de una estadística |
-| `stat_max` | Valor máximo de una estadística |
-| `sos` | Fortaleza del calendario |
-| `mov` | Margen de victoria acumulado |
-| `random` | Desempate aleatorio |
+| `stat_max` | Máximo de una estadística |
+| `sos` | Media de los puntos de los oponentes |
+| `mov` | Suma de las diferencias de puntuación a favor del jugador |
+| `random` | Orden aleatorio fijo para cada torneo (la primera vez que se usa se guarda una semilla, así no cambia al recalcular) |
 
-**Ejemplo estándar** (configuración por defecto):
-1. Buchholz (mayor es mejor)
-2. Progresivo (mayor es mejor)
+El bye no cuenta como rival en los desempates basados en oponentes, pero sí como victoria en el porcentaje propio de quien lo recibe. El valor mínimo se aplica también al resultado final de cada desempate.
 
-### Pestaña 7: Configuración de emparejamientos 🔀
+Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665.
 
-Cómo se generan las parejas en cada ronda.
+Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Método de emparejamiento | Select | ❌ | `Swiss estándar`, `Aleatorio`, `Swiss acelerado` |
-| Ordenar por | Select | ❌ | `Puntos`, `Estadística`, `Aleatorio` |
-| Estadística para ordenar | Texto | Según ordenar | Si ordenar = Estadística |
-| Evitar repeticiones | Toggle | ❌ | No emparejar jugadores que ya se enfrentaron (default: sí) |
-| Máximo de byes por jugador | Número | ❌ | Límite de descansos por jugador (default: 1) |
-| Asignación de bye | Select | ❌ | `Jugador con peor clasificación`, `Aleatorio`, `Jugador con mejor clasificación` |
+#### Configuración de emparejamientos
 
-**Métodos de emparejamiento**:
+**Generar ronda** los aplica (los del torneo; si no tiene, los de su perfil; si tampoco, los valores por defecto).
 
-| Método | Descripción |
-|--------|-------------|
-| `swiss` | Empareja jugadores con puntuación similar |
-| `random` | Emparejamiento totalmente aleatorio |
-| `accelerated` | Primera ronda divide en mitades (fuertes vs débiles) |
+| Campo | Valores | Por defecto |
+|-------|---------|-------------|
+| Método | `swiss` (empareja jugadores de puntuación similar), `random` (empareja al azar en todas las rondas) | `swiss` |
+| Ordenar por | `points` (grupos de puntuación: en cada grupo, la mitad superior contra la inferior), `stat` (total acumulado de una estadística, luego puntos; empareja en orden), `random` | `points` |
+| Estadística para ordenar | Obligatoria si se ordena por estadística | — |
+| Evitar repeticiones | Sí: busca una ronda sin rivales repetidos y solo repite si no existe; No: empareja en orden aunque ya se hayan enfrentado | Sí |
+| Máximo de byes por jugador | Número de byes que puede recibir un jugador; si todos lo han alcanzado, el bye se asigna igualmente | 1 |
+| Asignación de bye | `lowest_ranked` (el peor clasificado), `highest_ranked` (el mejor), `random` (al azar), siempre entre quienes no han alcanzado el máximo | `lowest_ranked` |
 
-**Criterios de ordenación**:
+Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario no se puede guardar hasta elegir otro método.
 
-| Criterio | Descripción |
-|----------|-------------|
-| `points` | Por puntos de torneo |
-| `stat` | Por una estadística específica |
-| `random` | Orden aleatorio |
+#### Opciones
 
-**Asignación de bye**:
+| Campo | Obligatorio | Descripción |
+|-------|-------------|-------------|
+| Reporte de resultados | Sí | `admin_only`, `players_with_confirmation` o `players_trusted` |
+| Permitir invitados | No | Inscripción sin cuenta |
+| Mostrar participantes | No | Lista de inscritos en la página pública |
+| Requiere check-in | No | Obliga a confirmar asistencia |
+| Minutos antes para check-in | Si hay check-in | Antelación sobre el inicio del evento (por defecto 30) |
+| Permitir auto check-in | Si hay check-in | Check-in desde la página pública |
+| Requiere confirmación manual | No | Un administrador confirma cada inscripción antes del check-in |
+| Email de notificaciones | Sí | Recibe los avisos de inscripciones y cancelaciones |
 
-| Método | Descripción |
-|--------|-------------|
-| `lowest_ranked` | Jugador con peor clasificación |
-| `random` | Aleatorio |
-| `highest_ranked` | Jugador con mejor clasificación |
+## Estados
 
-### Pestaña 8: Opciones ⚙️
+### Torneo
 
-Configuración general del torneo.
+| Estado | Valor | Siguiente estado posible |
+|--------|-------|--------------------------|
+| Borrador | `draft` | `registration_open`, `cancelled` |
+| Inscripción abierta | `registration_open` | `registration_closed`, `cancelled` |
+| Inscripción cerrada | `registration_closed` | `in_progress`, `cancelled` |
+| En curso | `in_progress` | `finished`, `cancelled` |
+| Finalizado | `finished` | — |
+| Cancelado | `cancelled` | — |
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| Reporte de resultados | Select | ✅ | Quién puede reportar resultados |
-| Permitir invitados | Toggle | ❌ | Inscripción sin cuenta de usuario |
-| Mostrar participantes | Toggle | ❌ | Mostrar lista de inscritos públicamente |
-| Requiere check-in | Toggle | ❌ | Obliga a confirmar asistencia |
-| → Minutos antes para check-in | Número | Si requiere | Ventana de check-in antes del evento |
-| → Permitir auto check-in | Toggle | Si requiere | Check-in desde la web pública |
-| Requiere confirmación manual | Toggle | ❌ | Admin debe aprobar inscripciones |
-| Email de notificaciones | Email | ✅ | Recibe avisos de inscripciones |
+Solo se aceptan inscripciones en `registration_open`. El panel permite **Iniciar torneo** también desde `registration_open`.
 
-**Modos de reporte de resultados**:
+### Participante
 
-| Modo | Descripción |
-|------|-------------|
-| `admin_only` | Solo administradores pueden reportar |
-| `players_with_confirmation` | Jugadores reportan, el oponente debe confirmar |
-| `players_trusted` | Jugadores reportan, se acepta automáticamente |
+| Estado | Valor | Siguiente estado posible |
+|--------|-------|--------------------------|
+| Inscrito | `registered` | `confirmed`, `withdrawn` |
+| Confirmado | `confirmed` | `checked_in`, `withdrawn`, `disqualified` |
+| Registrado (check-in hecho) | `checked_in` | `withdrawn`, `disqualified` |
+| Retirado | `withdrawn` | `registered` (se vuelve a inscribir) |
+| Descalificado | `disqualified` | — |
 
-## Estados de torneo
+Desde el panel (pestaña **Participantes**) se añaden participantes y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
 
-| Estado | Valor | Descripción |
-|--------|-------|-------------|
-| Borrador | `draft` | No visible públicamente |
-| Inscripciones abiertas | `registration_open` | Se aceptan inscripciones |
-| Inscripciones cerradas | `registration_closed` | No se aceptan más inscripciones |
-| En curso | `in_progress` | Torneo activo, rondas en juego |
-| Finalizado | `finished` | Torneo completado |
-| Cancelado | `cancelled` | Torneo cancelado |
+### Resultado de partida
 
-### Transiciones permitidas
+`player_one_win`, `player_two_win`, `draw`, `double_loss`, `bye` y `not_played` (valor inicial).
 
-```
-draft → registration_open → registration_closed → in_progress → finished
-  ↓           ↓                    ↓                  ↓
-cancelled  cancelled           cancelled          cancelled
-```
+## Emparejamiento y clasificación
 
-## Estados de participante
+**Generar ronda** solo está disponible con el torneo **En curso** y se niega (con un aviso) si:
 
-| Estado | Valor | Descripción |
-|--------|-------|-------------|
-| Registrado | `registered` | Inscripción realizada |
-| Confirmado | `confirmed` | Aprobado por administrador |
-| Check-in realizado | `checked_in` | Confirmó asistencia |
-| Retirado | `withdrawn` | Se retiró del torneo |
-| Descalificado | `disqualified` | Descalificado por admin |
+- la ronda anterior tiene partidas sin resultado o no se ha completado,
+- el torneo ya jugó su **Número de rondas**,
+- hay menos de 2 participantes confirmados o con check-in hecho (solo ellos se emparejan),
+- otra sesión acaba de generar la misma ronda.
 
-### Transiciones permitidas
+Al generarla:
 
-```
-registered → confirmed → checked_in
-    ↓           ↓            ↓
-withdrawn   withdrawn    withdrawn
-                ↓            ↓
-          disqualified  disqualified
-```
+1. La primera ronda se empareja al azar; las siguientes, según la [configuración de emparejamientos](#configuración-de-emparejamientos). Por defecto (`swiss` por puntos), los jugadores se agrupan por puntos y se ordenan por su posición en la clasificación; en cada grupo de *2k* jugadores, el 1.º se enfrenta al *k+1*.º, el 2.º al *k+2*.º y así sucesivamente. Si un grupo es impar, su último jugador baja al grupo siguiente. Si un emparejamiento repetiría rivales, se prueba con el siguiente rival en ese orden, y solo se repite si no hay ninguna ronda posible sin repeticiones.
+2. Con un número impar de jugadores, uno recibe bye según la configuración (por defecto, el peor clasificado que aún no lo haya tenido): su partida queda con resultado `bye` y puntúa al momento.
+3. Las partidas se numeran por mesa y la ronda queda **Pendiente**.
+
+Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Con el resultado se pueden anotar la puntuación de cada jugador (juegos o puntos ganados en la partida, que usan `gwp`, `ogwp` y `mov`) y sus estadísticas; si se anotan las dos puntuaciones, deben cuadrar con el resultado (quien gana no puede puntuar menos y un empate exige puntuaciones iguales). Los cambios de **Gestionar partidas** se guardan todos o ninguno, con un solo recálculo. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra, salvo en una ronda completada que ya tiene una ronda posterior (ahí solo se puede corregir). Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
+
+La clasificación se calcula así:
+
+- **Puntos**: las reglas de puntuación del torneo; si no tiene, las de su perfil; si tampoco, Victoria 3, Empate 1, Derrota 0 y Bye 3. Un bye sin regla `bye` puntúa como una victoria.
+- **Orden**: puntos y, a igualdad, los desempates configurados en su orden y dirección (si el torneo no tiene, los del perfil; si tampoco, Buchholz y Progresivo).
+- La página pública **Clasificación** muestra además Buchholz y el porcentaje de victorias de los oponentes de cada jugador.
 
 ## Perfiles de juego
 
-Los perfiles permiten crear templates reutilizables con:
+**Torneos** → **Perfiles de torneo** gestiona plantillas con estadísticas, reglas de puntuación, desempates y emparejamiento. Al crear un torneo se elige el perfil en la pestaña General, se cargan sus valores y luego se pueden ajustar para ese torneo.
 
-- **Estadísticas predefinidas**: Stats específicas del juego
-- **Reglas de puntuación**: Configuración de puntos por resultado
-- **Criterios de desempate**: Orden y tipos de tiebreakers
-- **Configuración de emparejamientos**: Método y opciones de pairing
+Los perfiles del sistema no se pueden borrar y solo se puede editar su descripción; la acción **Duplicar** crea una copia editable. Las actualizaciones del módulo pueden renovar las reglas de los perfiles del sistema, nunca los perfiles creados por los administradores.
 
-### Uso de perfiles
+## Web pública
 
-1. Crear perfil en **Torneos > Perfiles de juego**
-2. Al crear un torneo, seleccionar el perfil en la pestaña General
-3. Las configuraciones del perfil se cargan automáticamente
-4. Pueden modificarse para el torneo específico
+### Rutas
+
+| Método | Ruta | Nombre | Acceso |
+|--------|------|--------|--------|
+| GET | `/torneos` | `tournaments.index` | Público |
+| GET | `/torneos/mis-torneos` | `tournaments.my-tournaments` | Usuarios autenticados |
+| GET | `/torneos/{slug}` | `tournaments.show` | Público |
+| GET | `/torneos/{slug}/clasificacion` | `tournaments.standings` | Público |
+| GET | `/torneos/{slug}/rondas` | `tournaments.rounds` | Público |
+| GET | `/torneos/{slug}/check-in` | `tournaments.check-in.show` | Público |
+| POST | `/torneos/{slug}/check-in` | `tournaments.check-in.store` | Público (los invitados indican su email) |
+| GET | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.show` | Público |
+| POST | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.store` | Público (invitados si el torneo los permite) |
+| DELETE | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.destroy` | Usuarios autenticados |
+| GET | `/torneos/cancelar/{token}` | `tournaments.cancel-confirmation` | Invitados con enlace |
+| DELETE | `/torneos/cancelar/{token}` | `tournaments.cancel-by-token` | Invitados con enlace |
+
+`tournaments.index` aparece entre las páginas que se pueden enlazar desde el editor de menús.
+
+### Páginas Vue
+
+| Página | Descripción |
+|--------|-------------|
+| `Tournaments/Index` | Listado con filtro por estado |
+| `Tournaments/Show` | Detalle, inscripción y participantes |
+| `Tournaments/Standings` | Clasificación |
+| `Tournaments/Rounds` | Rondas y partidas |
+| `Tournaments/CheckIn` | Check-in |
+| `Tournaments/CancelRegistration` | Cancelación de invitados por token |
+| `Tournaments/MyTournaments` | Torneos del usuario |
+
+### Componentes Vue
+
+| Componente | Uso |
+|------------|-----|
+| `TournamentList` | Listado de tarjetas |
+| `TournamentCard` | Tarjeta de torneo |
+| `TournamentStatusFilter` | Filtro por estado del listado |
+| `MyTournamentCard` | Tarjeta de «Mis torneos» |
+| `EventTournamentSection` | Sección del torneo en la página del evento (slot `event-detail-actions`) |
+| `profile/ProfileTournamentsSection` | Pestaña «Torneos» del perfil (slot `profile-sections`) |
+| `profile/ProfileTournamentCard` | Tarjeta de la pestaña del perfil |
+
+El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts` acompañan a estos componentes; los textos están en `resources/js/locales/`.
+
+## Correos
+
+| Momento | Destinatarios |
+|---------|---------------|
+| Inscripción (`ParticipantRegistered`) | Participante y email de notificaciones del torneo |
+| Cancelación de la inscripción (`ParticipantWithdrawn`) | Participante y email de notificaciones del torneo |
+
+Son los dos eventos de dominio que el módulo dispara hoy. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
+
+## Permisos
+
+| Permiso | Rol propuesto | Uso |
+|---------|-----------------|-----|
+| `tournaments.view_any` | editor | Ver el listado del panel |
+| `tournaments.view` | editor | Ver un torneo |
+| `tournaments.create` | editor | Crear torneos |
+| `tournaments.update` | editor | Editar torneos |
+| `tournaments.delete` | — | Eliminar torneos |
+| `tournaments.manage_config` | editor | Gestionar perfiles de torneo |
+| `tournaments.report_results` | editor | Registrado, sin comprobaciones propias todavía |
+| `tournaments.manage_participants` | editor | Registrado, sin comprobaciones propias todavía |
+
+El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tournaments.view_any`), que es la clave que comprueban las policies: un rol con el permiso concedido en **Roles** accede a lo que el permiso indica. La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna. Los administradores tienen acceso completo.
+
+## Limitaciones actuales
+
+- **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
+- **Pestaña del evento y perfil**: en un torneo con perfil de torneo pero sin reglas propias, guardar la pestaña del evento guarda sus puntos y desempates (por defecto 3/1/0/3, Buchholz y Progresivo) como reglas del torneo, que pasan a tener prioridad sobre las del perfil.
 
 ## Arquitectura
 
 ```
 src/modules/tournaments/
 ├── config/
-│   ├── module.php              # Configuración del módulo
-│   └── settings.php            # Valores por defecto
+│   ├── module.php
+│   └── settings.php            # Valores por defecto de la página de configuración
 ├── database/
-│   ├── migrations/             # Migraciones de base de datos
-│   └── seeders/                # Seeders (GameProfileSeeder)
+│   ├── migrations/
+│   └── seeders/                # GameProfilesSeeder; DevelopmentSeeder (solo local y testing)
 ├── lang/
-│   ├── en/messages.php         # Traducciones en inglés
-│   └── es/messages.php         # Traducciones en español
+│   └── es/messages.php         # Textos del panel y correos
 ├── resources/
+│   ├── css/
 │   ├── js/
-│   │   ├── components/         # Componentes Vue
+│   │   ├── components/         # Componentes Vue (y profile/)
+│   │   ├── composables/        # useTournaments
+│   │   ├── locales/            # Textos del frontend
+│   │   ├── pages/Tournaments/  # Páginas Inertia
 │   │   └── types/              # Tipos TypeScript
-│   └── views/
-│       └── filament/           # Vistas Blade para Filament
+│   └── views/filament/         # Vista de la pestaña del formulario de eventos
 ├── routes/
-│   └── web.php                 # Rutas web públicas
+│   └── web.php
 ├── src/
-│   ├── Application/
-│   │   ├── DTOs/               # Data Transfer Objects
-│   │   │   └── Response/       # DTOs de respuesta
-│   │   └── Services/           # Interfaces de servicios
-│   ├── Domain/
-│   │   ├── Entities/           # Tournament, Round, TournamentMatch, etc.
-│   │   ├── Enums/              # TournamentStatus, ParticipantStatus, etc.
-│   │   ├── Events/             # Eventos de dominio
-│   │   ├── Exceptions/         # Excepciones de dominio
-│   │   ├── Repositories/       # Interfaces de repositorios
-│   │   ├── Services/           # Interfaces de servicios de dominio
-│   │   └── ValueObjects/       # StatDefinition, ScoringRule, etc.
+│   ├── Application/            # DTOs y interfaces de servicios
+│   ├── Domain/                 # Entidades, enums, eventos, excepciones, repositorios, servicios, VOs
 │   ├── Filament/
-│   │   ├── Resources/          # TournamentResource, GameProfileResource
-│   │   ├── RelationManagers/   # Participants, Rounds, Matches
-│   │   └── Widgets/            # Widgets del dashboard
-│   ├── Http/
-│   │   ├── Controllers/        # Controladores web
-│   │   └── Requests/           # Form Requests
-│   ├── Infrastructure/
-│   │   ├── Persistence/        # Repositorios Eloquent
-│   │   └── Services/           # Implementaciones de servicios
-│   ├── Listeners/              # Listeners de eventos
-│   ├── Notifications/          # Notificaciones por email
-│   └── Policies/               # Políticas de autorización
+│   │   ├── RelationManagers/   # TournamentConfigRelationManager (formulario de eventos)
+│   │   └── Resources/          # TournamentResource (Participantes, Rondas), GameProfileResource
+│   ├── Http/                   # Controladores, requests y resources
+│   ├── Infrastructure/         # Persistencia Eloquent y servicios
+│   ├── Listeners/              # Correos de inscripción y cancelación
+│   ├── Notifications/
+│   ├── Policies/
+│   └── TournamentsServiceProvider.php
 ├── tests/
-│   ├── Integration/            # Tests de integración
-│   └── Unit/                   # Tests unitarios
-├── module.json                 # Manifiesto del módulo
-└── phpunit.xml                 # Configuración de tests
+│   ├── Unit/
+│   ├── Integration/
+│   └── Feature/
+├── module.json
+├── package.json
+├── phpunit.xml
+└── vite.config.ts
 ```
-
-## Rutas públicas
-
-| Método | Ruta | Nombre | Descripción |
-|--------|------|--------|-------------|
-| GET | `/torneos` | `tournaments.index` | Listado de torneos |
-| GET | `/torneos/{slug}` | `tournaments.show` | Detalle del torneo |
-| GET | `/torneos/{slug}/clasificacion` | `tournaments.standings` | Clasificación |
-| GET | `/torneos/{slug}/rondas` | `tournaments.rounds` | Rondas y partidas |
-| GET | `/torneos/{slug}/check-in` | `tournaments.check-in.show` | Página de check-in |
-| POST | `/torneos/{slug}/check-in` | `tournaments.check-in.store` | Realizar check-in |
-| GET | `/torneos/{id}/inscripcion` | `tournaments.registration.show` | Estado de inscripción |
-| POST | `/torneos/{id}/inscripcion` | `tournaments.registration.store` | Inscribirse |
-| DELETE | `/torneos/{id}/inscripcion` | `tournaments.registration.destroy` | Cancelar inscripción |
-| GET | `/torneos/cancelar/{token}` | `tournaments.cancel-confirmation` | Página de cancelación (invitados) |
-| DELETE | `/torneos/cancelar/{token}` | `tournaments.cancel-by-token` | Cancelar por token (invitados) |
-
-## Componentes Vue
-
-### TournamentList
-
-Lista de torneos con filtros por estado.
-
-```vue
-<TournamentList :tournaments="tournaments" />
-```
-
-### TournamentDetail
-
-Detalle del torneo con tabs para información, participantes, rondas y clasificación.
-
-```vue
-<TournamentDetail :tournament="tournament" />
-```
-
-### StandingsTable
-
-Tabla de clasificación con puntos y tiebreakers.
-
-```vue
-<StandingsTable :standings="standings" :tiebreakers="tiebreakers" />
-```
-
-### RoundsList
-
-Lista de rondas con partidas y resultados.
-
-```vue
-<RoundsList :rounds="rounds" />
-```
-
-### RegistrationButton
-
-Botón de inscripción/cancelación para el torneo.
-
-```vue
-<RegistrationButton :tournament="tournament" />
-```
-
-### CheckInForm
-
-Formulario de check-in para participantes.
-
-```vue
-<CheckInForm :tournament="tournament" />
-```
-
-## Eventos de dominio
-
-| Evento | Cuándo se dispara |
-|--------|-------------------|
-| `TournamentCreated` | Al crear un torneo |
-| `TournamentStarted` | Al iniciar el torneo (primera ronda) |
-| `TournamentFinished` | Al finalizar todas las rondas |
-| `TournamentCancelled` | Al cancelar el torneo |
-| `ParticipantRegistered` | Al inscribirse un participante |
-| `ParticipantWithdrawn` | Al retirarse un participante |
-| `ParticipantDisqualified` | Al descalificar un participante |
-| `RoundGenerated` | Al generar emparejamientos de una ronda |
-| `RoundStarted` | Al iniciar una ronda |
-| `RoundCompleted` | Al completar todas las partidas de una ronda |
-| `MatchResultReported` | Al reportar resultado de una partida |
-| `StandingsUpdated` | Al recalcular la clasificación |
-
-## Permisos
-
-| Permiso | Descripción |
-|---------|-------------|
-| `tournaments.view_any` | Ver listado de torneos |
-| `tournaments.view` | Ver detalle de torneo |
-| `tournaments.create` | Crear torneos |
-| `tournaments.update` | Editar torneos |
-| `tournaments.delete` | Eliminar torneos |
-| `tournaments.manage_config` | Gestionar configuración del módulo |
-| `tournaments.report_results` | Reportar resultados de partidas |
-| `tournaments.manage_participants` | Gestionar participantes (confirmar, descalificar) |
-
-## Panel de administración
-
-### TournamentResource
-
-Recurso principal para gestión de torneos:
-- **Listado**: Filtros por estado, búsqueda por nombre
-- **Creación/Edición**: Formulario con 8 pestañas
-- **Relation managers**: Participantes, Rondas, Partidas
-
-### GameProfileResource
-
-Gestión de perfiles de juego predefinidos:
-- **CRUD completo**: Crear, editar, eliminar perfiles
-- **Configuración**: Stats, scoring rules, tiebreakers, pairing config
-
-### Relation managers
-
-- `ParticipantsRelationManager`: Gestionar inscripciones, check-in, estados
-- `RoundsRelationManager`: Ver y gestionar rondas
-- `MatchesRelationManager`: Reportar resultados, ver historial
-
-### Widgets
-
-- **Estadísticas de torneos**: Total activos, participantes, partidas completadas
-- **Próximos torneos**: Lista de torneos por iniciar
-- **Torneos en curso**: Torneos activos con progreso de rondas
 
 ## Tests
 
+Desde `src/` (o dentro del contenedor `guildforge_app`):
+
 ```bash
-# Ejecutar todos los tests del módulo
-php artisan test --filter=Tournament
-
-# Ejecutar tests unitarios
-cd src/modules/tournaments && ../../../vendor/bin/phpunit --testsuite=Unit
-
-# Ejecutar tests de integración
-cd src/modules/tournaments && ../../../vendor/bin/phpunit --testsuite=Integration
+vendor/bin/phpunit -c modules/tournaments/phpunit.xml
+vendor/bin/phpunit -c modules/tournaments/phpunit.xml --testsuite=Unit
 ```
+
+`php artisan test` no ejecuta los tests de los módulos.
+
+## Publicar una versión
+
+1. Sube `version` en `module.json`.
+2. Crea y empuja la etiqueta `vX.Y.Z` (debe coincidir con `version`).
+3. El workflow `release.yml` ejecuta los tests contra el core (`main`, o la variable `GUILDFORGE_HOST_REF`), compila los assets y publica `tournaments-X.Y.Z.zip` con su `.sha256` en la release.
 
 ## Licencia
 

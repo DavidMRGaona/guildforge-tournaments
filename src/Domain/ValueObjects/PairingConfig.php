@@ -28,7 +28,8 @@ final readonly class PairingConfig
     public static function fromArray(array $data): self
     {
         return new self(
-            method: isset($data['method']) ? PairingMethod::from($data['method']) : PairingMethod::Swiss,
+            // A method without pairing rules of its own (the old "accelerated") reads as Swiss
+            method: isset($data['method']) ? (PairingMethod::tryFrom($data['method']) ?? PairingMethod::Swiss) : PairingMethod::Swiss,
             sortBy: isset($data['sort_by']) ? PairingSortCriteria::from($data['sort_by']) : PairingSortCriteria::Points,
             sortByStat: $data['sort_by_stat'] ?? null,
             avoidRematches: $data['avoid_rematches'] ?? true,

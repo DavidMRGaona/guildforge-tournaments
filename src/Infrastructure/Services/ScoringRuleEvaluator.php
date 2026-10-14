@@ -33,6 +33,11 @@ final class ScoringRuleEvaluator implements ScoringRuleEvaluatorInterface
         $player1Result = $this->getPlayerResult($result, true);
         $player2Result = $this->getPlayerResult($result, false);
 
+        // A bye is a win unless the rules give it points of its own
+        if ($player1Result === 'bye' && ! $this->hasResultRule($sortedRules, 'bye')) {
+            $player1Result = 'win';
+        }
+
         $player1Points = $this->evaluateRulesForPlayer(
             $sortedRules,
             $player1Result,
@@ -48,6 +53,20 @@ final class ScoringRuleEvaluator implements ScoringRuleEvaluatorInterface
         );
 
         return ['player1' => $player1Points, 'player2' => $player2Points];
+    }
+
+    /**
+     * @param  array<ScoringRule>  $rules
+     */
+    private function hasResultRule(array $rules, string $resultValue): bool
+    {
+        foreach ($rules as $rule) {
+            if ($rule->condition->type === ConditionType::Result && $rule->condition->resultValue === $resultValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
