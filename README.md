@@ -1,6 +1,6 @@
 # Módulo de torneos
 
-Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción de usuarios e invitados, check-in, rondas, resultados con estadísticas por jugador, reglas de puntuación y desempates configurables y perfiles de juego reutilizables.
+Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción de usuarios e invitados, check-in, rondas con emparejamiento suizo, resultados con estadísticas por jugador, clasificación con reglas de puntuación y desempates configurables y perfiles de juego reutilizables.
 
 ## Características
 
@@ -8,8 +8,9 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas.
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
 - **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública.
-- **Rondas y resultados**: rondas y resultados de partidas con estadísticas por jugador, gestionados desde el panel.
-- **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas, criterios de desempate (16 tipos) y opciones de emparejamiento.
+- **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.
+- **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel; cada resultado recalcula la clasificación.
+- **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
 - **Perfiles de juego**: plantillas con estadísticas, reglas, desempates y emparejamiento; incluye perfiles del sistema.
 - **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción.
 - **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
@@ -47,16 +48,14 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración del módulo
 
-En **Módulos**, la acción **Configuración** del módulo muestra estos valores por defecto:
+En **Módulos**, la acción **Configuración** del módulo guarda los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
 
-| Opción | Descripción |
-|--------|-------------|
-| `default_result_reporting` | Modo de reporte de resultados |
-| `default_allow_guests` | Permitir invitados |
-| `default_requires_check_in` | Requiere check-in |
-| `default_check_in_starts_before` | Minutos antes para check-in |
-
-Hoy el formulario de torneo no los lee: usa sus propios valores iniciales (solo administradores reportan, sin invitados, sin check-in, 30 minutos).
+| Opción | Descripción | Por defecto |
+|--------|-------------|-------------|
+| `default_result_reporting` | Modo de reporte de resultados | `admin_only` |
+| `default_allow_guests` | Permitir invitados | No |
+| `default_requires_check_in` | Requiere check-in | No |
+| `default_check_in_starts_before` | Minutos antes para check-in | 30 |
 
 ## Gestión de torneos
 
@@ -68,7 +67,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
 3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Las fechas de inscripción se muestran en la web, pero no abren ni cierran la inscripción por sí solas.
 4. **Cerrar inscripción** e **Iniciar torneo** (comprueba el mínimo de participantes).
-5. En la pestaña de **Rondas**: **Generar ronda**, **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
+5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
 6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
 
 ```
@@ -77,7 +76,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
                        [Finalizar] ← [Rondas: generar, iniciar, resultados, completar] ← [Iniciar]
 ```
 
-También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Desactivar el interruptor y guardar elimina el torneo del evento.
+También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in; los puntos y desempates no se guardan, ver [Limitaciones actuales](#limitaciones-actuales)). Desactivar el interruptor y guardar elimina el torneo del evento.
 
 ### Pestañas del formulario
 
@@ -153,24 +152,22 @@ Se aplican en orden.
 |------|-------------|
 | `buchholz` | Suma de puntos de los oponentes |
 | `median_buchholz` | Buchholz sin el mejor ni el peor oponente |
-| `progressive` | Suma acumulada ronda a ronda |
+| `progressive` | Suma de los puntos acumulados tras cada partida (ver [Limitaciones actuales](#limitaciones-actuales)) |
 | `owp` | Porcentaje de victorias de los oponentes |
-| `oowp` | Porcentaje de victorias de los oponentes de los oponentes |
-| `gwp` | Porcentaje de victorias de partidas del jugador |
-| `ogwp` | GWP de los oponentes |
-| `head_to_head` | Enfrentamiento directo |
-| `sonneborn_berger` | Puntos de los oponentes derrotados |
 | `stat_sum` | Suma de una estadística |
 | `stat_diff` | Diferencia de una estadística |
 | `stat_average` | Media de una estadística |
 | `stat_max` | Máximo de una estadística |
 | `sos` | Fortaleza del calendario |
 | `mov` | Margen de victoria acumulado |
-| `random` | Aleatorio |
+
+El formulario ofrece también `oowp`, `gwp`, `ogwp`, `head_to_head`, `sonneborn_berger` y `random`, pero hoy valen 0 para todos y no desempatan.
 
 Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 
 #### Configuración de emparejamientos
+
+Se guardan con el torneo y el perfil, pero **Generar ronda** aún no los aplica: siempre empareja como se describe en [Emparejamiento y clasificación](#emparejamiento-y-clasificación).
 
 | Campo | Valores | Por defecto |
 |-------|---------|-------------|
@@ -224,6 +221,28 @@ Desde el panel (pestaña **Participantes**) se añaden participantes y se confir
 ### Resultado de partida
 
 `player_one_win`, `player_two_win`, `draw`, `double_loss`, `bye` y `not_played` (valor inicial).
+
+## Emparejamiento y clasificación
+
+**Generar ronda** solo está disponible con el torneo **En curso** y se niega (con un aviso) si:
+
+- la ronda anterior tiene partidas sin resultado o no se ha completado,
+- el torneo ya jugó su **Número de rondas**,
+- hay menos de 2 participantes confirmados o con check-in hecho (solo ellos se emparejan).
+
+Al generarla:
+
+1. La primera ronda se empareja al azar; las siguientes, por puntos y, a igualdad de puntos, por la posición en la clasificación (desempates incluidos), evitando repetir rivales mientras sea posible.
+2. Con un número impar de jugadores, el peor clasificado que aún no haya tenido bye recibe uno: su partida queda con resultado `bye` y puntúa al momento.
+3. Las partidas se numeran por mesa y la ronda queda **Pendiente**.
+
+Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra. Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
+
+La clasificación se calcula así:
+
+- **Puntos**: las reglas de puntuación del torneo; si no tiene, las de su perfil; si tampoco, Victoria 3, Empate 1, Derrota 0 y Bye 3. Un bye sin regla `bye` vale 0 puntos.
+- **Orden**: puntos y, a igualdad, los desempates configurados en su orden y dirección (si el torneo no tiene, los del perfil; si tampoco, Buchholz y Progresivo).
+- La página pública **Clasificación** muestra además Buchholz y el porcentaje de victorias de los oponentes de cada jugador.
 
 ## Perfiles de juego
 
@@ -300,14 +319,15 @@ Son los dos eventos de dominio que el módulo dispara hoy. `src/Domain/Events` d
 | `tournaments.report_results` | editor | Registrado, sin comprobaciones propias todavía |
 | `tournaments.manage_participants` | editor | Registrado, sin comprobaciones propias todavía |
 
-El módulo los registra con el prefijo `tournaments:` (por ejemplo `tournaments:tournaments.view_any`). La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna, se concede en **Roles**. Los administradores tienen acceso completo.
+El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tournaments.view_any`), que es la clave que comprueban las policies: un rol con el permiso concedido en **Roles** accede a lo que el permiso indica. La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna. Los administradores tienen acceso completo.
 
 ## Limitaciones actuales
 
-- **Emparejamientos y clasificación**: el módulo incluye los servicios de emparejamiento suizo (`SwissPairingService`) y de cálculo de la clasificación con desempates (`StandingCalculatorService`), pero el panel aún no los usa: **Generar ronda** crea la ronda sin partidas y nada recalcula la clasificación, así que las páginas de rondas y clasificación solo muestran lo que haya en la base de datos.
-- **Permisos en el panel**: las policies comprueban los permisos sin el prefijo `tournaments:` con que se guardan, así que hoy solo los administradores pueden gestionar torneos y perfiles de torneo; concederlos a otro rol no tiene efecto.
 - **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
-- **Valores por defecto del módulo**: ver [Configuración del módulo](#configuración-del-módulo).
+- **Opciones de emparejamiento**: el método, el criterio de orden, el máximo de byes y la asignación del bye se guardan pero no se aplican (ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)).
+- **Desempates sin cálculo**: `oowp`, `gwp`, `ogwp`, `head_to_head`, `sonneborn_berger` y `random` valen 0.
+- **Progresivo**: se calcula con valores fijos (victoria 3, empate 1,5), no con las reglas del torneo, y sin seguir el orden de las rondas.
+- **Torneo creado desde el evento**: la pestaña del evento no guarda reglas de puntuación ni desempates; el torneo usa las de su perfil o las predeterminadas hasta que se editen en **Torneos**.
 
 ## Arquitectura
 
