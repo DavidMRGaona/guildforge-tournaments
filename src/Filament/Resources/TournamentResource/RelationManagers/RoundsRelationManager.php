@@ -31,6 +31,7 @@ use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
+use Modules\Tournaments\Filament\InvalidMatchResultMessage;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
@@ -216,7 +217,7 @@ final class RoundsRelationManager extends RelationManager
                             Notification::make()
                                 ->title($exception instanceof MatchResultLockedException
                                     ? __('tournaments::messages.errors.result_locked_by_next_round')
-                                    : self::invalidResultMessage($exception))
+                                    : InvalidMatchResultMessage::for($exception))
                                 ->danger()
                                 ->send();
 
@@ -425,13 +426,5 @@ final class RoundsRelationManager extends RelationManager
                 ->numeric()
                 ->required($required),
         };
-    }
-
-    private static function invalidResultMessage(\DomainException $exception): string
-    {
-        return $exception instanceof InvalidMatchResultException
-            && $exception->reason() === InvalidMatchResultException::SCORES_CONTRADICT_RESULT
-            ? __('tournaments::messages.errors.scores_contradict_result')
-            : __('tournaments::messages.errors.invalid_match_result');
     }
 }
