@@ -31,13 +31,13 @@ final class GameProfilesSeederTest extends ModuleTestCase
 
     public function test_running_the_seeder_again_keeps_admin_edits(): void
     {
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
         $count = GameProfileModel::query()->count();
         $profile = GameProfileModel::query()->firstOrFail();
         // Not the name: renaming regenerates the slug (HasSlug), which the seeder matches on
         $profile->update(['description' => 'Edited by an admin']);
 
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
 
         $this->assertSame('Edited by an admin', $profile->fresh()?->description);
         $this->assertSame($count, GameProfileModel::query()->count());
@@ -45,7 +45,7 @@ final class GameProfilesSeederTest extends ModuleTestCase
 
     public function test_seeded_rules_are_in_the_shape_the_domain_reads(): void
     {
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
 
         foreach (GameProfileModel::query()->get() as $profile) {
             foreach ($profile->scoring_rules as $rule) {
@@ -61,7 +61,7 @@ final class GameProfilesSeederTest extends ModuleTestCase
 
     public function test_the_migration_brings_profiles_seeded_before_up_to_date(): void
     {
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
         $profile = GameProfileModel::query()->where('slug', 'warhammer-40k')->firstOrFail();
         // What an installation seeded with 2.0.0 or earlier holds
         DB::table('tournaments_game_profiles')->where('id', $profile->id)->update([
@@ -87,7 +87,7 @@ final class GameProfilesSeederTest extends ModuleTestCase
 
     public function test_every_system_profile_scores_a_bye_as_a_win(): void
     {
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
 
         foreach (GameProfileModel::query()->where('is_system', true)->get() as $profile) {
             $points = [];
@@ -104,7 +104,7 @@ final class GameProfilesSeederTest extends ModuleTestCase
 
     public function test_the_bye_migration_updates_only_the_system_profiles(): void
     {
-        $this->seed(GameProfilesSeeder::class);
+        $this->seedProfiles();
         $system = GameProfileModel::query()->where('slug', 'generic')->firstOrFail();
         $withoutBye = array_values(array_filter(
             $system->scoring_rules,
@@ -123,5 +123,10 @@ final class GameProfilesSeederTest extends ModuleTestCase
         $this->assertContains('bye', array_column(array_column($system->refresh()->scoring_rules, 'condition'), 'result_value'));
         $this->assertEquals($withoutBye, $custom->refresh()->scoring_rules);
         $this->assertFalse(GameProfileModel::query()->where('slug', 'magic-the-gathering')->exists());
+    }
+
+    private function seedProfiles(): void
+    {
+        $this->seed(GameProfilesSeeder::class);
     }
 }
