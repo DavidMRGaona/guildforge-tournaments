@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Application\DTOs\Response\RoundResponseDTO;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
@@ -17,6 +18,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
+use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
@@ -45,6 +47,16 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     }
 
     public function generateNextRound(string $tournamentId): RoundResponseDTO
+    {
+        try {
+            return $this->generateInTransaction($tournamentId);
+        } catch (UniqueConstraintViolationException) {
+            // Another request saved the same round number first (unique tournament + number)
+            throw RoundAlreadyGeneratedException::meanwhile($tournamentId);
+        }
+    }
+
+    private function generateInTransaction(string $tournamentId): RoundResponseDTO
     {
         return DB::transaction(function () use ($tournamentId): RoundResponseDTO {
             $tournament = $this->tournaments->findOrFail(TournamentId::fromString($tournamentId));

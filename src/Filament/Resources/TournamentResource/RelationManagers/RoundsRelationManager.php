@@ -32,6 +32,7 @@ use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
+use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -307,6 +308,7 @@ final class RoundsRelationManager extends RelationManager
     private static function generationErrorMessage(DomainException $exception): string
     {
         return match (true) {
+            $exception instanceof RoundAlreadyGeneratedException => __('tournaments::messages.errors.round_already_generated'),
             $exception instanceof PreviousRoundNotCompletedException => __('tournaments::messages.errors.previous_round_not_completed'),
             $exception instanceof InsufficientParticipantsException => __('tournaments::messages.errors.not_enough_players_for_round'),
             $exception instanceof CannotGeneratePairingsException => __('tournaments::messages.errors.cannot_generate_pairings'),

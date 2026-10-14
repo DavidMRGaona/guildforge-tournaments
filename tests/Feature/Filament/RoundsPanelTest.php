@@ -11,6 +11,7 @@ use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
@@ -21,6 +22,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
+use Modules\Tournaments\Tests\Integration\Infrastructure\Services\RoundManagementServiceTest;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -77,6 +80,20 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->roundsManager($tournament)
             ->callTableAction('generateRound')
             ->assertNotified(__('tournaments::messages.errors.previous_round_not_completed'));
+
+        $this->assertSame(1, RoundModel::query()->count());
+    }
+
+    public function test_a_second_simultaneous_generate_round_shows_a_notice(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $this->app->instance(RoundRepositoryInterface::class, RoundManagementServiceTest::staleRounds(new EloquentRoundRepository()));
+
+        $this->roundsManager($tournament)
+            ->callTableAction('generateRound')
+            ->assertNotified(__('tournaments::messages.errors.round_already_generated'));
 
         $this->assertSame(1, RoundModel::query()->count());
     }
