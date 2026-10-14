@@ -84,4 +84,44 @@ final class GameProfilesSeederTest extends ModuleTestCase
         // Its nine profiles were never seeded: only database/seeders runs on enable
         $this->assertFalse(class_exists('Modules\\Tournaments\\Database\\Seeders\\GameProfileSeeder'));
     }
+
+    public function test_every_system_profile_scores_a_bye_as_a_win(): void
+    {
+        $this->seed(GameProfilesSeeder::class);
+
+        foreach (GameProfileModel::query()->where('is_system', true)->get() as $profile) {
+            $points = [];
+            foreach ($profile->scoring_rules as $rule) {
+                if (($rule['condition']['type'] ?? null) === 'result') {
+                    $points[$rule['condition']['result_value']] = (float) $rule['points'];
+                }
+            }
+
+            $this->assertArrayHasKey('bye', $points, $profile->slug);
+            $this->assertSame($points['win'], $points['bye'], $profile->slug);
+        }
+    }
+
+    public function test_the_bye_migration_updates_only_the_system_profiles(): void
+    {
+        $this->seed(GameProfilesSeeder::class);
+        $system = GameProfileModel::query()->where('slug', 'generic')->firstOrFail();
+        $withoutBye = array_values(array_filter(
+            $system->scoring_rules,
+            static fn (array $rule): bool => ($rule['condition']['result_value'] ?? null) !== 'bye',
+        ));
+        DB::table('tournaments_game_profiles')->where('id', $system->id)->update(['scoring_rules' => json_encode($withoutBye)]);
+        $custom = $system->replicate(['id', 'slug']);
+        $custom->name = 'Perfil propio';
+        $custom->is_system = false;
+        $custom->forceFill(['scoring_rules' => $withoutBye])->save();
+        $deleted = GameProfileModel::query()->where('slug', 'magic-the-gathering')->firstOrFail();
+        DB::table('tournaments_game_profiles')->where('id', $deleted->id)->delete();
+
+        (require dirname(__DIR__, 3).'/database/migrations/2026_10_14_000002_add_bye_rule_to_system_game_profiles.php')->up();
+
+        $this->assertContains('bye', array_column(array_column($system->refresh()->scoring_rules, 'condition'), 'result_value'));
+        $this->assertEquals($withoutBye, $custom->refresh()->scoring_rules);
+        $this->assertFalse(GameProfileModel::query()->where('slug', 'magic-the-gathering')->exists());
+    }
 }

@@ -297,6 +297,22 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->assertSame(2.0, $this->pointsOfAWinner($tournament));
     }
 
+    public function test_a_bye_scores_the_win_points_with_a_system_profile(): void
+    {
+        $profile = GameProfileModel::query()->where('slug', 'warhammer-40k')->firstOrFail();
+        $tournament = $this->tournament([
+            'game_profile_id' => $profile->id,
+            'scoring_rules' => $profile->scoring_rules,
+            'tiebreaker_config' => $profile->tiebreaker_config,
+        ]);
+        $this->participants($tournament, 3);
+
+        $round = $this->rounds()->generateNextRound($tournament->id);
+
+        $bye = MatchModel::query()->where('round_id', $round->id)->whereNull('player_2_id')->sole();
+        $this->assertEquals(3.0, StandingModel::query()->where('participant_id', $bye->player_1_id)->sole()->points);
+    }
+
     public function test_default_rules_apply_without_tournament_or_profile_rules(): void
     {
         $tournament = $this->tournament(['scoring_rules' => null, 'tiebreaker_config' => null]);

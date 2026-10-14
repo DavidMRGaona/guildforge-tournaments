@@ -139,6 +139,28 @@ final class ScoringRuleEvaluatorTest extends TestCase
         $this->assertEquals(0.0, $result['player2']);
     }
 
+    public function test_a_bye_without_a_bye_rule_scores_the_win_points(): void
+    {
+        $rules = [
+            ScoringRule::fromArray(['name' => 'Victoria', 'points' => 3, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]]),
+            ScoringRule::fromArray(['name' => 'Derrota', 'points' => 0, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'loss', 'stat' => null, 'operator' => null, 'value' => null]]),
+        ];
+
+        $result = $this->evaluator->evaluate(MatchResult::Bye, $rules);
+
+        $this->assertEquals(3.0, $result['player1']);
+    }
+
+    public function test_an_explicit_bye_rule_wins_over_the_win_fallback(): void
+    {
+        $rules = [
+            ScoringRule::fromArray(['name' => 'Victoria', 'points' => 3, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]]),
+            ScoringRule::fromArray(['name' => 'Bye', 'points' => 1, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'bye', 'stat' => null, 'operator' => null, 'value' => null]]),
+        ];
+
+        $this->assertEquals(1.0, $this->evaluator->evaluate(MatchResult::Bye, $rules)['player1']);
+    }
+
     public function test_it_evaluates_margin_based_rule_when_condition_met(): void
     {
         // Blood Bowl example: if TD margin >= 3, bonus points
