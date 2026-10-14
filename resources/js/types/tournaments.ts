@@ -233,12 +233,18 @@ export interface TournamentRoundsProps {
 export type GuestRegistrationField = 'guest_name' | 'guest_email' | 'gdpr_consent';
 
 /**
- * JSON body of the registration and withdrawal endpoints
- * (`/torneos/{tournamentId}/inscripcion`): a message, plus per-field errors on a 422.
+ * Fields of the check-in form.
  */
-export interface RegistrationJsonResponse {
+export type CheckInField = 'email' | 'gdpr_consent';
+
+/**
+ * JSON body of the registration and withdrawal endpoints
+ * (`/torneos/{tournamentId}/inscripcion`) and, with `CheckInField`, of the check-in
+ * endpoint (`/torneos/{slug}/check-in`): a message, plus per-field errors on a 422.
+ */
+export interface RegistrationJsonResponse<TField extends string = GuestRegistrationField> {
     message?: string;
-    errors?: Partial<Record<GuestRegistrationField, string[]>>;
+    errors?: Partial<Record<TField, string[]>>;
 }
 
 /**
