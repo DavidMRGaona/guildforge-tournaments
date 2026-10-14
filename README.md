@@ -165,7 +165,7 @@ Se aplican en orden.
 | `stat_max` | Máximo de una estadística |
 | `sos` | Media de los puntos de los oponentes |
 | `mov` | Suma de las diferencias de puntuación a favor del jugador |
-| `random` | Orden aleatorio fijo para cada torneo (se guarda una semilla, así no cambia al recalcular) |
+| `random` | Orden aleatorio fijo para cada torneo (la primera vez que se usa se guarda una semilla, así no cambia al recalcular) |
 
 El bye no cuenta como rival en los desempates basados en oponentes, pero sí como victoria en el porcentaje propio de quien lo recibe. El valor mínimo se aplica también al resultado final de cada desempate.
 
@@ -180,13 +180,13 @@ Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 | Campo | Valores | Por defecto |
 |-------|---------|-------------|
 | Método | `swiss` (empareja jugadores de puntuación similar), `random` (empareja al azar en todas las rondas) | `swiss` |
-| Ordenar por | `points` (puntos y, a igualdad, posición en la clasificación), `stat` (total acumulado de una estadística, luego puntos), `random` | `points` |
+| Ordenar por | `points` (grupos de puntuación: en cada grupo, la mitad superior contra la inferior), `stat` (total acumulado de una estadística, luego puntos; empareja en orden), `random` | `points` |
 | Estadística para ordenar | Obligatoria si se ordena por estadística | — |
 | Evitar repeticiones | Sí: busca una ronda sin rivales repetidos y solo repite si no existe; No: empareja en orden aunque ya se hayan enfrentado | Sí |
 | Máximo de byes por jugador | Número de byes que puede recibir un jugador; si todos lo han alcanzado, el bye se asigna igualmente | 1 |
 | Asignación de bye | `lowest_ranked` (el peor clasificado), `highest_ranked` (el mejor), `random` (al azar), siempre entre quienes no han alcanzado el máximo | `lowest_ranked` |
 
-Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`.
+Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario no se puede guardar hasta elegir otro método.
 
 #### Opciones
 
@@ -238,15 +238,16 @@ Desde el panel (pestaña **Participantes**) se añaden participantes y se confir
 
 - la ronda anterior tiene partidas sin resultado o no se ha completado,
 - el torneo ya jugó su **Número de rondas**,
-- hay menos de 2 participantes confirmados o con check-in hecho (solo ellos se emparejan).
+- hay menos de 2 participantes confirmados o con check-in hecho (solo ellos se emparejan),
+- otra sesión acaba de generar la misma ronda.
 
 Al generarla:
 
-1. La primera ronda se empareja al azar; las siguientes, según la [configuración de emparejamientos](#configuración-de-emparejamientos) (por defecto, por puntos y, a igualdad, por la posición en la clasificación, evitando repetir rivales mientras sea posible).
+1. La primera ronda se empareja al azar; las siguientes, según la [configuración de emparejamientos](#configuración-de-emparejamientos). Por defecto (`swiss` por puntos), los jugadores se agrupan por puntos y se ordenan por su posición en la clasificación; en cada grupo de *2k* jugadores, el 1.º se enfrenta al *k+1*.º, el 2.º al *k+2*.º y así sucesivamente. Si un grupo es impar, su último jugador baja al grupo siguiente. Si un emparejamiento repetiría rivales, se prueba con el siguiente rival en ese orden, y solo se repite si no hay ninguna ronda posible sin repeticiones.
 2. Con un número impar de jugadores, uno recibe bye según la configuración (por defecto, el peor clasificado que aún no lo haya tenido): su partida queda con resultado `bye` y puntúa al momento.
 3. Las partidas se numeran por mesa y la ronda queda **Pendiente**.
 
-Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Con el resultado se pueden anotar la puntuación de cada jugador (juegos o puntos ganados en la partida, que usan `gwp`, `ogwp` y `mov`) y sus estadísticas. Los cambios de **Gestionar partidas** se guardan todos o ninguno, con un solo recálculo. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra, salvo en una ronda completada que ya tiene una ronda posterior (ahí solo se puede corregir). Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
+Cada resultado registrado desde **Gestionar partidas** (o desde la lista de partidas de la ronda) recalcula la clasificación entera. Con el resultado se pueden anotar la puntuación de cada jugador (juegos o puntos ganados en la partida, que usan `gwp`, `ogwp` y `mov`) y sus estadísticas; si se anotan las dos puntuaciones, deben cuadrar con el resultado (quien gana no puede puntuar menos y un empate exige puntuaciones iguales). Los cambios de **Gestionar partidas** se guardan todos o ninguno, con un solo recálculo. Corregir un resultado sustituye al anterior; volver a «No jugada» lo borra, salvo en una ronda completada que ya tiene una ronda posterior (ahí solo se puede corregir). Una partida con bye solo admite `bye` y una partida entre dos jugadores no lo admite.
 
 La clasificación se calcula así:
 
@@ -334,6 +335,7 @@ El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tourname
 ## Limitaciones actuales
 
 - **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
+- **Pestaña del evento y perfil**: en un torneo con perfil de torneo pero sin reglas propias, guardar la pestaña del evento guarda sus puntos y desempates (por defecto 3/1/0/3, Buchholz y Progresivo) como reglas del torneo, que pasan a tener prioridad sobre las del perfil.
 
 ## Arquitectura
 
