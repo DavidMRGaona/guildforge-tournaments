@@ -124,6 +124,25 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->assertEquals(3.0, $winner->points);
     }
 
+    public function test_manage_matches_explains_scores_that_contradict_the_result(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        $this->roundsManager($tournament)
+            ->mountTableAction('manageMatches', $round)
+            ->setTableActionData(['matches' => [
+                [...$this->matchRow($match, MatchResult::PlayerOneWin), 'player_1_score' => 0, 'player_2_score' => 2],
+            ]])
+            ->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.scores_contradict_result'));
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
     public function test_report_result_on_a_match_updates_the_standings(): void
     {
         $tournament = $this->tournament();
