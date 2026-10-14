@@ -18,6 +18,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Locked;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -45,7 +46,9 @@ final class TournamentConfigRelationManager extends RelationManager
     /**
      * The tournament has rules the tab cannot show (stat conditions, other tiebreaker types):
      * the tab leaves them alone and points to the tournament form.
+     * Locked: a client clearing it would make the save overwrite those rules.
      */
+    #[Locked]
     public bool $hasAdvancedRules = false;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string

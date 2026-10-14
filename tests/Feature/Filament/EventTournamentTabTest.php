@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
@@ -84,6 +85,34 @@ final class EventTournamentTabTest extends ModuleTestCase
 
         $this->tab($tournament->event)
             ->assertSee(__('tournaments::messages.config.advanced_rules_notice'))
+            ->set('configData.name', 'Nuevo nombre')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $tournament->refresh();
+        $this->assertSame('Nuevo nombre', $tournament->name);
+        $this->assertEquals($advancedRules, $tournament->scoring_rules);
+        $this->assertEquals($advancedTiebreakers, $tournament->tiebreaker_config);
+    }
+
+    public function test_a_client_cannot_clear_the_advanced_rules_flag_to_overwrite_them(): void
+    {
+        $advancedRules = [
+            ['name' => 'Victoria amplia', 'points' => 5, 'priority' => 10, 'condition' => ['type' => 'margin_diff', 'result_value' => null, 'stat' => 'vp', 'operator' => '>=', 'value' => 20]],
+            $this->resultRule('Victoria', 'win', 3),
+        ];
+        $advancedTiebreakers = [['key' => 'vp', 'name' => 'VP', 'type' => 'stat_sum', 'stat' => 'vp', 'direction' => 'desc', 'min_value' => null]];
+        $tournament = $this->tournament(['scoring_rules' => $advancedRules, 'tiebreaker_config' => $advancedTiebreakers]);
+
+        $tab = $this->tab($tournament->event)->assertSet('hasAdvancedRules', true);
+
+        try {
+            $tab->set('hasAdvancedRules', false);
+        } catch (CannotUpdateLockedPropertyException) {
+            // The forged update is rejected; the component keeps its state
+        }
+
+        $tab->assertSet('hasAdvancedRules', true)
             ->set('configData.name', 'Nuevo nombre')
             ->call('save')
             ->assertHasNoErrors();
