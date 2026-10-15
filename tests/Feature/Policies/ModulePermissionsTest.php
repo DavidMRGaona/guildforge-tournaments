@@ -36,7 +36,7 @@ final class ModulePermissionsTest extends ModuleTestCase
     {
         $registry = app(PermissionRegistryInterface::class);
 
-        foreach (['view_any', 'view', 'create', 'update', 'delete', 'manage_config'] as $action) {
+        foreach (['view_any', 'view', 'create', 'update', 'delete', 'manage_config', 'report_results', 'manage_participants'] as $action) {
             $this->assertTrue($registry->has("tournaments:tournaments.{$action}"), $action);
         }
     }
@@ -53,6 +53,8 @@ final class ModulePermissionsTest extends ModuleTestCase
             'update' => ['update', 'tournaments:tournaments.update'],
             'delete' => ['delete', 'tournaments:tournaments.delete'],
             'deleteAny' => ['deleteAny', 'tournaments:tournaments.delete'],
+            'reportResults' => ['reportResults', 'tournaments:tournaments.report_results'],
+            'manageParticipants' => ['manageParticipants', 'tournaments:tournaments.manage_participants'],
         ];
     }
 

@@ -8,7 +8,7 @@ use DomainException;
 
 final class PreviousRoundNotCompletedException extends DomainException
 {
-    private function __construct(string $message)
+    private function __construct(string $message, private readonly int $unreportedMatches = 0)
     {
         parent::__construct($message);
     }
@@ -20,6 +20,14 @@ final class PreviousRoundNotCompletedException extends DomainException
 
     public static function hasUnreportedMatches(string $roundId, int $unreportedCount): self
     {
-        return new self("Round {$roundId} has {$unreportedCount} unreported matches and cannot be completed.");
+        return new self("Round {$roundId} has {$unreportedCount} unreported matches and cannot be completed.", $unreportedCount);
+    }
+
+    /**
+     * Matches of the round still without result (0 when the round itself is not finished).
+     */
+    public function unreportedMatches(): int
+    {
+        return $this->unreportedMatches;
     }
 }

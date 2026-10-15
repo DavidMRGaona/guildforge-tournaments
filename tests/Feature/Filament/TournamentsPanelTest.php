@@ -166,6 +166,32 @@ final class TournamentsPanelTest extends ModuleTestCase
             ->assertSee(__('tournaments::messages.advanced_config.inherit_from_profile'));
     }
 
+    public function test_a_tournament_stored_with_the_old_accelerated_method_must_choose_another_to_save(): void
+    {
+        $tournament = $this->tournament(['pairing_config' => ['method' => 'accelerated']]);
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->call('save')
+            ->assertHasFormErrors(['pairing_config.method']);
+
+        $this->assertSame('accelerated', $tournament->refresh()->pairing_config['method'] ?? null);
+    }
+
+    public function test_a_profile_stored_with_the_old_accelerated_method_must_choose_another_to_save(): void
+    {
+        $profile = $this->systemProfile()->replicate(['id', 'slug']);
+        $profile->name = 'Perfil antiguo';
+        $profile->is_system = false;
+        $profile->pairing_config = [...$profile->pairing_config, 'method' => 'accelerated'];
+        $profile->save();
+
+        Livewire::test(EditGameProfile::class, ['record' => $profile->getRouteKey()])
+            ->call('save')
+            ->assertHasFormErrors(['pairing_config.method']);
+
+        $this->assertSame('accelerated', $profile->refresh()->pairing_config['method'] ?? null);
+    }
+
     public function test_a_tournament_is_created_from_a_seeded_system_profile(): void
     {
         $profile = $this->systemProfile();

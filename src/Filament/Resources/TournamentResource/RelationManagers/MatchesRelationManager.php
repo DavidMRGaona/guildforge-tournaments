@@ -20,6 +20,7 @@ use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
+use Modules\Tournaments\Filament\InvalidMatchResultMessage;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 
@@ -83,6 +84,7 @@ final class MatchesRelationManager extends RelationManager
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
                     ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
+                    ->authorize(fn (): bool => $this->canReportResults())
                     ->schema(function (MatchModel $record): array {
                         $fields = [
                             Select::make('result')
@@ -155,7 +157,7 @@ final class MatchesRelationManager extends RelationManager
                             Notification::make()
                                 ->title($exception instanceof MatchResultLockedException
                                     ? __('tournaments::messages.errors.result_locked_by_next_round')
-                                    : self::invalidResultMessage($exception))
+                                    : InvalidMatchResultMessage::for($exception))
                                 ->danger()
                                 ->send();
 
@@ -169,6 +171,17 @@ final class MatchesRelationManager extends RelationManager
                     }),
             ])
             ->defaultSort('table_number', 'asc');
+    }
+
+    /**
+     * Recording results needs tournaments.report_results, not only editing the tournament.
+     */
+    private function canReportResults(): bool
+    {
+        /** @var RoundModel $round */
+        $round = $this->getOwnerRecord();
+
+        return auth()->user()?->can('reportResults', $round->tournament) ?? false;
     }
 
     /**
@@ -221,13 +234,5 @@ final class MatchesRelationManager extends RelationManager
                 ->numeric()
                 ->required($required),
         };
-    }
-
-    private static function invalidResultMessage(\DomainException $exception): string
-    {
-        return $exception instanceof InvalidMatchResultException
-            && $exception->reason() === InvalidMatchResultException::SCORES_CONTRADICT_RESULT
-            ? __('tournaments::messages.errors.scores_contradict_result')
-            : __('tournaments::messages.errors.invalid_match_result');
     }
 }

@@ -77,7 +77,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
                        [Finalizar] ← [Rondas: generar, iniciar, resultados, completar] ← [Iniciar]
 ```
 
-También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. Si el torneo ya tiene reglas que la pestaña no puede mostrar (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
+También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. La pestaña muestra las reglas que usa la clasificación: las del torneo y, para lo que no tenga propio, las de su perfil de torneo (un aviso nombra el perfil). En un torneo con perfil, guardar solo convierte en reglas del torneo los puntos o los desempates que se hayan cambiado en la pestaña; lo que no se toca sigue saliendo del perfil, también si el perfil cambia después. Sin perfil, guarda siempre los puntos y desempates de la pestaña. Si las reglas que usa el torneo, propias o del perfil, no se pueden mostrar en la pestaña (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
 
 ### Pestañas del formulario
 
@@ -147,7 +147,7 @@ Se aplican en orden.
 | Tipo | Sí | Ver tipos |
 | Estadística | Según el tipo | Para los tipos basados en estadísticas |
 | Dirección | No | Mayor es mejor / menor es mejor |
-| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 da el OMW% estándar) |
+| Valor mínimo | No | Suelo del valor. En `owp`, `oowp` y `ogwp` se aplica a cada oponente antes de hacer la media (0,33 es el suelo habitual del OMW%; el módulo cuenta el empate como 0,5 y la fórmula de MTG como 1/3, así que solo dan lo mismo sin empates) |
 
 | Tipo | Descripción |
 |------|-------------|
@@ -170,7 +170,7 @@ Se aplican en orden.
 
 El bye no cuenta como rival en los desempates basados en oponentes, pero sí como victoria en el porcentaje propio de quien lo recibe. El valor mínimo se aplica también al resultado final de cada desempate.
 
-Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665.
+Ejemplo con valor mínimo 0,33 en `owp`: un jugador que se enfrentó a un rival con 1 victoria de 1 (100 %) y a otro con un empate y una derrota (25 %, que cuenta como 33 %) tiene un `owp` de (1 + 0,33) / 2 = 0,665. Con la fórmula de MTG, que cuenta el empate como 1/3, ese segundo rival tendría un 17 % (1 punto de 6), que también cuenta como 33 %.
 
 Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 
@@ -187,7 +187,7 @@ Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 | Máximo de byes por jugador | Número de byes que puede recibir un jugador; si todos lo han alcanzado, el bye se asigna igualmente | 1 |
 | Asignación de bye | `lowest_ranked` (el peor clasificado), `highest_ranked` (el mejor), `random` (al azar), siempre entre quienes no han alcanzado el máximo | `lowest_ranked` |
 
-Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario no se puede guardar hasta elegir otro método.
+Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario marca el campo **Método** y no se guarda hasta elegir `swiss` o `random`; el módulo no cambia esos datos por su cuenta.
 
 #### Opciones
 
@@ -227,7 +227,7 @@ Solo se aceptan inscripciones en `registration_open`. El panel permite **Iniciar
 | Retirado | `withdrawn` | `registered` (se vuelve a inscribir) |
 | Descalificado | `disqualified` | — |
 
-Desde el panel (pestaña **Participantes**) se añaden participantes y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
+Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
 
 ### Resultado de partida
 
@@ -328,15 +328,17 @@ Son los dos eventos de dominio que el módulo dispara hoy. `src/Domain/Events` d
 | `tournaments.update` | editor | Editar torneos |
 | `tournaments.delete` | — | Eliminar torneos |
 | `tournaments.manage_config` | editor | Gestionar perfiles de torneo |
-| `tournaments.report_results` | editor | Registrado, sin comprobaciones propias todavía |
-| `tournaments.manage_participants` | editor | Registrado, sin comprobaciones propias todavía |
+| `tournaments.report_results` | editor | Registrar resultados: **Gestionar partidas** en las rondas y **Reportar resultado** en las partidas |
+| `tournaments.manage_participants` | editor | Gestionar participantes: añadir, confirmar, check-in, retirar, descalificar y eliminar, también en bloque |
 
 El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tournaments.view_any`), que es la clave que comprueban las policies: un rol con el permiso concedido en **Roles** accede a lo que el permiso indica. La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna. Los administradores tienen acceso completo.
+
+Las pestañas **Rondas** y **Participantes** están en la edición del torneo, así que piden también `tournaments.update`. Sin `tournaments.report_results` o `tournaments.manage_participants` se ven, pero sin esas acciones; generar, iniciar y completar rondas sigue dependiendo solo de `tournaments.update`. La actualización a la versión 2.4.0 concede los dos permisos a cada rol que ya tenía `tournaments.update`, para que nadie pierda lo que podía hacer.
 
 ## Limitaciones actuales
 
 - **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
-- **Pestaña del evento y perfil**: en un torneo con perfil de torneo pero sin reglas propias, guardar la pestaña del evento guarda sus puntos y desempates (por defecto 3/1/0/3, Buchholz y Progresivo) como reglas del torneo, que pasan a tener prioridad sobre las del perfil.
+- **Método `accelerated`**: los torneos y perfiles que aún lo tengan guardado se emparejan como `swiss`, pero hay que elegir otro método antes de guardar su formulario (ver [Configuración de emparejamientos](#configuración-de-emparejamientos)).
 
 ## Arquitectura
 

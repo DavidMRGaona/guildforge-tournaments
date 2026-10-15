@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\Tournaments\Application\DTOs\Response\RoundResponseDTO;
+use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
@@ -124,6 +129,45 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->assertEquals(3.0, $winner->points);
     }
 
+    public function test_manage_matches_explains_scores_that_contradict_the_result(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        $this->roundsManager($tournament)
+            ->mountTableAction('manageMatches', $round)
+            ->setTableActionData(['matches' => [
+                [...$this->matchRow($match, MatchResult::PlayerOneWin), 'player_1_score' => 0, 'player_2_score' => 2],
+            ]])
+            ->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.scores_contradict_result'));
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
+    public function test_manage_matches_rejects_a_forged_bye_on_a_match_between_two_players(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        // The hidden bye flag is client state: a forged request can turn it on to be offered "bye"
+        $this->roundsManager($tournament)
+            ->mountTableAction('manageMatches', $round)
+            ->setTableActionData(['matches' => [
+                [...$this->matchRow($match, MatchResult::Bye), 'is_bye' => true],
+            ]])
+            ->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.invalid_match_result'));
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
     public function test_report_result_on_a_match_updates_the_standings(): void
     {
         $tournament = $this->tournament();
@@ -154,6 +198,256 @@ final class RoundsPanelTest extends ModuleTestCase
             ->assertNotified(__('tournaments::messages.errors.scores_contradict_result'));
 
         $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
+    public function test_start_round_is_only_offered_for_a_pending_round(): void
+    {
+        $tournament = $this->tournament();
+        $pending = $this->round($tournament, 1, RoundStatus::Pending);
+        $inProgress = $this->round($tournament, 2, RoundStatus::InProgress);
+        $finished = $this->round($tournament, 3, RoundStatus::Finished);
+
+        $this->roundsManager($tournament)
+            ->assertTableActionVisible('startRound', $pending)
+            ->assertTableActionHidden('startRound', $inProgress)
+            ->assertTableActionHidden('startRound', $finished);
+    }
+
+    public function test_start_round_puts_the_round_in_progress(): void
+    {
+        $tournament = $this->tournament();
+        $round = $this->round($tournament, 1, RoundStatus::Pending);
+
+        $this->roundsManager($tournament)
+            ->callTableAction('startRound', $round)
+            ->assertNotified(__('tournaments::messages.messages.round_started'));
+
+        $round->refresh();
+        $this->assertSame(RoundStatus::InProgress, $round->status);
+        $this->assertNotNull($round->started_at);
+        $this->assertLessThan(5, abs(now()->diffInSeconds($round->started_at)));
+        $this->assertNull($round->completed_at);
+    }
+
+    public function test_a_second_start_round_click_changes_nothing(): void
+    {
+        $tournament = $this->tournament();
+        $round = $this->round($tournament, 1, RoundStatus::Pending);
+        // Both clicks open the confirmation while the round is still pending
+        $first = $this->roundsManager($tournament)->mountTableAction('startRound', $round);
+        $second = $this->roundsManager($tournament)->mountTableAction('startRound', $round);
+        $first->callMountedTableAction();
+        $startedAt = $round->refresh()->started_at?->toIso8601String();
+        $this->travel(1)->minutes();
+        session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+
+        $second->callMountedTableAction()->assertNotNotified();
+
+        $round->refresh();
+        $this->assertSame(RoundStatus::InProgress, $round->status);
+        $this->assertSame($startedAt, $round->started_at?->toIso8601String());
+        $this->roundsManager($tournament)->assertTableActionHidden('startRound', $round);
+    }
+
+    public function test_complete_round_is_only_offered_for_a_round_in_progress(): void
+    {
+        $tournament = $this->tournament();
+        $pending = $this->round($tournament, 1, RoundStatus::Pending);
+        $inProgress = $this->round($tournament, 2, RoundStatus::InProgress);
+        $finished = $this->round($tournament, 3, RoundStatus::Finished);
+
+        $this->roundsManager($tournament)
+            ->assertTableActionHidden('completeRound', $pending)
+            ->assertTableActionVisible('completeRound', $inProgress)
+            ->assertTableActionHidden('completeRound', $finished);
+    }
+
+    public function test_complete_round_refuses_while_matches_have_no_result(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $this->roundsManager($tournament)->callTableAction('startRound', $round);
+        $first = MatchModel::query()->where('round_id', $round->id)->orderBy('table_number')->firstOrFail();
+        $first->update(['result' => MatchResult::Draw->value]);
+
+        $this->roundsManager($tournament)
+            ->callTableAction('completeRound', $round)
+            ->assertNotified(
+                Notification::make()
+                    ->title(__('tournaments::messages.errors.matches_not_completed'))
+                    ->body(__('tournaments::messages.errors.matches_not_completed_detail', ['count' => 1]))
+                    ->danger()
+            );
+
+        $round->refresh();
+        $this->assertSame(RoundStatus::InProgress, $round->status);
+        $this->assertNull($round->completed_at);
+    }
+
+    public function test_complete_round_finishes_a_round_with_every_result(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $this->roundsManager($tournament)->callTableAction('startRound', $round);
+        MatchModel::query()->where('round_id', $round->id)->update(['result' => MatchResult::PlayerOneWin->value]);
+
+        $this->roundsManager($tournament)
+            ->callTableAction('completeRound', $round)
+            ->assertNotified(__('tournaments::messages.messages.round_completed'));
+
+        $round->refresh();
+        $this->assertSame(RoundStatus::Finished, $round->status);
+        $this->assertNotNull($round->completed_at);
+        $this->assertLessThan(5, abs(now()->diffInSeconds($round->completed_at)));
+    }
+
+    public function test_a_second_complete_round_click_changes_nothing(): void
+    {
+        $tournament = $this->tournament();
+        $round = $this->round($tournament, 1, RoundStatus::InProgress);
+        // Both clicks open the confirmation while the round is still in progress
+        $first = $this->roundsManager($tournament)->mountTableAction('completeRound', $round);
+        $second = $this->roundsManager($tournament)->mountTableAction('completeRound', $round);
+        $first->callMountedTableAction();
+        $completedAt = $round->refresh()->completed_at?->toIso8601String();
+        $this->travel(1)->minutes();
+        session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+
+        $second->callMountedTableAction()->assertNotNotified();
+
+        $round->refresh();
+        $this->assertSame(RoundStatus::Finished, $round->status);
+        $this->assertSame($completedAt, $round->completed_at?->toIso8601String());
+        $this->roundsManager($tournament)->assertTableActionHidden('completeRound', $round);
+    }
+
+    public function test_start_and_complete_round_go_through_the_round_service(): void
+    {
+        $tournament = $this->tournament();
+        $round = $this->round($tournament, 1, RoundStatus::Pending);
+        // The real round service, recording the start and complete calls
+        $calls = [];
+        $record = static function (string $call) use (&$calls): void {
+            $calls[] = $call;
+        };
+        $service = new class($this->app->make(RoundManagementServiceInterface::class), $record) implements RoundManagementServiceInterface
+        {
+            public function __construct(private readonly RoundManagementServiceInterface $inner, private readonly \Closure $record) {}
+
+            public function generateNextRound(string $tournamentId): RoundResponseDTO
+            {
+                return $this->inner->generateNextRound($tournamentId);
+            }
+
+            public function startRound(string $roundId): RoundResponseDTO
+            {
+                ($this->record)('startRound:'.$roundId);
+
+                return $this->inner->startRound($roundId);
+            }
+
+            public function completeRound(string $roundId): RoundResponseDTO
+            {
+                ($this->record)('completeRound:'.$roundId);
+
+                return $this->inner->completeRound($roundId);
+            }
+
+            public function find(string $roundId): ?RoundResponseDTO
+            {
+                return $this->inner->find($roundId);
+            }
+
+            public function findByTournament(string $tournamentId): array
+            {
+                return $this->inner->findByTournament($tournamentId);
+            }
+
+            public function getCurrentRound(string $tournamentId): ?RoundResponseDTO
+            {
+                return $this->inner->getCurrentRound($tournamentId);
+            }
+        };
+        $this->app->instance(RoundManagementServiceInterface::class, $service);
+
+        $this->roundsManager($tournament)->callTableAction('startRound', $round);
+        $this->roundsManager($tournament)->callTableAction('completeRound', $round);
+
+        $this->assertSame(['startRound:'.$round->id, 'completeRound:'.$round->id], $calls);
+        $this->assertSame(RoundStatus::Finished, $round->refresh()->status);
+    }
+
+    public function test_a_round_changed_meanwhile_shows_a_notice_and_saves_nothing(): void
+    {
+        $tournament = $this->tournament();
+        $pending = $this->round($tournament, 1, RoundStatus::Pending);
+        $inProgress = $this->round($tournament, 2, RoundStatus::InProgress);
+        // Another admin moved both rounds on between the page load and the confirmation
+        $this->app->instance(RoundManagementServiceInterface::class, $this->roundServiceRefusingTransitions());
+
+        $this->roundsManager($tournament)
+            ->callTableAction('startRound', $pending)
+            ->assertNotified(__('tournaments::messages.errors.invalid_state_transition'));
+        $this->roundsManager($tournament)
+            ->callTableAction('completeRound', $inProgress)
+            ->assertNotified(__('tournaments::messages.errors.invalid_state_transition'));
+
+        $this->assertSame(RoundStatus::Pending, $pending->refresh()->status);
+        $this->assertSame(RoundStatus::InProgress, $inProgress->refresh()->status);
+    }
+
+    private function roundServiceRefusingTransitions(): RoundManagementServiceInterface
+    {
+        return new class($this->app->make(RoundManagementServiceInterface::class)) implements RoundManagementServiceInterface
+        {
+            public function __construct(private readonly RoundManagementServiceInterface $inner) {}
+
+            public function generateNextRound(string $tournamentId): RoundResponseDTO
+            {
+                return $this->inner->generateNextRound($tournamentId);
+            }
+
+            public function startRound(string $roundId): RoundResponseDTO
+            {
+                throw InvalidStateTransitionException::round($roundId, 'in_progress', 'in_progress');
+            }
+
+            public function completeRound(string $roundId): RoundResponseDTO
+            {
+                throw InvalidStateTransitionException::round($roundId, 'finished', 'finished');
+            }
+
+            public function find(string $roundId): ?RoundResponseDTO
+            {
+                return $this->inner->find($roundId);
+            }
+
+            public function findByTournament(string $tournamentId): array
+            {
+                return $this->inner->findByTournament($tournamentId);
+            }
+
+            public function getCurrentRound(string $tournamentId): ?RoundResponseDTO
+            {
+                return $this->inner->getCurrentRound($tournamentId);
+            }
+        };
+    }
+
+    private function round(TournamentModel $tournament, int $number, RoundStatus $status): RoundModel
+    {
+        return RoundModel::create([
+            'id' => (string) Str::uuid(),
+            'tournament_id' => $tournament->id,
+            'round_number' => $number,
+            'status' => $status->value,
+            'started_at' => $status === RoundStatus::Pending ? null : now()->subHour(),
+            'completed_at' => $status === RoundStatus::Finished ? now()->subMinutes(10) : null,
+        ])->refresh();
     }
 
     /**

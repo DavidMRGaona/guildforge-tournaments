@@ -18,6 +18,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Locked;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -34,6 +35,9 @@ final class TournamentConfigRelationManager extends RelationManager
 {
     protected static string $relationship = 'tournament';
 
+    /** Tiebreakers of a tournament without own or profile tiebreakers, as the standings use them. */
+    private const array DEFAULT_TIEBREAKERS = ['buchholz', 'progressive'];
+
     protected static ?string $recordTitleAttribute = 'name';
 
     // The module registers its view namespace at runtime, so Larastan cannot resolve it as a view-string
@@ -45,8 +49,16 @@ final class TournamentConfigRelationManager extends RelationManager
     /**
      * The tournament has rules the tab cannot show (stat conditions, other tiebreaker types):
      * the tab leaves them alone and points to the tournament form.
+     * Locked: a client clearing it would make the save overwrite those rules.
      */
+    #[Locked]
     public bool $hasAdvancedRules = false;
+
+    /**
+     * The game profile whose points or tiebreakers the tab shows because the tournament has none of its own.
+     */
+    #[Locked]
+    public ?string $inheritedProfileName = null;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -66,8 +78,18 @@ final class TournamentConfigRelationManager extends RelationManager
         $tournament = TournamentModel::where('event_id', $eventId)->first();
 
         if ($tournament) {
-            $this->hasAdvancedRules = ($tournament->scoring_rules !== null && $this->scoreWeightsFrom($tournament->scoring_rules) === null)
-                || ($tournament->tiebreaker_config !== null && $this->tiebreakersFrom($tournament->tiebreaker_config) === null);
+            // The rules the standings use: the tournament's own, else its game profile's
+            $profile = $tournament->gameProfile;
+            $rules = $this->effectiveRules($tournament->scoring_rules, $profile?->scoring_rules);
+            $tiebreakers = $this->effectiveRules($tournament->tiebreaker_config, $profile?->tiebreaker_config);
+
+            $this->hasAdvancedRules = ($rules !== null && $this->scoreWeightsFrom($rules) === null)
+                || ($tiebreakers !== null && $this->tiebreakersFrom($tiebreakers) === null);
+            // Something the tab shows comes from the profile, not from the tournament
+            $this->inheritedProfileName = $profile !== null
+                && ($rules !== $this->effectiveRules($tournament->scoring_rules, null) || $tiebreakers !== $this->effectiveRules($tournament->tiebreaker_config, null))
+                ? $profile->name
+                : null;
 
             $this->configForm->fill([
                 'tournament_enabled' => true,
@@ -76,8 +98,8 @@ final class TournamentConfigRelationManager extends RelationManager
                 'max_rounds' => $tournament->max_rounds,
                 'max_participants' => $tournament->max_participants,
                 'min_participants' => $tournament->min_participants,
-                'score_weights' => $this->scoreWeightsFrom($tournament->scoring_rules) ?? $this->getDefaultScoreWeights(),
-                'tiebreakers' => $this->tiebreakersFrom($tournament->tiebreaker_config) ?? ['buchholz', 'progressive'],
+                'score_weights' => $this->scoreWeightsFrom($rules) ?? $this->getDefaultScoreWeights(),
+                'tiebreakers' => $this->tiebreakersFrom($tiebreakers) ?? self::DEFAULT_TIEBREAKERS,
                 'allow_guests' => $tournament->allow_guests,
                 'requires_check_in' => $tournament->requires_check_in,
                 'check_in_starts_before' => $tournament->check_in_starts_before,
@@ -177,6 +199,8 @@ final class TournamentConfigRelationManager extends RelationManager
                 ->schema([
                     Text::make(__('tournaments::messages.config.advanced_rules_notice'))
                         ->visible(fn (): bool => $this->hasAdvancedRules),
+                    Text::make(fn (): string => __('tournaments::messages.config.profile_rules_notice', ['profile' => $this->inheritedProfileName]))
+                        ->visible(fn (): bool => ! $this->hasAdvancedRules && $this->inheritedProfileName !== null),
                     Repeater::make('score_weights')
                         ->visible(fn (): bool => ! $this->hasAdvancedRules)
                         ->label(__('tournaments::messages.config.score_weights'))
@@ -280,8 +304,22 @@ final class TournamentConfigRelationManager extends RelationManager
         ];
 
         if (! $this->hasAdvancedRules) {
-            $data['scoring_rules'] = $this->scoringRulesFrom($formData['score_weights'] ?? $this->getDefaultScoreWeights());
-            $data['tiebreaker_config'] = $this->tiebreakerConfigFrom($formData['tiebreakers'] ?? ['buchholz', 'progressive']);
+            $scoringRules = $this->scoringRulesFrom($formData['score_weights'] ?? $this->getDefaultScoreWeights());
+            $tiebreakerConfig = $this->tiebreakerConfigFrom($formData['tiebreakers'] ?? self::DEFAULT_TIEBREAKERS);
+
+            // With a game profile, only what the user changed becomes the tournament's own rules:
+            // saving what the tab showed would hide later changes to the profile
+            $profile = $tournament?->gameProfile;
+            $shownRules = $this->effectiveRules($tournament?->scoring_rules, $profile?->scoring_rules);
+            $shownTiebreakers = $this->effectiveRules($tournament?->tiebreaker_config, $profile?->tiebreaker_config);
+
+            if ($profile === null || $scoringRules !== $this->scoringRulesFrom($this->scoreWeightsFrom($shownRules) ?? $this->getDefaultScoreWeights())) {
+                $data['scoring_rules'] = $scoringRules;
+            }
+
+            if ($profile === null || $tiebreakerConfig !== $this->tiebreakerConfigFrom($this->tiebreakersFrom($shownTiebreakers) ?? self::DEFAULT_TIEBREAKERS)) {
+                $data['tiebreaker_config'] = $tiebreakerConfig;
+            }
         }
 
         if ($tournament) {
@@ -295,6 +333,22 @@ final class TournamentConfigRelationManager extends RelationManager
             ->title(__('tournaments::messages.config.saved'))
             ->success()
             ->send();
+    }
+
+    /**
+     * The tournament's own rules, else its game profile's, as the standings pick them; null when neither has any.
+     *
+     * @param  array<mixed>|null  $own
+     * @param  array<mixed>|null  $profile
+     * @return array<mixed>|null
+     */
+    private function effectiveRules(?array $own, ?array $profile): ?array
+    {
+        if ($own !== null && $own !== []) {
+            return $own;
+        }
+
+        return $profile !== null && $profile !== [] ? $profile : null;
     }
 
     /**

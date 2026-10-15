@@ -2,7 +2,7 @@
 import { computed, ref, reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { TournamentCheckInProps } from '../../types/tournaments';
+import type { TournamentCheckInProps, RegistrationJsonResponse, CheckInField } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
@@ -10,10 +10,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
-interface FormErrors {
-    email?: string;
-    gdpr_consent?: string;
-}
+type FormErrors = Partial<Record<CheckInField, string | undefined>>;
 
 const props = defineProps<TournamentCheckInProps>();
 
@@ -89,7 +86,7 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
             notifySuccess(t('tournaments.check_in.success'));
             router.reload();
         } else {
-            const data = await response.json();
+            const data: RegistrationJsonResponse<CheckInField> = await response.json();
             notifyError(data.message || t('tournaments.check_in.window_closed'));
         }
     } catch {
@@ -124,7 +121,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
             return;
         }
 
-        const data = await response.json();
+        const data: RegistrationJsonResponse<CheckInField> = await response.json();
 
         if (response.ok) {
             notifySuccess(t('tournaments.check_in.success'));

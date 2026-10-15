@@ -2,7 +2,7 @@
 import { computed, ref, reactive, watch, nextTick } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { TournamentShowProps, Standing } from '../../types/tournaments';
+import type { TournamentShowProps, Standing, GuestRegistrationField, RegistrationJsonResponse } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useTournaments } from '../../composables/useTournaments';
@@ -11,11 +11,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
-interface FormErrors {
-    guest_name?: string;
-    guest_email?: string;
-    gdpr_consent?: string;
-}
+type FormErrors = Partial<Record<GuestRegistrationField, string | undefined>>;
 
 const props = defineProps<TournamentShowProps>();
 
@@ -117,7 +113,7 @@ const handleRegister = async (): Promise<void> => {
             notifySuccess(t('tournaments.public.registered_successfully'));
             router.reload();
         } else {
-            const data = await response.json();
+            const data: RegistrationJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.public.cannot_register'));
         }
     } catch {
@@ -151,7 +147,7 @@ const submitGuestRegistration = async (): Promise<void> => {
             return;
         }
 
-        const data = await response.json();
+        const data: RegistrationJsonResponse = await response.json();
 
         if (response.ok) {
             showGuestModal.value = false;
@@ -222,7 +218,7 @@ const confirmWithdraw = async (): Promise<void> => {
             notifySuccess(t('tournaments.public.withdrawn_successfully'));
             router.reload();
         } else {
-            const data = await response.json();
+            const data: RegistrationJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.public.cannot_register'));
         }
     } catch {

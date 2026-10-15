@@ -26,7 +26,6 @@
       "tournaments.manage_participants"
     ],
     "routes": [
-      "api",
       "web"
     ],
     "filament": true,
