@@ -17,6 +17,7 @@ use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Entities\Round;
@@ -210,6 +211,55 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->expectException(PreviousRoundNotCompletedException::class);
 
         $this->rounds()->generateNextRound($tournament->id);
+    }
+
+    public function test_starting_a_pending_round_puts_it_in_progress_once(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+
+        $started = $this->rounds()->startRound($round->id);
+
+        $this->assertSame(RoundStatus::InProgress, $started->status);
+        $this->assertNotNull(RoundModel::query()->findOrFail($round->id)->started_at);
+
+        $this->expectException(InvalidStateTransitionException::class);
+        $this->rounds()->startRound($round->id);
+    }
+
+    public function test_a_round_with_matches_without_result_cannot_be_completed_and_says_how_many(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $this->rounds()->startRound($round->id);
+
+        try {
+            $this->rounds()->completeRound($round->id);
+            $this->fail('A round with matches without result was completed');
+        } catch (PreviousRoundNotCompletedException $exception) {
+            $this->assertSame(2, $exception->unreportedMatches());
+        }
+
+        $this->assertSame(RoundStatus::InProgress, RoundModel::query()->findOrFail($round->id)->status);
+    }
+
+    public function test_completing_a_round_with_every_result_finishes_it_once(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $this->rounds()->startRound($round->id);
+        $this->reportAll($round->id);
+
+        $completed = $this->rounds()->completeRound($round->id);
+
+        $this->assertSame(RoundStatus::Finished, $completed->status);
+        $this->assertNotNull(RoundModel::query()->findOrFail($round->id)->completed_at);
+
+        $this->expectException(InvalidStateTransitionException::class);
+        $this->rounds()->completeRound($round->id);
     }
 
     public function test_no_round_is_generated_beyond_the_maximum(): void

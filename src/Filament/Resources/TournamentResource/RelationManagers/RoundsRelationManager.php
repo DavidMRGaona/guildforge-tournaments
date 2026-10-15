@@ -30,6 +30,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Filament\InvalidMatchResultMessage;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
@@ -236,11 +237,14 @@ final class RoundsRelationManager extends RelationManager
                     ->color('success')
                     ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::Pending)
                     ->requiresConfirmation()
-                    ->action(function (RoundModel $record): void {
-                        $record->update([
-                            'status' => RoundStatus::InProgress->value,
-                            'started_at' => now(),
-                        ]);
+                    ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
+                        try {
+                            $rounds->startRound($record->id);
+                        } catch (InvalidStateTransitionException) {
+                            self::invalidTransitionNotice();
+
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('tournaments::messages.messages.round_started'))
@@ -254,26 +258,22 @@ final class RoundsRelationManager extends RelationManager
                     ->color('primary')
                     ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress)
                     ->requiresConfirmation()
-                    ->action(function (RoundModel $record): void {
-                        // Check if all matches have results
-                        $unplayedMatches = $record->matches()
-                            ->where('result', 'not_played')
-                            ->count();
-
-                        if ($unplayedMatches > 0) {
+                    ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
+                        try {
+                            $rounds->completeRound($record->id);
+                        } catch (PreviousRoundNotCompletedException $exception) {
                             Notification::make()
                                 ->title(__('tournaments::messages.errors.matches_not_completed'))
-                                ->body(__('tournaments::messages.errors.matches_not_completed_detail', ['count' => $unplayedMatches]))
+                                ->body(__('tournaments::messages.errors.matches_not_completed_detail', ['count' => $exception->unreportedMatches()]))
                                 ->danger()
                                 ->send();
 
                             return;
-                        }
+                        } catch (InvalidStateTransitionException) {
+                            self::invalidTransitionNotice();
 
-                        $record->update([
-                            'status' => RoundStatus::Finished->value,
-                            'completed_at' => now(),
-                        ]);
+                            return;
+                        }
 
                         Notification::make()
                             ->title(__('tournaments::messages.messages.round_completed'))
@@ -304,6 +304,17 @@ final class RoundsRelationManager extends RelationManager
     private static function score(mixed $value): ?int
     {
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * The round changed meanwhile (another click or another admin): nothing was saved.
+     */
+    private static function invalidTransitionNotice(): void
+    {
+        Notification::make()
+            ->title(__('tournaments::messages.errors.invalid_state_transition'))
+            ->danger()
+            ->send();
     }
 
     private static function generationErrorMessage(DomainException $exception): string
