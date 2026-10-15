@@ -8,46 +8,55 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The module has no Vue test runner, so this reads the sources of the pages and the event
- * section that sign up, withdraw and check in a signed-in user. While the account must verify
- * its email (the core's useVerificationGate), each of those buttons is disabled with the
- * reason tied to it, the handler sends nothing, and a verification 403 that arrives anyway
- * (state changed in another tab) leads to the notice instead of an error message.
+ * Source guards, not behaviour tests: the module has no Vue test runner, so this reads the
+ * sources of the pages and the event section that sign up, withdraw and check in a signed-in
+ * user. While the account must verify its email (the core's useVerificationGate), each of
+ * those buttons is disabled with the reason tied to it, the handler sends nothing, and a
+ * verification 403 that arrives anyway (state changed in another tab) closes any open dialog
+ * and leads to the notice instead of an error message.
  */
 final class VerificationGateComponentsTest extends TestCase
 {
     private const string JS = __DIR__ . '/../../../resources/js/';
 
     /**
-     * @return array<string, array{string, list<string>, list<string>}>
+     * Per file: the handlers that act as the signed-in user, the gate actions whose reason is
+     * shown, and how many buttons the gate disables.
+     *
+     * @var array<string, array{handlers: list<string>, actions: list<string>, buttons: int}>
+     */
+    private const array GATED = [
+        'pages/Tournaments/Show.vue' => [
+            'handlers' => ['handleRegister', 'handleWithdraw', 'confirmWithdraw'],
+            'actions' => ['register', 'withdraw'],
+            'buttons' => 2,
+        ],
+        'components/EventTournamentSection.vue' => [
+            'handlers' => ['handleRegister', 'handleWithdraw', 'confirmWithdraw'],
+            'actions' => ['register', 'withdraw'],
+            'buttons' => 2,
+        ],
+        'pages/Tournaments/CheckIn.vue' => [
+            'handlers' => ['handleAuthenticatedCheckIn'],
+            'actions' => ['checkIn'],
+            'buttons' => 1,
+        ],
+    ];
+
+    /**
+     * @return array<string, array{string}>
      */
     public static function components(): array
     {
         return [
-            'tournament page' => [
-                'pages/Tournaments/Show.vue',
-                ['handleRegister', 'handleWithdraw', 'confirmWithdraw'],
-                ['register', 'withdraw'],
-            ],
-            'event tournament section' => [
-                'components/EventTournamentSection.vue',
-                ['handleRegister', 'handleWithdraw', 'confirmWithdraw'],
-                ['register', 'withdraw'],
-            ],
-            'check-in page' => [
-                'pages/Tournaments/CheckIn.vue',
-                ['handleAuthenticatedCheckIn'],
-                ['checkIn'],
-            ],
+            'tournament page' => ['pages/Tournaments/Show.vue'],
+            'event tournament section' => ['components/EventTournamentSection.vue'],
+            'check-in page' => ['pages/Tournaments/CheckIn.vue'],
         ];
     }
 
-    /**
-     * @param  list<string>  $handlers
-     * @param  list<string>  $actions
-     */
     #[DataProvider('components')]
-    public function test_it_uses_the_core_verification_gate(string $file, array $handlers, array $actions): void
+    public function test_it_uses_the_core_verification_gate(string $file): void
     {
         $source = $this->source($file);
 
@@ -58,16 +67,12 @@ final class VerificationGateComponentsTest extends TestCase
         $this->assertStringContainsString('const gate = useVerificationGate();', $source);
     }
 
-    /**
-     * @param  list<string>  $handlers
-     * @param  list<string>  $actions
-     */
     #[DataProvider('components')]
-    public function test_every_signed_in_handler_sends_nothing_while_blocked(string $file, array $handlers, array $actions): void
+    public function test_every_signed_in_handler_sends_nothing_while_blocked(string $file): void
     {
         $source = $this->source($file);
 
-        foreach ($handlers as $handler) {
+        foreach (self::GATED[$file]['handlers'] as $handler) {
             $pattern = '/const ' . $handler . ' = (?:async )?\(\): (?:Promise<void>|void) => \{\s*'
                 . 'if \(gate\.blocked\.value\) \{\s*return;\s*\}/';
 
@@ -75,12 +80,8 @@ final class VerificationGateComponentsTest extends TestCase
         }
     }
 
-    /**
-     * @param  list<string>  $handlers
-     * @param  list<string>  $actions
-     */
     #[DataProvider('components')]
-    public function test_every_request_leads_to_the_notice_on_a_verification_403(string $file, array $handlers, array $actions): void
+    public function test_every_request_leads_to_the_notice_on_a_verification_403(string $file): void
     {
         $source = $this->source($file);
 
@@ -94,24 +95,60 @@ final class VerificationGateComponentsTest extends TestCase
         $this->assertSame($requests, $checks, 'Each fetch() checks for the verification 403 and goes to the notice');
     }
 
-    /**
-     * @param  list<string>  $handlers
-     * @param  list<string>  $actions
-     */
     #[DataProvider('components')]
-    public function test_blocked_buttons_are_disabled_with_their_reason_and_a_link_to_the_notice(string $file, array $handlers, array $actions): void
+    public function test_an_open_dialog_is_closed_before_going_to_the_notice(string $file): void
     {
         $source = $this->source($file);
 
-        // Ids unique per instance: the section and the page are separate components
-        $this->assertMatchesRegularExpression('/const \w+ = useId\(\);/', $source);
+        $dialogs = [
+            'showGuestModal' => 'submitGuestRegistration',
+            'showWithdrawConfirm' => 'confirmWithdraw',
+        ];
 
-        foreach ($actions as $action) {
+        foreach ($dialogs as $flag => $handler) {
+            if (! str_contains($source, "const {$flag} = ref(false);")) {
+                continue;
+            }
+
+            $pattern = '/const ' . $handler . ' = async \(\): Promise<void> => \{'
+                . '(?:(?!\nconst ).)*?if \(gate\.isVerificationRequired\(response\)\) \{\s*'
+                . $flag . '\.value = false;\s*gate\.goToNotice\(\);/s';
+
+            $this->assertMatchesRegularExpression($pattern, $source, "{$handler}() closes {$flag} first");
+        }
+    }
+
+    #[DataProvider('components')]
+    public function test_every_gated_button_is_disabled_and_described_by_a_rendered_reason(string $file): void
+    {
+        $source = $this->source($file);
+        $buttons = self::GATED[$file]['buttons'];
+
+        $this->assertSame(
+            $buttons,
+            preg_match_all('/:disabled="[^"]*gate\.blocked\.value[^"]*"/', $source),
+            'Every gated button is disabled while blocked',
+        );
+
+        preg_match_all('/:aria-describedby="gate\.blocked\.value \? (\w+) : undefined"/', $source, $matches);
+        $this->assertCount($buttons, $matches[1], 'Every gated button is described by the reason');
+
+        // Ids unique per instance: the section and the page are separate components
+        foreach (array_unique($matches[1]) as $id) {
+            $this->assertStringContainsString("const {$id} = useId();", $source);
+            $this->assertSame(1, substr_count($source, ":id=\"{$id}\""), "One reason element carries :id=\"{$id}\"");
+        }
+    }
+
+    #[DataProvider('components')]
+    public function test_the_reason_names_the_action_and_links_to_the_notice(string $file): void
+    {
+        $source = $this->source($file);
+
+        foreach (self::GATED[$file]['actions'] as $action) {
             $this->assertStringContainsString("gate.reason('{$action}')", $source, "Reason for {$action}");
         }
 
-        $this->assertMatchesRegularExpression('/:disabled="[^"]*gate\.blocked\.value[^"]*"/', $source);
-        $this->assertMatchesRegularExpression('/:aria-describedby="gate\.blocked\.value \? \w+ : undefined"/', $source);
         $this->assertStringContainsString(':href="gate.noticeUrl"', $source);
         $this->assertStringContainsString('{{ gate.linkLabel.value }}', $source);
     }
