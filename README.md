@@ -187,7 +187,7 @@ Valores iniciales: Buchholz y Progresivo (mayor es mejor).
 | Máximo de byes por jugador | Número de byes que puede recibir un jugador; si todos lo han alcanzado, el bye se asigna igualmente | 1 |
 | Asignación de bye | `lowest_ranked` (el peor clasificado), `highest_ranked` (el mejor), `random` (al azar), siempre entre quienes no han alcanzado el máximo | `lowest_ranked` |
 
-Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario no se puede guardar hasta elegir otro método.
+Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía reglas propias, se empareja como `swiss`. Su formulario marca el campo **Método** y no se guarda hasta elegir `swiss` o `random`; el módulo no cambia esos datos por su cuenta.
 
 #### Opciones
 
@@ -336,6 +336,7 @@ El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tourname
 ## Limitaciones actuales
 
 - **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
+- **Método `accelerated`**: los torneos y perfiles que aún lo tengan guardado se emparejan como `swiss`, pero hay que elegir otro método antes de guardar su formulario (ver [Configuración de emparejamientos](#configuración-de-emparejamientos)).
 
 ## Arquitectura
 
