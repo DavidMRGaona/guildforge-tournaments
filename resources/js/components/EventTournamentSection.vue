@@ -269,6 +269,7 @@ const confirmWithdraw = async (): Promise<void> => {
 
         // Must verify after all (e.g. changed in another tab)
         if (gate.isVerificationRequired(response)) {
+            showWithdrawConfirm.value = false;
             gate.goToNotice();
             return;
         }
