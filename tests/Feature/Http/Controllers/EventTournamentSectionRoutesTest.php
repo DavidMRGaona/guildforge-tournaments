@@ -139,7 +139,7 @@ final class EventTournamentSectionRoutesTest extends ModuleTestCase
         $this->assertSame(ParticipantStatus::Withdrawn, $participant->fresh()?->status);
     }
 
-    public function test_a_new_unverified_account_gets_a_403_with_a_message_the_component_shows(): void
+    public function test_a_new_unverified_account_gets_the_403_the_component_sends_to_the_notice(): void
     {
         $settings = app(SettingsServiceInterface::class);
         $settings->set('email_verification_enforced_since', '2026-01-01T00:00:00+00:00');
@@ -149,7 +149,11 @@ final class EventTournamentSectionRoutesTest extends ModuleTestCase
         $this->actingAs(UserModel::factory()->unverified()->create())
             ->json('POST', $this->registrationUrl($tournament), [])
             ->assertForbidden()
-            ->assertJson(['message' => __('auth.email_verification_required')]);
+            ->assertHeader('X-Email-Verification-Required', '1')
+            ->assertJson([
+                'error' => 'email_verification_required',
+                'message' => __('auth.email_verification_required'),
+            ]);
 
         $this->assertDatabaseMissing('tournaments_participants', ['tournament_id' => $tournament->id]);
     }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { TournamentCheckInProps, RegistrationJsonResponse, CheckInField } from '../../types/tournaments';
+import type { TournamentCheckInProps, CheckInJsonResponse, CheckInField } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
+import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
@@ -17,6 +18,9 @@ const props = defineProps<TournamentCheckInProps>();
 const { t, locale } = useI18n();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
+// A signed-in user checks in as themselves, which is closed to accounts that must verify their email
+const gate = useVerificationGate();
+const gateReasonId = useId();
 
 // Form state
 const emailForm = reactive({
@@ -65,6 +69,10 @@ const formatDateTime = (dateString: string | null): string => {
 
 // Handle check-in for authenticated user
 const handleAuthenticatedCheckIn = async (): Promise<void> => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     isProcessing.value = true;
 
     try {
@@ -82,11 +90,17 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
             return;
         }
 
+        // Must verify after all (e.g. changed in another tab)
+        if (gate.isVerificationRequired(response)) {
+            gate.goToNotice();
+            return;
+        }
+
         if (response.ok) {
             notifySuccess(t('tournaments.check_in.success'));
             router.reload();
         } else {
-            const data: RegistrationJsonResponse<CheckInField> = await response.json();
+            const data: CheckInJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.check_in.window_closed'));
         }
     } catch {
@@ -121,7 +135,13 @@ const handleEmailCheckIn = async (): Promise<void> => {
             return;
         }
 
-        const data: RegistrationJsonResponse<CheckInField> = await response.json();
+        // Signed in meanwhile (e.g. in another tab) with an account that must verify
+        if (gate.isVerificationRequired(response)) {
+            gate.goToNotice();
+            return;
+        }
+
+        const data: CheckInJsonResponse = await response.json();
 
         if (response.ok) {
             notifySuccess(t('tournaments.check_in.success'));
@@ -292,11 +312,26 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                 variant="primary"
                                 class="w-full"
                                 :loading="isProcessing"
-                                :disabled="isProcessing"
+                                :disabled="isProcessing || gate.blocked.value"
+                                :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
                                 @click="handleAuthenticatedCheckIn"
                             >
                                 {{ t('tournaments.check_in.submit') }}
                             </BaseButton>
+                            <p
+                                v-if="gate.blocked.value"
+                                :id="gateReasonId"
+                                class="mt-3 rounded-md bg-warning-light p-3 text-sm text-base-primary"
+                            >
+                                {{ gate.reason('checkIn') }}
+                                <Link
+                                    :href="gate.noticeUrl"
+                                    class="font-semibold underline underline-offset-2 hover:no-underline"
+                                >
+                                    {{ gate.linkLabel.value }}
+                                    <span aria-hidden="true">→</span>
+                                </Link>
+                            </p>
                         </div>
 
                         <!-- Authenticated but not registered -->

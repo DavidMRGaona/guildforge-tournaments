@@ -248,6 +248,11 @@ export interface RegistrationJsonResponse<TField extends string = GuestRegistrat
 }
 
 /**
+ * JSON body of the check-in endpoint (`/torneos/{slug}/check-in`).
+ */
+export type CheckInJsonResponse = RegistrationJsonResponse<CheckInField>;
+
+/**
  * Props for the event tournament section component.
  */
 export interface EventTournamentSectionProps {

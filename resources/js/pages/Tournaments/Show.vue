@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, reactive, watch, nextTick } from 'vue';
+import { computed, ref, reactive, watch, nextTick, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentShowProps, Standing, GuestRegistrationField, RegistrationJsonResponse } from '../../types/tournaments';
@@ -7,6 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useTournaments } from '../../composables/useTournaments';
 import { useAuth } from '@/composables/useAuth';
+import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
@@ -19,6 +20,9 @@ const { t, locale } = useI18n();
 const { formatStatus, formatPoints, formatRecord, spotsRemaining, isTournamentFull, hasStarted, shouldShowParticipants } = useTournaments();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
+// Registering and withdrawing are closed to accounts that must verify their email
+const gate = useVerificationGate();
+const gateReasonId = useId();
 
 const tournamentHasStarted = computed(() => hasStarted(props.tournament));
 const showParticipantsList = computed(() => shouldShowParticipants(props.tournament) && props.participants.length > 0);
@@ -36,6 +40,11 @@ const isRegistered = computed(() =>
 const canWithdraw = computed(() => {
     return isRegistered.value && props.tournament.is_registration_open;
 });
+
+// The register or withdraw button is on screen, so its disabled reason must be too
+const showGateReason = computed(() =>
+    gate.blocked.value && (isRegistered.value ? canWithdraw.value : props.canRegister)
+);
 
 // Guest registration modal state
 const showGuestModal = ref(false);
@@ -81,6 +90,10 @@ const formatDate = (dateString: string | null): string => {
 };
 
 const handleRegister = async (): Promise<void> => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     // If not authenticated and tournament allows guests, show guest modal
     if (!isAuthenticated.value && props.tournament.allow_guests) {
         showGuestModal.value = true;
@@ -106,6 +119,12 @@ const handleRegister = async (): Promise<void> => {
 
         if (isCsrfFailure(response)) {
             notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        // Must verify after all (e.g. changed in another tab)
+        if (gate.isVerificationRequired(response)) {
+            gate.goToNotice();
             return;
         }
 
@@ -144,6 +163,13 @@ const submitGuestRegistration = async (): Promise<void> => {
 
         if (isCsrfFailure(response)) {
             notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        // Signed in meanwhile (e.g. in another tab) with an account that must verify
+        if (gate.isVerificationRequired(response)) {
+            showGuestModal.value = false;
+            gate.goToNotice();
             return;
         }
 
@@ -188,6 +214,10 @@ const handleKeydown = (event: KeyboardEvent): void => {
 };
 
 const handleWithdraw = (): void => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     showWithdrawConfirm.value = true;
 };
 
@@ -196,6 +226,10 @@ const closeWithdrawModal = (): void => {
 };
 
 const confirmWithdraw = async (): Promise<void> => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     withdrawProcessing.value = true;
 
     try {
@@ -210,6 +244,12 @@ const confirmWithdraw = async (): Promise<void> => {
 
         if (isCsrfFailure(response)) {
             notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        // Must verify after all (e.g. changed in another tab)
+        if (gate.isVerificationRequired(response)) {
+            gate.goToNotice();
             return;
         }
 
@@ -369,6 +409,8 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 v-if="canWithdraw"
                                 variant="danger"
                                 size="sm"
+                                :disabled="gate.blocked.value"
+                                :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
                                 @click="handleWithdraw"
                             >
                                 {{ t('tournaments.public.withdraw') }}
@@ -384,7 +426,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     {{ t('tournaments.public.spots_remaining', { count: remainingSpots }) }}
                                 </p>
                             </div>
-                            <BaseButton variant="primary" @click="handleRegister">
+                            <BaseButton
+                                variant="primary"
+                                :disabled="gate.blocked.value"
+                                :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
+                                @click="handleRegister"
+                            >
                                 {{ t('tournaments.public.register') }}
                             </BaseButton>
                         </div>
@@ -397,6 +444,21 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 {{ t('tournaments.public.login_to_register') }}
                             </p>
                         </div>
+
+                        <p
+                            v-if="showGateReason"
+                            :id="gateReasonId"
+                            class="mt-3 rounded-md bg-warning-light p-3 text-sm text-base-primary"
+                        >
+                            {{ isRegistered ? gate.reason('withdraw') : gate.reason('register') }}
+                            <Link
+                                :href="gate.noticeUrl"
+                                class="font-semibold underline underline-offset-2 hover:no-underline"
+                            >
+                                {{ gate.linkLabel.value }}
+                                <span aria-hidden="true">→</span>
+                            </Link>
+                        </p>
                     </div>
 
                     <!-- Current Round -->
