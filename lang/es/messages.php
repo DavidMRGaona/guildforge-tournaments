@@ -286,7 +286,7 @@ return [
         'tiebreakers' => 'Criterios de desempate',
         'tiebreakers_help' => 'Se aplicarán en el orden seleccionado',
         'advanced_rules_notice' => 'Este torneo usa reglas de puntuación o desempates avanzados: se editan en Torneos y aquí no se modifican',
-        'profile_rules_notice' => 'Lo que el torneo no tiene propio se muestra con las reglas del perfil «:profile». Si cambias los puntos o los desempates aquí, el cambio pasa a ser del torneo y tiene prioridad sobre el perfil',
+        'profile_rules_notice' => 'Los puntos o desempates que este torneo no tiene propios se toman del perfil «:profile». Si los cambias aquí, pasan a ser del torneo y tienen prioridad sobre el perfil',
         'options' => 'Opciones',
         'result_reporting' => 'Reporte de resultados',
         'result_reporting_help' => 'Define quién puede reportar los resultados de las partidas',
