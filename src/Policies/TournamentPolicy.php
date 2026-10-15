@@ -32,6 +32,22 @@ final class TournamentPolicy
         return $this->authorize($user, 'tournaments:tournaments.update');
     }
 
+    /**
+     * Record match results in the panel (rounds and matches managers).
+     */
+    public function reportResults(UserModel $user, TournamentModel $tournament): bool
+    {
+        return $this->authorize($user, 'tournaments:tournaments.report_results');
+    }
+
+    /**
+     * Add, confirm, check in, withdraw, disqualify and delete participants in the panel.
+     */
+    public function manageParticipants(UserModel $user, TournamentModel $tournament): bool
+    {
+        return $this->authorize($user, 'tournaments:tournaments.manage_participants');
+    }
+
     public function delete(UserModel $user, TournamentModel $tournament): bool
     {
         return $this->authorize($user, 'tournaments:tournaments.delete');

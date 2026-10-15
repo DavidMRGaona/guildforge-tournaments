@@ -138,6 +138,7 @@ final class RoundsRelationManager extends RelationManager
                     ->icon('heroicon-o-table-cells')
                     ->color('gray')
                     ->modalWidth(Width::SevenExtraLarge)
+                    ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
                     ->slideOver()
                     ->fillForm(function (RoundModel $record): array {
                         $matches = $record->matches()->with(['player1', 'player2'])->orderBy('table_number')->get();

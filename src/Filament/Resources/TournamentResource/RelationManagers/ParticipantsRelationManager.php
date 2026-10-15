@@ -67,6 +67,14 @@ final class ParticipantsRelationManager extends RelationManager
             ]);
     }
 
+    /**
+     * Managing participants needs tournaments.manage_participants, not only editing the tournament.
+     */
+    private function canManageParticipants(): bool
+    {
+        return auth()->user()?->can('manageParticipants', $this->getOwnerRecord()) ?? false;
+    }
+
     private function getStatsDescription(): string
     {
         /** @var TournamentModel $tournament */
@@ -171,6 +179,7 @@ final class ParticipantsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label(__('tournaments::messages.participants.add'))
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->mutateDataUsing(function (array $data): array {
                         /** @var TournamentModel $tournament */
                         $tournament = $this->getOwnerRecord();
@@ -182,6 +191,7 @@ final class ParticipantsRelationManager extends RelationManager
             ])
             ->recordActions([
                 Action::make('confirm')
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.confirm'))
                     ->icon('heroicon-o-check-badge')
                     ->color('info')
@@ -203,6 +213,7 @@ final class ParticipantsRelationManager extends RelationManager
                             ->send();
                     }),
                 Action::make('check_in')
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.check_in'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -236,6 +247,7 @@ final class ParticipantsRelationManager extends RelationManager
                             ->send();
                     }),
                 Action::make('withdraw')
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.withdraw'))
                     ->icon('heroicon-o-arrow-right-start-on-rectangle')
                     ->color('warning')
@@ -251,6 +263,7 @@ final class ParticipantsRelationManager extends RelationManager
                             ->send();
                     }),
                 Action::make('disqualify')
+                    ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.disqualify'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
@@ -265,11 +278,13 @@ final class ParticipantsRelationManager extends RelationManager
                             ->success()
                             ->send();
                     }),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->authorize(fn (): bool => $this->canManageParticipants()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     BulkAction::make('confirm_selected')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
                         ->label(__('tournaments::messages.participants.confirm_selected'))
                         ->icon('heroicon-o-check-badge')
                         ->color('info')
@@ -303,6 +318,7 @@ final class ParticipantsRelationManager extends RelationManager
                                 ->send();
                         }),
                     BulkAction::make('check_in_selected')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
                         ->label(__('tournaments::messages.participants.check_in_selected'))
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
@@ -347,6 +363,7 @@ final class ParticipantsRelationManager extends RelationManager
                                 ->send();
                         }),
                     BulkAction::make('disqualify_selected')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
                         ->label(__('tournaments::messages.participants.disqualify_selected'))
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
@@ -373,7 +390,8 @@ final class ParticipantsRelationManager extends RelationManager
                                 ->success()
                                 ->send();
                         }),
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->authorize(fn (): bool => $this->canManageParticipants()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

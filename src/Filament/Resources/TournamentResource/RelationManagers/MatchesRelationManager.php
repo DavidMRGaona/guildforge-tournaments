@@ -84,6 +84,7 @@ final class MatchesRelationManager extends RelationManager
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
                     ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
+                    ->authorize(fn (): bool => $this->canReportResults())
                     ->schema(function (MatchModel $record): array {
                         $fields = [
                             Select::make('result')
@@ -170,6 +171,17 @@ final class MatchesRelationManager extends RelationManager
                     }),
             ])
             ->defaultSort('table_number', 'asc');
+    }
+
+    /**
+     * Recording results needs tournaments.report_results, not only editing the tournament.
+     */
+    private function canReportResults(): bool
+    {
+        /** @var RoundModel $round */
+        $round = $this->getOwnerRecord();
+
+        return auth()->user()?->can('reportResults', $round->tournament) ?? false;
     }
 
     /**
