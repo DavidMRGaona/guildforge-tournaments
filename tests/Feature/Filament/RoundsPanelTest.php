@@ -148,6 +148,26 @@ final class RoundsPanelTest extends ModuleTestCase
         $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
     }
 
+    public function test_manage_matches_rejects_a_forged_bye_on_a_match_between_two_players(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 2);
+        $this->roundsManager($tournament)->callTableAction('generateRound');
+        $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
+        $match = MatchModel::query()->where('round_id', $round->id)->sole();
+
+        // The hidden bye flag is client state: a forged request can turn it on to be offered "bye"
+        $this->roundsManager($tournament)
+            ->mountTableAction('manageMatches', $round)
+            ->setTableActionData(['matches' => [
+                [...$this->matchRow($match, MatchResult::Bye), 'is_bye' => true],
+            ]])
+            ->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.invalid_match_result'));
+
+        $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
+    }
+
     public function test_report_result_on_a_match_updates_the_standings(): void
     {
         $tournament = $this->tournament();
