@@ -77,7 +77,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
                        [Finalizar] ← [Rondas: generar, iniciar, resultados, completar] ← [Iniciar]
 ```
 
-También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. Si el torneo ya tiene reglas que la pestaña no puede mostrar (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
+También se puede crear un torneo simplificado desde el propio evento: el formulario de eventos tiene la pestaña **Configuración del torneo** (activar torneo, nombre, capacidad, fechas, puntos por resultado, desempates, reporte de resultados, invitados y check-in). Los puntos por resultado (victoria, empate, derrota, bye) y los desempates (Buchholz, Buchholz mediano, progresivo, enfrentamiento directo, porcentaje de victorias de los oponentes) se guardan como reglas de puntuación y desempates del torneo. La pestaña muestra las reglas que usa la clasificación: las del torneo y, para lo que no tenga propio, las de su perfil de torneo (un aviso nombra el perfil). En un torneo con perfil, guardar solo convierte en reglas del torneo los puntos o los desempates que se hayan cambiado en la pestaña; lo que no se toca sigue saliendo del perfil, también si el perfil cambia después. Sin perfil, guarda siempre los puntos y desempates de la pestaña. Si las reglas que usa el torneo, propias o del perfil, no se pueden mostrar en la pestaña (condiciones por estadísticas; desempates de otros tipos, ascendentes, con valor mínimo, estadística o clave propia), la pestaña lo indica y no las toca: se editan en **Torneos**. Desactivar el interruptor y guardar elimina el torneo del evento.
 
 ### Pestañas del formulario
 
@@ -336,7 +336,6 @@ El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tourname
 ## Limitaciones actuales
 
 - **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
-- **Pestaña del evento y perfil**: en un torneo con perfil de torneo pero sin reglas propias, guardar la pestaña del evento guarda sus puntos y desempates (por defecto 3/1/0/3, Buchholz y Progresivo) como reglas del torneo, que pasan a tener prioridad sobre las del perfil.
 
 ## Arquitectura
 
