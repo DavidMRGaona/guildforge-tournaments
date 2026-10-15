@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, reactive, watch, nextTick } from 'vue';
+import { computed, ref, reactive, watch, nextTick, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
+import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -20,6 +21,9 @@ const props = defineProps<EventTournamentSectionProps>();
 const { t } = useI18n();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
+// Registering and withdrawing are closed to accounts that must verify their email
+const gate = useVerificationGate();
+const gateReasonId = useId();
 
 const activeStatuses = ['registered', 'confirmed', 'checked_in'];
 const isRegistered = computed(() =>
@@ -46,6 +50,19 @@ const canWithdraw = computed(() => {
     }
     return isRegistered.value && props.tournament.is_registration_open;
 });
+
+const showRegisterButton = computed(() =>
+    props.tournament !== null
+    && !isRegistered.value
+    && props.canRegister
+    && props.tournament.is_registration_open
+    && !isFull.value
+);
+
+// The register or withdraw button is on screen, so its disabled reason must be too
+const showGateReason = computed(() =>
+    gate.blocked.value && (showRegisterButton.value || canWithdraw.value)
+);
 
 // Guest registration modal state
 const showGuestModal = ref(false);
@@ -77,6 +94,10 @@ watch(showGuestModal, async (isOpen) => {
 const registrationUrl = (tournamentId: string): string => `/torneos/${tournamentId}/inscripcion`;
 
 const handleRegister = async (): Promise<void> => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     if (props.tournament === null) {
         return;
     }
@@ -106,6 +127,12 @@ const handleRegister = async (): Promise<void> => {
 
         if (isCsrfFailure(response)) {
             notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        // Must verify after all (e.g. changed in another tab)
+        if (gate.isVerificationRequired(response)) {
+            gate.goToNotice();
             return;
         }
 
@@ -161,6 +188,13 @@ const submitGuestRegistration = async (): Promise<void> => {
             return;
         }
 
+        // Signed in meanwhile (e.g. in another tab) with an account that must verify
+        if (gate.isVerificationRequired(response)) {
+            showGuestModal.value = false;
+            gate.goToNotice();
+            return;
+        }
+
         const data: RegistrationJsonResponse = await response.json();
 
         if (response.ok) {
@@ -196,6 +230,10 @@ const handleKeydown = (event: KeyboardEvent): void => {
 };
 
 const handleWithdraw = (): void => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     showWithdrawConfirm.value = true;
 };
 
@@ -204,6 +242,10 @@ const closeWithdrawModal = (): void => {
 };
 
 const confirmWithdraw = async (): Promise<void> => {
+    if (gate.blocked.value) {
+        return;
+    }
+
     if (props.tournament === null) {
         return;
     }
@@ -222,6 +264,13 @@ const confirmWithdraw = async (): Promise<void> => {
 
         if (isCsrfFailure(response)) {
             notifyError(t('tournaments.public.session_expired'));
+            return;
+        }
+
+        // Must verify after all (e.g. changed in another tab)
+        if (gate.isVerificationRequired(response)) {
+            showWithdrawConfirm.value = false;
+            gate.goToNotice();
             return;
         }
 
@@ -341,9 +390,11 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
             <div class="flex flex-shrink-0 flex-col gap-2">
                 <!-- Register Button -->
                 <BaseButton
-                    v-if="!isRegistered && canRegister && tournament.is_registration_open && !isFull"
+                    v-if="showRegisterButton"
                     variant="primary"
                     size="sm"
+                    :disabled="gate.blocked.value"
+                    :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
                     @click="handleRegister"
                 >
                     {{ t('tournaments.public.register') }}
@@ -354,12 +405,29 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     v-if="canWithdraw"
                     variant="danger"
                     size="sm"
+                    :disabled="gate.blocked.value"
+                    :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
                     @click="handleWithdraw"
                 >
                     {{ t('tournaments.public.withdraw') }}
                 </BaseButton>
             </div>
         </div>
+
+        <p
+            v-if="showGateReason"
+            :id="gateReasonId"
+            class="mt-3 rounded-md bg-warning-light p-3 text-sm text-base-primary"
+        >
+            {{ canWithdraw ? gate.reason('withdraw') : gate.reason('register') }}
+            <Link
+                :href="gate.noticeUrl"
+                class="font-semibold underline underline-offset-2 hover:no-underline"
+            >
+                {{ gate.linkLabel.value }}
+                <span aria-hidden="true">→</span>
+            </Link>
+        </p>
     </div>
 
     <!-- Guest Registration Modal -->
