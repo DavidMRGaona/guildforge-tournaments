@@ -6,7 +6,8 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 - **Un torneo por evento**: cada torneo pertenece a un evento publicado (relación 1:1).
 - **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas.
-  Con la verificación de email obligatoria activa en el sitio, las cuentas a las que el core se la exige deben verificar su email antes de inscribirse o de hacer check-in; los invitados no se ven afectados.
+  Con la verificación de email obligatoria activa en el sitio, las cuentas a las que el core se la exige deben verificar su email antes de inscribirse, retirarse o hacer check-in; los invitados no se ven afectados.
+  Mientras tanto, en la página del torneo, en la sección del torneo de la página del evento y en la página de check-in los botones de inscribirse, retirarse y hacer check-in aparecen desactivados, con el motivo debajo y un enlace «Ver cómo» a la página de verificación. Si la cuenta pasa a necesitar la verificación con la página ya abierta (por ejemplo, desde otra pestaña), al pulsar el botón se abre la página de verificación en lugar de un mensaje de error. Las cuentas que no deben verificar y los invitados ven la página igual que antes.
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
 - **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública.
 - **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.
@@ -18,7 +19,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 ## Requisitos
 
-- GuildForge core `^3.8`
+- GuildForge core `^3.10`
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
