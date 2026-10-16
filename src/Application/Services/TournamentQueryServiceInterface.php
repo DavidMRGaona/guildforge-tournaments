@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\Services;
 
-use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\StandingsResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
@@ -86,10 +85,4 @@ interface TournamentQueryServiceInterface
      * @param  array<string>|null  $statusFilter  Optional filter by status values
      */
     public function getPublishedTotal(?array $statusFilter = null): int;
-
-    /**
-     * Get the event start date for a tournament.
-     * Used for check-in window calculation.
-     */
-    public function getEventStartDate(string $tournamentId): ?DateTimeImmutable;
 }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
-use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\StandingsResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
@@ -386,26 +384,5 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             WHEN status = 'finished' THEN 3
             ELSE 4
         END";
-    }
-
-    public function getEventStartDate(string $tournamentId): ?DateTimeImmutable
-    {
-        $tournament = TournamentModel::query()
-            ->where('id', $tournamentId)
-            ->first(['event_id']);
-
-        if ($tournament === null) {
-            return null;
-        }
-
-        $event = EventModel::query()
-            ->where('id', $tournament->event_id)
-            ->first(['start_date']);
-
-        if ($event === null || $event->start_date === null) {
-            return null;
-        }
-
-        return $event->start_date->toImmutable();
     }
 }
