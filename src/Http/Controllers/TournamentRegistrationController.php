@@ -129,8 +129,8 @@ final class TournamentRegistrationController extends Controller
                 return back()->with('success', __('tournaments::messages.messages.registered_successfully'));
             } catch (TournamentNotFoundException) {
                 return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_found'), 404);
-            } catch (TournamentNotOpenException) {
-                return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_open'), 400);
+            } catch (TournamentNotOpenException $e) {
+                return $this->errorResponse($request, $this->notOpenMessage($e), 400);
             } catch (TournamentFullException) {
                 return $this->errorResponse($request, __('tournaments::messages.errors.tournament_full'), 400);
             } catch (AlreadyRegisteredException) {
@@ -157,8 +157,8 @@ final class TournamentRegistrationController extends Controller
             return back()->with('success', __('tournaments::messages.messages.registered_successfully'));
         } catch (TournamentNotFoundException) {
             return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_found'), 404);
-        } catch (TournamentNotOpenException) {
-            return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_open'), 400);
+        } catch (TournamentNotOpenException $e) {
+            return $this->errorResponse($request, $this->notOpenMessage($e), 400);
         } catch (TournamentFullException) {
             return $this->errorResponse($request, __('tournaments::messages.errors.tournament_full'), 400);
         } catch (AlreadyRegisteredException) {
@@ -208,9 +208,18 @@ final class TournamentRegistrationController extends Controller
             return back()->with('success', __('tournaments::messages.messages.withdrawn_successfully'));
         } catch (ParticipantNotFoundException) {
             return $this->errorResponse($request, __('tournaments::messages.errors.not_registered'), 404);
-        } catch (CannotWithdrawException) {
-            return $this->errorResponse($request, __('tournaments::messages.errors.cannot_withdraw'), 400);
+        } catch (CannotWithdrawException $e) {
+            return $this->errorResponse($request, $e->eventHasStarted()
+                ? __('tournaments::messages.errors.cannot_withdraw_started')
+                : __('tournaments::messages.errors.cannot_withdraw'), 400);
         }
+    }
+
+    private function notOpenMessage(TournamentNotOpenException $e): string
+    {
+        return $e->eventHasStarted()
+            ? __('tournaments::messages.errors.tournament_started')
+            : __('tournaments::messages.errors.tournament_not_open');
     }
 
     private function errorResponse(

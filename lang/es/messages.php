@@ -221,9 +221,11 @@ return [
     'errors' => [
         'tournament_not_found' => 'Torneo no encontrado',
         'tournament_not_open' => 'El torneo no está abierto para inscripción',
+        'tournament_started' => 'El torneo ya ha comenzado: la inscripción está cerrada',
         'tournament_full' => 'El torneo está completo',
         'already_registered' => 'Ya estás inscrito en este torneo',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
+        'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
         'user_not_allowed' => 'No tienes permiso para inscribirte en este torneo',
         'guests_not_allowed' => 'Este torneo no permite invitados',
         'unauthenticated' => 'Debes iniciar sesión para inscribirte',

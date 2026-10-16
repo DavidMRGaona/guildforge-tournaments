@@ -45,6 +45,14 @@ final class GuestCancellationController extends Controller
                 ->with('error', __('tournaments::messages.errors.tournament_not_found'));
         }
 
+        // Same rule withdrawByToken() enforces (Tournament::canWithdraw()), with the reason the page shows
+        $cancelBlockedReason = match (true) {
+            ! $participant->status->isActive() => 'already_cancelled',
+            $tournament->status === TournamentStatus::Cancelled => 'tournament_cancelled',
+            ! $tournament->canWithdraw => 'tournament_started',
+            default => null,
+        };
+
         return Inertia::render('Tournaments/CancelRegistration', [
             'participant' => $participant->toArray(),
             'tournament' => [
@@ -53,9 +61,8 @@ final class GuestCancellationController extends Controller
                 'eventDate' => $this->events->findById($tournament->eventId)?->startDate->format('c'),
             ],
             'token' => $token,
-            // Same rules withdrawByToken() enforces
-            'canCancel' => $participant->status->isActive()
-                && ! in_array($tournament->status, [TournamentStatus::InProgress, TournamentStatus::Finished], true),
+            'canCancel' => $cancelBlockedReason === null,
+            'cancelBlockedReason' => $cancelBlockedReason,
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('tournaments::messages.seo.cancel_registration_title'),
                 noindex: true,
@@ -76,9 +83,11 @@ final class GuestCancellationController extends Controller
         } catch (ParticipantNotFoundException) {
             return redirect()->route('tournaments.index')
                 ->with('error', __('tournaments::messages.errors.invalid_token'));
-        } catch (CannotWithdrawException) {
+        } catch (CannotWithdrawException $e) {
             return redirect()->route('tournaments.index')
-                ->with('error', __('tournaments::messages.errors.cannot_withdraw'));
+                ->with('error', $e->eventHasStarted()
+                    ? __('tournaments::messages.errors.cannot_withdraw_started')
+                    : __('tournaments::messages.errors.cannot_withdraw'));
         }
     }
 }
