@@ -327,6 +327,53 @@ final class EventTournamentTabTest extends ModuleTestCase
         ]);
     }
 
+    public function test_the_registration_cannot_close_after_the_event_starts(): void
+    {
+        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+
+        $tab = $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->set('configData.name', 'Torneo del evento')
+            ->set('configData.registration_closes_at', '2036-11-20 10:30:00')
+            ->call('save')
+            ->assertHasErrors(['configData.registration_closes_at']);
+
+        $this->assertContains(
+            'El cierre de inscripción no puede ser posterior al inicio del evento (20/11/2036 10:00)',
+            $tab->errors()->get('configData.registration_closes_at'),
+        );
+        $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
+    }
+
+    public function test_the_registration_can_close_when_the_event_starts(): void
+    {
+        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+
+        $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->set('configData.name', 'Torneo del evento')
+            ->set('configData.registration_closes_at', '2036-11-20 10:00:00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
+        $this->assertSame('2036-11-20 10:00:00', $tournament->registration_closes_at?->format('Y-m-d H:i:s'));
+    }
+
+    public function test_a_garbage_closing_date_never_throws(): void
+    {
+        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+
+        $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->set('configData.name', 'Torneo del evento')
+            ->set('configData.registration_closes_at', 'definitely not a date')
+            ->call('save')
+            ->assertHasErrors(['configData.registration_closes_at']);
+
+        $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
+    }
+
     /**
      * @return Testable<TournamentConfigRelationManager>
      */

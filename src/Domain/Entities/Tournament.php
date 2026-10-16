@@ -63,6 +63,8 @@ final class Tournament
         private readonly bool $showParticipants = true,
         private readonly string $notificationEmail = '',
         private readonly bool $selfCheckInAllowed = false,
+        // Start of the linked core event: read from the event, never persisted with the tournament
+        private readonly ?DateTimeImmutable $eventStartsAt = null,
     ) {
     }
 
@@ -253,11 +255,59 @@ final class Tournament
     }
 
     /**
-     * Check if registration is currently open.
+     * Start of the linked event, or null when the event no longer exists.
      */
-    public function isRegistrationOpen(): bool
+    public function eventStartsAt(): ?DateTimeImmutable
     {
-        return $this->status->isRegistrationOpen();
+        return $this->eventStartsAt;
+    }
+
+    /**
+     * Whether the event has started. An unknown start counts as started, so nobody
+     * registers or withdraws from the web without a known start.
+     */
+    public function hasEventStarted(?DateTimeImmutable $now = null): bool
+    {
+        $now ??= new DateTimeImmutable();
+
+        return $this->eventStartsAt === null || $now >= $this->eventStartsAt;
+    }
+
+    /**
+     * Whether users and guests can register now: open status, inside the configured opening
+     * and closing dates, and before the event starts (the start caps any closing date).
+     */
+    public function isRegistrationOpen(?DateTimeImmutable $now = null): bool
+    {
+        $now ??= new DateTimeImmutable();
+
+        if (! $this->status->isRegistrationOpen()) {
+            return false;
+        }
+
+        if ($this->registrationOpensAt !== null && $now < $this->registrationOpensAt) {
+            return false;
+        }
+
+        if ($this->registrationClosesAt !== null && $now >= $this->registrationClosesAt) {
+            return false;
+        }
+
+        return ! $this->hasEventStarted($now);
+    }
+
+    /**
+     * Whether a participant can withdraw from the web now: before the event starts and while
+     * the tournament is not running, finished or cancelled. Staff withdrawals in the panel
+     * are not bound by this.
+     */
+    public function canWithdraw(?DateTimeImmutable $now = null): bool
+    {
+        if (in_array($this->status, [TournamentStatus::InProgress, TournamentStatus::Finished, TournamentStatus::Cancelled], true)) {
+            return false;
+        }
+
+        return ! $this->hasEventStarted($now);
     }
 
     /**

@@ -7,12 +7,14 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
+use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
 use Modules\Tournaments\Domain\Exceptions\GuestRegistrationNotAllowedException;
 use Modules\Tournaments\Domain\Exceptions\TournamentFullException;
 use Modules\Tournaments\Domain\Exceptions\TournamentNotOpenException;
@@ -73,6 +75,11 @@ final class ParticipantRegistrationRulesTest extends TestCase
             'registered_at' => new DateTimeImmutable,
             ...$attributes,
         ]);
+    }
+
+    private function eventStartingAt(DateTimeInterface $startsAt): string
+    {
+        return EventModel::factory()->create(['start_date' => $startsAt])->id;
     }
 
     /**
@@ -226,5 +233,140 @@ final class ParticipantRegistrationRulesTest extends TestCase
         }
 
         $this->assertSame(1, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_registering_once_the_event_has_started_is_rejected_even_while_registration_is_open(): void
+    {
+        $tournament = $this->tournament(['event_id' => $this->eventStartingAt(now()->subMinute())]);
+
+        try {
+            $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
+            $this->fail('A user registered after the event started');
+        } catch (TournamentNotOpenException $e) {
+            $this->assertTrue($e->eventHasStarted());
+            $this->assertStringContainsString('event started', $e->getMessage());
+        }
+
+        $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_a_guest_cannot_register_once_the_event_has_started(): void
+    {
+        $tournament = $this->tournament(['event_id' => $this->eventStartingAt(now()->subMinute())]);
+
+        try {
+            $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
+            $this->fail('A guest registered after the event started');
+        } catch (TournamentNotOpenException $e) {
+            $this->assertTrue($e->eventHasStarted());
+        }
+
+        $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_registering_before_the_opening_date_is_rejected(): void
+    {
+        $tournament = $this->tournament(['registration_opens_at' => now()->addDay()]);
+
+        $this->expectException(TournamentNotOpenException::class);
+        $this->expectExceptionMessage('not yet open');
+
+        $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
+    }
+
+    public function test_registering_after_the_closing_date_is_rejected(): void
+    {
+        $tournament = $this->tournament(['registration_closes_at' => now()->subMinute()]);
+
+        $this->expectException(TournamentNotOpenException::class);
+        $this->expectExceptionMessage('already closed');
+
+        $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
+    }
+
+    public function test_withdrawing_once_the_event_has_started_is_rejected_even_while_registration_is_open(): void
+    {
+        $tournament = $this->tournament(['event_id' => $this->eventStartingAt(now()->subMinute())]);
+        $participant = $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
+
+        try {
+            $this->service->withdraw($participant->id);
+            $this->fail('A participant withdrew after the event started');
+        } catch (CannotWithdrawException $e) {
+            $this->assertTrue($e->eventHasStarted());
+        }
+
+        $this->assertSame(ParticipantStatus::Registered, $participant->fresh()?->status);
+    }
+
+    public function test_withdrawing_by_token_once_the_event_has_started_is_rejected(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => $this->eventStartingAt(now()->subMinute()),
+            'status' => TournamentStatus::RegistrationClosed->value,
+        ]);
+        $participant = $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com', 'cancellation_token' => 'started-token']);
+
+        try {
+            $this->service->withdrawByToken('started-token');
+            $this->fail('A guest withdrew by token after the event started');
+        } catch (CannotWithdrawException $e) {
+            $this->assertTrue($e->eventHasStarted());
+        }
+
+        $this->assertSame(ParticipantStatus::Registered, $participant->fresh()?->status);
+    }
+
+    public function test_withdrawing_after_registration_closes_is_allowed_until_the_event_starts(): void
+    {
+        $tournament = $this->tournament(['status' => TournamentStatus::RegistrationClosed->value]);
+        $participant = $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
+
+        $result = $this->service->withdraw($participant->id);
+
+        $this->assertSame(ParticipantStatus::Withdrawn, $result->status);
+    }
+
+    public function test_withdrawing_from_a_cancelled_tournament_is_rejected(): void
+    {
+        $tournament = $this->tournament(['status' => TournamentStatus::Cancelled->value]);
+        $participant = $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
+
+        $this->expectException(CannotWithdrawException::class);
+        $this->expectExceptionMessage('cancelled');
+
+        $this->service->withdraw($participant->id);
+    }
+
+    public function test_checking_in_inside_the_window_still_works(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => $this->eventStartingAt(now()->addMinutes(10)),
+            'status' => TournamentStatus::RegistrationClosed->value,
+            'requires_check_in' => true,
+            'self_check_in_allowed' => true,
+            'check_in_starts_before' => 30,
+        ]);
+        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com', 'status' => ParticipantStatus::Confirmed->value]);
+
+        $result = $this->service->checkInByEmail($tournament->id, 'ana@example.com');
+
+        $this->assertSame(ParticipantStatus::CheckedIn, $result->status);
+    }
+
+    public function test_checking_in_after_the_event_start_is_rejected(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => $this->eventStartingAt(now()->subMinute()),
+            'status' => TournamentStatus::RegistrationClosed->value,
+            'requires_check_in' => true,
+            'self_check_in_allowed' => true,
+        ]);
+        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com']);
+
+        $this->expectException(CheckInWindowClosedException::class);
+        $this->expectExceptionMessage('has closed');
+
+        $this->service->checkInByEmail($tournament->id, 'ana@example.com');
     }
 }

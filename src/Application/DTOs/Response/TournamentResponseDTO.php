@@ -11,6 +11,8 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 
 final readonly class TournamentResponseDTO
 {
+    public const string DISPLAY_REGISTRATION_UPCOMING = 'registration_upcoming';
+
     /**
      * @param  array<array{name: string, key: string, points: float}>  $scoreWeights
      * @param  array<string>  $tiebreakers
@@ -46,11 +48,19 @@ final readonly class TournamentResponseDTO
         public bool $showParticipants = true,
         public string $notificationEmail = '',
         public bool $selfCheckInAllowed = false,
+        // Verdicts of the Tournament entity at build time (status, configured dates, event start)
+        public bool $registrationOpen = false,
+        public bool $canWithdraw = false,
+        // What the status badge shows: the raw status, or `registration_upcoming` before the opening date
+        public ?string $displayStatus = null,
+        public ?DateTimeImmutable $eventStartsAt = null,
     ) {
     }
 
-    public static function fromEntity(Tournament $tournament, int $participantCount = 0): self
+    public static function fromEntity(Tournament $tournament, int $participantCount = 0, ?DateTimeImmutable $now = null): self
     {
+        $now ??= new DateTimeImmutable();
+
         return new self(
             id: $tournament->id()->value,
             eventId: $tournament->eventId(),
@@ -81,12 +91,56 @@ final readonly class TournamentResponseDTO
             showParticipants: $tournament->showParticipants(),
             notificationEmail: $tournament->notificationEmail(),
             selfCheckInAllowed: $tournament->selfCheckInAllowed(),
+            registrationOpen: $tournament->isRegistrationOpen($now),
+            canWithdraw: $tournament->canWithdraw($now),
+            displayStatus: self::resolveDisplayStatus($tournament, $now),
+            eventStartsAt: $tournament->eventStartsAt(),
         );
+    }
+
+    /**
+     * An "open" tournament whose registration is not actually open shows as upcoming before the
+     * opening date and as closed otherwise (closing date passed or event started).
+     */
+    private static function resolveDisplayStatus(Tournament $tournament, DateTimeImmutable $now): string
+    {
+        if ($tournament->status() !== TournamentStatus::RegistrationOpen || $tournament->isRegistrationOpen($now)) {
+            return $tournament->status()->value;
+        }
+
+        $opensAt = $tournament->registrationOpensAt();
+
+        return $opensAt !== null && $now < $opensAt
+            ? self::DISPLAY_REGISTRATION_UPCOMING
+            : TournamentStatus::RegistrationClosed->value;
+    }
+
+    public function displayStatus(): string
+    {
+        return $this->displayStatus ?? $this->status->value;
+    }
+
+    public function displayStatusLabel(): string
+    {
+        if ($this->displayStatus() === self::DISPLAY_REGISTRATION_UPCOMING) {
+            return (string) __('tournaments::messages.tournament_status.registration_upcoming');
+        }
+
+        return (TournamentStatus::tryFrom($this->displayStatus()) ?? $this->status)->label();
+    }
+
+    public function displayStatusColor(): string
+    {
+        if ($this->displayStatus() === self::DISPLAY_REGISTRATION_UPCOMING) {
+            return 'info';
+        }
+
+        return (TournamentStatus::tryFrom($this->displayStatus()) ?? $this->status)->color();
     }
 
     public function isRegistrationOpen(): bool
     {
-        return $this->status === TournamentStatus::RegistrationOpen;
+        return $this->registrationOpen;
     }
 
     public function isInProgress(): bool
@@ -130,7 +184,8 @@ final readonly class TournamentResponseDTO
             'description' => $this->description,
             'image_public_id' => $this->imagePublicId,
             'status' => $this->status->value,
-            'status_label' => $this->status->label(),
+            'display_status' => $this->displayStatus(),
+            'status_label' => $this->displayStatusLabel(),
             'max_rounds' => $this->maxRounds,
             'current_round' => $this->currentRound,
             'max_participants' => $this->maxParticipants,
@@ -151,6 +206,7 @@ final readonly class TournamentResponseDTO
             'created_at' => $this->createdAt->format('c'),
             'updated_at' => $this->updatedAt->format('c'),
             'is_registration_open' => $this->isRegistrationOpen(),
+            'can_withdraw' => $this->canWithdraw,
             'is_in_progress' => $this->isInProgress(),
             'is_finished' => $this->isFinished(),
             'has_capacity' => $this->hasCapacity(),

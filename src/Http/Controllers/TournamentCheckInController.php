@@ -44,7 +44,7 @@ final class TournamentCheckInController extends Controller
         }
 
         // Get event start date for check-in window calculation
-        $eventStartDate = $this->tournamentQuery->getEventStartDate($tournament->id);
+        $eventStartDate = $tournament->eventStartsAt;
 
         $user = auth()->user();
         $userRegistration = null;
@@ -86,7 +86,7 @@ final class TournamentCheckInController extends Controller
         }
 
         // Validate check-in window
-        $eventStartDate = $this->tournamentQuery->getEventStartDate($tournament->id);
+        $eventStartDate = $tournament->eventStartsAt;
         $checkInWindow = $this->calculateCheckInWindow($tournament, $eventStartDate);
 
         if ($checkInWindow['status'] !== 'open') {

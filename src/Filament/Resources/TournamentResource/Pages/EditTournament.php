@@ -44,6 +44,8 @@ final class EditTournament extends EditRecord
                         ->title(__('tournaments::messages.messages.registration_opened'))
                         ->success()
                         ->send();
+
+                    $this->warnWhenTheWebStaysClosed();
                 }),
 
             Action::make('closeRegistration')
@@ -144,5 +146,36 @@ final class EditTournament extends EditRecord
 
             DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Opening registration only changes the status: the web stays closed before the opening
+     * date, after the closing date and once the event has started. Say why.
+     */
+    private function warnWhenTheWebStaysClosed(): void
+    {
+        /** @var TournamentModel $record */
+        $record = $this->record->refresh();
+        $now = now();
+        $eventStartsAt = $record->event?->start_date;
+
+        $reason = match (true) {
+            $eventStartsAt === null || $now->greaterThanOrEqualTo($eventStartsAt) => __('tournaments::messages.registration_still_closed.event_started'),
+            $record->registration_closes_at !== null && $now->greaterThanOrEqualTo($record->registration_closes_at) => __('tournaments::messages.registration_still_closed.closing_date_passed'),
+            $record->registration_opens_at !== null && $now->lessThan($record->registration_opens_at) => __('tournaments::messages.registration_still_closed.opens_later', [
+                'date' => $record->registration_opens_at->format('d/m/Y H:i'),
+            ]),
+            default => null,
+        };
+
+        if ($reason === null) {
+            return;
+        }
+
+        Notification::make()
+            ->title(__('tournaments::messages.registration_still_closed.title'))
+            ->body($reason)
+            ->warning()
+            ->send();
     }
 }

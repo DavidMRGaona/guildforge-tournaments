@@ -71,7 +71,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
 
     public function find(TournamentId $id): ?Tournament
     {
-        $model = TournamentModel::find($id->value);
+        $model = TournamentModel::query()->with('event')->find($id->value);
 
         if ($model === null) {
             return null;
@@ -93,7 +93,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
 
     public function findBySlug(string $slug): ?Tournament
     {
-        $model = TournamentModel::where('slug', $slug)->first();
+        $model = TournamentModel::query()->with('event')->where('slug', $slug)->first();
 
         if ($model === null) {
             return null;
@@ -104,7 +104,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
 
     public function findByEventId(string $eventId): ?Tournament
     {
-        $model = TournamentModel::where('event_id', $eventId)->first();
+        $model = TournamentModel::query()->with('event')->where('event_id', $eventId)->first();
 
         if ($model === null) {
             return null;
@@ -118,9 +118,32 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
      */
     public function findByStatus(TournamentStatus $status): array
     {
-        $models = TournamentModel::where('status', $status)->get();
+        $models = TournamentModel::query()->with('event')->where('status', $status)->get();
 
         return $models->map(fn (TournamentModel $model): Tournament => $this->toEntity($model))->all();
+    }
+
+    /**
+     * @param  list<string>  $ids
+     * @return list<Tournament>
+     */
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $models = TournamentModel::query()->with('event')->whereIn('id', $ids)->get()->keyBy('id');
+
+        $tournaments = [];
+        foreach ($ids as $id) {
+            $model = $models->get($id);
+            if ($model instanceof TournamentModel) {
+                $tournaments[] = $this->toEntity($model);
+            }
+        }
+
+        return $tournaments;
     }
 
     public function delete(TournamentId $id): void
@@ -133,7 +156,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
      */
     public function all(): array
     {
-        $models = TournamentModel::all();
+        $models = TournamentModel::query()->with('event')->get();
 
         return $models->map(fn (TournamentModel $model): Tournament => $this->toEntity($model))->all();
     }
@@ -203,6 +226,8 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
             showParticipants: $model->show_participants ?? true,
             notificationEmail: $model->notification_email ?? '',
             selfCheckInAllowed: $model->self_check_in_allowed ?? false,
+            // A missing event row leaves the tournament without a known start
+            eventStartsAt: $model->event?->start_date->toDateTimeImmutable(),
         );
     }
 }

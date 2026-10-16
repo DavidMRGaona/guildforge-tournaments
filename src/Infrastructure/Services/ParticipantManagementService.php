@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
-use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
@@ -30,7 +30,6 @@ use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final readonly class ParticipantManagementService implements ParticipantManagementServiceInterface
 {
@@ -48,14 +47,10 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw TournamentNotFoundException::withId($dto->tournamentId);
         }
 
-        if ($tournament->status() !== TournamentStatus::RegistrationOpen) {
-            throw match ($tournament->status()) {
-                TournamentStatus::Draft => TournamentNotOpenException::notYetOpen($dto->tournamentId),
-                TournamentStatus::InProgress => TournamentNotOpenException::inProgress($dto->tournamentId),
-                TournamentStatus::Finished => TournamentNotOpenException::finished($dto->tournamentId),
-                TournamentStatus::Cancelled => TournamentNotOpenException::cancelled($dto->tournamentId),
-                default => TournamentNotOpenException::alreadyClosed($dto->tournamentId),
-            };
+        $now = new DateTimeImmutable;
+
+        if (! $tournament->isRegistrationOpen($now)) {
+            throw $this->registrationClosedReason($tournament, $now);
         }
 
         if ($tournament->maxParticipants() !== null) {
@@ -190,13 +185,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw TournamentNotFoundException::withId($participant->tournamentId());
         }
 
-        if ($tournament->status() === TournamentStatus::InProgress) {
-            throw CannotWithdrawException::tournamentInProgress($participantId);
-        }
-
-        if ($tournament->status() === TournamentStatus::Finished) {
-            throw CannotWithdrawException::tournamentFinished($participantId);
-        }
+        $this->ensureTournamentAllowsWithdrawal($tournament, $participantId);
 
         // Get participant info before withdrawal for notification
         $participantName = $this->getParticipantName($participant);
@@ -244,13 +233,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw TournamentNotFoundException::withId($participant->tournamentId());
         }
 
-        if ($tournament->status() === TournamentStatus::InProgress) {
-            throw CannotWithdrawException::tournamentInProgress($participant->id()->value);
-        }
-
-        if ($tournament->status() === TournamentStatus::Finished) {
-            throw CannotWithdrawException::tournamentFinished($participant->id()->value);
-        }
+        $this->ensureTournamentAllowsWithdrawal($tournament, $participant->id()->value);
 
         // Get participant info before withdrawal for notification
         $participantName = $this->getParticipantName($participant);
@@ -370,31 +353,19 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return $this->createResponseDTO($participant);
     }
 
-    private function validateCheckInWindow(\Modules\Tournaments\Domain\Entities\Tournament $tournament): void
+    private function validateCheckInWindow(Tournament $tournament): void
     {
         // If tournament is already in progress or finished, check-in is closed
         if (in_array($tournament->status(), [TournamentStatus::InProgress, TournamentStatus::Finished, TournamentStatus::Cancelled], true)) {
             throw CheckInWindowClosedException::tournamentStarted($tournament->id()->value);
         }
 
-        // Get event start date
-        $tournamentModel = TournamentModel::query()
-            ->where('id', $tournament->id()->value)
-            ->first(['event_id']);
+        $eventStartDate = $tournament->eventStartsAt();
 
-        if ($tournamentModel === null) {
-            throw TournamentNotFoundException::withId($tournament->id()->value);
-        }
-
-        $event = EventModel::query()
-            ->where('id', $tournamentModel->event_id)
-            ->first(['start_date']);
-
-        if ($event === null || $event->start_date === null) {
+        if ($eventStartDate === null) {
             throw CheckInWindowClosedException::alreadyClosed($tournament->id()->value);
         }
 
-        $eventStartDate = $event->start_date->toDateTimeImmutable();
         $checkInMinutesBefore = $tournament->checkInStartsBefore() ?? 30;
         $windowOpensAt = $eventStartDate->modify("-{$checkInMinutesBefore} minutes");
 
@@ -407,6 +378,49 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         if ($now > $eventStartDate) {
             throw CheckInWindowClosedException::alreadyClosed($tournament->id()->value);
         }
+    }
+
+    /**
+     * Why registration is closed: the status first, then the event start (which caps any
+     * closing date) and the configured dates. An unknown start reads as a plain closed registration.
+     */
+    private function registrationClosedReason(Tournament $tournament, DateTimeImmutable $now): TournamentNotOpenException
+    {
+        $tournamentId = $tournament->id()->value;
+        $opensAt = $tournament->registrationOpensAt();
+
+        return match (true) {
+            $tournament->status() === TournamentStatus::Draft => TournamentNotOpenException::notYetOpen($tournamentId),
+            $tournament->status() === TournamentStatus::InProgress => TournamentNotOpenException::inProgress($tournamentId),
+            $tournament->status() === TournamentStatus::Finished => TournamentNotOpenException::finished($tournamentId),
+            $tournament->status() === TournamentStatus::Cancelled => TournamentNotOpenException::cancelled($tournamentId),
+            $tournament->status() !== TournamentStatus::RegistrationOpen => TournamentNotOpenException::alreadyClosed($tournamentId),
+            $tournament->eventStartsAt() === null => TournamentNotOpenException::alreadyClosed($tournamentId),
+            $tournament->hasEventStarted($now) => TournamentNotOpenException::eventStarted($tournamentId),
+            $opensAt !== null && $now < $opensAt => TournamentNotOpenException::notYetOpen($tournamentId),
+            default => TournamentNotOpenException::alreadyClosed($tournamentId),
+        };
+    }
+
+    /**
+     * Withdrawing from the web follows Tournament::canWithdraw(); the exception tells the
+     * controllers why. The panel's staff withdrawal updates the participant directly and skips this.
+     *
+     * @throws CannotWithdrawException
+     */
+    private function ensureTournamentAllowsWithdrawal(Tournament $tournament, string $participantId): void
+    {
+        if ($tournament->canWithdraw()) {
+            return;
+        }
+
+        throw match (true) {
+            $tournament->status() === TournamentStatus::InProgress => CannotWithdrawException::tournamentInProgress($participantId),
+            $tournament->status() === TournamentStatus::Finished => CannotWithdrawException::tournamentFinished($participantId),
+            $tournament->status() === TournamentStatus::Cancelled => CannotWithdrawException::tournamentCancelled($participantId),
+            $tournament->eventStartsAt() === null => CannotWithdrawException::eventStartUnknown($participantId),
+            default => CannotWithdrawException::tournamentStarted($participantId),
+        };
     }
 
     /**

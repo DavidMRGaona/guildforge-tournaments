@@ -7,8 +7,11 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
@@ -22,6 +25,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\M
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Tests\Support\Modules\InteractsWithModulePanel;
@@ -246,6 +250,191 @@ final class TournamentsPanelTest extends ModuleTestCase
     public function test_settings_page_renders(): void
     {
         Livewire::test(ModuleSettingsPage::class, ['module' => 'tournaments'])->assertOk();
+    }
+
+    public function test_registration_cannot_close_after_the_event_starts(): void
+    {
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+
+        $component = Livewire::test(CreateTournament::class)
+            ->fillForm($this->closingFormData($event->id, '2036-11-20 10:30:00'))
+            ->call('create')
+            ->assertHasFormErrors(['registration_closes_at']);
+
+        $this->assertContains(
+            'El cierre de inscripción no puede ser posterior al inicio del evento (20/11/2036 10:00)',
+            $component->errors()->get('data.registration_closes_at'),
+        );
+        $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
+    }
+
+    public function test_registration_can_close_when_the_event_starts(): void
+    {
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+
+        Livewire::test(CreateTournament::class)
+            ->fillForm($this->closingFormData($event->id, '2036-11-20 10:00:00'))
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
+        $this->assertSame('2036-11-20 10:00:00', $tournament->registration_closes_at?->format('Y-m-d H:i:s'));
+    }
+
+    public function test_the_closing_date_is_not_checked_until_an_event_is_chosen(): void
+    {
+        Livewire::test(CreateTournament::class)
+            ->fillForm([
+                'name' => 'Torneo de prueba',
+                'notification_email' => 'torneos@example.com',
+                'registration_closes_at' => '2036-11-20 10:30:00',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['event_id' => 'required'])
+            ->assertHasNoFormErrors(['registration_closes_at']);
+    }
+
+    public function test_a_garbage_event_id_never_breaks_the_closing_date_check(): void
+    {
+        Livewire::test(CreateTournament::class)
+            ->fillForm($this->closingFormData('not-a-uuid', '2036-11-20 10:30:00'))
+            ->call('create')
+            ->assertHasFormErrors(['event_id'])
+            ->assertHasNoFormErrors(['registration_closes_at']);
+    }
+
+    public function test_a_missing_event_never_breaks_the_closing_date_check(): void
+    {
+        Livewire::test(CreateTournament::class)
+            ->fillForm($this->closingFormData((string) Str::uuid(), '2036-11-20 10:30:00'))
+            ->call('create')
+            ->assertHasFormErrors(['event_id'])
+            ->assertHasNoFormErrors(['registration_closes_at']);
+    }
+
+    public function test_a_garbage_closing_date_is_reported_without_an_exception(): void
+    {
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+
+        $component = Livewire::test(CreateTournament::class)
+            ->fillForm($this->closingFormData($event->id, 'definitely not a date'))
+            ->call('create');
+
+        $component->assertHasNoErrors(['data.event_id']);
+        $component->assertHasFormErrors(['registration_closes_at']);
+        $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
+    }
+
+    public function test_opening_registration_warns_when_the_opening_date_is_still_ahead(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00', [
+            'registration_opens_at' => '2036-05-01 09:30:00',
+        ]);
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('La inscripción no se abrirá en la web hasta el 01/05/2036 09:30, la fecha de apertura configurada.')
+                    ->warning()
+            );
+
+        $this->assertSame('registration_open', $tournament->refresh()->status->value);
+    }
+
+    public function test_opening_registration_warns_when_the_closing_date_has_passed(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00', [
+            'registration_closes_at' => now()->subDay(),
+        ]);
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('La fecha de cierre de inscripción ya ha pasado.')
+                    ->warning()
+            );
+    }
+
+    public function test_opening_registration_warns_when_the_event_has_started(): void
+    {
+        $tournament = $this->tournamentWithEventStart(now()->subHour());
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('El evento ya ha comenzado.')
+                    ->warning()
+            );
+    }
+
+    public function test_opening_registration_keeps_the_success_notification_when_it_warns(): void
+    {
+        $tournament = $this->tournamentWithEventStart(now()->subHour());
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified('Inscripción abierta');
+    }
+
+    public function test_opening_registration_does_not_warn_when_the_web_will_accept_registrations(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00');
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotNotified('La web aún no admite inscripciones');
+
+        $this->assertSame('registration_open', $tournament->refresh()->status->value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function tournamentWithEventStart(\DateTimeInterface|string $eventStartsAt, array $attributes = []): TournamentModel
+    {
+        return $this->tournament([
+            'event_id' => EventModel::factory()->create(['start_date' => $eventStartsAt])->id,
+            ...$attributes,
+        ]);
+    }
+
+    public function test_staff_can_withdraw_a_participant_after_the_event_has_started(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => EventModel::factory()->create(['start_date' => now()->subHour()])->id,
+            'status' => 'registration_closed',
+        ]);
+        $participant = ParticipantModel::create([
+            'tournament_id' => $tournament->id,
+            'user_id' => UserModel::factory()->create()->id,
+            'status' => ParticipantStatus::Registered,
+            'registered_at' => now()->subDay(),
+        ]);
+
+        Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
+            ->callTableAction('withdraw', $participant);
+
+        $this->assertSame(ParticipantStatus::Withdrawn, $participant->fresh()?->status);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function closingFormData(string $eventId, string $closesAt): array
+    {
+        return [
+            'event_id' => $eventId,
+            'name' => 'Torneo de prueba',
+            'notification_email' => 'torneos@example.com',
+            'game_profile_id' => $this->systemProfile()->id,
+            'registration_closes_at' => $closesAt,
+        ];
     }
 
     private function systemProfile(): GameProfileModel

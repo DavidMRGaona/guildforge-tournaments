@@ -27,7 +27,11 @@ const gateReasonId = useId();
 const tournamentHasStarted = computed(() => hasStarted(props.tournament));
 const showParticipantsList = computed(() => shouldShowParticipants(props.tournament) && props.participants.length > 0);
 
-const statusInfo = computed(() => formatStatus(props.tournament.status));
+const statusInfo = computed(() => formatStatus(props.tournament.display_status));
+
+const registrationUpcoming = computed(() =>
+    props.tournament.display_status === 'registration_upcoming' && props.tournament.registration_opens_at !== null
+);
 
 const remainingSpots = computed(() => spotsRemaining(props.tournament));
 const isFull = computed(() => isTournamentFull(props.tournament));
@@ -37,8 +41,9 @@ const isRegistered = computed(() =>
     props.userRegistration !== null && activeStatuses.includes(props.userRegistration.status)
 );
 
+// The server decides: before the event starts and while the tournament is not running
 const canWithdraw = computed(() => {
-    return isRegistered.value && props.tournament.is_registration_open;
+    return isRegistered.value && props.tournament.can_withdraw;
 });
 
 // The register or withdraw button is on screen, so its disabled reason must be too
@@ -387,6 +392,19 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 </p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Registration not open yet: say when it opens -->
+                    <div
+                        v-if="registrationUpcoming && !isRegistered"
+                        class="mb-6 rounded-lg border border-primary bg-primary-light p-4"
+                    >
+                        <h3 class="font-semibold text-primary">
+                            {{ t('tournaments.public.registration_upcoming') }}
+                        </h3>
+                        <p class="mt-1 text-sm text-primary">
+                            {{ t('tournaments.public.registration_opens_on', { date: formatDate(tournament.registration_opens_at) }) }}
+                        </p>
                     </div>
 
                     <!-- Registration Section -->

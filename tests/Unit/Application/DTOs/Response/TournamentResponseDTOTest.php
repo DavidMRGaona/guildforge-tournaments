@@ -6,8 +6,10 @@ namespace Modules\Tournaments\Tests\Unit\Application\DTOs\Response;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use PHPUnit\Framework\TestCase;
 
 final class TournamentResponseDTOTest extends TestCase
@@ -73,22 +75,34 @@ final class TournamentResponseDTOTest extends TestCase
         $this->assertNull($dto->completedAt);
     }
 
-    public function test_is_registration_open_returns_true_when_status_is_registration_open(): void
+    public function test_from_entity_takes_the_registration_and_withdrawal_flags_from_the_entity(): void
     {
-        $dto = $this->createDtoWithStatus(TournamentStatus::RegistrationOpen);
+        $now = new DateTimeImmutable('2026-11-01 10:00:00');
 
-        $this->assertTrue($dto->isRegistrationOpen());
+        $open = TournamentResponseDTO::fromEntity($this->entity(TournamentStatus::RegistrationOpen, '2026-11-20 10:00:00'), 0, $now);
+        $started = TournamentResponseDTO::fromEntity($this->entity(TournamentStatus::RegistrationOpen, '2026-10-20 10:00:00'), 0, $now);
+        $closedBeforeStart = TournamentResponseDTO::fromEntity($this->entity(TournamentStatus::RegistrationClosed, '2026-11-20 10:00:00'), 0, $now);
+        $unknownStart = TournamentResponseDTO::fromEntity($this->entity(TournamentStatus::RegistrationOpen, null), 0, $now);
+
+        $this->assertTrue($open->isRegistrationOpen());
+        $this->assertTrue($open->canWithdraw);
+        $this->assertFalse($started->isRegistrationOpen());
+        $this->assertFalse($started->canWithdraw);
+        $this->assertFalse($closedBeforeStart->isRegistrationOpen());
+        $this->assertTrue($closedBeforeStart->canWithdraw);
+        $this->assertFalse($unknownStart->isRegistrationOpen());
+        $this->assertFalse($unknownStart->canWithdraw);
     }
 
-    public function test_is_registration_open_returns_false_for_other_statuses(): void
+    public function test_registration_is_not_open_for_other_statuses_even_before_the_event_starts(): void
     {
-        $draftDto = $this->createDtoWithStatus(TournamentStatus::Draft);
-        $inProgressDto = $this->createDtoWithStatus(TournamentStatus::InProgress);
-        $finishedDto = $this->createDtoWithStatus(TournamentStatus::Finished);
+        $now = new DateTimeImmutable('2026-11-01 10:00:00');
 
-        $this->assertFalse($draftDto->isRegistrationOpen());
-        $this->assertFalse($inProgressDto->isRegistrationOpen());
-        $this->assertFalse($finishedDto->isRegistrationOpen());
+        foreach ([TournamentStatus::Draft, TournamentStatus::InProgress, TournamentStatus::Finished] as $status) {
+            $dto = TournamentResponseDTO::fromEntity($this->entity($status, '2026-11-20 10:00:00'), 0, $now);
+
+            $this->assertFalse($dto->isRegistrationOpen(), $status->value);
+        }
     }
 
     public function test_is_in_progress_returns_true_when_status_is_in_progress(): void
@@ -169,6 +183,7 @@ final class TournamentResponseDTOTest extends TestCase
             completedAt: null,
             createdAt: $createdAt,
             updatedAt: $createdAt,
+            registrationOpen: true,
         );
 
         $this->assertEquals('tournament-array', $dto->id);
@@ -253,6 +268,21 @@ final class TournamentResponseDTOTest extends TestCase
             completedAt: null,
             createdAt: new DateTimeImmutable(),
             updatedAt: new DateTimeImmutable(),
+        );
+    }
+
+    private function entity(TournamentStatus $status, ?string $eventStartsAt): Tournament
+    {
+        return new Tournament(
+            id: TournamentId::generate(),
+            eventId: 'event',
+            name: 'Test',
+            slug: 'test',
+            status: $status,
+            scoreWeights: [],
+            tiebreakers: [],
+            resultReporting: ResultReporting::AdminOnly,
+            eventStartsAt: $eventStartsAt !== null ? new DateTimeImmutable($eventStartsAt) : null,
         );
     }
 }

@@ -47,7 +47,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
  * @property \Carbon\Carbon|null $completed_at
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
- * @property-read EventModel $event
+ * @property-read EventModel|null $event
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ParticipantModel> $participants
  * @property-read \Illuminate\Database\Eloquent\Collection<int, RoundModel> $rounds
  * @property-read \Illuminate\Database\Eloquent\Collection<int, StandingModel> $standings

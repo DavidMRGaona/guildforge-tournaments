@@ -43,6 +43,14 @@ interface TournamentRepositoryInterface
     public function findByStatus(TournamentStatus $status): array;
 
     /**
+     * Find tournaments by ID, in the order of the given IDs; unknown IDs are skipped.
+     *
+     * @param  list<string>  $ids
+     * @return list<Tournament>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * Delete a tournament.
      */
     public function delete(TournamentId $id): void;

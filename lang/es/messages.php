@@ -57,6 +57,7 @@ return [
 
     'tournament_status' => [
         'draft' => 'Borrador',
+        'registration_upcoming' => 'Inscripción próximamente',
         'registration_open' => 'Inscripción abierta',
         'registration_closed' => 'Inscripción cerrada',
         'in_progress' => 'En curso',
@@ -195,6 +196,13 @@ return [
         'view_matches' => 'Ver partidas',
     ],
 
+    'registration_still_closed' => [
+        'title' => 'La web aún no admite inscripciones',
+        'event_started' => 'El evento ya ha comenzado.',
+        'closing_date_passed' => 'La fecha de cierre de inscripción ya ha pasado.',
+        'opens_later' => 'La inscripción no se abrirá en la web hasta el :date, la fecha de apertura configurada.',
+    ],
+
     'messages' => [
         'tournament_created' => 'Torneo creado correctamente',
         'tournament_updated' => 'Torneo actualizado correctamente',
@@ -221,9 +229,12 @@ return [
     'errors' => [
         'tournament_not_found' => 'Torneo no encontrado',
         'tournament_not_open' => 'El torneo no está abierto para inscripción',
+        'tournament_started' => 'El torneo ya ha comenzado: la inscripción está cerrada',
         'tournament_full' => 'El torneo está completo',
         'already_registered' => 'Ya estás inscrito en este torneo',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
+        'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
+        'cannot_cancel_started' => 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
         'user_not_allowed' => 'No tienes permiso para inscribirte en este torneo',
         'guests_not_allowed' => 'Este torneo no permite invitados',
         'unauthenticated' => 'Debes iniciar sesión para inscribirte',
@@ -245,6 +256,7 @@ return [
 
     'validation' => [
         'gdpr_consent_required' => 'Debes aceptar la política de privacidad',
+        'registration_closes_after_start' => 'El cierre de inscripción no puede ser posterior al inicio del evento (:date)',
     ],
 
     'cancellation' => [

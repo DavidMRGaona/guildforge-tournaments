@@ -5,7 +5,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 ## Características
 
 - **Un torneo por evento**: cada torneo pertenece a un evento publicado (relación 1:1).
-- **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas.
+- **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas. Solo se aceptan inscripciones con el torneo en **Inscripción abierta**, dentro de las fechas de apertura y cierre si se han configurado y antes del inicio del evento. Desde el inicio del evento nadie puede inscribirse ni retirarse desde la web (tampoco con el enlace de cancelación de invitados), aunque el torneo siga en **Inscripción abierta** o **Inscripción cerrada**; desde el panel se pueden seguir añadiendo y retirando participantes. Si no se puede leer el inicio del evento, la inscripción y la retirada quedan cerradas por seguridad.
   Con la verificación de email obligatoria activa en el sitio, las cuentas a las que el core se la exige deben verificar su email antes de inscribirse, retirarse o hacer check-in; los invitados no se ven afectados.
   Mientras tanto, en la página del torneo, en la sección del torneo de la página del evento y en la página de check-in los botones de inscribirse, retirarse y hacer check-in aparecen desactivados, con el motivo debajo y un enlace «Ver cómo» a la página de verificación. Si la cuenta pasa a necesitar la verificación con la página ya abierta (por ejemplo, desde otra pestaña), al pulsar el botón se abre la página de verificación en lugar de un mensaje de error. Las cuentas que no deben verificar y los invitados ven la página igual que antes.
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
@@ -67,7 +67,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 
 1. **Crear el evento** y publicarlo: el torneo se asocia a un evento publicado.
 2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
-3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Las fechas de inscripción se muestran en la web, pero no abren ni cierran la inscripción por sí solas.
+3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Con fechas de apertura o cierre configuradas, la web solo acepta inscripciones entre ellas; el inicio del evento la cierra siempre.
 4. **Cerrar inscripción** e **Iniciar torneo** (comprueba el mínimo de participantes).
 5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
 6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
@@ -104,8 +104,8 @@ También se puede crear un torneo simplificado desde el propio evento: el formul
 
 | Campo | Obligatorio | Descripción |
 |-------|-------------|-------------|
-| Apertura de inscripción | No | Informativa |
-| Cierre de inscripción | No | Informativa; posterior a la apertura |
+| Apertura de inscripción | No | Antes de esta fecha no se aceptan inscripciones |
+| Cierre de inscripción | No | Desde esta fecha no se aceptan inscripciones; posterior a la apertura y no posterior al inicio del evento |
 
 #### Estadísticas
 
@@ -216,7 +216,7 @@ Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía 
 | Finalizado | `finished` | — |
 | Cancelado | `cancelled` | — |
 
-Solo se aceptan inscripciones en `registration_open`. El panel permite **Iniciar torneo** también desde `registration_open`.
+Solo se aceptan inscripciones en `registration_open`, dentro de las fechas configuradas y antes del inicio del evento. Retirarse desde la web es posible hasta el inicio del evento mientras el torneo no esté en curso, finalizado o cancelado. El panel permite **Iniciar torneo** también desde `registration_open`.
 
 ### Participante
 

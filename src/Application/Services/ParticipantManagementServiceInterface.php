@@ -24,7 +24,7 @@ interface ParticipantManagementServiceInterface
      * Register a user or guest to a tournament.
      *
      * @throws TournamentNotFoundException
-     * @throws TournamentNotOpenException
+     * @throws TournamentNotOpenException When the status, the configured dates or the event start close registration
      * @throws TournamentFullException
      * @throws AlreadyRegisteredException
      * @throws UserNotAllowedToRegisterException When user doesn't have required role
@@ -50,7 +50,7 @@ interface ParticipantManagementServiceInterface
      * Withdraw a participant from the tournament.
      *
      * @throws ParticipantNotFoundException
-     * @throws CannotWithdrawException When tournament has already started
+     * @throws CannotWithdrawException When the participant is not active, the tournament is running, finished or cancelled, or its event has started
      */
     public function withdraw(string $participantId): ParticipantResponseDTO;
 
