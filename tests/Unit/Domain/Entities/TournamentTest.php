@@ -12,6 +12,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TournamentTest extends TestCase
@@ -41,6 +42,27 @@ final class TournamentTest extends TestCase
             new ScoreWeight('Derrota', 'loss', 0.0),
             new ScoreWeight('Bye', 'bye', 3.0),
         ];
+    }
+
+    private function tournamentWith(
+        TournamentStatus $status = TournamentStatus::RegistrationOpen,
+        ?string $opensAt = null,
+        ?string $closesAt = null,
+        ?string $eventStartsAt = '2026-11-20 10:00:00',
+    ): Tournament {
+        return new Tournament(
+            id: TournamentId::generate(),
+            eventId: '550e8400-e29b-41d4-a716-446655440000',
+            name: 'Test Tournament',
+            slug: 'test-tournament',
+            status: $status,
+            scoreWeights: $this->getDefaultScoreWeights(),
+            tiebreakers: [Tiebreaker::Buchholz, Tiebreaker::Progressive],
+            resultReporting: ResultReporting::AdminOnly,
+            registrationOpensAt: $opensAt !== null ? new DateTimeImmutable($opensAt) : null,
+            registrationClosesAt: $closesAt !== null ? new DateTimeImmutable($closesAt) : null,
+            eventStartsAt: $eventStartsAt !== null ? new DateTimeImmutable($eventStartsAt) : null,
+        );
     }
 
     public function test_it_creates_tournament_with_required_fields(): void
@@ -193,13 +215,95 @@ final class TournamentTest extends TestCase
         $this->assertEquals(1, $rounds);
     }
 
-    public function test_is_registration_open(): void
+    public function test_is_registration_open_needs_the_open_status(): void
     {
-        $openTournament = $this->createTournament(TournamentStatus::RegistrationOpen);
-        $closedTournament = $this->createTournament(TournamentStatus::RegistrationClosed);
+        $now = new DateTimeImmutable('2026-11-01 10:00:00');
 
-        $this->assertTrue($openTournament->isRegistrationOpen());
-        $this->assertFalse($closedTournament->isRegistrationOpen());
+        $this->assertTrue($this->tournamentWith(TournamentStatus::RegistrationOpen)->isRegistrationOpen($now));
+        $this->assertFalse($this->tournamentWith(TournamentStatus::RegistrationClosed)->isRegistrationOpen($now));
+    }
+
+    /**
+     * @return iterable<string, array{TournamentStatus, ?string, ?string, ?string, string, bool}>
+     */
+    public static function registrationWindow(): iterable
+    {
+        $start = '2026-11-20 10:00:00';
+
+        // status, opens at, closes at, event starts at, now, open?
+        yield 'no dates, before the start' => [TournamentStatus::RegistrationOpen, null, null, $start, '2026-11-20 09:59:59', true];
+        yield 'no dates, at the exact start' => [TournamentStatus::RegistrationOpen, null, null, $start, '2026-11-20 10:00:00', false];
+        yield 'no dates, after the start' => [TournamentStatus::RegistrationOpen, null, null, $start, '2026-11-20 10:01:00', false];
+        yield 'before the opening date' => [TournamentStatus::RegistrationOpen, '2026-11-10 10:00:00', null, $start, '2026-11-10 09:59:59', false];
+        yield 'at the exact opening date' => [TournamentStatus::RegistrationOpen, '2026-11-10 10:00:00', null, $start, '2026-11-10 10:00:00', true];
+        yield 'before the closing date' => [TournamentStatus::RegistrationOpen, null, '2026-11-15 20:00:00', $start, '2026-11-15 19:59:59', true];
+        yield 'at the exact closing date' => [TournamentStatus::RegistrationOpen, null, '2026-11-15 20:00:00', $start, '2026-11-15 20:00:00', false];
+        yield 'closing date after the start, at the start' => [TournamentStatus::RegistrationOpen, null, '2026-11-20 12:00:00', $start, '2026-11-20 10:00:00', false];
+        yield 'inside both dates' => [TournamentStatus::RegistrationOpen, '2026-11-10 10:00:00', '2026-11-15 20:00:00', $start, '2026-11-12 10:00:00', true];
+        yield 'unknown start' => [TournamentStatus::RegistrationOpen, null, null, null, '2026-11-01 10:00:00', false];
+        yield 'registration closed status' => [TournamentStatus::RegistrationClosed, null, null, $start, '2026-11-01 10:00:00', false];
+        yield 'draft status' => [TournamentStatus::Draft, null, null, $start, '2026-11-01 10:00:00', false];
+    }
+
+    #[DataProvider('registrationWindow')]
+    public function test_registration_is_open_only_inside_its_window(
+        TournamentStatus $status,
+        ?string $opensAt,
+        ?string $closesAt,
+        ?string $eventStartsAt,
+        string $now,
+        bool $expected,
+    ): void {
+        $tournament = $this->tournamentWith($status, $opensAt, $closesAt, $eventStartsAt);
+
+        $this->assertSame($expected, $tournament->isRegistrationOpen(new DateTimeImmutable($now)));
+    }
+
+    public function test_is_registration_open_uses_the_current_time_by_default(): void
+    {
+        $this->assertTrue($this->tournamentWith(eventStartsAt: '+1 day')->isRegistrationOpen());
+        $this->assertFalse($this->tournamentWith(eventStartsAt: '-1 minute')->isRegistrationOpen());
+    }
+
+    public function test_has_event_started(): void
+    {
+        $tournament = $this->tournamentWith();
+
+        $this->assertFalse($tournament->hasEventStarted(new DateTimeImmutable('2026-11-20 09:59:59')));
+        $this->assertTrue($tournament->hasEventStarted(new DateTimeImmutable('2026-11-20 10:00:00')));
+        $this->assertTrue($this->tournamentWith(eventStartsAt: null)->hasEventStarted(new DateTimeImmutable('2026-11-01 10:00:00')));
+        $this->assertEquals(new DateTimeImmutable('2026-11-20 10:00:00'), $tournament->eventStartsAt());
+    }
+
+    /**
+     * @return iterable<string, array{TournamentStatus, ?string, string, bool}>
+     */
+    public static function withdrawalWindow(): iterable
+    {
+        $start = '2026-11-20 10:00:00';
+
+        // status, event starts at, now, can withdraw?
+        yield 'registration open, before the start' => [TournamentStatus::RegistrationOpen, $start, '2026-11-20 09:59:59', true];
+        yield 'registration closed, before the start' => [TournamentStatus::RegistrationClosed, $start, '2026-11-20 09:59:59', true];
+        yield 'draft, before the start' => [TournamentStatus::Draft, $start, '2026-11-01 10:00:00', true];
+        yield 'registration open, at the exact start' => [TournamentStatus::RegistrationOpen, $start, '2026-11-20 10:00:00', false];
+        yield 'registration closed, after the start' => [TournamentStatus::RegistrationClosed, $start, '2026-11-20 11:00:00', false];
+        yield 'in progress, before the start' => [TournamentStatus::InProgress, $start, '2026-11-01 10:00:00', false];
+        yield 'finished, before the start' => [TournamentStatus::Finished, $start, '2026-11-01 10:00:00', false];
+        yield 'cancelled, before the start' => [TournamentStatus::Cancelled, $start, '2026-11-01 10:00:00', false];
+        yield 'unknown start' => [TournamentStatus::RegistrationOpen, null, '2026-11-01 10:00:00', false];
+    }
+
+    #[DataProvider('withdrawalWindow')]
+    public function test_participants_can_withdraw_only_before_the_start(
+        TournamentStatus $status,
+        ?string $eventStartsAt,
+        string $now,
+        bool $expected,
+    ): void {
+        $tournament = $this->tournamentWith($status, eventStartsAt: $eventStartsAt);
+
+        $this->assertSame($expected, $tournament->canWithdraw(new DateTimeImmutable($now)));
     }
 
     public function test_has_max_rounds_when_configured(): void
