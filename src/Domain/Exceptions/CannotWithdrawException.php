@@ -8,9 +8,32 @@ use DomainException;
 
 final class CannotWithdrawException extends DomainException
 {
-    private function __construct(string $message)
+    private function __construct(string $message, private readonly bool $closedByStart = false)
     {
         parent::__construct($message);
+    }
+
+    public static function tournamentStarted(string $participantId): self
+    {
+        return new self("Participant {$participantId} cannot withdraw once the tournament's event has started.", closedByStart: true);
+    }
+
+    public static function tournamentCancelled(string $participantId): self
+    {
+        return new self("Participant {$participantId} cannot withdraw from a cancelled tournament.");
+    }
+
+    public static function eventStartUnknown(string $participantId): self
+    {
+        return new self("Participant {$participantId} cannot withdraw: the start of the tournament's event is unknown.");
+    }
+
+    /**
+     * Whether the withdrawal is refused because the tournament's event has started.
+     */
+    public function eventHasStarted(): bool
+    {
+        return $this->closedByStart;
     }
 
     public static function alreadyWithdrawn(string $participantId): self

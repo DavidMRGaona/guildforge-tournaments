@@ -8,9 +8,22 @@ use DomainException;
 
 final class TournamentNotOpenException extends DomainException
 {
-    private function __construct(string $message)
+    private function __construct(string $message, private readonly bool $closedByStart = false)
     {
         parent::__construct($message);
+    }
+
+    public static function eventStarted(string $tournamentId): self
+    {
+        return new self("Tournament {$tournamentId} registration closed when its event started.", closedByStart: true);
+    }
+
+    /**
+     * Whether registration is closed because the tournament's event has started.
+     */
+    public function eventHasStarted(): bool
+    {
+        return $this->closedByStart;
     }
 
     public static function notYetOpen(string $tournamentId): self

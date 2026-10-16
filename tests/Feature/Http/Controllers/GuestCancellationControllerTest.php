@@ -33,8 +33,8 @@ final class GuestCancellationControllerTest extends ModuleTestCase
     ): TournamentModel {
         $event = EventModel::factory()->published()->create([
             // app.timezone is Europe/Madrid, so this is a venue local time
-            'start_date' => '2026-03-14 10:00:00',
-            'end_date' => '2026-03-14 20:00:00',
+            'start_date' => '2036-03-14 10:00:00',
+            'end_date' => '2036-03-14 20:00:00',
         ]);
 
         $tournament = TournamentModel::create([
@@ -68,7 +68,7 @@ final class GuestCancellationControllerTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('tournament.name', 'Torneo de Warhammer')
-                ->where('tournament.eventDate', '2026-03-14T10:00:00+01:00')
+                ->where('tournament.eventDate', '2036-03-14T10:00:00+01:00')
                 ->where('participant.guest_name', 'Ana')
                 ->where('canCancel', true));
     }
