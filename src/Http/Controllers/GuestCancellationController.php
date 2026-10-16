@@ -86,7 +86,7 @@ final class GuestCancellationController extends Controller
         } catch (CannotWithdrawException $e) {
             return redirect()->route('tournaments.index')
                 ->with('error', $e->eventHasStarted()
-                    ? __('tournaments::messages.errors.cannot_withdraw_started')
+                    ? __('tournaments::messages.errors.cannot_cancel_started')
                     : __('tournaments::messages.errors.cannot_withdraw'));
         }
     }

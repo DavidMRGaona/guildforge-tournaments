@@ -234,6 +234,7 @@ return [
         'already_registered' => 'Ya estás inscrito en este torneo',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
         'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
+        'cannot_cancel_started' => 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
         'user_not_allowed' => 'No tienes permiso para inscribirte en este torneo',
         'guests_not_allowed' => 'Este torneo no permite invitados',
         'unauthenticated' => 'Debes iniciar sesión para inscribirte',

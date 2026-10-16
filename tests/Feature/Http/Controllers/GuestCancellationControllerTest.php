@@ -142,7 +142,7 @@ final class GuestCancellationControllerTest extends ModuleTestCase
 
         $this->delete('/torneos/cancelar/'.self::TOKEN)
             ->assertRedirect(route('tournaments.index'))
-            ->assertSessionHas('error', 'El torneo ya ha comenzado: ya no puedes retirarte');
+            ->assertSessionHas('error', 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción');
 
         $this->assertSame(
             ParticipantStatus::Registered,
@@ -168,5 +168,19 @@ final class GuestCancellationControllerTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('canCancel', false)
                 ->where('cancelBlockedReason', 'tournament_cancelled'));
+    }
+
+    public function test_cancelling_from_a_cancelled_tournament_is_refused_and_keeps_the_participant(): void
+    {
+        $this->guestRegistration(tournamentStatus: 'cancelled');
+
+        $this->delete('/torneos/cancelar/'.self::TOKEN)
+            ->assertRedirect(route('tournaments.index'))
+            ->assertSessionHas('error', 'No puedes retirarte del torneo en este momento');
+
+        $this->assertSame(
+            ParticipantStatus::Registered,
+            ParticipantModel::query()->where('cancellation_token', self::TOKEN)->firstOrFail()->status,
+        );
     }
 }
