@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -26,6 +28,21 @@ final class RegistrationDisplayStatusTest extends ModuleTestCase
     {
         parent::setUp();
 
+    }
+
+    public function test_the_event_page_loads_its_tournament_once(): void
+    {
+        $tournament = $this->tournament('2036-03-14 10:00:00');
+        $event = EventModel::query()->findOrFail($tournament->event_id);
+
+        DB::enableQueryLog();
+        $this->actingAs(UserModel::factory()->create())->get(route('events.show', $event->slug))->assertOk();
+        $lookups = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'tournaments_tournaments') && str_contains($query['query'], '"event_id" = ?'))
+            ->count();
+        DB::disableQueryLog();
+
+        $this->assertSame(1, $lookups);
     }
 
     public function test_the_page_says_registration_is_coming_soon_before_the_opening_date(): void

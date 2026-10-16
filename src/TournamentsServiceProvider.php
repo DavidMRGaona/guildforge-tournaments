@@ -20,6 +20,7 @@ use Filament\Forms\Components\Toggle;
 use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
 use Livewire\Livewire;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
@@ -357,8 +358,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             return null;
         }
 
-        $tournamentQuery = app(TournamentQueryServiceInterface::class);
-        $tournament = $tournamentQuery->findByEventId($eventId);
+        $tournament = $this->findTournamentByEventId($eventId);
 
         return $tournament?->toArray();
     }
@@ -378,8 +378,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             return null;
         }
 
-        $tournamentQuery = app(TournamentQueryServiceInterface::class);
-        $tournament = $tournamentQuery->findByEventId($eventId);
+        $tournament = $this->findTournamentByEventId($eventId);
         if ($tournament === null) {
             return null;
         }
@@ -400,12 +399,12 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             return false;
         }
 
-        $tournamentQuery = app(TournamentQueryServiceInterface::class);
-        $tournament = $tournamentQuery->findByEventId($eventId);
+        $tournament = $this->findTournamentByEventId($eventId);
         if ($tournament === null) {
             return false;
         }
 
+        $tournamentQuery = app(TournamentQueryServiceInterface::class);
         $user = auth()->user();
         if ($user !== null) {
             $userDataProvider = app(UserDataProviderInterface::class);
@@ -422,6 +421,23 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             null,
             []
         );
+    }
+
+    /**
+     * The event page asks for its tournament in several props: resolve it once per request.
+     */
+    private function findTournamentByEventId(string $eventId): ?TournamentResponseDTO
+    {
+        $key = 'tournaments.by_event.'.$eventId;
+        $attributes = request()->attributes;
+
+        if (! $attributes->has($key)) {
+            $attributes->set($key, app(TournamentQueryServiceInterface::class)->findByEventId($eventId));
+        }
+
+        $tournament = $attributes->get($key);
+
+        return $tournament instanceof TournamentResponseDTO ? $tournament : null;
     }
 
     private function getEventIdFromCurrentRoute(): ?string
