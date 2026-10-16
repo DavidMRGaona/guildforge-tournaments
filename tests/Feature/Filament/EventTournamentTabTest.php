@@ -368,7 +368,8 @@ final class EventTournamentTabTest extends ModuleTestCase
             ->set('configData.tournament_enabled', true)
             ->set('configData.name', 'Torneo del evento')
             ->set('configData.registration_closes_at', 'definitely not a date')
-            ->call('save');
+            ->call('save')
+            ->assertHasErrors(['configData.registration_closes_at']);
 
         $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
     }
