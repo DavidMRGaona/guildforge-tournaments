@@ -196,6 +196,13 @@ return [
         'view_matches' => 'Ver partidas',
     ],
 
+    'registration_still_closed' => [
+        'title' => 'La web aún no admite inscripciones',
+        'event_started' => 'El evento ya ha comenzado.',
+        'closing_date_passed' => 'La fecha de cierre de inscripción ya ha pasado.',
+        'opens_later' => 'La inscripción no se abrirá en la web hasta el :date, la fecha de apertura configurada.',
+    ],
+
     'messages' => [
         'tournament_created' => 'Torneo creado correctamente',
         'tournament_updated' => 'Torneo actualizado correctamente',

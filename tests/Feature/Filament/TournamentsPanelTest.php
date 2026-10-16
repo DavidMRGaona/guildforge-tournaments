@@ -8,6 +8,7 @@ use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -320,7 +321,87 @@ final class TournamentsPanelTest extends ModuleTestCase
             ->call('create');
 
         $component->assertHasNoErrors(['data.event_id']);
+        $component->assertHasFormErrors(['registration_closes_at']);
         $this->assertFalse(TournamentModel::query()->where('event_id', $event->id)->exists());
+    }
+
+    public function test_opening_registration_warns_when_the_opening_date_is_still_ahead(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00', [
+            'registration_opens_at' => '2036-05-01 09:30:00',
+        ]);
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('La inscripción no se abrirá en la web hasta el 01/05/2036 09:30, la fecha de apertura configurada.')
+                    ->warning()
+            );
+
+        $this->assertSame('registration_open', $tournament->refresh()->status->value);
+    }
+
+    public function test_opening_registration_warns_when_the_closing_date_has_passed(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00', [
+            'registration_closes_at' => now()->subDay(),
+        ]);
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('La fecha de cierre de inscripción ya ha pasado.')
+                    ->warning()
+            );
+    }
+
+    public function test_opening_registration_warns_when_the_event_has_started(): void
+    {
+        $tournament = $this->tournamentWithEventStart(now()->subHour());
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified(
+                Notification::make()
+                    ->title('La web aún no admite inscripciones')
+                    ->body('El evento ya ha comenzado.')
+                    ->warning()
+            );
+    }
+
+    public function test_opening_registration_keeps_the_success_notification_when_it_warns(): void
+    {
+        $tournament = $this->tournamentWithEventStart(now()->subHour());
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotified('Inscripción abierta');
+    }
+
+    public function test_opening_registration_does_not_warn_when_the_web_will_accept_registrations(): void
+    {
+        $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00');
+
+        Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
+            ->callAction('openRegistration')
+            ->assertNotNotified('La web aún no admite inscripciones');
+
+        $this->assertSame('registration_open', $tournament->refresh()->status->value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function tournamentWithEventStart(\DateTimeInterface|string $eventStartsAt, array $attributes = []): TournamentModel
+    {
+        return $this->tournament([
+            'event_id' => EventModel::factory()->create(['start_date' => $eventStartsAt])->id,
+            ...$attributes,
+        ]);
     }
 
     public function test_staff_can_withdraw_a_participant_after_the_event_has_started(): void
