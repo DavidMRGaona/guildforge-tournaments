@@ -6,6 +6,9 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
+// Why the page cannot cancel; null while it can
+type CancelBlockedReason = 'already_cancelled' | 'tournament_started' | 'tournament_cancelled';
+
 interface Props {
     participant: {
         id: string;
@@ -21,6 +24,7 @@ interface Props {
     };
     token: string;
     canCancel: boolean;
+    cancelBlockedReason: CancelBlockedReason | null;
 }
 
 const props = defineProps<Props>();
@@ -48,6 +52,17 @@ const formattedDate = computed(() => {
 });
 
 const isLoading = computed(() => false);
+
+const blockedMessage = computed(() => {
+    switch (props.cancelBlockedReason) {
+        case 'tournament_started':
+            return t('tournaments.cancellation.tournament_started');
+        case 'tournament_cancelled':
+            return t('tournaments.cancellation.tournament_cancelled');
+        default:
+            return t('tournaments.cancellation.already_cancelled');
+    }
+});
 
 function handleCancel(): void {
     router.delete(`/torneos/cancelar/${props.token}`, {
@@ -148,7 +163,7 @@ function handleCancel(): void {
                 <template v-else>
                     <div class="mb-6 rounded-lg bg-warning-light p-4 text-center">
                         <p class="text-sm text-warning-dark">
-                            {{ t('tournaments.cancellation.already_cancelled') }}
+                            {{ blockedMessage }}
                         </p>
                     </div>
 

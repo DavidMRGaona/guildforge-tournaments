@@ -156,5 +156,20 @@ export default {
             registration_error: 'Error al inscribirse',
             session_expired: 'Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.',
         },
+
+        // Guest cancellation page
+        cancellation: {
+            title: 'Cancelar inscripción',
+            confirm_message: '¿Estás seguro de que quieres cancelar tu inscripción en el torneo {tournament}?',
+            already_cancelled: 'Tu inscripción ya ha sido cancelada',
+            tournament_started: 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
+            tournament_cancelled: 'El torneo se ha cancelado',
+            confirm_button: 'Sí, cancelar inscripción',
+            participant: 'Participante',
+            tournament: 'Torneo',
+            date: 'Fecha',
+            guest: 'Invitado',
+            view_tournaments: 'Ver torneos',
+        },
     },
 };

@@ -125,5 +125,20 @@ export default {
             registration_error: 'Registration error',
             session_expired: 'Your session has expired. Reload the page and try again.',
         },
+
+        // Guest cancellation page
+        cancellation: {
+            title: 'Cancel registration',
+            confirm_message: 'Are you sure you want to cancel your registration for {tournament}?',
+            already_cancelled: 'Your registration has already been cancelled',
+            tournament_started: 'The tournament has already started: you can no longer cancel your registration',
+            tournament_cancelled: 'The tournament has been cancelled',
+            confirm_button: 'Yes, cancel registration',
+            participant: 'Participant',
+            tournament: 'Tournament',
+            date: 'Date',
+            guest: 'Guest',
+            view_tournaments: 'View tournaments',
+        },
     },
 };

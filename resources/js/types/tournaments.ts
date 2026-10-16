@@ -54,6 +54,7 @@ export interface Tournament {
     created_at: string;
     updated_at: string;
     is_registration_open: boolean;
+    can_withdraw: boolean;
     is_in_progress: boolean;
     is_finished: boolean;
     has_capacity: boolean;

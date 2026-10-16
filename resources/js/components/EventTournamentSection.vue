@@ -44,11 +44,12 @@ const isFull = computed(() => {
     return props.tournament.participant_count >= props.tournament.max_participants;
 });
 
+// The server decides: before the event starts and while the tournament is not running
 const canWithdraw = computed(() => {
     if (props.tournament === null) {
         return false;
     }
-    return isRegistered.value && props.tournament.is_registration_open;
+    return isRegistered.value && props.tournament.can_withdraw;
 });
 
 const showRegisterButton = computed(() =>

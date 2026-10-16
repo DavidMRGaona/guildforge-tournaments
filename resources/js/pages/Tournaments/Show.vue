@@ -37,8 +37,9 @@ const isRegistered = computed(() =>
     props.userRegistration !== null && activeStatuses.includes(props.userRegistration.status)
 );
 
+// The server decides: before the event starts and while the tournament is not running
 const canWithdraw = computed(() => {
-    return isRegistered.value && props.tournament.is_registration_open;
+    return isRegistered.value && props.tournament.can_withdraw;
 });
 
 // The register or withdraw button is on screen, so its disabled reason must be too
