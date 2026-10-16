@@ -363,4 +363,77 @@ final class EloquentTournamentRepositoryTest extends TestCase
         $this->assertEquals('2026-02-01', $retrieved->registrationOpensAt()->format('Y-m-d'));
         $this->assertEquals('2026-02-15', $retrieved->registrationClosesAt()->format('Y-m-d'));
     }
+
+    public function test_it_reads_the_event_start_in_the_venue_time_zone(): void
+    {
+        // 25 October 2026 is the day Europe/Madrid (app.timezone) goes back from CEST to CET
+        $event = EventModel::factory()->create(['start_date' => '2026-10-25 10:00:00']);
+        $id = $this->createTournamentFor($event->id, 'dst-tournament');
+
+        $tournament = $this->repository->find(TournamentId::fromString($id));
+
+        $this->assertNotNull($tournament);
+        $this->assertSame('2026-10-25T10:00:00+01:00', $tournament->eventStartsAt()?->format('c'));
+        $this->assertSame($event->refresh()->start_date->getTimestamp(), $tournament->eventStartsAt()?->getTimestamp());
+    }
+
+    public function test_every_finder_reads_the_event_start(): void
+    {
+        $event = EventModel::factory()->create(['start_date' => '2026-11-20 10:00:00']);
+        $id = $this->createTournamentFor($event->id, 'finder-tournament');
+        $expected = '2026-11-20T10:00:00+01:00';
+
+        $this->assertSame($expected, $this->repository->find(TournamentId::fromString($id))?->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->findOrFail(TournamentId::fromString($id))->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->findBySlug('finder-tournament')?->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->findByEventId($event->id)?->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->findByStatus(TournamentStatus::RegistrationOpen)[0]->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->all()[0]->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, $this->repository->findByIds([$id])[0]->eventStartsAt()?->format('c'));
+    }
+
+    public function test_list_finders_do_not_query_the_event_per_tournament(): void
+    {
+        foreach (range(1, 3) as $i) {
+            $this->createTournamentFor(EventModel::factory()->create()->id, 'bulk-tournament-'.$i);
+        }
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        $this->repository->all();
+        $allQueries = count(\Illuminate\Support\Facades\DB::getQueryLog());
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        $this->repository->findByStatus(TournamentStatus::RegistrationOpen);
+        $statusQueries = count(\Illuminate\Support\Facades\DB::getQueryLog());
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
+        $this->assertSame(2, $allQueries);
+        $this->assertSame(2, $statusQueries);
+    }
+
+    public function test_find_by_ids_keeps_the_requested_order_and_skips_unknown_ids(): void
+    {
+        $first = $this->createTournamentFor(EventModel::factory()->create()->id, 'first-tournament');
+        $second = $this->createTournamentFor(EventModel::factory()->create()->id, 'second-tournament');
+
+        $found = $this->repository->findByIds([$second, TournamentId::generate()->value, $first]);
+
+        $this->assertSame([$second, $first], array_map(static fn (Tournament $t): string => $t->id()->value, $found));
+        $this->assertSame([], $this->repository->findByIds([]));
+    }
+
+    private function createTournamentFor(string $eventId, string $slug): string
+    {
+        $id = TournamentId::generate()->value;
+
+        TournamentModel::create([
+            'id' => $id,
+            'event_id' => $eventId,
+            'name' => 'Tournament '.$slug,
+            'slug' => $slug,
+            'status' => 'registration_open',
+            'result_reporting' => 'admin_only',
+        ]);
+
+        return $id;
+    }
 }
