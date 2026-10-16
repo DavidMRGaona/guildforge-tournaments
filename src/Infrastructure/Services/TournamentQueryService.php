@@ -11,6 +11,7 @@ use Modules\Tournaments\Application\DTOs\Response\StandingsResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
@@ -134,7 +135,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             return false;
         }
 
-        if ($tournament->status() !== TournamentStatus::RegistrationOpen) {
+        if (! $tournament->isRegistrationOpen()) {
             return false;
         }
 
@@ -329,52 +330,25 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
     {
         $offset = ($page - 1) * $perPage;
 
-        $query = $this->buildPublishedQuery($statusFilter);
-
-        $tournaments = $query
+        /** @var list<string> $ids */
+        $ids = $this->buildPublishedQuery($statusFilter)
             ->orderByRaw($this->getStatusPriorityOrderSql())
             ->orderBy('started_at', 'desc')
             ->orderBy('registration_opens_at', 'asc')
             ->orderBy('completed_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
-            ->get();
+            ->pluck('id')
+            ->all();
 
-        return $tournaments->map(function (TournamentModel $model): TournamentResponseDTO {
-            $participantCount = $this->participantRepository->countActiveByTournament($model->id);
-
-            return new TournamentResponseDTO(
-                id: $model->id,
-                eventId: $model->event_id,
-                name: $model->name,
-                slug: $model->slug,
-                description: $model->description,
-                imagePublicId: $model->image_public_id,
-                status: $model->status,
-                maxRounds: $model->max_rounds,
-                currentRound: $model->current_round ?? 0,
-                maxParticipants: $model->max_participants,
-                minParticipants: $model->min_participants ?? 2,
-                participantCount: $participantCount,
-                scoreWeights: [],
-                tiebreakers: [],
-                allowGuests: $model->allow_guests ?? false,
-                requiresManualConfirmation: $model->requires_manual_confirmation ?? false,
-                allowedRoles: $model->allowed_roles ?? [],
-                resultReporting: $model->result_reporting,
-                requiresCheckIn: $model->requires_check_in ?? false,
-                checkInStartsBefore: $model->check_in_starts_before,
-                registrationOpensAt: $model->registration_opens_at?->toImmutable(),
-                registrationClosesAt: $model->registration_closes_at?->toImmutable(),
-                startedAt: $model->started_at?->toImmutable(),
-                completedAt: $model->completed_at?->toImmutable(),
-                createdAt: $model->created_at->toImmutable(),
-                updatedAt: $model->updated_at->toImmutable(),
-                showParticipants: $model->show_participants ?? true,
-                notificationEmail: $model->notification_email ?? '',
-                selfCheckInAllowed: $model->self_check_in_allowed ?? false,
-            );
-        })->all();
+        // Through the entity, so the listing gets the same registration verdict as the pages
+        return array_map(
+            fn (Tournament $tournament): TournamentResponseDTO => TournamentResponseDTO::fromEntity(
+                $tournament,
+                $this->participantRepository->countActiveByTournament($tournament->id()->value),
+            ),
+            $this->tournamentRepository->findByIds($ids),
+        );
     }
 
     public function getPublishedTotal(?array $statusFilter = null): int

@@ -177,6 +177,23 @@ final class TournamentQueryServiceListingTest extends ModuleTestCase
         $this->assertIsInt($result[0]->participantCount);
     }
 
+    public function test_a_listed_tournament_is_not_open_for_registration_once_its_event_has_started(): void
+    {
+        $started = $this->createTournamentWithStatus('registration_open', 'Started');
+        EventModel::query()->findOrFail($started->event_id)->update(['start_date' => now()->subMinute()]);
+        $this->createTournamentWithStatus('registration_open', 'Upcoming');
+
+        $byName = [];
+        foreach ($this->service->getPublishedPaginated(1, 12) as $tournament) {
+            $byName[$tournament->name] = $tournament;
+        }
+
+        $this->assertFalse($byName['Started']->isRegistrationOpen());
+        $this->assertFalse($byName['Started']->canWithdraw);
+        $this->assertTrue($byName['Upcoming']->isRegistrationOpen());
+        $this->assertTrue($byName['Upcoming']->canWithdraw);
+    }
+
     private function createTournamentWithStatus(string $status, string $name = 'Test Tournament'): TournamentModel
     {
         $event = EventModel::factory()->create();

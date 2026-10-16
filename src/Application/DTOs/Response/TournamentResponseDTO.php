@@ -46,11 +46,16 @@ final readonly class TournamentResponseDTO
         public bool $showParticipants = true,
         public string $notificationEmail = '',
         public bool $selfCheckInAllowed = false,
+        // Verdicts of the Tournament entity at build time (status, configured dates, event start)
+        public bool $registrationOpen = false,
+        public bool $canWithdraw = false,
     ) {
     }
 
-    public static function fromEntity(Tournament $tournament, int $participantCount = 0): self
+    public static function fromEntity(Tournament $tournament, int $participantCount = 0, ?DateTimeImmutable $now = null): self
     {
+        $now ??= new DateTimeImmutable();
+
         return new self(
             id: $tournament->id()->value,
             eventId: $tournament->eventId(),
@@ -81,12 +86,14 @@ final readonly class TournamentResponseDTO
             showParticipants: $tournament->showParticipants(),
             notificationEmail: $tournament->notificationEmail(),
             selfCheckInAllowed: $tournament->selfCheckInAllowed(),
+            registrationOpen: $tournament->isRegistrationOpen($now),
+            canWithdraw: $tournament->canWithdraw($now),
         );
     }
 
     public function isRegistrationOpen(): bool
     {
-        return $this->status === TournamentStatus::RegistrationOpen;
+        return $this->registrationOpen;
     }
 
     public function isInProgress(): bool
@@ -151,6 +158,7 @@ final readonly class TournamentResponseDTO
             'created_at' => $this->createdAt->format('c'),
             'updated_at' => $this->updatedAt->format('c'),
             'is_registration_open' => $this->isRegistrationOpen(),
+            'can_withdraw' => $this->canWithdraw,
             'is_in_progress' => $this->isInProgress(),
             'is_finished' => $this->isFinished(),
             'has_capacity' => $this->hasCapacity(),
