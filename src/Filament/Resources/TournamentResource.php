@@ -16,6 +16,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Closure;
+use Modules\Tournaments\Filament\RegistrationClosingDateRule;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
@@ -173,6 +175,9 @@ final class TournamentResource extends BaseResource
                                     ->native(false)
                                     ->displayFormat('d/m/Y H:i')
                                     ->after('registration_opens_at')
+                                    ->rule(fn (Get $get): Closure => RegistrationClosingDateRule::notAfter(
+                                        RegistrationClosingDateRule::eventStartsAtFrom(fn (): mixed => $get('event_id'))
+                                    ))
                                     ->nullable(),
                             ])
                             ->columns(2),

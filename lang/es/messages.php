@@ -247,6 +247,7 @@ return [
 
     'validation' => [
         'gdpr_consent_required' => 'Debes aceptar la política de privacidad',
+        'registration_closes_after_start' => 'El cierre de inscripción no puede ser posterior al inicio del evento (:date)',
     ],
 
     'cancellation' => [

@@ -9,6 +9,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Text;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Closure;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -19,6 +20,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
+use Modules\Tournaments\Filament\RegistrationClosingDateRule;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -190,6 +192,9 @@ final class TournamentConfigRelationManager extends RelationManager
                         ->native(false)
                         ->displayFormat('d/m/Y H:i')
                         ->after('registration_opens_at')
+                        ->rule(fn (): Closure => RegistrationClosingDateRule::notAfter(
+                            ($event = $this->getOwnerRecord()) instanceof EventModel ? $event->start_date : null
+                        ))
                         ->nullable(),
                 ])
                 ->columns(2)
