@@ -6,6 +6,7 @@ export default {
         // Status labels
         status: {
             draft: 'Draft',
+            registration_upcoming: 'Registration opening soon',
             registration_open: 'Registration open',
             registration_closed: 'Registration closed',
             in_progress: 'In progress',
@@ -84,6 +85,8 @@ export default {
             already_registered: 'Already registered',
             registered_status: 'Status: {status}',
             registration_open: 'Registration open',
+            registration_upcoming: 'Registration opening soon',
+            registration_opens_on: 'Registration opens on {date}',
             cannot_register: 'Cannot register',
             cannot_withdraw: 'Cannot cancel registration',
             login_to_register: 'Login to register',

@@ -57,6 +57,7 @@ return [
 
     'tournament_status' => [
         'draft' => 'Borrador',
+        'registration_upcoming' => 'Inscripción próximamente',
         'registration_open' => 'Inscripción abierta',
         'registration_closed' => 'Inscripción cerrada',
         'in_progress' => 'En curso',

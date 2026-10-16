@@ -37,6 +37,7 @@ export default {
         // Status labels
         status: {
             draft: 'Borrador',
+            registration_upcoming: 'Inscripción próximamente',
             registration_open: 'Inscripción abierta',
             registration_closed: 'Inscripción cerrada',
             in_progress: 'En curso',
@@ -115,6 +116,8 @@ export default {
             already_registered: 'Ya estás inscrito',
             registered_status: 'Estado: {status}',
             registration_open: 'Inscripción abierta',
+            registration_upcoming: 'Inscripción próximamente',
+            registration_opens_on: 'La inscripción se abre el {date}',
             cannot_register: 'No puedes inscribirte',
             cannot_withdraw: 'No puedes cancelar tu inscripción',
             login_to_register: 'Inicia sesión para inscribirte',

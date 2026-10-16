@@ -2,6 +2,7 @@ import { useI18n } from 'vue-i18n';
 import type {
     Tournament,
     TournamentStatus,
+    TournamentDisplayStatus,
     ParticipantStatus,
     RoundStatus,
     MatchResult,
@@ -14,7 +15,7 @@ interface StatusInfo {
 }
 
 interface UseTournamentsReturn {
-    formatStatus: (status: TournamentStatus) => StatusInfo;
+    formatStatus: (status: TournamentDisplayStatus) => StatusInfo;
     formatParticipantStatus: (status: ParticipantStatus) => StatusInfo;
     formatRoundStatus: (status: RoundStatus) => StatusInfo;
     formatMatchResult: (result: MatchResult) => StatusInfo;
@@ -37,12 +38,14 @@ interface UseTournamentsReturn {
 export function useTournaments(): UseTournamentsReturn {
     const { t } = useI18n();
 
-    function getStatusColor(status: TournamentStatus): string {
+    function getStatusColor(status: TournamentDisplayStatus): string {
         switch (status) {
             case 'draft':
                 return 'gray';
             case 'registration_open':
                 return 'green';
+            case 'registration_upcoming':
+                return 'blue';
             case 'registration_closed':
                 return 'yellow';
             case 'in_progress':
@@ -56,7 +59,7 @@ export function useTournaments(): UseTournamentsReturn {
         }
     }
 
-    function formatStatus(status: TournamentStatus): StatusInfo {
+    function formatStatus(status: TournamentDisplayStatus): StatusInfo {
         return {
             label: t(`tournaments.status.${status}`),
             color: getStatusColor(status),

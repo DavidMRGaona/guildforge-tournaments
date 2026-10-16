@@ -6,6 +6,9 @@ export type TournamentStatus =
     | 'finished'
     | 'cancelled';
 
+// What the status badge shows: the raw status, or `registration_upcoming` before the opening date
+export type TournamentDisplayStatus = TournamentStatus | 'registration_upcoming';
+
 export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified';
 
 export type RoundStatus = 'pending' | 'in_progress' | 'finished';
@@ -34,6 +37,7 @@ export interface Tournament {
     description: string | null;
     image_public_id: string | null;
     status: TournamentStatus;
+    display_status: TournamentDisplayStatus;
     status_label: string;
     max_rounds: number | null;
     current_round: number;
@@ -181,6 +185,7 @@ export interface TournamentListItem {
     description: string | null;
     imagePublicId: string | null;
     status: TournamentStatus;
+    displayStatus: TournamentDisplayStatus;
     statusLabel: string;
     statusColor: string;
     currentRound: number | null;
