@@ -175,5 +175,19 @@ export default {
             guest: 'Invitado',
             view_tournaments: 'Ver torneos',
         },
+
+        // Guest email confirmation page
+        confirmation: {
+            title: 'Confirmar inscripción',
+            participant: 'Participante',
+            tournament: 'Torneo',
+            deadline: 'Confírmala antes del {date}',
+            wait_notice: 'Tu plaza no está garantizada hasta que la confirmes.',
+            confirm_button: 'Confirmar inscripción',
+            already_confirmed: 'Tu inscripción ya estaba confirmada.',
+            invalid: 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
+            view_tournament: 'Ver torneo',
+            view_tournaments: 'Ver torneos',
+        },
     },
 };

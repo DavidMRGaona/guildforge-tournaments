@@ -17,7 +17,10 @@ use App\Modules\ModuleServiceProvider;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
@@ -84,6 +87,7 @@ use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
 use Modules\Tournaments\Policies\GameProfilePolicy;
 use Modules\Tournaments\Policies\TournamentPolicy;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class TournamentsServiceProvider extends ModuleServiceProvider
 {
@@ -107,6 +111,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->registerEventListeners();
+        $this->registerRateLimiters();
         $this->shareInertiaData();
         $this->shareProfileTournamentsData();
         $this->registerLivewireComponents();
@@ -118,6 +123,30 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         Event::listen(ParticipantRegistered::class, SendParticipantRegisteredEmails::class);
         Event::listen(ParticipantWithdrawn::class, SendParticipantWithdrawnEmail::class);
         Event::listen(GuestConfirmationRequested::class, SendGuestConfirmationRequest::class);
+    }
+
+    /**
+     * The guest confirmation link (page and button) per IP, wide enough for a person and tight
+     * enough to stop guessing tokens. Over the limit: a 429 with a translated message, no redirect.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('tournaments-guest-confirmation', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.guest_confirmation.too_many_attempts');
+
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : response($message, 429, $headers);
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(20)->by('minute:'.$ip)->response($tooMany),
+                Limit::perHour(100)->by('hour:'.$ip)->response($tooMany),
+            ];
+        });
     }
 
     private function registerModelExtensions(): void

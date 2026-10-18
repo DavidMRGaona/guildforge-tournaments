@@ -8,6 +8,8 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
+use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationOutcome;
+use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationOutcome;
 use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
@@ -106,6 +108,59 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         return $result;
+    }
+
+    public function confirmGuestEmail(string $token): GuestConfirmationResultDTO
+    {
+        $now = CarbonImmutable::now();
+
+        /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null} $outcome */
+        $outcome = $this->lock->forConfirmationToken(
+            $token,
+            fn (): array => $this->confirmUnderLock($token, $now),
+        );
+
+        [$result, $registered] = $outcome;
+
+        // Mailed once the confirmation is committed
+        if ($registered !== null) {
+            event($registered);
+        }
+
+        return $result;
+    }
+
+    public function findGuestConfirmation(string $token): ?array
+    {
+        $participant = $this->participantRepository->findByConfirmationToken($token);
+
+        if ($participant === null) {
+            return null;
+        }
+
+        $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
+
+        if ($tournament === null) {
+            return null;
+        }
+
+        $expiresAt = $participant->confirmationExpiresAt();
+
+        $state = match (true) {
+            ! $participant->isActive() => 'invalid',
+            $participant->emailConfirmedAt() !== null => 'already_confirmed',
+            $this->isOverdue($participant, CarbonImmutable::now()) => 'invalid',
+            default => 'pending',
+        };
+
+        return [
+            'state' => $state,
+            'tournament_name' => $tournament->name(),
+            'tournament_slug' => $tournament->slug(),
+            'guest_name' => $participant->guestName(),
+            'expires_at' => $state === 'pending' ? $expiresAt?->format('c') : null,
+            'seat_held' => $state === 'pending' && $participant->holdsSeat(),
+        ];
     }
 
     public function confirm(string $participantId): ParticipantResponseDTO
@@ -579,11 +634,21 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     private function ensureCapacity(Tournament $tournament): void
     {
         $maxParticipants = $tournament->maxParticipants();
-        $tournamentId = $tournament->id()->value;
 
-        if ($maxParticipants !== null && $this->participantRepository->countActiveByTournament($tournamentId) >= $maxParticipants) {
-            throw TournamentFullException::maxParticipantsReached($tournamentId, $maxParticipants);
+        if ($maxParticipants !== null && $this->isFull($tournament)) {
+            throw TournamentFullException::maxParticipantsReached($tournament->id()->value, $maxParticipants);
         }
+    }
+
+    /**
+     * Whether every seat is taken; registrations waiting without a seat do not count.
+     */
+    private function isFull(Tournament $tournament): bool
+    {
+        $maxParticipants = $tournament->maxParticipants();
+
+        return $maxParticipants !== null
+            && $this->participantRepository->countActiveByTournament($tournament->id()->value) >= $maxParticipants;
     }
 
     /**
@@ -715,17 +780,90 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      */
     private function expireIfOverdue(Participant $participant, CarbonImmutable $now): void
     {
-        $expiresAt = $participant->confirmationExpiresAt();
-
-        if (! $participant->isAwaitingEmailConfirmation()
-            || $participant->status() !== ParticipantStatus::Registered
-            || $expiresAt === null
-            || $expiresAt > $now) {
+        if (! $this->isOverdue($participant, $now)) {
             return;
         }
 
         $participant->expire();
         $this->participantRepository->save($participant);
+    }
+
+    /**
+     * A registration still awaiting confirmation whose held seat is past its deadline.
+     */
+    private function isOverdue(Participant $participant, CarbonImmutable $now): bool
+    {
+        $expiresAt = $participant->confirmationExpiresAt();
+
+        return $participant->isAwaitingEmailConfirmation()
+            && $participant->status() === ParticipantStatus::Registered
+            && $expiresAt !== null
+            && $expiresAt <= $now;
+    }
+
+    /**
+     * The confirmation itself, under the tournament lock. A registration still in the state the
+     * form left it lapses instead when registration closed, its deadline passed, or it waits
+     * without a seat in a full tournament.
+     *
+     * @return array{GuestConfirmationResultDTO, ParticipantRegistered|null}
+     */
+    private function confirmUnderLock(string $token, CarbonImmutable $now): array
+    {
+        $participant = $this->participantRepository->findByConfirmationToken($token);
+        $tournament = $participant === null
+            ? null
+            : $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
+
+        if ($participant === null || $tournament === null) {
+            return [new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid, null, null), null];
+        }
+
+        $answer = static fn (GuestConfirmationOutcome $outcome): GuestConfirmationResultDTO => new GuestConfirmationResultDTO(
+            $outcome,
+            $tournament->id()->value,
+            $tournament->slug(),
+        );
+
+        if (! $participant->isActive()) {
+            return [$answer(GuestConfirmationOutcome::Invalid), null];
+        }
+
+        if (! $participant->isAwaitingEmailConfirmation()) {
+            return [$answer(GuestConfirmationOutcome::AlreadyConfirmed), null];
+        }
+
+        // A row the organisation already moved on (confirmed, checked in) has been vouched for: it never lapses here
+        if ($participant->status() === ParticipantStatus::Registered) {
+            $lapse = match (true) {
+                ! $tournament->isRegistrationOpen($now) => GuestConfirmationOutcome::RegistrationClosed,
+                $this->isOverdue($participant, $now) => GuestConfirmationOutcome::Invalid,
+                ! $participant->holdsSeat() && $this->isFull($tournament) => GuestConfirmationOutcome::Full,
+                default => null,
+            };
+
+            if ($lapse !== null) {
+                $participant->expire();
+                $this->participantRepository->save($participant);
+
+                return [$answer($lapse), null];
+            }
+        }
+
+        $participant->markEmailConfirmed($now->toDateTimeImmutable());
+        $this->participantRepository->save($participant);
+
+        return [
+            $answer(GuestConfirmationOutcome::Confirmed),
+            ParticipantRegistered::create(
+                participantId: $participant->id()->value,
+                tournamentId: $participant->tournamentId(),
+                userId: null,
+                guestEmail: $participant->guestEmail(),
+                isGuest: true,
+                cancellationToken: $participant->cancellationToken(),
+            ),
+        ];
     }
 
     /**

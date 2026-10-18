@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Tournaments\Http\Controllers\GuestCancellationController;
+use Modules\Tournaments\Http\Controllers\GuestConfirmationController;
 use Modules\Tournaments\Http\Controllers\MyTournamentsController;
 use Modules\Tournaments\Http\Controllers\TournamentCheckInController;
 use Modules\Tournaments\Http\Controllers\TournamentController;
@@ -23,6 +24,14 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->name('cancel-confirmation');
     Route::delete('/cancelar/{token}', [GuestCancellationController::class, 'destroy'])
         ->name('cancel-by-token');
+
+    // Guest email confirmation (public): the page only shows, the button confirms
+    Route::get('/confirmar/{token}', [GuestConfirmationController::class, 'show'])
+        ->middleware('throttle:tournaments-guest-confirmation')
+        ->name('confirm-registration');
+    Route::post('/confirmar/{token}', [GuestConfirmationController::class, 'store'])
+        ->middleware('throttle:tournaments-guest-confirmation')
+        ->name('confirm-registration.store');
 
     // My tournaments (authenticated users only)
     Route::get('/mis-torneos', MyTournamentsController::class)
