@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentListItem } from '../types/tournaments';
+import { statusBadgeClasses } from '../utils/statusColors';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import { buildCardImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
@@ -17,16 +18,7 @@ const { t, locale } = useI18n();
 
 const tournamentImageUrl = computed(() => buildCardImageUrl(props.tournament.imagePublicId));
 
-const statusColorClasses = computed(() => {
-    const colorMap: Record<string, string> = {
-        green: 'bg-success-light text-success',
-        blue: 'bg-info-light text-info',
-        amber: 'bg-warning-light text-warning',
-        gray: 'bg-muted text-base-secondary',
-        red: 'bg-error-light text-error',
-    };
-    return colorMap[props.tournament.statusColor] || colorMap.gray;
-});
+const statusColorClasses = computed(() => statusBadgeClasses(props.tournament.statusColor));
 
 const participantInfo = computed(() => {
     const current = props.tournament.participantCount;
