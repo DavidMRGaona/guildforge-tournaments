@@ -21,6 +21,7 @@ export default {
             checked_in: 'Checked in',
             withdrawn: 'Withdrawn',
             disqualified: 'Disqualified',
+            expired: 'Expired',
         },
 
         // Round status
