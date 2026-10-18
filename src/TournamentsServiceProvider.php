@@ -32,6 +32,7 @@ use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
@@ -78,6 +79,7 @@ use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
 use Modules\Tournaments\Policies\GameProfilePolicy;
@@ -115,6 +117,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         Event::listen(ParticipantRegistered::class, SendParticipantRegisteredEmails::class);
         Event::listen(ParticipantWithdrawn::class, SendParticipantWithdrawnEmail::class);
+        Event::listen(GuestConfirmationRequested::class, SendGuestConfirmationRequest::class);
     }
 
     private function registerModelExtensions(): void

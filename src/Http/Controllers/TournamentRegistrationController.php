@@ -112,7 +112,7 @@ final class TournamentRegistrationController extends Controller
 
             // Register as guest
             try {
-                $registration = $this->participantService->register(new RegisterParticipantDTO(
+                $registration = $this->participantService->registerGuest(new RegisterParticipantDTO(
                     tournamentId: $tournamentId,
                     userId: null,
                     guestName: $request->validated('guest_name'),

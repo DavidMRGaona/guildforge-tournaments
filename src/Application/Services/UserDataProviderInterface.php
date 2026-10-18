@@ -26,4 +26,11 @@ interface UserDataProviderInterface
      * @param  array<string>  $roles
      */
     public function userHasAnyRole(string $userId, array $roles): bool;
+
+    /**
+     * The account using the email, compared without case.
+     *
+     * @return array{id: string, email_verified: bool}|null
+     */
+    public function findAccountByEmail(string $email): ?array;
 }

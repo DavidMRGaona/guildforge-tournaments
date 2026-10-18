@@ -643,6 +643,15 @@ return [
             'cancel_link' => 'Cancelar inscripción',
             'gdpr_notice' => 'Tus datos serán tratados conforme a nuestra política de privacidad.',
         ],
+        'guest_confirmation' => [
+            'subject' => 'Confirma tu inscripción en :tournament',
+            'greeting' => 'Hola, :name',
+            'body' => 'Has pedido inscribirte en :tournament. Confirma la inscripción con el botón.',
+            'hold_deadline' => 'Si no la confirmas antes del :date, la plaza se liberará.',
+            'wait_notice' => 'Tu plaza no está garantizada hasta que la confirmes.',
+            'action' => 'Confirmar inscripción',
+            'closing' => 'Si no has sido tú, ignora este mensaje.',
+        ],
         'withdrawal_confirmed' => [
             'subject' => 'Inscripción cancelada: :tournament',
             'greeting' => '¡Hola :name!',

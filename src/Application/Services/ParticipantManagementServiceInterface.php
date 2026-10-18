@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\Services;
 
+use InvalidArgumentException;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
+use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
 use Modules\Tournaments\Domain\Exceptions\CheckInNotAllowedException;
 use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
+use Modules\Tournaments\Domain\Exceptions\GuestEmailBelongsToAccountException;
 use Modules\Tournaments\Domain\Exceptions\GuestRegistrationNotAllowedException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Exceptions\TournamentFullException;
@@ -21,16 +24,32 @@ use Modules\Tournaments\Domain\Exceptions\UserNotAllowedToRegisterException;
 interface ParticipantManagementServiceInterface
 {
     /**
-     * Register a user or guest to a tournament.
+     * Register a signed-in user to a tournament. Guests go through registerGuest().
      *
+     * @throws InvalidArgumentException For a guest registration
      * @throws TournamentNotFoundException
      * @throws TournamentNotOpenException When the status, the configured dates or the event start close registration
      * @throws TournamentFullException
      * @throws AlreadyRegisteredException
      * @throws UserNotAllowedToRegisterException When user doesn't have required role
-     * @throws GuestRegistrationNotAllowedException When guests are not allowed
      */
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO;
+
+    /**
+     * Register a guest, who must confirm the email before the registration counts for the
+     * organisation. The email is compared trimmed and lowercased; a guest whose registration
+     * still awaits confirmation gets the email again (at most every few minutes) instead of a
+     * second registration.
+     *
+     * @throws InvalidArgumentException When the registration has a user or lacks the guest name or email
+     * @throws TournamentNotFoundException
+     * @throws TournamentNotOpenException When the status, the configured dates or the event start close registration
+     * @throws GuestRegistrationNotAllowedException When guests are not allowed
+     * @throws GuestEmailBelongsToAccountException When the email is an account's that must sign in
+     * @throws AlreadyRegisteredException When the email is already registered (or disqualified)
+     * @throws TournamentFullException
+     */
+    public function registerGuest(RegisterParticipantDTO $dto): GuestRegistrationResultDTO;
 
     /**
      * Confirm a participant's registration.

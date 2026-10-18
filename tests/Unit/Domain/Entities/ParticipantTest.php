@@ -406,4 +406,13 @@ final class ParticipantTest extends TestCase
         $participant->recordFingerprint(null);
         $this->assertNull($participant->fingerprint());
     }
+
+    public function test_rename_guest(): void
+    {
+        $participant = $this->createGuestParticipant(ParticipantStatus::Expired);
+
+        $participant->renameGuest('Ana María');
+
+        $this->assertSame('Ana María', $participant->guestName());
+    }
 }
