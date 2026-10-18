@@ -6,6 +6,7 @@ import type { TournamentShowProps, Standing, GuestRegistrationField, Registratio
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useTournaments } from '../../composables/useTournaments';
+import { statusBadgeClasses } from '../../utils/statusColors';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
@@ -317,14 +318,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <div class="mb-4 flex flex-wrap items-center gap-2">
                             <span
                                 class="rounded-full px-3 py-1 text-sm font-medium"
-                                :class="{
-                                    'bg-muted text-base-secondary': statusInfo.color === 'gray',
-                                    'bg-success-light text-success': statusInfo.color === 'green',
-                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400': statusInfo.color === 'yellow',
-                                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': statusInfo.color === 'blue',
-                                    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400': statusInfo.color === 'purple',
-                                    'bg-error-light text-error': statusInfo.color === 'red',
-                                }"
+                                :class="statusBadgeClasses(statusInfo.color)"
                             >
                                 {{ tournament.status_label }}
                             </span>
