@@ -2,14 +2,15 @@
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { TournamentRoundsProps, Match } from '../../types/tournaments';
+import type { TournamentRoundsProps } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import { useTournaments } from '../../composables/useTournaments';
+import { statusBadgeClasses } from '../../utils/statusColors';
 
 const props = defineProps<TournamentRoundsProps>();
 
 const { t } = useI18n();
-const { getMatchResultColor } = useTournaments();
+const { getMatchResultColor, getRoundStatusColor } = useTournaments();
 
 // Track which rounds are expanded
 const expandedRounds = ref<Set<string>>(new Set());
@@ -33,20 +34,6 @@ const toggleRound = (roundId: string): void => {
 
 const isExpanded = (roundId: string): boolean => {
     return expandedRounds.value.has(roundId);
-};
-
-const defaultBadgeClass = 'bg-muted text-base-secondary';
-
-const getResultBadgeClass = (match: Match): string => {
-    const color = getMatchResultColor(match.result);
-    const colorClasses: Record<string, string> = {
-        gray: defaultBadgeClass,
-        green: 'bg-success-light text-success',
-        yellow: 'bg-warning-light text-warning',
-        red: 'bg-error-light text-error',
-        purple: 'bg-info-light text-info',
-    };
-    return colorClasses[color] ?? defaultBadgeClass;
 };
 
 const sortedRounds = computed(() => {
@@ -118,11 +105,7 @@ const sortedRounds = computed(() => {
                                     </span>
                                     <span
                                         class="rounded-full px-2 py-0.5 text-xs font-medium"
-                                        :class="{
-                                            'bg-muted text-base-secondary': roundData.round.status === 'pending',
-                                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': roundData.round.status === 'in_progress',
-                                            'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': roundData.round.status === 'finished',
-                                        }"
+                                        :class="statusBadgeClasses(getRoundStatusColor(roundData.round.status))"
                                     >
                                         {{ roundData.round.status_label }}
                                     </span>
@@ -222,7 +205,7 @@ const sortedRounds = computed(() => {
                                         <div class="ml-4 flex-shrink-0">
                                             <span
                                                 class="rounded-full px-2.5 py-1 text-xs font-medium"
-                                                :class="getResultBadgeClass(match)"
+                                                :class="statusBadgeClasses(getMatchResultColor(match.result))"
                                             >
                                                 {{ match.result_label }}
                                             </span>

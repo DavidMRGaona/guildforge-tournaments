@@ -8,6 +8,7 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -66,6 +67,62 @@ final class MatchResultContractTest extends TestCase
 
         $this->assertStringContainsString('statusBadgeClasses(statusInfo.color)', $show);
         $this->assertStringNotContainsString("statusInfo.color === 'green'", $show);
+    }
+
+    /**
+     * @return array<string, array{string, array<string, string>}>
+     */
+    public static function matchResultLocales(): array
+    {
+        return [
+            'es' => ['locales/es.ts', [
+                'player_one_win' => 'Victoria jugador 1',
+                'player_two_win' => 'Victoria jugador 2',
+                'draw' => 'Empate',
+                'double_loss' => 'Doble derrota',
+                'bye' => 'Bye',
+                'not_played' => 'Sin jugar',
+            ]],
+            'en' => ['locales/en.ts', [
+                'player_one_win' => 'Player 1 wins',
+                'player_two_win' => 'Player 2 wins',
+                'draw' => 'Draw',
+                'double_loss' => 'Double loss',
+                'bye' => 'Bye',
+                'not_played' => 'Not played',
+            ]],
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $expected
+     */
+    #[DataProvider('matchResultLocales')]
+    public function test_the_js_locales_have_one_label_per_enum_value(string $file, array $expected): void
+    {
+        $this->assertSame(array_keys($expected), MatchResult::values());
+
+        $matched = preg_match('/match_result: \{(.*?)\},/s', $this->source($file), $block);
+        $this->assertSame(1, $matched, 'match_result block');
+
+        foreach ($expected as $key => $label) {
+            $this->assertStringContainsString("{$key}: '{$label}'", $block[1]);
+        }
+        $this->assertStringNotContainsString('player1_win', $block[1]);
+        $this->assertStringNotContainsString('pending:', $block[1]);
+    }
+
+    public function test_the_rounds_page_highlights_winners_and_colors_badges_from_server_values(): void
+    {
+        $rounds = $this->source('pages/Tournaments/Rounds.vue');
+
+        $this->assertStringContainsString("match.result === 'player_one_win'", $rounds);
+        $this->assertStringContainsString("match.result === 'player_two_win'", $rounds);
+        $this->assertStringNotContainsString('player1_win', $rounds);
+        $this->assertStringNotContainsString('player2_win', $rounds);
+        $this->assertStringContainsString('statusBadgeClasses(getMatchResultColor(match.result))', $rounds);
+        $this->assertStringContainsString('statusBadgeClasses(getRoundStatusColor(roundData.round.status))', $rounds);
+        $this->assertStringNotContainsString("purple: 'bg-info-light", $rounds);
     }
 
     private function assertMapEntry(string $source, string $map, string $key, string $color): void
