@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { UserTournament } from '../../types/tournaments';
+import { statusBadgeClasses } from '../../utils/statusColors';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 interface Props {
@@ -14,17 +15,7 @@ const { t, locale } = useI18n();
 
 const tournamentUrl = computed(() => `/torneos/${props.tournament.slug}`);
 
-const statusColorClasses = computed(() => {
-    const colorMap: Record<string, string> = {
-        success: 'bg-success-light text-success',
-        info: 'bg-info-light text-info',
-        warning: 'bg-warning-light text-warning',
-        gray: 'bg-muted text-base-secondary',
-        danger: 'bg-error-light text-error',
-        primary: 'bg-primary-light text-primary',
-    };
-    return colorMap[props.tournament.statusColor] || colorMap.gray;
-});
+const statusColorClasses = computed(() => statusBadgeClasses(props.tournament.statusColor));
 
 const formattedDate = computed(() => {
     if (!props.tournament.startsAt) return null;

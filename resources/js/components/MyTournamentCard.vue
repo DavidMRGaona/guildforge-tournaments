@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { UserTournament } from '../types/tournaments';
+import { statusBadgeClasses } from '../utils/statusColors';
 import { buildCardImageUrl } from '@/utils/cloudinary';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
@@ -16,28 +17,9 @@ const { t, locale } = useI18n();
 
 const tournamentImageUrl = computed(() => buildCardImageUrl(props.tournament.imagePublicId));
 
-const statusColorClasses = computed(() => {
-    const colorMap: Record<string, string> = {
-        success: 'bg-success-light text-success',
-        info: 'bg-info-light text-info',
-        warning: 'bg-warning-light text-warning',
-        gray: 'bg-muted text-base-secondary',
-        danger: 'bg-error-light text-error',
-        primary: 'bg-primary-light text-primary',
-    };
-    return colorMap[props.tournament.statusColor] || colorMap.gray;
-});
+const statusColorClasses = computed(() => statusBadgeClasses(props.tournament.statusColor));
 
-const participantStatusColorClasses = computed(() => {
-    const colorMap: Record<string, string> = {
-        success: 'bg-success-light text-success',
-        info: 'bg-info-light text-info',
-        warning: 'bg-warning-light text-warning',
-        gray: 'bg-muted text-base-secondary',
-        danger: 'bg-error-light text-error',
-    };
-    return colorMap[props.tournament.participantStatusColor] || colorMap.gray;
-});
+const participantStatusColorClasses = computed(() => statusBadgeClasses(props.tournament.participantStatusColor));
 
 const formattedDate = computed(() => {
     if (!props.tournament.startsAt) return null;

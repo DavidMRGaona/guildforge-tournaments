@@ -14,12 +14,12 @@ export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'wit
 export type RoundStatus = 'pending' | 'in_progress' | 'finished';
 
 export type MatchResult =
-    | 'pending'
-    | 'player1_win'
-    | 'player2_win'
+    | 'player_one_win'
+    | 'player_two_win'
     | 'draw'
     | 'double_loss'
-    | 'bye';
+    | 'bye'
+    | 'not_played';
 
 export type ResultReporting = 'admin_only' | 'players_with_confirmation' | 'players_trusted';
 
