@@ -9,7 +9,7 @@ export type TournamentStatus =
 // What the status badge shows: the raw status, or `registration_upcoming` before the opening date
 export type TournamentDisplayStatus = TournamentStatus | 'registration_upcoming';
 
-export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified';
+export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified' | 'expired';
 
 export type RoundStatus = 'pending' | 'in_progress' | 'finished';
 

@@ -11,6 +11,7 @@ enum ParticipantStatus: string
     case CheckedIn = 'checked_in';
     case Withdrawn = 'withdrawn';
     case Disqualified = 'disqualified';
+    case Expired = 'expired';
 
     /**
      * Get human-readable label for the status.
@@ -23,6 +24,7 @@ enum ParticipantStatus: string
             self::CheckedIn => __('tournaments::messages.participant_status.checked_in'),
             self::Withdrawn => __('tournaments::messages.participant_status.withdrawn'),
             self::Disqualified => __('tournaments::messages.participant_status.disqualified'),
+            self::Expired => __('tournaments::messages.participant_status.expired'),
         };
     }
 
@@ -37,6 +39,7 @@ enum ParticipantStatus: string
             self::CheckedIn => 'success',
             self::Withdrawn => 'gray',
             self::Disqualified => 'danger',
+            self::Expired => 'gray',
         };
     }
 
@@ -46,10 +49,10 @@ enum ParticipantStatus: string
     public function canTransitionTo(self $newStatus): bool
     {
         return match ($this) {
-            self::Registered => in_array($newStatus, [self::Confirmed, self::Withdrawn], true),
+            self::Registered => in_array($newStatus, [self::Confirmed, self::Withdrawn, self::Expired], true),
             self::Confirmed => in_array($newStatus, [self::CheckedIn, self::Withdrawn, self::Disqualified], true),
             self::CheckedIn => in_array($newStatus, [self::Withdrawn, self::Disqualified], true),
-            self::Withdrawn => $newStatus === self::Registered,
+            self::Withdrawn, self::Expired => $newStatus === self::Registered,
             self::Disqualified => false,
         };
     }

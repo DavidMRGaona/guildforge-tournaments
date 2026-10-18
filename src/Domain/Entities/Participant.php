@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Domain\Entities;
 
 use DateTimeImmutable;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
@@ -15,9 +16,9 @@ final class Participant
         private readonly ParticipantId $id,
         private readonly string $tournamentId,
         private ParticipantStatus $status,
-        private readonly ?string $userId = null,
-        private readonly ?string $guestName = null,
-        private readonly ?string $guestEmail = null,
+        private ?string $userId = null,
+        private ?string $guestName = null,
+        private ?string $guestEmail = null,
         private ?string $cancellationToken = null,
         private ?int $seed = null,
         private bool $hasReceivedBye = false,
@@ -25,6 +26,12 @@ final class Participant
         private ?DateTimeImmutable $checkedInAt = null,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
+        private ?DateTimeImmutable $emailConfirmedAt = null,
+        private ?DateTimeImmutable $confirmationExpiresAt = null,
+        private ?string $confirmationToken = null,
+        private ?DateTimeImmutable $confirmationSentAt = null,
+        private ?GuestConfirmationMode $confirmationMode = null,
+        private ?string $fingerprint = null,
     ) {
     }
 
@@ -101,6 +108,36 @@ final class Participant
         return $this->updatedAt;
     }
 
+    public function emailConfirmedAt(): ?DateTimeImmutable
+    {
+        return $this->emailConfirmedAt;
+    }
+
+    public function confirmationExpiresAt(): ?DateTimeImmutable
+    {
+        return $this->confirmationExpiresAt;
+    }
+
+    public function confirmationToken(): ?string
+    {
+        return $this->confirmationToken;
+    }
+
+    public function confirmationSentAt(): ?DateTimeImmutable
+    {
+        return $this->confirmationSentAt;
+    }
+
+    public function confirmationMode(): ?GuestConfirmationMode
+    {
+        return $this->confirmationMode;
+    }
+
+    public function fingerprint(): ?string
+    {
+        return $this->fingerprint;
+    }
+
     /**
      * Check if this is a guest participant (no user account).
      */
@@ -124,6 +161,94 @@ final class Participant
     public function isActive(): bool
     {
         return $this->status->isActive();
+    }
+
+    /**
+     * A guest whose registration is active but whose email is not confirmed yet.
+     */
+    public function isAwaitingEmailConfirmation(): bool
+    {
+        return $this->isGuest() && $this->isActive() && $this->emailConfirmedAt === null;
+    }
+
+    /**
+     * Whether the registration counts against the tournament's capacity.
+     */
+    public function holdsSeat(): bool
+    {
+        if (! $this->isActive()) {
+            return false;
+        }
+
+        return ! ($this->isAwaitingEmailConfirmation() && $this->confirmationMode === GuestConfirmationMode::Wait);
+    }
+
+    /**
+     * Begin (or restart) the email confirmation of a guest registration.
+     */
+    public function startEmailConfirmation(
+        string $token,
+        GuestConfirmationMode $mode,
+        ?DateTimeImmutable $expiresAt,
+        DateTimeImmutable $sentAt,
+    ): void {
+        $this->confirmationToken = $token;
+        $this->confirmationMode = $mode;
+        $this->confirmationExpiresAt = $expiresAt;
+        $this->confirmationSentAt = $sentAt;
+        $this->emailConfirmedAt = null;
+    }
+
+    public function markConfirmationSent(DateTimeImmutable $at): void
+    {
+        $this->confirmationSentAt = $at;
+    }
+
+    /**
+     * Mark the guest's email as confirmed. The token is kept so a reused link can say it was already confirmed.
+     *
+     * @return bool false (and no change) when it was already confirmed
+     */
+    public function markEmailConfirmed(DateTimeImmutable $at): bool
+    {
+        if ($this->emailConfirmedAt !== null) {
+            return false;
+        }
+
+        $this->emailConfirmedAt = $at;
+        $this->confirmationExpiresAt = null;
+
+        return true;
+    }
+
+    /**
+     * Let the unconfirmed registration lapse.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function expire(): void
+    {
+        $this->transitionTo(ParticipantStatus::Expired);
+        $this->confirmationExpiresAt = null;
+    }
+
+    /**
+     * Turn the guest registration into the one of a signed-in user.
+     */
+    public function claimForUser(string $userId, DateTimeImmutable $now): void
+    {
+        $this->userId = $userId;
+        $this->guestName = null;
+        $this->guestEmail = null;
+        $this->cancellationToken = null;
+        $this->confirmationToken = null;
+        $this->confirmationExpiresAt = null;
+        $this->emailConfirmedAt ??= $now;
+    }
+
+    public function recordFingerprint(?string $fingerprint): void
+    {
+        $this->fingerprint = $fingerprint;
     }
 
     /**
@@ -176,7 +301,7 @@ final class Participant
     }
 
     /**
-     * Reactivate a withdrawn participant.
+     * Reactivate a withdrawn or expired participant.
      *
      * @throws InvalidStateTransitionException
      */

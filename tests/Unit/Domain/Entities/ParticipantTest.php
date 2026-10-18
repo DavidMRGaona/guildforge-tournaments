@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
@@ -265,5 +266,144 @@ final class ParticipantTest extends TestCase
         $this->expectException(InvalidStateTransitionException::class);
 
         $participant->reactivate();
+    }
+
+    private function awaiting(GuestConfirmationMode $mode): Participant
+    {
+        $participant = $this->createGuestParticipant();
+        $participant->startEmailConfirmation(
+            'token-1',
+            $mode,
+            new DateTimeImmutable('2030-01-01 12:00:00'),
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+
+        return $participant;
+    }
+
+    public function test_a_guest_awaiting_confirmation_in_wait_mode_holds_no_seat(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Wait);
+
+        $this->assertTrue($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->isActive());
+        $this->assertFalse($participant->holdsSeat());
+    }
+
+    public function test_a_guest_awaiting_confirmation_in_hold_mode_holds_a_seat(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+
+        $this->assertTrue($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->holdsSeat());
+        $this->assertSame('token-1', $participant->confirmationToken());
+        $this->assertSame(GuestConfirmationMode::Hold, $participant->confirmationMode());
+        $this->assertNull($participant->emailConfirmedAt());
+        $this->assertEquals(new DateTimeImmutable('2030-01-01 10:00:00'), $participant->confirmationSentAt());
+    }
+
+    public function test_a_user_is_never_awaiting_confirmation(): void
+    {
+        $participant = $this->createParticipant();
+
+        $this->assertFalse($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->holdsSeat());
+    }
+
+    public function test_mark_email_confirmed_is_idempotent(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $at = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $this->assertTrue($participant->markEmailConfirmed($at));
+        $this->assertFalse($participant->markEmailConfirmed(new DateTimeImmutable('2030-01-01 11:30:00')));
+
+        $this->assertEquals($at, $participant->emailConfirmedAt());
+        $this->assertSame('token-1', $participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertFalse($participant->isAwaitingEmailConfirmation());
+    }
+
+    public function test_mark_confirmation_sent_records_the_time(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $at = new DateTimeImmutable('2030-01-01 10:30:00');
+
+        $participant->markConfirmationSent($at);
+
+        $this->assertEquals($at, $participant->confirmationSentAt());
+    }
+
+    public function test_start_email_confirmation_clears_a_previous_confirmation(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->markEmailConfirmed(new DateTimeImmutable('2030-01-01 11:00:00'));
+
+        $participant->startEmailConfirmation('token-2', GuestConfirmationMode::Wait, null, new DateTimeImmutable('2030-01-02 10:00:00'));
+
+        $this->assertNull($participant->emailConfirmedAt());
+        $this->assertSame('token-2', $participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+    }
+
+    public function test_expire_moves_to_expired_and_clears_the_deadline(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+
+        $participant->expire();
+
+        $this->assertSame(ParticipantStatus::Expired, $participant->status());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertFalse($participant->isActive());
+    }
+
+    public function test_an_expired_registration_can_be_reactivated(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->expire();
+
+        $participant->reactivate();
+
+        $this->assertSame(ParticipantStatus::Registered, $participant->status());
+    }
+
+    public function test_claim_for_user_turns_the_guest_row_into_the_users(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->setCancellationToken('cancel-1');
+        $now = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $participant->claimForUser('770e8400-e29b-41d4-a716-446655440002', $now);
+
+        $this->assertFalse($participant->isGuest());
+        $this->assertSame('770e8400-e29b-41d4-a716-446655440002', $participant->userId());
+        $this->assertNull($participant->guestName());
+        $this->assertNull($participant->guestEmail());
+        $this->assertNull($participant->cancellationToken());
+        $this->assertNull($participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertEquals($now, $participant->emailConfirmedAt());
+    }
+
+    public function test_claim_for_user_keeps_an_earlier_confirmation(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $earlier = new DateTimeImmutable('2030-01-01 10:30:00');
+        $participant->markEmailConfirmed($earlier);
+
+        $participant->claimForUser('770e8400-e29b-41d4-a716-446655440002', new DateTimeImmutable('2030-01-01 11:00:00'));
+
+        $this->assertEquals($earlier, $participant->emailConfirmedAt());
+    }
+
+    public function test_record_fingerprint(): void
+    {
+        $participant = $this->createGuestParticipant();
+
+        $participant->recordFingerprint('abc');
+        $this->assertSame('abc', $participant->fingerprint());
+
+        $participant->recordFingerprint(null);
+        $this->assertNull($participant->fingerprint());
     }
 }

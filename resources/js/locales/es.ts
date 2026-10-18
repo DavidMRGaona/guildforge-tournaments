@@ -52,6 +52,7 @@ export default {
             checked_in: 'Registrado',
             withdrawn: 'Retirado',
             disqualified: 'Descalificado',
+            expired: 'Caducada',
         },
 
         // Round status
