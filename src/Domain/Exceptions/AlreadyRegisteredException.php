@@ -27,4 +27,9 @@ final class AlreadyRegisteredException extends DomainException
     {
         return new self("A guest with email {$email} is already registered for tournament {$tournamentId}.");
     }
+
+    public static function guestWithAccountEmail(string $tournamentId): self
+    {
+        return new self("A registration with the account email already exists for tournament {$tournamentId}.");
+    }
 }
