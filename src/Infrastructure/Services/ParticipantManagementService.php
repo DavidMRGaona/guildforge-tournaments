@@ -62,67 +62,22 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw new InvalidArgumentException('Guests register through registerGuest().');
         }
 
-        $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
+        $now = CarbonImmutable::now();
 
-        if ($tournament === null) {
-            throw TournamentNotFoundException::withId($dto->tournamentId);
-        }
-
-        $now = new DateTimeImmutable;
-
-        if (! $tournament->isRegistrationOpen($now)) {
-            throw $this->registrationClosedReason($tournament, $now);
-        }
-
-        if ($tournament->maxParticipants() !== null) {
-            $currentCount = $this->participantRepository->countActiveByTournament($dto->tournamentId);
-            if ($currentCount >= $tournament->maxParticipants()) {
-                throw TournamentFullException::maxParticipantsReached($dto->tournamentId, $tournament->maxParticipants());
-            }
-        }
-
-        $existingParticipant = $this->participantRepository->findByUserAndTournament(
-            $userId,
-            $dto->tournamentId
-        );
-        if ($existingParticipant !== null) {
-            $this->rejectDisqualified($existingParticipant);
-
-            if ($this->isActiveParticipant($existingParticipant)) {
-                throw AlreadyRegisteredException::userAlreadyRegistered($dto->tournamentId, $userId);
-            }
-            if ($existingParticipant->status() === ParticipantStatus::Withdrawn) {
-                return $this->reactivateParticipant($existingParticipant);
-            }
-        }
-
-        $allowedRoles = $tournament->allowedRoles();
-        if ($allowedRoles !== [] && ! $this->userDataProvider->userHasAnyRole($userId, $allowedRoles)) {
-            throw UserNotAllowedToRegisterException::missingRequiredRole($dto->tournamentId, $userId, $allowedRoles);
-        }
-
-        $participant = new Participant(
-            id: ParticipantId::generate(),
-            tournamentId: $dto->tournamentId,
-            status: ParticipantStatus::Registered,
-            userId: $userId,
-            seed: $dto->seed,
-            hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable,
+        /** @var array{ParticipantResponseDTO, ParticipantRegistered|null} $outcome */
+        $outcome = $this->lock->forTournament(
+            $dto->tournamentId,
+            fn (): array => $this->placeUser($dto, $userId, $now),
         );
 
-        $this->participantRepository->save($participant);
+        [$response, $registered] = $outcome;
 
-        // Dispatch registration event for notifications
-        event(ParticipantRegistered::create(
-            participantId: $participant->id()->value,
-            tournamentId: $dto->tournamentId,
-            userId: $userId,
-            guestEmail: null,
-            isGuest: false,
-        ));
+        // Mailed once the registration is committed
+        if ($registered !== null) {
+            event($registered);
+        }
 
-        return $this->createResponseDTO($participant);
+        return $response;
     }
 
     public function registerGuest(RegisterParticipantDTO $dto): GuestRegistrationResultDTO
@@ -473,20 +428,183 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return in_array($participant->status(), $activeStatuses, true);
     }
 
-    private function reactivateParticipant(Participant $participant): ParticipantResponseDTO
+    /**
+     * The user registration itself, under the tournament lock: the user's own rules first, then an
+     * active guest registration of the account email, then capacity and the user's row.
+     *
+     * @return array{ParticipantResponseDTO, ParticipantRegistered|null}
+     *
+     * @throws TournamentNotFoundException
+     * @throws TournamentNotOpenException
+     * @throws AlreadyRegisteredException
+     * @throws UserNotAllowedToRegisterException
+     * @throws TournamentFullException
+     */
+    private function placeUser(RegisterParticipantDTO $dto, string $userId, CarbonImmutable $now): array
     {
-        $participant->reactivate();
+        $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
+
+        if ($tournament === null) {
+            throw TournamentNotFoundException::withId($dto->tournamentId);
+        }
+
+        if (! $tournament->isRegistrationOpen($now)) {
+            throw $this->registrationClosedReason($tournament, $now);
+        }
+
+        $existingParticipant = $this->participantRepository->findByUserAndTournament($userId, $dto->tournamentId);
+        if ($existingParticipant !== null) {
+            $this->rejectDisqualified($existingParticipant);
+
+            if ($this->isActiveParticipant($existingParticipant)) {
+                throw AlreadyRegisteredException::userAlreadyRegistered($dto->tournamentId, $userId);
+            }
+        }
+
+        $allowedRoles = $tournament->allowedRoles();
+        if ($allowedRoles !== [] && ! $this->userDataProvider->userHasAnyRole($userId, $allowedRoles)) {
+            throw UserNotAllowedToRegisterException::missingRequiredRole($dto->tournamentId, $userId, $allowedRoles);
+        }
+
+        $guestRegistration = $this->activeGuestRegistrationOfAccount($userId, $dto->tournamentId, $now);
+        if ($guestRegistration !== null) {
+            return $this->takeOverGuestRegistration($tournament, $guestRegistration, $existingParticipant, $userId, $dto, $now);
+        }
+
+        $this->ensureCapacity($tournament);
+
+        if ($existingParticipant !== null) {
+            // Withdrawn earlier: the same row comes back
+            $participant = $existingParticipant;
+            $participant->reactivate();
+        } else {
+            $participant = new Participant(
+                id: ParticipantId::generate(),
+                tournamentId: $dto->tournamentId,
+                status: ParticipantStatus::Registered,
+                userId: $userId,
+                seed: $dto->seed,
+                hasReceivedBye: false,
+                registeredAt: $now->toDateTimeImmutable(),
+            );
+        }
+
+        $this->recordFingerprint($participant, $dto);
         $this->participantRepository->save($participant);
 
-        event(ParticipantRegistered::create(
+        return [
+            $this->createResponseDTO($participant),
+            $this->userRegistered($participant, $userId),
+        ];
+    }
+
+    /**
+     * The active guest registration made with the account's email, if any. One whose hold lapsed
+     * before the expiry command got to it ends here instead, as it would for a guest signing up again.
+     */
+    private function activeGuestRegistrationOfAccount(string $userId, string $tournamentId, CarbonImmutable $now): ?Participant
+    {
+        $email = $this->userDataProvider->getUserInfo($userId)['email'] ?? null;
+
+        if ($email === null || trim($email) === '') {
+            return null;
+        }
+
+        $guestRegistration = $this->participantRepository->findByGuestEmailAndTournament(mb_strtolower(trim($email)), $tournamentId);
+
+        if ($guestRegistration === null || ! $guestRegistration->isActive()) {
+            return null;
+        }
+
+        $this->expireIfOverdue($guestRegistration, $now);
+
+        return $guestRegistration->isActive() ? $guestRegistration : null;
+    }
+
+    /**
+     * The user takes over the guest registration of their email when the account email is verified:
+     * the place is kept and the email counts as confirmed. The organisation is told only if it never
+     * heard of the guest registration, i.e. it was still awaiting confirmation.
+     *
+     * @return array{ParticipantResponseDTO, ParticipantRegistered|null}
+     *
+     * @throws AlreadyRegisteredException when the account email is not verified
+     * @throws TournamentFullException when a registration waiting without a seat finds none
+     */
+    private function takeOverGuestRegistration(
+        Tournament $tournament,
+        Participant $guestRegistration,
+        ?Participant $ownRegistration,
+        string $userId,
+        RegisterParticipantDTO $dto,
+        CarbonImmutable $now,
+    ): array {
+        $account = $this->userDataProvider->findAccountByEmail((string) $guestRegistration->guestEmail());
+
+        // Anyone can create an unverified account with someone else's email: it proves nothing
+        if ($account === null || $account['id'] !== $userId || ! $account['email_verified']) {
+            throw AlreadyRegisteredException::guestWithAccountEmail($tournament->id()->value);
+        }
+
+        if (! $guestRegistration->holdsSeat()) {
+            $this->ensureCapacity($tournament);
+        }
+
+        $organizerNeverTold = $guestRegistration->isAwaitingEmailConfirmation();
+
+        if ($ownRegistration !== null) {
+            // One row per user and tournament: the user's ended row takes the guest's place
+            $participant = $ownRegistration;
+            $participant->takeOverGuestRegistration($guestRegistration, $now->toDateTimeImmutable());
+
+            $guestRegistration->handOverToAccount();
+            $this->participantRepository->save($guestRegistration);
+        } else {
+            $participant = $guestRegistration;
+            $participant->claimForUser($userId, $now->toDateTimeImmutable());
+        }
+
+        $this->recordFingerprint($participant, $dto);
+        $this->participantRepository->save($participant);
+
+        return [
+            $this->createResponseDTO($participant, claimedGuestRegistration: true),
+            $organizerNeverTold ? $this->userRegistered($participant, $userId) : null,
+        ];
+    }
+
+    /**
+     * @throws TournamentFullException
+     */
+    private function ensureCapacity(Tournament $tournament): void
+    {
+        $maxParticipants = $tournament->maxParticipants();
+        $tournamentId = $tournament->id()->value;
+
+        if ($maxParticipants !== null && $this->participantRepository->countActiveByTournament($tournamentId) >= $maxParticipants) {
+            throw TournamentFullException::maxParticipantsReached($tournamentId, $maxParticipants);
+        }
+    }
+
+    /**
+     * A web registration stores the browser fingerprint; one without it keeps what the row had.
+     */
+    private function recordFingerprint(Participant $participant, RegisterParticipantDTO $dto): void
+    {
+        if ($dto->fingerprint !== null) {
+            $participant->recordFingerprint($dto->fingerprint);
+        }
+    }
+
+    private function userRegistered(Participant $participant, string $userId): ParticipantRegistered
+    {
+        return ParticipantRegistered::create(
             participantId: $participant->id()->value,
             tournamentId: $participant->tournamentId(),
-            userId: $participant->userId(),
-            guestEmail: $participant->guestEmail(),
-            isGuest: $participant->isGuest(),
-        ));
-
-        return $this->createResponseDTO($participant);
+            userId: $userId,
+            guestEmail: null,
+            isGuest: false,
+        );
     }
 
     /**
@@ -534,12 +652,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             }
         }
 
-        if ($tournament->maxParticipants() !== null) {
-            $currentCount = $this->participantRepository->countActiveByTournament($dto->tournamentId);
-            if ($currentCount >= $tournament->maxParticipants()) {
-                throw TournamentFullException::maxParticipantsReached($dto->tournamentId, $tournament->maxParticipants());
-            }
-        }
+        $this->ensureCapacity($tournament);
 
         $terms = GuestConfirmationTerms::for(
             $tournament,
@@ -687,7 +800,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         )];
     }
 
-    private function createResponseDTO(Participant $participant): ParticipantResponseDTO
+    private function createResponseDTO(Participant $participant, bool $claimedGuestRegistration = false): ParticipantResponseDTO
     {
         $userInfo = $participant->userId() !== null
             ? $this->userDataProvider->getUserInfo($participant->userId())
@@ -696,7 +809,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return ParticipantResponseDTO::fromEntity(
             $participant,
             $userInfo['name'] ?? null,
-            $userInfo['email'] ?? null
+            $userInfo['email'] ?? null,
+            $claimedGuestRegistration,
         );
     }
 

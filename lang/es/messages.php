@@ -221,6 +221,7 @@ return [
         'result_disputed' => 'Resultado disputado',
         'results_updated' => 'Resultados actualizados',
         'registered_successfully' => 'Inscripción realizada correctamente',
+        'guest_registration_claimed' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
         'withdrawn_successfully' => 'Retirada realizada correctamente',
         'checked_in_successfully' => 'Check-in realizado correctamente',
         'participant_disqualified' => 'Participante descalificado',

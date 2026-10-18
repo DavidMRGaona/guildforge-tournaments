@@ -59,9 +59,9 @@ final readonly class SendParticipantRegisteredEmails
             cancellationToken: $event->isGuest ? $event->cancellationToken : null,
         ));
 
-        // Send to organizer
+        // Send to organizer, unless the registration is not news to them
         $organizerEmail = $tournament->notificationEmail();
-        if ($organizerEmail !== '') {
+        if ($event->notifyOrganizer && $organizerEmail !== '') {
             $currentCount = $this->participantRepository->countActiveByTournament($event->tournamentId);
 
             $organizerNotifiable = new AnonymousNotifiable($organizerEmail);
