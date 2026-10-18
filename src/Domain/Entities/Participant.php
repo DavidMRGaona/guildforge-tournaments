@@ -247,6 +247,46 @@ final class Participant
     }
 
     /**
+     * Carry an active guest registration of the account's email over to this ended (withdrawn)
+     * registration of the account, since there is one row per user and tournament: its status,
+     * check-in and confirmation state come along, its links do not.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function takeOverGuestRegistration(Participant $guest, DateTimeImmutable $now): void
+    {
+        if (! $this->status->canTransitionTo(ParticipantStatus::Registered) || $this->isGuest() || ! $guest->isGuest() || ! $guest->isActive()) {
+            throw InvalidStateTransitionException::participant(
+                $this->id->value,
+                $this->status->value,
+                $guest->status->value
+            );
+        }
+
+        $this->status = $guest->status;
+        $this->checkedInAt = $guest->checkedInAt;
+        $this->emailConfirmedAt = $guest->emailConfirmedAt ?? $now;
+        $this->confirmationMode = $guest->confirmationMode;
+        $this->confirmationSentAt = $guest->confirmationSentAt;
+        $this->confirmationToken = null;
+        $this->confirmationExpiresAt = null;
+        $this->cancellationToken = null;
+    }
+
+    /**
+     * End a guest registration taken over by the account of its email: withdrawn, with no links left.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function handOverToAccount(): void
+    {
+        $this->transitionTo(ParticipantStatus::Withdrawn);
+        $this->cancellationToken = null;
+        $this->confirmationToken = null;
+        $this->confirmationExpiresAt = null;
+    }
+
+    /**
      * A guest signing up again after their registration ended gives their name anew.
      */
     public function renameGuest(string $name): void

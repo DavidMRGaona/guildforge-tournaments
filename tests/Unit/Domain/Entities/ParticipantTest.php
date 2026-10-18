@@ -396,6 +396,57 @@ final class ParticipantTest extends TestCase
         $this->assertEquals($earlier, $participant->emailConfirmedAt());
     }
 
+    public function test_a_withdrawn_user_row_takes_over_an_active_guest_registration(): void
+    {
+        $guest = $this->awaiting(GuestConfirmationMode::Hold);
+        $guest->confirm();
+        $own = $this->createParticipant(ParticipantStatus::Withdrawn);
+        $now = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $own->takeOverGuestRegistration($guest, $now);
+
+        $this->assertSame(ParticipantStatus::Confirmed, $own->status());
+        $this->assertEquals($now, $own->emailConfirmedAt());
+        $this->assertSame(GuestConfirmationMode::Hold, $own->confirmationMode());
+        $this->assertEquals(new DateTimeImmutable('2030-01-01 10:00:00'), $own->confirmationSentAt());
+        $this->assertNull($own->confirmationToken());
+        $this->assertNull($own->confirmationExpiresAt());
+        $this->assertNull($own->cancellationToken());
+        $this->assertSame('660e8400-e29b-41d4-a716-446655440001', $own->userId());
+    }
+
+    public function test_only_a_withdrawn_user_row_takes_over_a_guest_registration(): void
+    {
+        $own = $this->createParticipant(ParticipantStatus::Registered);
+
+        $this->expectException(InvalidStateTransitionException::class);
+
+        $own->takeOverGuestRegistration($this->createGuestParticipant(), new DateTimeImmutable('2030-01-01 11:00:00'));
+    }
+
+    public function test_an_inactive_guest_registration_cannot_be_taken_over(): void
+    {
+        $own = $this->createParticipant(ParticipantStatus::Withdrawn);
+
+        $this->expectException(InvalidStateTransitionException::class);
+
+        $own->takeOverGuestRegistration($this->createGuestParticipant(ParticipantStatus::Withdrawn), new DateTimeImmutable('2030-01-01 11:00:00'));
+    }
+
+    public function test_handing_a_guest_registration_over_withdraws_it_without_links(): void
+    {
+        $guest = $this->awaiting(GuestConfirmationMode::Hold);
+        $guest->setCancellationToken('cancel-1');
+
+        $guest->handOverToAccount();
+
+        $this->assertSame(ParticipantStatus::Withdrawn, $guest->status());
+        $this->assertNull($guest->cancellationToken());
+        $this->assertNull($guest->confirmationToken());
+        $this->assertNull($guest->confirmationExpiresAt());
+        $this->assertSame('john@example.com', $guest->guestEmail());
+    }
+
     public function test_record_fingerprint(): void
     {
         $participant = $this->createGuestParticipant();
