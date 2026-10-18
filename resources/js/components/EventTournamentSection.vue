@@ -7,6 +7,8 @@ import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { useTournaments } from '../composables/useTournaments';
+import { statusBadgeClasses } from '../utils/statusColors';
 import type {
     EventTournamentSectionProps,
     GuestRegistrationField,
@@ -19,6 +21,7 @@ type FormErrors = Partial<Record<GuestRegistrationField, string | undefined>>;
 const props = defineProps<EventTournamentSectionProps>();
 
 const { t } = useI18n();
+const { getStatusColor } = useTournaments();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
 // Registering and withdrawing are closed to accounts that must verify their email
@@ -323,11 +326,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </h3>
                     <span
                         class="rounded-full px-2 py-0.5 text-xs font-medium"
-                        :class="{
-                            'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': tournament.is_registration_open,
-                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': tournament.is_in_progress,
-                            'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-300': tournament.is_finished || (!tournament.is_registration_open && !tournament.is_in_progress),
-                        }"
+                        :class="statusBadgeClasses(getStatusColor(tournament.display_status))"
                     >
                         {{ tournament.status_label }}
                     </span>

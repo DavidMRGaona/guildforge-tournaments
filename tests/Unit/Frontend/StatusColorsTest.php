@@ -68,6 +68,18 @@ final class StatusColorsTest extends TestCase
         $this->assertStringNotContainsString("amber:", $source);
     }
 
+    public function test_the_event_section_chip_uses_the_shared_map_for_the_display_status(): void
+    {
+        $source = $this->source('components/EventTournamentSection.vue');
+
+        $this->assertStringContainsString("from '../utils/statusColors'", $source);
+        $this->assertStringContainsString("from '../composables/useTournaments'", $source);
+        $this->assertStringContainsString('statusBadgeClasses(getStatusColor(tournament.display_status))', $source);
+        $this->assertStringNotContainsString('bg-green-100', $source);
+        $this->assertStringNotContainsString('bg-blue-100 text-blue-800', $source);
+        $this->assertStringNotContainsString('bg-gray-100 text-gray-800', $source);
+    }
+
     private function source(string $file): string
     {
         $source = file_get_contents(self::JS . $file);
