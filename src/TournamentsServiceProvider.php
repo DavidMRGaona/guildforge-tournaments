@@ -21,9 +21,11 @@ use Illuminate\Support\Facades\Event;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
+use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
@@ -61,6 +63,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
@@ -221,6 +225,16 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             ScoringRuleEvaluatorInterface::class,
             ScoringRuleEvaluator::class
+        );
+
+        $this->app->bind(
+            GuestRegistrationSettingsInterface::class,
+            GuestRegistrationSettings::class
+        );
+
+        $this->app->bind(
+            RegistrationLockInterface::class,
+            DatabaseRegistrationLock::class
         );
     }
 
@@ -616,6 +630,73 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                         ->suffix(__('tournaments::messages.settings.minutes'))
                         ->default(30),
                 ]),
+            Section::make(__('tournaments::messages.settings.guest_registrations'))
+                ->schema([
+                    Select::make('guest_confirmation.mode')
+                        ->label(__('tournaments::messages.settings.guest_confirmation_mode'))
+                        ->options([
+                            'hold' => __('tournaments::messages.settings.guest_confirmation_modes.hold'),
+                            'wait' => __('tournaments::messages.settings.guest_confirmation_modes.wait'),
+                        ])
+                        ->in(['hold', 'wait'])
+                        ->native(false)
+                        ->default('hold')
+                        ->required(),
+                    TextInput::make('guest_confirmation.hold_hours')
+                        ->label(__('tournaments::messages.settings.guest_hold_hours'))
+                        ->suffix(__('tournaments::messages.settings.hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(168)
+                        ->default(2)
+                        ->required(),
+                    TextInput::make('guest_confirmation.max_unconfirmed_held')
+                        ->label(__('tournaments::messages.settings.guest_max_unconfirmed_held'))
+                        ->helperText(__('tournaments::messages.settings.guest_max_unconfirmed_held_help'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(0)
+                        ->maxValue(50)
+                        ->default(2)
+                        ->required(),
+                    Select::make('guest_accounts.mode')
+                        ->label(__('tournaments::messages.settings.guest_accounts_mode'))
+                        ->options([
+                            'require_login' => __('tournaments::messages.settings.guest_accounts_modes.require_login'),
+                            'allow_guest' => __('tournaments::messages.settings.guest_accounts_modes.allow_guest'),
+                        ])
+                        ->in(['require_login', 'allow_guest'])
+                        ->native(false)
+                        ->default('require_login')
+                        ->required(),
+                    TextInput::make('guest_rate_limit.per_minute')
+                        ->label(__('tournaments::messages.settings.guest_rate_per_minute'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(100)
+                        ->default(5)
+                        ->required(),
+                    TextInput::make('guest_rate_limit.per_hour')
+                        ->label(__('tournaments::messages.settings.guest_rate_per_hour'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(1000)
+                        ->default(20)
+                        ->required(),
+                    TextInput::make('duplicate_signal.window_hours')
+                        ->label(__('tournaments::messages.settings.duplicate_window_hours'))
+                        ->suffix(__('tournaments::messages.settings.hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(720)
+                        ->default(24)
+                        ->required(),
+                ])
+                ->columns(2),
         ];
     }
 
