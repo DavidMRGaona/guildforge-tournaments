@@ -182,7 +182,7 @@ const sortedRounds = computed(() => {
                                                     <span
                                                         class="font-medium text-base-primary"
                                                         :class="{
-                                                            'text-green-600 dark:text-green-400': match.result === 'player1_win',
+                                                            'text-green-600 dark:text-green-400': match.result === 'player_one_win',
                                                         }"
                                                     >
                                                         {{ match.player_1_name }}
@@ -199,7 +199,7 @@ const sortedRounds = computed(() => {
                                                     <span
                                                         class="font-medium text-base-primary"
                                                         :class="{
-                                                            'text-green-600 dark:text-green-400': match.result === 'player2_win',
+                                                            'text-green-600 dark:text-green-400': match.result === 'player_two_win',
                                                         }"
                                                     >
                                                         {{ match.player_2_name }}

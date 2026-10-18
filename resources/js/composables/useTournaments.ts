@@ -1,17 +1,52 @@
 import { useI18n } from 'vue-i18n';
 import type {
     Tournament,
-    TournamentStatus,
     TournamentDisplayStatus,
     ParticipantStatus,
     RoundStatus,
     MatchResult,
     Standing,
 } from '../types/tournaments';
+import { pickColor } from '../utils/statusColors';
+import type { StatusColor } from '../utils/statusColors';
+
+// Mirror TournamentStatus::color() / ParticipantStatus::color() / RoundStatus::color() / MatchResult::color() in PHP.
+const TOURNAMENT_STATUS_COLORS: Record<TournamentDisplayStatus, StatusColor> = {
+    draft: 'gray',
+    registration_open: 'success',
+    registration_upcoming: 'info',
+    registration_closed: 'warning',
+    in_progress: 'info',
+    finished: 'primary',
+    cancelled: 'danger',
+};
+
+const PARTICIPANT_STATUS_COLORS: Record<ParticipantStatus, StatusColor> = {
+    registered: 'warning',
+    confirmed: 'info',
+    checked_in: 'success',
+    withdrawn: 'gray',
+    disqualified: 'danger',
+};
+
+const ROUND_STATUS_COLORS: Record<RoundStatus, StatusColor> = {
+    pending: 'gray',
+    in_progress: 'info',
+    finished: 'success',
+};
+
+const MATCH_RESULT_COLORS: Record<MatchResult, StatusColor> = {
+    player_one_win: 'success',
+    player_two_win: 'success',
+    draw: 'warning',
+    double_loss: 'danger',
+    bye: 'info',
+    not_played: 'gray',
+};
 
 interface StatusInfo {
     label: string;
-    color: string;
+    color: StatusColor;
 }
 
 interface UseTournamentsReturn {
@@ -23,10 +58,10 @@ interface UseTournamentsReturn {
     canShowRounds: (tournament: Tournament) => boolean;
     hasStarted: (tournament: Tournament) => boolean;
     shouldShowParticipants: (tournament: Tournament) => boolean;
-    getStatusColor: (status: TournamentStatus) => string;
-    getParticipantStatusColor: (status: ParticipantStatus) => string;
-    getRoundStatusColor: (status: RoundStatus) => string;
-    getMatchResultColor: (result: MatchResult) => string;
+    getStatusColor: (status: TournamentDisplayStatus) => StatusColor;
+    getParticipantStatusColor: (status: ParticipantStatus) => StatusColor;
+    getRoundStatusColor: (status: RoundStatus) => StatusColor;
+    getMatchResultColor: (result: MatchResult) => StatusColor;
     formatPoints: (points: number) => string;
     formatPercentage: (percentage: number) => string;
     formatRank: (rank: number) => string;
@@ -38,25 +73,8 @@ interface UseTournamentsReturn {
 export function useTournaments(): UseTournamentsReturn {
     const { t } = useI18n();
 
-    function getStatusColor(status: TournamentDisplayStatus): string {
-        switch (status) {
-            case 'draft':
-                return 'gray';
-            case 'registration_open':
-                return 'green';
-            case 'registration_upcoming':
-                return 'blue';
-            case 'registration_closed':
-                return 'yellow';
-            case 'in_progress':
-                return 'blue';
-            case 'finished':
-                return 'purple';
-            case 'cancelled':
-                return 'red';
-            default:
-                return 'gray';
-        }
+    function getStatusColor(status: TournamentDisplayStatus): StatusColor {
+        return pickColor(TOURNAMENT_STATUS_COLORS, status);
     }
 
     function formatStatus(status: TournamentDisplayStatus): StatusInfo {
@@ -66,21 +84,8 @@ export function useTournaments(): UseTournamentsReturn {
         };
     }
 
-    function getParticipantStatusColor(status: ParticipantStatus): string {
-        switch (status) {
-            case 'registered':
-                return 'yellow';
-            case 'confirmed':
-                return 'green';
-            case 'checked_in':
-                return 'blue';
-            case 'withdrawn':
-                return 'gray';
-            case 'disqualified':
-                return 'red';
-            default:
-                return 'gray';
-        }
+    function getParticipantStatusColor(status: ParticipantStatus): StatusColor {
+        return pickColor(PARTICIPANT_STATUS_COLORS, status);
     }
 
     function formatParticipantStatus(status: ParticipantStatus): StatusInfo {
@@ -90,17 +95,8 @@ export function useTournaments(): UseTournamentsReturn {
         };
     }
 
-    function getRoundStatusColor(status: RoundStatus): string {
-        switch (status) {
-            case 'pending':
-                return 'gray';
-            case 'in_progress':
-                return 'blue';
-            case 'finished':
-                return 'green';
-            default:
-                return 'gray';
-        }
+    function getRoundStatusColor(status: RoundStatus): StatusColor {
+        return pickColor(ROUND_STATUS_COLORS, status);
     }
 
     function formatRoundStatus(status: RoundStatus): StatusInfo {
@@ -110,22 +106,8 @@ export function useTournaments(): UseTournamentsReturn {
         };
     }
 
-    function getMatchResultColor(result: MatchResult): string {
-        switch (result) {
-            case 'pending':
-                return 'gray';
-            case 'player1_win':
-            case 'player2_win':
-                return 'green';
-            case 'draw':
-                return 'yellow';
-            case 'double_loss':
-                return 'red';
-            case 'bye':
-                return 'purple';
-            default:
-                return 'gray';
-        }
+    function getMatchResultColor(result: MatchResult): StatusColor {
+        return pickColor(MATCH_RESULT_COLORS, result);
     }
 
     function formatMatchResult(result: MatchResult): StatusInfo {
