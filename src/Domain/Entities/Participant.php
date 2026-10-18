@@ -246,6 +246,14 @@ final class Participant
         $this->emailConfirmedAt ??= $now;
     }
 
+    /**
+     * A guest signing up again after their registration ended gives their name anew.
+     */
+    public function renameGuest(string $name): void
+    {
+        $this->guestName = $name;
+    }
+
     public function recordFingerprint(?string $fingerprint): void
     {
         $this->fingerprint = $fingerprint;
