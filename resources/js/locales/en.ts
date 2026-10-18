@@ -144,5 +144,19 @@ export default {
             guest: 'Guest',
             view_tournaments: 'View tournaments',
         },
+
+        // Guest email confirmation page
+        confirmation: {
+            title: 'Confirm registration',
+            participant: 'Participant',
+            tournament: 'Tournament',
+            deadline: 'Confirm it before {date}',
+            wait_notice: 'Your place is not guaranteed until you confirm it.',
+            confirm_button: 'Confirm registration',
+            already_confirmed: 'Your registration was already confirmed.',
+            invalid: 'This link is no longer valid. If registration is still open, you can sign up again.',
+            view_tournament: 'View tournament',
+            view_tournaments: 'View tournaments',
+        },
     },
 };

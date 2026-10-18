@@ -57,7 +57,7 @@ final class GuestConfirmationRequestNotification extends Notification implements
         return $message
             ->action(
                 __('tournaments::messages.emails.guest_confirmation.action'),
-                url("/torneos/confirmar/{$this->confirmationToken}"),
+                route('tournaments.confirm-registration', ['token' => $this->confirmationToken]),
             )
             ->line(__('tournaments::messages.emails.guest_confirmation.closing'));
     }

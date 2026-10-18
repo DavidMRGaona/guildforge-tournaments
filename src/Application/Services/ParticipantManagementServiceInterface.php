@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Application\Services;
 
 use InvalidArgumentException;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
+use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
@@ -50,6 +51,22 @@ interface ParticipantManagementServiceInterface
      * @throws TournamentFullException
      */
     public function registerGuest(RegisterParticipantDTO $dto): GuestRegistrationResultDTO;
+
+    /**
+     * Confirm a guest's email through the link of the confirmation email. Only then does the
+     * organisation hear of the registration and the guest get the usual registration email. A
+     * registration whose deadline passed, or whose tournament closed registration, expires instead;
+     * one waiting without a seat expires when the tournament is full. The token survives, so a
+     * reused link answers that it was already confirmed.
+     */
+    public function confirmGuestEmail(string $token): GuestConfirmationResultDTO;
+
+    /**
+     * What the confirmation page shows for a link, without changing anything; null for an unknown link.
+     *
+     * @return array{state: 'pending'|'already_confirmed'|'invalid', tournament_name: string, tournament_slug: string, guest_name: ?string, expires_at: ?string, seat_held: bool}|null
+     */
+    public function findGuestConfirmation(string $token): ?array;
 
     /**
      * Confirm a participant's registration.

@@ -275,6 +275,16 @@ return [
         'view_tournaments' => 'Ver torneos',
     ],
 
+    // Guest email confirmation (link of the confirmation email)
+    'guest_confirmation' => [
+        'confirmed' => 'Inscripción confirmada. Te hemos enviado un email con los detalles.',
+        'already_confirmed' => 'Tu inscripción ya estaba confirmada.',
+        'invalid' => 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
+        'registration_closed' => 'Las inscripciones ya se han cerrado.',
+        'full' => 'Se ha llenado mientras confirmabas.',
+        'too_many_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
+    ],
+
     // Filament - Tournament configuration relation manager
     'config' => [
         'title' => 'Configuración del torneo',
@@ -733,5 +743,6 @@ return [
         'my_tournaments_title' => 'Mis torneos',
         'check_in_title' => 'Check-in - :name',
         'cancel_registration_title' => 'Cancelar inscripción',
+        'confirm_registration_title' => 'Confirmar inscripción',
     ],
 ];
