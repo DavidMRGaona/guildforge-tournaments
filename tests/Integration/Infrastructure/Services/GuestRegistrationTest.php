@@ -358,6 +358,59 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->onlyRow($registered);
     }
 
+    public function test_an_unverified_account_email_does_not_ask_to_sign_in(): void
+    {
+        $this->fakeEvents();
+        UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        $tournament = $this->tournament();
+
+        $result = $this->registerGuest($tournament);
+
+        $this->assertSame(GuestRegistrationOutcome::ConfirmationSent, $result->outcome);
+        $this->assertNull($this->onlyRow($tournament)->user_id);
+    }
+
+    public function test_an_unverified_account_already_registered_does_not_block_the_guest(): void
+    {
+        $this->fakeEvents();
+        config()->set('modules.settings.tournaments', ['guest_accounts' => ['mode' => 'allow_guest']]);
+        $account = UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        $tournament = $this->tournament();
+        $this->participant($tournament, ['user_id' => $account->id]);
+
+        $result = $this->registerGuest($tournament);
+
+        $this->assertSame(GuestRegistrationOutcome::ConfirmationSent, $result->outcome);
+        $this->assertSame(2, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_an_overdue_registration_not_yet_expired_is_replaced_by_a_new_one(): void
+    {
+        $this->fakeEvents();
+        $tournament = $this->tournament(['max_participants' => 1]);
+        $this->registerGuest($tournament);
+        $before = $this->onlyRow($tournament);
+
+        $later = $this->now->addHours(2)->addMinute();
+        $this->travelTo($later);
+        $result = $this->registerGuest($tournament, name: 'Ana María');
+
+        $this->assertSame(GuestRegistrationOutcome::ConfirmationSent, $result->outcome);
+        $this->assertSame($before->id, $result->participantId);
+        $this->assertTrue($result->seatHeld);
+        $this->assertEquals($later->addHours(2), $result->expiresAt);
+
+        $row = $this->onlyRow($tournament);
+        $this->assertSame(ParticipantStatus::Registered, $row->status);
+        $this->assertSame('Ana María', $row->guest_name);
+        $this->assertSame($later->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertNotSame($before->confirmation_token, $row->confirmation_token);
+        $this->assertNotSame($before->cancellation_token, $row->cancellation_token);
+        Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
+        Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->confirmationToken === $row->confirmation_token
+            && $event->expiresAt?->format('Y-m-d H:i:s') === $later->addHours(2)->format('Y-m-d H:i:s'));
+    }
+
     /**
      * @return iterable<string, array{ParticipantStatus}>
      */

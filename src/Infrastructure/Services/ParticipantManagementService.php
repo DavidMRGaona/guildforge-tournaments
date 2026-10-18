@@ -523,6 +523,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         if ($existing !== null) {
             $this->rejectDisqualified($existing);
+            $this->expireIfOverdue($existing, $now);
 
             if ($existing->isActive()) {
                 if (! $existing->isAwaitingEmailConfirmation()) {
@@ -595,8 +596,28 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     }
 
     /**
-     * The email of an account only matters when that account could register as a user here;
-     * otherwise its owner signs up as any other guest.
+     * A held seat whose deadline passed before the expiry command got to it ends here, under the
+     * lock, so the submission becomes a new registration instead of resending a dead link. Saved
+     * before the capacity check so its seat is free. No expiry email: the guest is signing up again.
+     */
+    private function expireIfOverdue(Participant $participant, CarbonImmutable $now): void
+    {
+        $expiresAt = $participant->confirmationExpiresAt();
+
+        if (! $participant->isAwaitingEmailConfirmation()
+            || $participant->status() !== ParticipantStatus::Registered
+            || $expiresAt === null
+            || $expiresAt > $now) {
+            return;
+        }
+
+        $participant->expire();
+        $this->participantRepository->save($participant);
+    }
+
+    /**
+     * The email of an account only matters when it is verified and that account could register
+     * as a user here; otherwise the submitter signs up as any other guest.
      *
      * @throws GuestEmailBelongsToAccountException
      * @throws AlreadyRegisteredException
@@ -605,7 +626,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $account = $this->userDataProvider->findAccountByEmail($email);
 
-        if ($account === null) {
+        // Anyone can create an unverified account with someone else's email: it proves nothing
+        if ($account === null || ! $account['email_verified']) {
             return;
         }
 
