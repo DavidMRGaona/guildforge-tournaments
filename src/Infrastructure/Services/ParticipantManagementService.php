@@ -363,6 +363,11 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw ParticipantNotFoundException::withEmail($email, $tournamentId);
         }
 
+        // Knowing the email of an unconfirmed guest registration proves nothing
+        if ($participant->isAwaitingEmailConfirmation()) {
+            throw CheckInNotAllowedException::emailNotConfirmed($tournamentId);
+        }
+
         // Check if already checked in
         if ($participant->status() === ParticipantStatus::CheckedIn) {
             throw AlreadyCheckedInException::forParticipant($participant->id()->value);

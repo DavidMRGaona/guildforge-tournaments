@@ -120,7 +120,13 @@ final class TournamentCheckInController extends Controller
             return back()->withErrors([
                 'email' => __('tournaments::messages.check_in.not_found'),
             ]);
-        } catch (CheckInNotAllowedException) {
+        } catch (CheckInNotAllowedException $e) {
+            if ($e->emailIsUnconfirmed()) {
+                return back()->withErrors([
+                    'email' => __('tournaments::messages.check_in.email_not_confirmed'),
+                ]);
+            }
+
             return back()->withErrors([
                 'check_in' => __('tournaments::messages.check_in.not_allowed'),
             ]);

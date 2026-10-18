@@ -8,7 +8,7 @@ use DomainException;
 
 final class AlreadyRegisteredException extends DomainException
 {
-    private function __construct(string $message)
+    private function __construct(string $message, private readonly bool $accountEmailTaken = false)
     {
         parent::__construct($message);
     }
@@ -30,6 +30,15 @@ final class AlreadyRegisteredException extends DomainException
 
     public static function guestWithAccountEmail(string $tournamentId): self
     {
-        return new self("A registration with the account email already exists for tournament {$tournamentId}.");
+        return new self("A registration with the account email already exists for tournament {$tournamentId}.", accountEmailTaken: true);
+    }
+
+    /**
+     * Whether a guest registration with the email of the signed-in account blocks it (the account
+     * could not take it over), rather than a registration of the account itself.
+     */
+    public function isAccountEmailTaken(): bool
+    {
+        return $this->accountEmailTaken;
     }
 }

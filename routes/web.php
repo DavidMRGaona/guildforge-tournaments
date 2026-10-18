@@ -77,8 +77,9 @@ Route::prefix('torneos/{tournamentId}')
 
         // Public: register (authenticated user or guest if allowed). A signed-in user
         // registers as themselves, so the core's "email verification required" rule applies
+        // Guests (no session) are limited per IP
         Route::post('/inscripcion', [TournamentRegistrationController::class, 'store'])
-            ->middleware('email.verified-if-required')
+            ->middleware(['throttle:tournaments-guest-registration', 'email.verified-if-required'])
             ->name('tournaments.registration.store');
 
         // Only authenticated users can withdraw

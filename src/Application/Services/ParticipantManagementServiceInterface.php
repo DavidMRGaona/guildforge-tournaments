@@ -120,7 +120,8 @@ interface ParticipantManagementServiceInterface
      * Finds participant by email (guest_email or user email) and performs check-in.
      *
      * @throws ParticipantNotFoundException When no participant found with that email
-     * @throws CheckInNotAllowedException When self check-in is disabled for the tournament
+     * @throws CheckInNotAllowedException When self check-in is disabled for the tournament, or the
+     *                                     guest registration found has not confirmed its email
      * @throws CheckInWindowClosedException When check-in window is not active
      * @throws AlreadyCheckedInException When participant has already checked in
      */
