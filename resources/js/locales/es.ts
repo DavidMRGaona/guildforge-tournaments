@@ -63,12 +63,12 @@ export default {
 
         // Match result
         match_result: {
-            pending: 'Pendiente',
-            player1_win: 'Victoria J1',
-            player2_win: 'Victoria J2',
+            player_one_win: 'Victoria jugador 1',
+            player_two_win: 'Victoria jugador 2',
             draw: 'Empate',
             double_loss: 'Doble derrota',
             bye: 'Bye',
+            not_played: 'Sin jugar',
         },
 
         // Record format
