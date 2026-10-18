@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
@@ -68,6 +69,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
@@ -126,11 +128,37 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The guest confirmation link (page and button) per IP, wide enough for a person and tight
-     * enough to stop guessing tokens. Over the limit: a 429 with a translated message, no redirect.
+     * Guest registrations per IP, from the module settings; signed-in users are not limited (the
+     * route is shared). The guest confirmation link (page and button) per IP, wide enough for a
+     * person and tight enough to stop guessing tokens. Over either limit: a translated message,
+     * never an error page.
      */
     private function registerRateLimiters(): void
     {
+        RateLimiter::for('tournaments-guest-registration', static function (Request $request): Limit|array {
+            if ($request->user() !== null) {
+                return Limit::none();
+            }
+
+            $settings = app(GuestRegistrationSettingsInterface::class);
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.errors.too_many_registration_attempts');
+
+                // Inertia visits go back to the form with the error, like any other refusal
+                if ($request->header('X-Inertia') === null && $request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                return back()->withErrors(['registration' => $message])->with('error', $message);
+            };
+
+            return [
+                Limit::perMinute($settings->perMinute())->by('tn-guest-min|'.$ip)->response($tooMany),
+                Limit::perHour($settings->perHour())->by('tn-guest-hour|'.$ip)->response($tooMany),
+            ];
+        });
+
         RateLimiter::for('tournaments-guest-confirmation', static function (Request $request): array {
             $ip = $request->ip() ?? 'unknown';
             $tooMany = static function (Request $request, array $headers): HttpResponse {
@@ -268,6 +296,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             RegistrationLockInterface::class,
             DatabaseRegistrationLock::class
         );
+
+        $this->app->bind(
+            GuestConfirmationQueryInterface::class,
+            GuestConfirmationQuery::class
+        );
     }
 
     private function registerLivewireComponents(): void
@@ -348,7 +381,28 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             'tournament' => fn () => $this->getTournamentForCurrentRoute(),
             'userRegistration' => fn () => $this->getUserRegistrationForCurrentRoute(),
             'canRegister' => fn () => $this->getCanRegisterForCurrentRoute(),
+            'guestConfirmation' => fn () => $this->getGuestConfirmationForCurrentRoute(),
         ]);
+    }
+
+    /**
+     * What the guest form of the event page says before submitting.
+     *
+     * @return array{mode: 'hold'|'wait', expires_at: string|null}|null
+     */
+    private function getGuestConfirmationForCurrentRoute(): ?array
+    {
+        $eventId = $this->getEventIdFromCurrentRoute();
+        if ($eventId === null) {
+            return null;
+        }
+
+        $tournament = $this->findTournamentByEventId($eventId);
+        if ($tournament === null) {
+            return null;
+        }
+
+        return app(GuestConfirmationQueryInterface::class)->forTournament($tournament->id);
     }
 
     /**
@@ -746,7 +800,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 20, // After game-tables (10)
                 props: [],
-                dataKeys: ['tournament', 'userRegistration', 'canRegister'],
+                dataKeys: ['tournament', 'userRegistration', 'canRegister', 'guestConfirmation'],
             ),
             new SlotRegistrationDTO(
                 slot: 'profile-sections',

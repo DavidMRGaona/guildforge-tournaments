@@ -293,7 +293,12 @@ final class ParticipantRegistrationRulesTest extends TestCase
             'self_check_in_allowed' => true,
             'check_in_starts_before' => 30,
         ]);
-        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com', 'status' => ParticipantStatus::Confirmed->value]);
+        $this->participant($tournament, [
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'status' => ParticipantStatus::Confirmed->value,
+            'email_confirmed_at' => now()->subDay(),
+        ]);
 
         $result = $this->service->checkInByEmail($tournament->id, 'ana@example.com');
 

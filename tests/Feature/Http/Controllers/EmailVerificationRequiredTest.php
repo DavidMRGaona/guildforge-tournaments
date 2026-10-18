@@ -182,6 +182,7 @@ final class EmailVerificationRequiredTest extends ModuleTestCase
             'tournament_id' => $tournament->id,
             'guest_name' => 'Invitado',
             'guest_email' => 'guest@example.com',
+            'email_confirmed_at' => now()->subDay(),
             'status' => ParticipantStatus::Confirmed,
             'registered_at' => now()->subDay(),
         ]);
