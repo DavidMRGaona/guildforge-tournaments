@@ -233,6 +233,7 @@ return [
         'tournament_started' => 'El torneo ya ha comenzado: la inscripción está cerrada',
         'tournament_full' => 'El torneo está completo',
         'already_registered' => 'Ya estás inscrito en este torneo',
+        'registration_with_your_email' => 'Ya hay una inscripción con tu email.',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
         'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
         'cannot_cancel_started' => 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
