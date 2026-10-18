@@ -32,12 +32,12 @@ export default {
 
         // Match result
         match_result: {
-            pending: 'Pending',
-            player1_win: 'Player 1 wins',
-            player2_win: 'Player 2 wins',
+            player_one_win: 'Player 1 wins',
+            player_two_win: 'Player 2 wins',
             draw: 'Draw',
             double_loss: 'Double loss',
             bye: 'Bye',
+            not_played: 'Not played',
         },
 
         // Record format
