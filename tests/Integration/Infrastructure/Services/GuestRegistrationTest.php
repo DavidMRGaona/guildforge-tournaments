@@ -551,7 +551,7 @@ final class GuestRegistrationTest extends ModuleTestCase
         ))->toMail($notifiable);
 
         $this->assertSame('Confirma tu inscripción en Torneo de primavera', $hold->subject);
-        $this->assertSame('Hola, Ana', $hold->greeting);
+        $this->assertSame('¡Hola, Ana!', $hold->greeting);
         $this->assertSame([
             'Has pedido inscribirte en Torneo de primavera. Confirma la inscripción con el botón.',
             'Si no la confirmas antes del 02/11/2026 12:00, la plaza se liberará.',

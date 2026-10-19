@@ -20,6 +20,7 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
         private readonly bool $requiresCheckIn,
         private readonly ?int $checkInStartsBefore,
         private readonly ?string $cancellationToken = null,
+        private readonly ?string $tournamentSlug = null,
     ) {}
 
     /**
@@ -55,11 +56,22 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
             ]));
         }
 
-        // Add cancellation link for guests
+        // isset(): a notification queued before this property existed comes back without it
+        $tournamentUrl = isset($this->tournamentSlug) ? route('tournaments.show', $this->tournamentSlug) : null;
+
+        // Guests get the cancellation button; accounts manage it from the tournament page
         if ($this->cancellationToken !== null) {
-            $cancelUrl = url("/torneos/cancelar/{$this->cancellationToken}");
             $message->line(__('tournaments::messages.emails.registration_confirmed.cancel_intro'))
-                ->action(__('tournaments::messages.emails.registration_confirmed.cancel_link'), $cancelUrl);
+                ->action(
+                    __('tournaments::messages.emails.registration_confirmed.cancel_link'),
+                    route('tournaments.cancel-confirmation', $this->cancellationToken),
+                );
+
+            if ($tournamentUrl !== null) {
+                $message->line(__('tournaments::messages.emails.view_tournament_line', ['url' => $tournamentUrl]));
+            }
+        } elseif ($tournamentUrl !== null) {
+            $message->action(__('tournaments::messages.emails.view_tournament'), $tournamentUrl);
         }
 
         // Add GDPR notice

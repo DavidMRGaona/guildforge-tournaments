@@ -436,6 +436,10 @@ return [
         'guest_rate_per_minute' => 'Inscripciones por IP y minuto',
         'guest_rate_per_hour' => 'Inscripciones por IP y hora',
         'duplicate_window_hours' => 'Ventana de posible duplicado',
+        'reminders' => 'Recordatorio',
+        'reminders_enabled' => 'Enviar recordatorio antes del torneo',
+        'reminders_enabled_help' => 'Un correo a cada participante activo (con cuenta o con el email confirmado) las horas indicadas antes del inicio del evento. Desactivado por defecto.',
+        'reminders_hours_before' => 'Antelación del recordatorio',
         'send_registration_email' => 'Enviar email de confirmación de inscripción',
         'send_round_pairing_email' => 'Enviar email de emparejamientos',
         'send_result_confirmation_email' => 'Enviar email de confirmación de resultado',
@@ -669,9 +673,18 @@ return [
 
     // Email notifications
     'emails' => [
+        'view_tournament' => 'Ver torneo',
+        'view_tournament_line' => 'Puedes consultar el torneo en :url',
+        'tournament_reminder' => [
+            'subject' => 'Recordatorio: :tournament, :date',
+            'greeting' => '¡Hola, :name!',
+            'intro' => 'Te recordamos tu inscripción en el torneo «:tournament», que empieza el :date.',
+            'cancel' => 'Si al final no puedes venir, cancela tu inscripción para dejar la plaza libre: :url',
+            'closing' => '¡Te esperamos!',
+        ],
         'registration_confirmed' => [
             'subject' => 'Inscripción confirmada: :tournament',
-            'greeting' => '¡Hola :name!',
+            'greeting' => '¡Hola, :name!',
             'body' => 'Tu inscripción al torneo :tournament ha sido registrada correctamente.',
             'event_date' => 'Fecha del evento: :date',
             'check_in_required' => 'Recuerda que deberás hacer check-in :minutes minutos antes del inicio del evento.',
@@ -682,7 +695,7 @@ return [
         ],
         'guest_confirmation' => [
             'subject' => 'Confirma tu inscripción en :tournament',
-            'greeting' => 'Hola, :name',
+            'greeting' => '¡Hola, :name!',
             'body' => 'Has pedido inscribirte en :tournament. Confirma la inscripción con el botón.',
             'hold_deadline' => 'Si no la confirmas antes del :date, la plaza se liberará.',
             'wait_notice' => 'Tu plaza no está garantizada hasta que la confirmes.',
@@ -705,12 +718,11 @@ return [
         ],
         'withdrawal_confirmed' => [
             'subject' => 'Inscripción cancelada: :tournament',
-            'greeting' => '¡Hola :name!',
+            'greeting' => '¡Hola, :name!',
             'intro' => 'Tu inscripción ha sido cancelada correctamente.',
             'details' => 'Estos son los detalles:',
             'tournament_name' => 'Torneo',
             'event_date' => 'Fecha del evento',
-            'gdpr_notice' => 'Tus datos han sido eliminados conforme a nuestra política de privacidad.',
         ],
         'new_registration' => [
             'subject' => 'Nueva inscripción: :tournament',
@@ -724,7 +736,7 @@ return [
         ],
         'guest_registration_expired' => [
             'subject' => 'Tu inscripción en :tournament ha caducado',
-            'greeting' => 'Hola, :name',
+            'greeting' => '¡Hola, :name!',
             'body' => 'No confirmaste tu inscripción a tiempo y la plaza se ha liberado.',
             'rejoin' => 'Si quedan plazas, puedes volver a apuntarte.',
             'action' => 'Ver el torneo',
