@@ -183,8 +183,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     /**
      * Guest registrations per IP, from the module settings; signed-in users are not limited (the
      * route is shared). The guest confirmation link (page and button) per IP, wide enough for a
-     * person and tight enough to stop guessing tokens. Over either limit: a translated message,
-     * never an error page.
+     * person and tight enough to stop guessing tokens. The public check-in per IP, for everyone,
+     * so emails cannot be tried in bulk. Over any limit: a translated message, never an error page.
      */
     private function registerRateLimiters(): void
     {
@@ -226,6 +226,26 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             return [
                 Limit::perMinute(20)->by('minute:'.$ip)->response($tooMany),
                 Limit::perHour(100)->by('hour:'.$ip)->response($tooMany),
+            ];
+        });
+
+        RateLimiter::for('tournaments-public-check-in', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.check_in.too_many_attempts');
+
+                // Inertia visits go back to the form with the error, like any other refusal
+                if ($request->header('X-Inertia') === null && $request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                return back()->withErrors(['check_in' => $message])->with('error', $message);
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(10)->by('tn-check-in-min|'.$ip)->response($tooMany),
+                Limit::perHour(60)->by('tn-check-in-hour|'.$ip)->response($tooMany),
             ];
         });
     }
