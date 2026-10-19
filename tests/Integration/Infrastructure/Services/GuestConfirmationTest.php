@@ -7,7 +7,9 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationOutcome;
@@ -19,6 +21,7 @@ use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use RuntimeException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mime\Email;
 use Tests\Support\Modules\ModuleTestCase;
@@ -225,6 +228,24 @@ final class GuestConfirmationTest extends ModuleTestCase
         // The seat is free again
         $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->whereIn('status', ['registered', 'confirmed', 'checked_in'])->count());
         Event::assertNotDispatched(ParticipantRegistered::class);
+    }
+
+    public function test_a_failing_expiry_email_does_not_break_the_confirmation_page(): void
+    {
+        $this->fakeEvents();
+        $tournament = $this->tournament();
+        $row = $this->pendingGuest($tournament);
+        $this->travelTo($this->now->addHours(2)->addMinute());
+        Notification::shouldReceive('send')->andThrow(new RuntimeException('queue down'));
+        Log::spy();
+
+        $result = $this->service()->confirmGuestEmail((string) $row->confirmation_token);
+
+        $this->assertSame(GuestConfirmationOutcome::Invalid, $result->outcome);
+        $this->assertSame(ParticipantStatus::Expired, $row->refresh()->status);
+        Log::shouldHaveReceived('warning')->once()->withArgs(
+            static fn (string $message, array $context): bool => $context['participant_id'] === $row->id,
+        );
     }
 
     public function test_a_wait_row_in_a_full_tournament_expires(): void

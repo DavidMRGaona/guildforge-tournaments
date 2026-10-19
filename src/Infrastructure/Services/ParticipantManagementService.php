@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Infrastructure\Services;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeImmutable;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationOutcome;
@@ -44,6 +45,7 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Notifications\GuestRegistrationExpiredNotification;
+use Throwable;
 
 final readonly class ParticipantManagementService implements ParticipantManagementServiceInterface
 {
@@ -116,7 +118,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $now = CarbonImmutable::now();
 
-        /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{email: string, name: string, tournament: string, slug: string}|null} $outcome */
+        /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{participant: string, email: string, name: string, tournament: string, slug: string}|null} $outcome */
         $outcome = $this->lock->forConfirmationToken(
             $token,
             fn (): array => $this->confirmUnderLock($token, $now),
@@ -129,9 +131,17 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             event($registered);
         }
 
-        // A held seat that lapsed here is told exactly as the expiry command would
+        // A held seat that lapsed here is told exactly as the expiry command would; the expiry is
+        // committed, so a failing email is logged and the page still answers
         if ($lapsed !== null) {
-            GuestRegistrationExpiredNotification::sendTo($lapsed['email'], $lapsed['name'], $lapsed['tournament'], $lapsed['slug']);
+            try {
+                GuestRegistrationExpiredNotification::sendTo($lapsed['email'], $lapsed['name'], $lapsed['tournament'], $lapsed['slug']);
+            } catch (Throwable $e) {
+                Log::warning('tournaments: guest registration expiry email failed', [
+                    'participant_id' => $lapsed['participant'],
+                    'exception' => $e,
+                ]);
+            }
         }
 
         return $result;
@@ -957,7 +967,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      *
      * The third element is the expiry email to send once the lock is released, for a held seat that lapsed.
      *
-     * @return array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{email: string, name: string, tournament: string, slug: string}|null}
+     * @return array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{participant: string, email: string, name: string, tournament: string, slug: string}|null}
      */
     private function confirmUnderLock(string $token, CarbonImmutable $now): array
     {
@@ -1004,7 +1014,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                     $answer($lapse),
                     null,
                     $heldSeat && $email !== null
-                        ? ['email' => $email, 'name' => $participant->guestName() ?? $email, 'tournament' => $tournament->name(), 'slug' => $tournament->slug()]
+                        ? ['participant' => $participant->id()->value, 'email' => $email, 'name' => $participant->guestName() ?? $email, 'tournament' => $tournament->name(), 'slug' => $tournament->slug()]
                         : null,
                 ];
             }
