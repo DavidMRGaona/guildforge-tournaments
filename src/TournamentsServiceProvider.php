@@ -18,6 +18,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -36,6 +37,7 @@ use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
@@ -113,11 +115,35 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->registerEventListeners();
+        $this->registerCommands();
+        $this->registerSchedule();
         $this->registerRateLimiters();
         $this->shareInertiaData();
         $this->shareProfileTournamentsData();
         $this->registerLivewireComponents();
         $this->registerFilamentExtensions();
+    }
+
+    private function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ExpireGuestRegistrationsCommand::class,
+            ]);
+        }
+    }
+
+    /**
+     * Unconfirmed guest registrations lapse with the clock.
+     */
+    private function registerSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('tournaments:expire-guest-registrations')
+                ->everyFiveMinutes()
+                // A run takes seconds; a killed one must not block the expiry for a day
+                ->withoutOverlapping(10);
+        });
     }
 
     private function registerEventListeners(): void

@@ -282,6 +282,11 @@ return [
         'view_tournaments' => 'Ver torneos',
     ],
 
+    // Console commands
+    'console' => [
+        'expire_guest_registrations' => 'Inscripciones caducadas: :expired. Huellas borradas: :cleared.',
+    ],
+
     // Guest email confirmation (link of the confirmation email)
     'guest_confirmation' => [
         'confirmed' => 'Inscripción confirmada. Te hemos enviado un email con los detalles.',
@@ -700,6 +705,13 @@ return [
             'registered_user' => 'Usuario registrado',
             'capacity' => 'Participantes: :current / :max',
             'participants' => 'Total de participantes: :count',
+        ],
+        'guest_registration_expired' => [
+            'subject' => 'Tu inscripción en :tournament ha caducado',
+            'greeting' => 'Hola, :name',
+            'body' => 'No confirmaste tu inscripción a tiempo y la plaza se ha liberado.',
+            'rejoin' => 'Si quedan plazas, puedes volver a apuntarte.',
+            'action' => 'Ver el torneo',
         ],
         'withdrawal' => [
             'subject' => 'Cancelación: :tournament',
