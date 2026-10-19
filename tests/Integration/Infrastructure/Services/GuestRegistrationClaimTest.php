@@ -88,15 +88,15 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     }
 
     /**
-     * A guest row of ana@example.com whose email was confirmed yesterday.
+     * A guest row of john@example.com whose email was confirmed yesterday.
      *
      * @param  array<string, mixed>  $attributes
      */
     private function guestRow(TournamentModel $tournament, array $attributes = []): ParticipantModel
     {
         return $this->participant($tournament, [
-            'guest_name' => 'Ana invitada',
-            'guest_email' => 'ana@example.com',
+            'guest_name' => 'John invitada',
+            'guest_email' => 'john@example.com',
             'cancellation_token' => str_repeat('c', 64),
             'confirmation_token' => str_repeat('t', 64),
             'confirmation_sent_at' => $this->now->subDay(),
@@ -106,7 +106,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     }
 
     /**
-     * A guest row of ana@example.com still awaiting the confirmation of its email.
+     * A guest row of john@example.com still awaiting the confirmation of its email.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -133,7 +133,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_verified_user_takes_over_the_guest_row(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $guest = $this->guestRow($tournament, ['status' => ParticipantStatus::Confirmed->value]);
 
@@ -161,7 +161,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_the_account_email_matches_the_guest_row_in_another_case(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'Ana@Example.COM']);
+        $user = UserModel::factory()->create(['email' => 'John@Example.COM']);
         $tournament = $this->tournament();
         $guest = $this->guestRow($tournament);
 
@@ -174,7 +174,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_held_unconfirmed_row_is_confirmed_by_the_claim(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $guest = $this->unconfirmedGuestRow($tournament);
 
@@ -201,7 +201,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_confirmed_guest_row_claim_sends_nothing(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $this->guestRow($tournament);
 
@@ -214,7 +214,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_an_unverified_user_is_refused(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->unverified()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $guest = $this->guestRow($tournament);
 
@@ -230,7 +230,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
 
         $row = ParticipantModel::query()->findOrFail($guest->id);
         $this->assertNull($row->user_id);
-        $this->assertSame('ana@example.com', $row->guest_email);
+        $this->assertSame('john@example.com', $row->guest_email);
         $this->assertSame(str_repeat('c', 64), $row->cancellation_token);
         $this->assertSame(1, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
         Event::assertNotDispatched(ParticipantRegistered::class);
@@ -239,7 +239,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_user_without_the_role_is_refused_and_the_guest_row_stays(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament(['allowed_roles' => ['socio']]);
         $guest = $this->unconfirmedGuestRow($tournament);
 
@@ -251,7 +251,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
 
         $row = ParticipantModel::query()->findOrFail($guest->id);
         $this->assertNull($row->user_id);
-        $this->assertSame('ana@example.com', $row->guest_email);
+        $this->assertSame('john@example.com', $row->guest_email);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame(str_repeat('t', 64), $row->confirmation_token);
         Event::assertNotDispatched(ParticipantRegistered::class);
@@ -260,9 +260,9 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_wait_row_claim_needs_a_seat(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament(['max_participants' => 1]);
-        $other = $this->participant($tournament, ['guest_name' => 'Berta', 'guest_email' => 'berta@example.com']);
+        $other = $this->participant($tournament, ['guest_name' => 'Jane', 'guest_email' => 'jane@example.com']);
         $guest = $this->unconfirmedGuestRow($tournament, [
             'confirmation_mode' => GuestConfirmationMode::Wait->value,
             'confirmation_expires_at' => null,
@@ -276,7 +276,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
 
         $row = ParticipantModel::query()->findOrFail($guest->id);
         $this->assertNull($row->user_id);
-        $this->assertSame('ana@example.com', $row->guest_email);
+        $this->assertSame('john@example.com', $row->guest_email);
         $this->assertNull($row->email_confirmed_at);
         Event::assertNotDispatched(ParticipantRegistered::class);
 
@@ -294,7 +294,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_user_with_a_withdrawn_registration_takes_over_the_guest_row_in_their_own(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $own = $this->participant($tournament, [
             'user_id' => $user->id,
@@ -333,7 +333,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_a_withdrawn_user_taking_over_a_checked_in_guest_keeps_the_check_in(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $own = $this->participant($tournament, ['user_id' => $user->id, 'status' => ParticipantStatus::Withdrawn->value]);
         $checkedInAt = $this->now->subMinutes(10);
@@ -352,7 +352,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_an_inactive_guest_row_is_left_alone(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $guest = $this->guestRow($tournament, ['status' => ParticipantStatus::Withdrawn->value]);
 
@@ -361,14 +361,14 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
         $this->assertNotSame($guest->id, $result->id);
         $this->assertFalse($result->claimedGuestRegistration);
         $this->assertFalse($result->toArray()['claimed_guest_registration']);
-        $this->assertSame('ana@example.com', ParticipantModel::query()->findOrFail($guest->id)->guest_email);
+        $this->assertSame('john@example.com', ParticipantModel::query()->findOrFail($guest->id)->guest_email);
         Event::assertDispatchedTimes(ParticipantRegistered::class, 1);
     }
 
     public function test_an_overdue_guest_row_lapses_instead_of_being_taken_over(): void
     {
         Event::fake([ParticipantRegistered::class]);
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament(['max_participants' => 1]);
         $guest = $this->unconfirmedGuestRow($tournament, ['confirmation_expires_at' => $this->now->subMinute()]);
 
@@ -396,7 +396,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
     public function test_the_organiser_mail_is_skipped_when_not_notifying(): void
     {
         // AnonymousNotifiable has no key, so Notification::fake() cannot record it: read the array mailer
-        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $user = UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $row = $this->participant($tournament, ['user_id' => $user->id]);
         $listener = app(SendParticipantRegisteredEmails::class);
@@ -410,7 +410,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
             notifyOrganizer: false,
         ));
 
-        $this->assertSame(['ana@example.com'], $this->mailRecipients());
+        $this->assertSame(['john@example.com'], $this->mailRecipients());
 
         $listener->handle(ParticipantRegistered::create(
             participantId: $row->id,
@@ -420,7 +420,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
             isGuest: false,
         ));
 
-        $this->assertSame(['ana@example.com', 'ana@example.com', 'organizacion@example.com'], $this->mailRecipients());
+        $this->assertSame(['john@example.com', 'john@example.com', 'organizacion@example.com'], $this->mailRecipients());
     }
 
     /**

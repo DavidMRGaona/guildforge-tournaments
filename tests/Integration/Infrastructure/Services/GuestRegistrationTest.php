@@ -96,8 +96,8 @@ final class GuestRegistrationTest extends ModuleTestCase
 
     private function registerGuest(
         TournamentModel $tournament,
-        string $email = 'ana@example.com',
-        string $name = 'Ana',
+        string $email = 'john@example.com',
+        string $name = 'John',
         ?string $fingerprint = null,
     ): GuestRegistrationResultDTO {
         return $this->service()->registerGuest(new RegisterParticipantDTO(
@@ -148,8 +148,8 @@ final class GuestRegistrationTest extends ModuleTestCase
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 1);
         Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->participantId === $row->id
             && $event->tournamentId === $tournament->id
-            && $event->guestEmail === 'ana@example.com'
-            && $event->guestName === 'Ana'
+            && $event->guestEmail === 'john@example.com'
+            && $event->guestName === 'John'
             && $event->confirmationToken === $row->confirmation_token
             && $event->seatHeld
             && $event->expiresAt?->format('Y-m-d H:i:s') === $this->now->addHours(2)->format('Y-m-d H:i:s'));
@@ -179,16 +179,16 @@ final class GuestRegistrationTest extends ModuleTestCase
     {
         $this->fakeEvents();
         $tournament = $this->tournament();
-        $this->registerGuest($tournament, 'ana@example.com', 'Ana');
+        $this->registerGuest($tournament, 'john@example.com', 'John');
         $before = $this->onlyRow($tournament);
 
-        $result = $this->registerGuest($tournament, ' ANA@example.com ', 'Otra persona');
+        $result = $this->registerGuest($tournament, ' JOHN@example.com ', 'Otra persona');
 
         $this->assertSame(GuestRegistrationOutcome::ConfirmationPending, $result->outcome);
         $this->assertSame($before->id, $result->participantId);
         $after = $this->onlyRow($tournament);
-        $this->assertSame('Ana', $after->guest_name);
-        $this->assertSame('ana@example.com', $after->guest_email);
+        $this->assertSame('John', $after->guest_name);
+        $this->assertSame('john@example.com', $after->guest_email);
         $this->assertEquals($before->confirmation_expires_at, $after->confirmation_expires_at);
         $this->assertSame($before->confirmation_token, $after->confirmation_token);
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 1);
@@ -202,13 +202,13 @@ final class GuestRegistrationTest extends ModuleTestCase
         $expiresAt = $this->onlyRow($tournament)->confirmation_expires_at;
 
         $this->travelTo($this->now->addMinutes(4));
-        $pending = $this->registerGuest($tournament, name: 'Ana María');
+        $pending = $this->registerGuest($tournament, name: 'Jane Doe');
 
         $this->assertSame(GuestRegistrationOutcome::ConfirmationPending, $pending->outcome);
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 1);
 
         $this->travelTo($this->now->addMinutes(6));
-        $resent = $this->registerGuest($tournament, name: 'Ana María');
+        $resent = $this->registerGuest($tournament, name: 'Jane Doe');
 
         $this->assertSame(GuestRegistrationOutcome::ConfirmationResent, $resent->outcome);
         $this->assertTrue($resent->seatHeld);
@@ -217,7 +217,7 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $row = $this->onlyRow($tournament);
         $this->assertEquals($expiresAt, $row->confirmation_expires_at);
-        $this->assertSame('Ana', $row->guest_name);
+        $this->assertSame('John', $row->guest_name);
         $this->assertSame($this->now->addMinutes(6)->format('Y-m-d H:i:s'), $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
 
         // The margin counts from the last send
@@ -231,17 +231,17 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->fakeEvents();
         $tournament = $this->tournament();
         $this->participant($tournament, [
-            'guest_name' => 'Ana',
-            'guest_email' => 'ana@example.com',
+            'guest_name' => 'John',
+            'guest_email' => 'john@example.com',
             'email_confirmed_at' => $this->now->subDay(),
         ]);
 
         try {
-            $this->registerGuest($tournament, 'Ana@Example.com');
+            $this->registerGuest($tournament, 'John@Example.com');
             $this->fail('A confirmed guest registered twice');
         } catch (AlreadyRegisteredException $e) {
             // Exception messages reach the logs: ids, never the email
-            $this->assertStringNotContainsString('ana@example.com', $e->getMessage());
+            $this->assertStringNotContainsString('john@example.com', $e->getMessage());
             $this->assertStringContainsString($tournament->id, $e->getMessage());
         }
 
@@ -313,11 +313,11 @@ final class GuestRegistrationTest extends ModuleTestCase
     public function test_an_account_email_asks_to_sign_in(): void
     {
         $this->fakeEvents();
-        UserModel::factory()->create(['email' => 'Ana@Example.com']);
+        UserModel::factory()->create(['email' => 'John@Example.com']);
         $tournament = $this->tournament();
 
         try {
-            $this->registerGuest($tournament, ' ana@example.COM ');
+            $this->registerGuest($tournament, ' john@example.COM ');
             $this->fail('A guest registered with the email of an account');
         } catch (GuestEmailBelongsToAccountException $e) {
             $this->assertStringContainsString($tournament->id, $e->getMessage());
@@ -330,7 +330,7 @@ final class GuestRegistrationTest extends ModuleTestCase
     public function test_an_account_that_could_not_register_is_treated_as_a_guest(): void
     {
         $this->fakeEvents();
-        UserModel::factory()->create(['email' => 'ana@example.com']);
+        UserModel::factory()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament(['allowed_roles' => ['socio']]);
 
         $result = $this->registerGuest($tournament);
@@ -343,7 +343,7 @@ final class GuestRegistrationTest extends ModuleTestCase
     {
         $this->fakeEvents();
         config()->set('modules.settings.tournaments', ['guest_accounts' => ['mode' => 'allow_guest']]);
-        $account = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $account = UserModel::factory()->create(['email' => 'john@example.com']);
         $open = $this->tournament();
         $registered = $this->tournament();
         $this->participant($registered, ['user_id' => $account->id]);
@@ -363,7 +363,7 @@ final class GuestRegistrationTest extends ModuleTestCase
     public function test_an_unverified_account_email_does_not_ask_to_sign_in(): void
     {
         $this->fakeEvents();
-        UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        UserModel::factory()->unverified()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
 
         $result = $this->registerGuest($tournament);
@@ -376,7 +376,7 @@ final class GuestRegistrationTest extends ModuleTestCase
     {
         $this->fakeEvents();
         config()->set('modules.settings.tournaments', ['guest_accounts' => ['mode' => 'allow_guest']]);
-        $account = UserModel::factory()->unverified()->create(['email' => 'ana@example.com']);
+        $account = UserModel::factory()->unverified()->create(['email' => 'john@example.com']);
         $tournament = $this->tournament();
         $this->participant($tournament, ['user_id' => $account->id]);
 
@@ -395,7 +395,7 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $later = $this->now->addHours(2)->addMinute();
         $this->travelTo($later);
-        $result = $this->registerGuest($tournament, name: 'Ana María');
+        $result = $this->registerGuest($tournament, name: 'Jane Doe');
 
         $this->assertSame(GuestRegistrationOutcome::ConfirmationSent, $result->outcome);
         $this->assertSame($before->id, $result->participantId);
@@ -404,7 +404,7 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $row = $this->onlyRow($tournament);
         $this->assertSame(ParticipantStatus::Registered, $row->status);
-        $this->assertSame('Ana María', $row->guest_name);
+        $this->assertSame('Jane Doe', $row->guest_name);
         $this->assertSame($later->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
         $this->assertNotSame($before->confirmation_token, $row->confirmation_token);
         $this->assertNotSame($before->cancellation_token, $row->cancellation_token);
@@ -428,8 +428,8 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->fakeEvents();
         $tournament = $this->tournament();
         $old = $this->participant($tournament, [
-            'guest_name' => 'Ana',
-            'guest_email' => 'ana@example.com',
+            'guest_name' => 'John',
+            'guest_email' => 'john@example.com',
             'status' => $status->value,
             'cancellation_token' => str_repeat('c', 64),
             'confirmation_token' => str_repeat('t', 64),
@@ -437,13 +437,13 @@ final class GuestRegistrationTest extends ModuleTestCase
             'email_confirmed_at' => $status === ParticipantStatus::Withdrawn ? $this->now->subDay() : null,
         ]);
 
-        $result = $this->registerGuest($tournament, 'ANA@example.com', 'Ana María', str_repeat('f', 64));
+        $result = $this->registerGuest($tournament, 'JOHN@example.com', 'Jane Doe', str_repeat('f', 64));
 
         $this->assertSame(GuestRegistrationOutcome::ConfirmationSent, $result->outcome);
         $this->assertSame($old->id, $result->participantId);
         $row = $this->onlyRow($tournament);
         $this->assertSame(ParticipantStatus::Registered, $row->status);
-        $this->assertSame('Ana María', $row->guest_name);
+        $this->assertSame('Jane Doe', $row->guest_name);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame(GuestConfirmationMode::Hold, $row->confirmation_mode);
         $this->assertSame($this->now->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
@@ -461,8 +461,8 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->fakeEvents();
         $tournament = $this->tournament();
         $this->participant($tournament, [
-            'guest_name' => 'Ana',
-            'guest_email' => 'ana@example.com',
+            'guest_name' => 'John',
+            'guest_email' => 'john@example.com',
             'status' => ParticipantStatus::Disqualified->value,
         ]);
 
@@ -518,7 +518,7 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        $this->service()->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
+        $this->service()->register(new RegisterParticipantDTO($tournament->id, guestName: 'John', guestEmail: 'john@example.com'));
     }
 
     public function test_the_listener_mails_the_confirmation_to_the_guest(): void
@@ -526,32 +526,32 @@ final class GuestRegistrationTest extends ModuleTestCase
         Event::fake([ParticipantRegistered::class]);
         $tournament = $this->tournament();
 
-        $this->registerGuest($tournament, ' Ana@Example.com ');
+        $this->registerGuest($tournament, ' John@Example.com ');
 
         /** @var list<SentMessage> $messages */
         $messages = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
         $this->assertCount(1, $messages);
         $email = $messages[0]->getOriginalMessage();
         $this->assertInstanceOf(Email::class, $email);
-        $this->assertSame('ana@example.com', $email->getTo()[0]->getAddress());
+        $this->assertSame('john@example.com', $email->getTo()[0]->getAddress());
         $this->assertSame('Confirma tu inscripción en Torneo de primavera', $email->getSubject());
         $this->assertStringContainsString('/torneos/confirmar/'.$this->onlyRow($tournament)->confirmation_token, (string) $email->getHtmlBody());
     }
 
     public function test_the_confirmation_email_copy(): void
     {
-        $notifiable = new AnonymousNotifiable('ana@example.com', 'Ana');
+        $notifiable = new AnonymousNotifiable('john@example.com', 'John');
 
         $hold = (new GuestConfirmationRequestNotification(
             tournamentName: 'Torneo de primavera',
-            guestName: 'Ana',
+            guestName: 'John',
             confirmationToken: 'token-de-prueba',
             expiresAt: new DateTimeImmutable('2026-11-02 12:00:00'),
             seatHeld: true,
         ))->toMail($notifiable);
 
         $this->assertSame('Confirma tu inscripción en Torneo de primavera', $hold->subject);
-        $this->assertSame('¡Hola, Ana!', $hold->greeting);
+        $this->assertSame('¡Hola, John!', $hold->greeting);
         $this->assertSame([
             'Has pedido inscribirte en Torneo de primavera. Confirma la inscripción con el botón.',
             'Si no la confirmas antes del 02/11/2026 12:00, la plaza se liberará.',
@@ -562,7 +562,7 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $wait = (new GuestConfirmationRequestNotification(
             tournamentName: 'Torneo de primavera',
-            guestName: 'Ana',
+            guestName: 'John',
             confirmationToken: 'token-de-prueba',
             expiresAt: null,
             seatHeld: false,

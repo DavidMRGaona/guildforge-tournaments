@@ -72,11 +72,11 @@ final class GuestConfirmationTest extends ModuleTestCase
     /**
      * A guest registration awaiting confirmation, as the form leaves it.
      */
-    private function pendingGuest(TournamentModel $tournament, string $email = 'ana@example.com'): ParticipantModel
+    private function pendingGuest(TournamentModel $tournament, string $email = 'john@example.com'): ParticipantModel
     {
         $result = $this->service()->registerGuest(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
+            guestName: 'John',
             guestEmail: $email,
         ));
 
@@ -89,7 +89,7 @@ final class GuestConfirmationTest extends ModuleTestCase
             'id' => fake()->uuid(),
             'tournament_id' => $tournament->id,
             'status' => ParticipantStatus::Registered->value,
-            'guest_name' => 'Berta',
+            'guest_name' => 'Jane',
             'guest_email' => $email,
             'registered_at' => $this->now,
             'email_confirmed_at' => $this->now,
@@ -126,7 +126,7 @@ final class GuestConfirmationTest extends ModuleTestCase
             && $event->tournamentId === $tournament->id
             && $event->userId === null
             && $event->isGuest
-            && $event->guestEmail === 'ana@example.com'
+            && $event->guestEmail === 'john@example.com'
             && $event->cancellationToken !== null
             && $event->cancellationToken === $row->cancellation_token
             && $event->notifyOrganizer);
@@ -149,13 +149,13 @@ final class GuestConfirmationTest extends ModuleTestCase
             $this->assertInstanceOf(Email::class, $email);
             $address = $email->getTo()[0]->getAddress();
             $recipients[] = $address;
-            if ($address === 'ana@example.com') {
+            if ($address === 'john@example.com') {
                 $guestBody = (string) $email->getHtmlBody();
             }
         }
 
         sort($recipients);
-        $this->assertSame(['ana@example.com', 'organizacion@example.com'], $recipients);
+        $this->assertSame(['john@example.com', 'organizacion@example.com'], $recipients);
         $this->assertNotNull($guestBody);
         $this->assertStringContainsString('/torneos/cancelar/'.$row->cancellation_token, $guestBody);
     }
@@ -255,7 +255,7 @@ final class GuestConfirmationTest extends ModuleTestCase
         $tournament = $this->tournament(['max_participants' => 1]);
         $row = $this->pendingGuest($tournament);
         $this->assertSame(GuestConfirmationMode::Wait, $row->confirmation_mode);
-        $this->confirmedGuest($tournament, 'berta@example.com');
+        $this->confirmedGuest($tournament, 'jane@example.com');
 
         $result = $this->service()->confirmGuestEmail((string) $row->confirmation_token);
 
@@ -307,7 +307,7 @@ final class GuestConfirmationTest extends ModuleTestCase
             'state' => 'pending',
             'tournament_name' => 'Torneo de primavera',
             'tournament_slug' => $tournament->slug,
-            'guest_name' => 'Ana',
+            'guest_name' => 'John',
             'expires_at' => $this->now->addHours(2)->format('c'),
             'seat_held' => true,
         ], $this->service()->findGuestConfirmation((string) $row->confirmation_token));
@@ -337,11 +337,11 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->fakeEvents();
         $tournament = $this->tournament();
 
-        $confirmed = $this->pendingGuest($tournament, 'ana@example.com');
+        $confirmed = $this->pendingGuest($tournament, 'john@example.com');
         $this->service()->confirmGuestEmail((string) $confirmed->confirmation_token);
         $this->assertSame('already_confirmed', $this->service()->findGuestConfirmation((string) $confirmed->confirmation_token)['state'] ?? null);
 
-        $cancelled = $this->pendingGuest($tournament, 'carla@example.com');
+        $cancelled = $this->pendingGuest($tournament, 'mary@example.com');
         $cancelled->update(['status' => ParticipantStatus::Withdrawn->value]);
         $this->assertSame('invalid', $this->service()->findGuestConfirmation((string) $cancelled->confirmation_token)['state'] ?? null);
 
