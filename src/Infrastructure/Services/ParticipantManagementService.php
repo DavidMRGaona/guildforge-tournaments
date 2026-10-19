@@ -209,7 +209,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                         $this->rejectDisqualified($existing);
 
                         if ($existing->isActive()) {
-                            throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $guestEmail);
+                            throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $existing->id()->value);
                         }
                     }
                 }
@@ -859,7 +859,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
             if ($existing->isActive()) {
                 if (! $existing->isAwaitingEmailConfirmation()) {
-                    throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $email);
+                    throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $existing->id()->value);
                 }
 
                 return $this->answerPendingGuest($existing, $now);

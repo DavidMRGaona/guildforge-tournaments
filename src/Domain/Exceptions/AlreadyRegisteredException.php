@@ -23,9 +23,12 @@ final class AlreadyRegisteredException extends DomainException
         return new self("Participant {$participantId} was disqualified from tournament {$tournamentId} and cannot register again.");
     }
 
-    public static function guestWithEmailAlreadyRegistered(string $tournamentId, string $email): self
+    /**
+     * The message names the registration involved, never the email: exception messages reach the logs.
+     */
+    public static function guestWithEmailAlreadyRegistered(string $tournamentId, string $participantId): self
     {
-        return new self("A guest with email {$email} is already registered for tournament {$tournamentId}.");
+        return new self("An active guest registration with the email of participant {$participantId} already exists for tournament {$tournamentId}.");
     }
 
     public static function guestWithAccountEmail(string $tournamentId): self
