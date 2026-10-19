@@ -291,7 +291,7 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción no
 
 ### Cookie `tn_guest_registrations`
 
-Tras una inscripción de invitado correcta, el navegador guarda los identificadores de los torneos (nunca emails ni nombres) para avisar de que ya hay una inscripción desde ese navegador si se intenta otra vez. El aviso no bloquea el envío. Dura 90 días como máximo (o hasta el cierre de inscripciones).
+Tras una inscripción de invitado correcta, el navegador guarda los identificadores de los torneos (nunca emails ni nombres) para avisar de que ya hay una inscripción desde ese navegador si se intenta otra vez. El aviso no bloquea el envío. La cookie dura 90 días (`Max-Age`, que vuelve a contar con cada inscripción). Cada torneo guardado en ella caduca por su cuenta al cerrarse sus inscripciones (a los 90 días como máximo, o si no tienen fecha de cierre): desde entonces ya no avisa y se descarta en la siguiente escritura.
 
 - Categoría `preferences`: solo se escribe y se lee si el visitante la ha aceptado en el banner (`globalThis.GuildForgeCookieConsent?.hasConsent('preferences')`); sin el módulo `cookie-consent` en la página no se guarda nada.
 - El módulo no depende de `cookie-consent`: si está instalado, declara la cookie en su registro y aparece en la categoría de preferencias del banner y de la política de cookies. Los textos están en `lang/es/messages.php` (`cookies.*`).
