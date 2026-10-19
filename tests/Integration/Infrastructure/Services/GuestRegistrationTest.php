@@ -240,7 +240,9 @@ final class GuestRegistrationTest extends ModuleTestCase
             $this->registerGuest($tournament, 'Ana@Example.com');
             $this->fail('A confirmed guest registered twice');
         } catch (AlreadyRegisteredException $e) {
-            $this->assertStringContainsString('ana@example.com', $e->getMessage());
+            // Exception messages reach the logs: ids, never the email
+            $this->assertStringNotContainsString('ana@example.com', $e->getMessage());
+            $this->assertStringContainsString($tournament->id, $e->getMessage());
         }
 
         $this->onlyRow($tournament);

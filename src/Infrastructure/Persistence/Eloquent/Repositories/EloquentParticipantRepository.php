@@ -30,7 +30,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             $this->persist($participant, $guestEmail);
         } catch (UniqueConstraintViolationException $exception) {
             if ($guestEmail !== null && $this->isActiveGuestEmailViolation($exception)) {
-                throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($participant->tournamentId(), $guestEmail);
+                throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($participant->tournamentId(), $participant->id()->value);
             }
 
             throw $exception;

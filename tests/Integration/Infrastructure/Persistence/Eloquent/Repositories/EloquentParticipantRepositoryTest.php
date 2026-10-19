@@ -465,6 +465,20 @@ final class EloquentParticipantRepositoryTest extends TestCase
         $this->repository->save($this->guest('ANA@example.com'));
     }
 
+    public function test_the_translated_violation_does_not_name_the_email(): void
+    {
+        $this->repository->save($this->guest('ana@example.com'));
+        $second = $this->guest('ana@example.com');
+
+        try {
+            $this->repository->save($second);
+            $this->fail('The duplicate email was saved');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertStringNotContainsString('ana@example.com', $e->getMessage());
+            $this->assertStringContainsString($second->id()->value, $e->getMessage());
+        }
+    }
+
     public function test_save_allows_the_same_email_after_the_first_registration_was_withdrawn(): void
     {
         $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Withdrawn));
