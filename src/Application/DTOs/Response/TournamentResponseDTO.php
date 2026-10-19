@@ -172,6 +172,8 @@ final readonly class TournamentResponseDTO
     }
 
     /**
+     * The notification email is left out: this array reaches the public pages.
+     *
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -212,7 +214,6 @@ final readonly class TournamentResponseDTO
             'has_capacity' => $this->hasCapacity(),
             'recommended_rounds' => $this->recommendedRounds(),
             'show_participants' => $this->showParticipants,
-            'notification_email' => $this->notificationEmail,
             'self_check_in_allowed' => $this->selfCheckInAllowed,
         ];
     }
