@@ -19,6 +19,11 @@ interface Props {
         seat_held: boolean;
     };
     token: string;
+    // What pressing the button just did, already translated by the server
+    result: {
+        outcome: string;
+        message: string;
+    } | null;
 }
 
 const props = defineProps<Props>();
@@ -35,7 +40,13 @@ const backHref = computed(() =>
         : '/torneos'
 );
 
-const isAlreadyConfirmed = computed(() => props.confirmation.state === 'already_confirmed');
+const isSuccess = computed((): boolean =>
+    props.result
+        ? ['confirmed', 'already_confirmed'].includes(props.result.outcome)
+        : props.confirmation.state === 'already_confirmed'
+);
+
+const showForm = computed((): boolean => props.confirmation.state === 'pending' && props.result === null);
 
 const formattedDeadline = computed((): string | null => {
     if (!props.confirmation.expires_at) {
@@ -58,11 +69,14 @@ const seatNotice = computed((): string => {
     return t('tournaments.confirmation.wait_notice');
 });
 
-const stateMessage = computed((): string =>
-    isAlreadyConfirmed.value
+const stateMessage = computed((): string => {
+    if (props.result) {
+        return props.result.message;
+    }
+    return props.confirmation.state === 'already_confirmed'
         ? t('tournaments.confirmation.already_confirmed')
-        : t('tournaments.confirmation.invalid')
-);
+        : t('tournaments.confirmation.invalid');
+});
 
 // Only the button confirms: opening the link (as mail scanners do) changes nothing
 function handleConfirm(): void {
@@ -117,7 +131,7 @@ function handleConfirm(): void {
                 </div>
 
                 <form
-                    v-if="confirmation.state === 'pending'"
+                    v-if="showForm"
                     method="post"
                     :action="confirmUrl"
                     @submit.prevent="handleConfirm"
@@ -138,12 +152,13 @@ function handleConfirm(): void {
 
                 <template v-else>
                     <div
+                        :role="isSuccess ? 'status' : 'alert'"
                         class="mb-6 rounded-lg p-4 text-center"
-                        :class="isAlreadyConfirmed ? 'bg-success-light' : 'bg-warning-light'"
+                        :class="isSuccess ? 'bg-success-light' : 'bg-warning-light'"
                     >
                         <p
                             class="text-sm"
-                            :class="isAlreadyConfirmed ? 'text-success' : 'text-warning-dark'"
+                            :class="isSuccess ? 'text-success' : 'text-warning-dark'"
                         >
                             {{ stateMessage }}
                         </p>
