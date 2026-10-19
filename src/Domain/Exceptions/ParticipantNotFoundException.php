@@ -31,8 +31,11 @@ final class ParticipantNotFoundException extends DomainException
         return new self("No active participant found with the given email in tournament {$tournamentId}.");
     }
 
-    public static function byToken(string $token): self
+    /**
+     * The token is left out: it is a secret and exception messages reach the logs.
+     */
+    public static function byToken(): self
     {
-        return new self("No participant found with cancellation token {$token}.");
+        return new self('No participant found with the given cancellation token.');
     }
 }
