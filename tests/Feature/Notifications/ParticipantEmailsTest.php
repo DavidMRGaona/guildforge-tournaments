@@ -28,17 +28,17 @@ final class ParticipantEmailsTest extends ModuleTestCase
 
     public function test_the_registration_email_of_an_account_links_to_the_tournament(): void
     {
-        $message = (new ParticipantRegisteredToParticipant('Torneo de Magic', 'Ana', '02/11/2026 20:00', false, null, null, 'torneo-de-magic'))
-            ->toMail(new AnonymousNotifiable('ana@example.com', 'Ana'));
+        $message = (new ParticipantRegisteredToParticipant('Torneo de Magic', 'John', '02/11/2026 20:00', false, null, null, 'torneo-de-magic'))
+            ->toMail(new AnonymousNotifiable('john.doe@example.com', 'John'));
 
-        $this->assertSame('¡Hola, Ana!', $message->greeting);
+        $this->assertSame('¡Hola, John!', $message->greeting);
         $this->assertSame(route('tournaments.show', 'torneo-de-magic'), $message->actionUrl);
     }
 
     public function test_the_registration_email_of_a_guest_keeps_the_cancellation_button_and_links_to_the_tournament(): void
     {
-        $message = (new ParticipantRegisteredToParticipant('Torneo de Magic', 'Ana', null, false, null, 'token-de-prueba', 'torneo-de-magic'))
-            ->toMail(new AnonymousNotifiable('ana@example.com', 'Ana'));
+        $message = (new ParticipantRegisteredToParticipant('Torneo de Magic', 'John', null, false, null, 'token-de-prueba', 'torneo-de-magic'))
+            ->toMail(new AnonymousNotifiable('john.doe@example.com', 'John'));
 
         $this->assertSame(route('tournaments.cancel-confirmation', 'token-de-prueba'), $message->actionUrl);
         $this->assertStringContainsString(route('tournaments.show', 'torneo-de-magic'), implode(' ', [...$message->introLines, ...$message->outroLines]));
@@ -46,12 +46,12 @@ final class ParticipantEmailsTest extends ModuleTestCase
 
     public function test_the_withdrawal_email_does_not_claim_the_data_was_deleted(): void
     {
-        $message = (new ParticipantWithdrawnToParticipant('Ana', 'Torneo de Magic', null, 'torneo-de-magic'))
-            ->toMail(new AnonymousNotifiable('ana@example.com', 'Ana'));
+        $message = (new ParticipantWithdrawnToParticipant('John', 'Torneo de Magic', null, 'torneo-de-magic'))
+            ->toMail(new AnonymousNotifiable('john.doe@example.com', 'John'));
         $text = implode(' ', [...$message->introLines, ...$message->outroLines]);
 
         $this->assertStringNotContainsString('eliminados', $text);
-        $this->assertSame('¡Hola, Ana!', $message->greeting);
+        $this->assertSame('¡Hola, John!', $message->greeting);
         $this->assertSame(route('tournaments.show', 'torneo-de-magic'), $message->actionUrl);
     }
 }
