@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
+use DomainException;
 use Filament\Schemas\Schema;
 use Filament\Actions\CreateAction;
 use Filament\Actions\Action;
@@ -18,11 +19,19 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
+use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
+use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
+use Modules\Tournaments\Domain\Exceptions\TournamentFullException;
+use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -31,6 +40,13 @@ final class ParticipantsRelationManager extends RelationManager
     protected static string $relationship = 'participants';
 
     protected static ?string $recordTitleAttribute = 'id';
+
+    /**
+     * IDs flagged as possible duplicates, worked out once per request.
+     *
+     * @var list<string>|null
+     */
+    private ?array $possibleDuplicateIds = null;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -55,9 +71,14 @@ final class ParticipantsRelationManager extends RelationManager
                     ->label(__('tournaments::messages.participants.guest_email'))
                     ->email()
                     ->maxLength(255),
+                // A participant is added in an active status only
                 Select::make('status')
                     ->label(__('tournaments::messages.participants.status'))
-                    ->options(ParticipantStatus::options())
+                    ->options(array_filter(
+                        ParticipantStatus::options(),
+                        static fn (string $status): bool => ParticipantStatus::from($status)->isActive(),
+                        ARRAY_FILTER_USE_KEY,
+                    ))
                     ->required()
                     ->default(ParticipantStatus::Registered->value),
                 TextInput::make('seed')
@@ -73,6 +94,162 @@ final class ParticipantsRelationManager extends RelationManager
     private function canManageParticipants(): bool
     {
         return auth()->user()?->can('manageParticipants', $this->getOwnerRecord()) ?? false;
+    }
+
+    private function participants(): ParticipantManagementServiceInterface
+    {
+        return app(ParticipantManagementServiceInterface::class);
+    }
+
+    /**
+     * Add the participant through the service: same duplicate and capacity rules as the web,
+     * without the registration window, and the guest email counts as confirmed.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function addParticipant(array $data, CreateAction $action): ParticipantModel
+    {
+        /** @var TournamentModel $tournament */
+        $tournament = $this->getOwnerRecord();
+        $userId = filled($data['user_id'] ?? null) ? (string) $data['user_id'] : null;
+        $seed = $data['seed'] ?? null;
+
+        try {
+            $participant = $this->participants()->registerByOrganization(
+                new RegisterParticipantDTO(
+                    tournamentId: $tournament->id,
+                    userId: $userId,
+                    guestName: filled($data['guest_name'] ?? null) ? (string) $data['guest_name'] : null,
+                    guestEmail: filled($data['guest_email'] ?? null) ? (string) $data['guest_email'] : null,
+                    seed: is_numeric($seed) ? (int) $seed : null,
+                ),
+                ParticipantStatus::from((string) $data['status']),
+            );
+
+            return ParticipantModel::query()->findOrFail($participant->id);
+        } catch (DomainException $exception) {
+            Notification::make()
+                ->title($this->refusalMessage($exception, forUser: $userId !== null))
+                ->danger()
+                ->send();
+
+            // The form stays open with what was typed; halt() always throws
+            $action->halt();
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Run a panel action through the service, telling the organisation why it was refused.
+     *
+     * @param  callable(string): mixed  $act
+     */
+    private function runOnParticipant(ParticipantModel $record, callable $act, string $successTitle): void
+    {
+        try {
+            $act($record->id);
+        } catch (DomainException $exception) {
+            Notification::make()
+                ->title($this->refusalMessage($exception))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title($successTitle)
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Run a bulk action through the service one participant at a time; one refusal does not stop the others.
+     *
+     * @param  iterable<ParticipantModel>  $records
+     * @param  callable(string): mixed  $act
+     */
+    private function runOnParticipants(iterable $records, callable $act, string $successTitle): void
+    {
+        $count = 0;
+        $refusals = [];
+
+        foreach ($records as $record) {
+            try {
+                $act($record->id);
+                $count++;
+            } catch (DomainException $exception) {
+                $refusals[] = $this->refusalMessage($exception);
+            }
+        }
+
+        Notification::make()
+            ->title($successTitle)
+            ->body($count.' '.__('tournaments::messages.participants.title'))
+            ->success()
+            ->send();
+
+        if ($refusals !== []) {
+            Notification::make()
+                ->title(__('tournaments::messages.notifications.bulk_refused', ['count' => count($refusals)]))
+                ->body(implode(' ', array_unique($refusals)))
+                ->danger()
+                ->send();
+        }
+    }
+
+    private function refusalMessage(DomainException $exception, bool $forUser = false): string
+    {
+        return match (true) {
+            $exception instanceof TournamentFullException => __('tournaments::messages.errors.tournament_full'),
+            $exception instanceof AlreadyRegisteredException && $forUser => __('tournaments::messages.participants.user_already_registered'),
+            $exception instanceof AlreadyRegisteredException => __('tournaments::messages.errors.registration_with_this_email'),
+            default => __('tournaments::messages.participants.action_not_allowed'),
+        };
+    }
+
+    /**
+     * Whether the row is a guest registration still waiting for its email to be confirmed.
+     */
+    private function isAwaitingEmailConfirmation(ParticipantModel $record): bool
+    {
+        return $record->user_id === null
+            && $record->email_confirmed_at === null
+            && $record->status->isActive();
+    }
+
+    private function emailConfirmationNotice(ParticipantModel $record): ?string
+    {
+        if (! $this->isAwaitingEmailConfirmation($record)) {
+            return null;
+        }
+
+        if ($record->confirmation_mode === GuestConfirmationMode::Wait) {
+            return __('tournaments::messages.participants.email_unconfirmed_without_seat');
+        }
+
+        if ($record->confirmation_expires_at !== null) {
+            return __('tournaments::messages.participants.email_unconfirmed_until', [
+                'date' => $record->confirmation_expires_at->format('d/m/Y H:i'),
+            ]);
+        }
+
+        return __('tournaments::messages.participants.email_unconfirmed');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function possibleDuplicateIds(): array
+    {
+        /** @var TournamentModel $tournament */
+        $tournament = $this->getOwnerRecord();
+
+        return $this->possibleDuplicateIds ??= app(ParticipantRepositoryInterface::class)->findPossibleDuplicateIds(
+            $tournament->id,
+            app(GuestRegistrationSettingsInterface::class)->duplicateWindowHours(),
+        );
     }
 
     private function getStatsDescription(): string
@@ -152,7 +329,15 @@ final class ParticipantsRelationManager extends RelationManager
                     ->badge()
                     ->color(fn (ParticipantStatus $state): string => $state->color())
                     ->formatStateUsing(fn (ParticipantStatus $state): string => $state->label())
+                    ->description(fn (ParticipantModel $record): ?string => $this->emailConfirmationNotice($record))
                     ->sortable(),
+                IconColumn::make('possible_duplicate')
+                    ->label(__('tournaments::messages.participants.possible_duplicate'))
+                    ->getStateUsing(fn (ParticipantModel $record): bool => in_array($record->id, $this->possibleDuplicateIds(), true))
+                    ->icon(fn (bool $state): ?string => $state ? 'heroicon-o-exclamation-triangle' : null)
+                    ->color('warning')
+                    ->tooltip(fn (bool $state): ?string => $state ? (string) __('tournaments::messages.participants.possible_duplicate_tooltip') : null)
+                    ->toggleable(),
                 IconColumn::make('has_received_bye')
                     ->label(__('tournaments::messages.participants.bye'))
                     ->boolean()
@@ -175,19 +360,19 @@ final class ParticipantsRelationManager extends RelationManager
                 SelectFilter::make('status')
                     ->label(__('tournaments::messages.participants.status'))
                     ->options(ParticipantStatus::options()),
+                // Users sign in, so only guest emails go unconfirmed
+                TernaryFilter::make('email_confirmed')
+                    ->label(__('tournaments::messages.participants.email_confirmed'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where(fn (Builder $q): Builder => $q->whereNotNull('email_confirmed_at')->orWhereNotNull('user_id')),
+                        false: fn (Builder $query): Builder => $query->whereNull('user_id')->whereNull('email_confirmed_at'),
+                    ),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->label(__('tournaments::messages.participants.add'))
                     ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->mutateDataUsing(function (array $data): array {
-                        /** @var TournamentModel $tournament */
-                        $tournament = $this->getOwnerRecord();
-                        $data['tournament_id'] = $tournament->id;
-                        $data['registered_at'] = now();
-
-                        return $data;
-                    }),
+                    ->using(fn (array $data, CreateAction $action): Model => $this->addParticipant($data, $action)),
             ])
             ->recordActions([
                 Action::make('confirm')
@@ -204,48 +389,42 @@ final class ParticipantsRelationManager extends RelationManager
                     })
                     ->requiresConfirmation()
                     ->modalHeading(__('tournaments::messages.participants.confirm_participant'))
-                    ->action(function (ParticipantModel $record): void {
-                        $record->update(['status' => ParticipantStatus::Confirmed]);
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.notifications.participant_confirmed'))
-                            ->success()
-                            ->send();
-                    }),
+                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                        $record,
+                        fn (string $id) => $this->participants()->confirm($id),
+                        __('tournaments::messages.notifications.participant_confirmed'),
+                    )),
+                Action::make('confirm_email')
+                    ->authorize(fn (): bool => $this->canManageParticipants())
+                    ->label(__('tournaments::messages.participants.confirm_email'))
+                    ->icon('heroicon-o-envelope-open')
+                    ->color('info')
+                    ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
+                    ->requiresConfirmation()
+                    ->modalDescription(__('tournaments::messages.modal.confirm_email_description'))
+                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                        $record,
+                        fn (string $id) => $this->participants()->confirmEmailByOrganization($id),
+                        __('tournaments::messages.notifications.email_confirmed'),
+                    )),
                 Action::make('check_in')
                     ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.check_in'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(function (ParticipantModel $record): bool {
-                        if ($record->status === ParticipantStatus::CheckedIn) {
-                            return false;
-                        }
-
                         /** @var TournamentModel $tournament */
                         $tournament = $this->getOwnerRecord();
 
-                        // If manual confirmation is required, only confirmed participants can check in
-                        if ($tournament->requires_manual_confirmation) {
-                            return $record->status === ParticipantStatus::Confirmed;
-                        }
-
-                        // Otherwise, registered participants can check in directly
-                        return $record->status === ParticipantStatus::Registered
-                            || $record->status === ParticipantStatus::Confirmed;
+                        // The rule self check-in follows too
+                        return $this->participants()->canCheckIn($record->status, $tournament->requires_manual_confirmation);
                     })
                     ->requiresConfirmation()
-                    ->action(function (ParticipantModel $record): void {
-                        $record->update([
-                            'status' => ParticipantStatus::CheckedIn,
-                            'checked_in_at' => now(),
-                        ]);
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.notifications.checked_in'))
-                            ->success()
-                            ->send();
-                    }),
+                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                        $record,
+                        fn (string $id) => $this->participants()->checkIn($id),
+                        __('tournaments::messages.notifications.checked_in'),
+                    )),
                 Action::make('withdraw')
                     ->authorize(fn (): bool => $this->canManageParticipants())
                     ->label(__('tournaments::messages.participants.withdraw'))
@@ -270,14 +449,11 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
                     ->requiresConfirmation()
                     ->modalDescription(__('tournaments::messages.modal.disqualify_description'))
-                    ->action(function (ParticipantModel $record): void {
-                        $record->update(['status' => ParticipantStatus::Disqualified]);
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.notifications.disqualified'))
-                            ->success()
-                            ->send();
-                    }),
+                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                        $record,
+                        fn (string $id) => $this->participants()->disqualify($id),
+                        __('tournaments::messages.notifications.disqualified'),
+                    )),
                 DeleteAction::make()
                     ->authorize(fn (): bool => $this->canManageParticipants()),
             ])
@@ -297,25 +473,12 @@ final class ParticipantsRelationManager extends RelationManager
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion()
                         ->action(function (Collection $records): void {
-                            $count = 0;
-
-                            foreach ($records as $record) {
-                                /** @var ParticipantModel $participant */
-                                $participant = $record;
-
-                                if ($participant->status !== ParticipantStatus::Registered) {
-                                    continue;
-                                }
-
-                                $participant->update(['status' => ParticipantStatus::Confirmed]);
-                                $count++;
-                            }
-
-                            Notification::make()
-                                ->title(__('tournaments::messages.notifications.bulk_confirmed'))
-                                ->body($count.' '.__('tournaments::messages.participants.title'))
-                                ->success()
-                                ->send();
+                            /** @var Collection<int, ParticipantModel> $records */
+                            $this->runOnParticipants(
+                                $records->filter(fn (ParticipantModel $participant): bool => $participant->status === ParticipantStatus::Registered),
+                                fn (string $id) => $this->participants()->confirm($id),
+                                __('tournaments::messages.notifications.bulk_confirmed'),
+                            );
                         }),
                     BulkAction::make('check_in_selected')
                         ->authorize(fn (): bool => $this->canManageParticipants())
@@ -327,40 +490,15 @@ final class ParticipantsRelationManager extends RelationManager
                         ->action(function (Collection $records): void {
                             /** @var TournamentModel $tournament */
                             $tournament = $this->getOwnerRecord();
-                            $count = 0;
 
-                            foreach ($records as $record) {
-                                /** @var ParticipantModel $participant */
-                                $participant = $record;
+                            $manualConfirmation = $tournament->requires_manual_confirmation;
 
-                                if ($participant->status === ParticipantStatus::CheckedIn) {
-                                    continue;
-                                }
-
-                                // If manual confirmation is required, only confirmed can check in
-                                if ($tournament->requires_manual_confirmation) {
-                                    if ($participant->status !== ParticipantStatus::Confirmed) {
-                                        continue;
-                                    }
-                                } else {
-                                    // Without manual confirmation, registered or confirmed can check in
-                                    if (! in_array($participant->status, [ParticipantStatus::Registered, ParticipantStatus::Confirmed], true)) {
-                                        continue;
-                                    }
-                                }
-
-                                $participant->update([
-                                    'status' => ParticipantStatus::CheckedIn,
-                                    'checked_in_at' => now(),
-                                ]);
-                                $count++;
-                            }
-
-                            Notification::make()
-                                ->title(__('tournaments::messages.notifications.bulk_checked_in'))
-                                ->body($count.' '.__('tournaments::messages.participants.title'))
-                                ->success()
-                                ->send();
+                            /** @var Collection<int, ParticipantModel> $records */
+                            $this->runOnParticipants(
+                                $records->filter(fn (ParticipantModel $participant): bool => $this->participants()->canCheckIn($participant->status, $manualConfirmation)),
+                                fn (string $id) => $this->participants()->checkIn($id),
+                                __('tournaments::messages.notifications.bulk_checked_in'),
+                            );
                         }),
                     BulkAction::make('disqualify_selected')
                         ->authorize(fn (): bool => $this->canManageParticipants())
@@ -370,25 +508,12 @@ final class ParticipantsRelationManager extends RelationManager
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion()
                         ->action(function (Collection $records): void {
-                            $count = 0;
-
-                            foreach ($records as $record) {
-                                /** @var ParticipantModel $participant */
-                                $participant = $record;
-
-                                if (! $participant->status->isActive()) {
-                                    continue;
-                                }
-
-                                $participant->update(['status' => ParticipantStatus::Disqualified]);
-                                $count++;
-                            }
-
-                            Notification::make()
-                                ->title(__('tournaments::messages.notifications.bulk_disqualified'))
-                                ->body($count.' '.__('tournaments::messages.participants.title'))
-                                ->success()
-                                ->send();
+                            /** @var Collection<int, ParticipantModel> $records */
+                            $this->runOnParticipants(
+                                $records->filter(fn (ParticipantModel $participant): bool => $participant->status->isActive()),
+                                fn (string $id) => $this->participants()->disqualify($id),
+                                __('tournaments::messages.notifications.bulk_disqualified'),
+                            );
                         }),
                     DeleteBulkAction::make()
                         ->authorize(fn (): bool => $this->canManageParticipants()),

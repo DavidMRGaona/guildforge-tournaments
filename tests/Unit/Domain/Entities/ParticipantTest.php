@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
@@ -265,5 +266,257 @@ final class ParticipantTest extends TestCase
         $this->expectException(InvalidStateTransitionException::class);
 
         $participant->reactivate();
+    }
+
+    private function awaiting(GuestConfirmationMode $mode): Participant
+    {
+        $participant = $this->createGuestParticipant();
+        $participant->startEmailConfirmation(
+            'token-1',
+            $mode,
+            new DateTimeImmutable('2030-01-01 12:00:00'),
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+
+        return $participant;
+    }
+
+    public function test_a_guest_awaiting_confirmation_in_wait_mode_holds_no_seat(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Wait);
+
+        $this->assertTrue($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->isActive());
+        $this->assertFalse($participant->holdsSeat());
+    }
+
+    public function test_a_guest_awaiting_confirmation_in_hold_mode_holds_a_seat(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+
+        $this->assertTrue($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->holdsSeat());
+        $this->assertSame('token-1', $participant->confirmationToken());
+        $this->assertSame(GuestConfirmationMode::Hold, $participant->confirmationMode());
+        $this->assertNull($participant->emailConfirmedAt());
+        $this->assertEquals(new DateTimeImmutable('2030-01-01 10:00:00'), $participant->confirmationSentAt());
+    }
+
+    public function test_a_user_is_never_awaiting_confirmation(): void
+    {
+        $participant = $this->createParticipant();
+
+        $this->assertFalse($participant->isAwaitingEmailConfirmation());
+        $this->assertTrue($participant->holdsSeat());
+    }
+
+    public function test_mark_email_confirmed_is_idempotent(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $at = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $this->assertTrue($participant->markEmailConfirmed($at));
+        $this->assertFalse($participant->markEmailConfirmed(new DateTimeImmutable('2030-01-01 11:30:00')));
+
+        $this->assertEquals($at, $participant->emailConfirmedAt());
+        $this->assertSame('token-1', $participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertFalse($participant->isAwaitingEmailConfirmation());
+    }
+
+    public function test_mark_confirmation_sent_records_the_time(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $at = new DateTimeImmutable('2030-01-01 10:30:00');
+
+        $participant->markConfirmationSent($at);
+
+        $this->assertEquals($at, $participant->confirmationSentAt());
+    }
+
+    public function test_start_email_confirmation_clears_a_previous_confirmation(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->markEmailConfirmed(new DateTimeImmutable('2030-01-01 11:00:00'));
+
+        $participant->startEmailConfirmation('token-2', GuestConfirmationMode::Wait, null, new DateTimeImmutable('2030-01-02 10:00:00'));
+
+        $this->assertNull($participant->emailConfirmedAt());
+        $this->assertSame('token-2', $participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+    }
+
+    public function test_expire_moves_to_expired_and_clears_the_deadline(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+
+        $participant->expire();
+
+        $this->assertSame(ParticipantStatus::Expired, $participant->status());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertFalse($participant->isActive());
+    }
+
+    public function test_an_expired_registration_can_be_reactivated(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->expire();
+
+        $participant->reactivate();
+
+        $this->assertSame(ParticipantStatus::Registered, $participant->status());
+    }
+
+    public function test_claim_for_user_turns_the_guest_row_into_the_users(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $participant->setCancellationToken('cancel-1');
+        $now = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $participant->claimForUser('770e8400-e29b-41d4-a716-446655440002', $now);
+
+        $this->assertFalse($participant->isGuest());
+        $this->assertSame('770e8400-e29b-41d4-a716-446655440002', $participant->userId());
+        $this->assertNull($participant->guestName());
+        $this->assertNull($participant->guestEmail());
+        $this->assertNull($participant->cancellationToken());
+        $this->assertNull($participant->confirmationToken());
+        $this->assertNull($participant->confirmationExpiresAt());
+        $this->assertEquals($now, $participant->emailConfirmedAt());
+    }
+
+    public function test_claim_for_user_keeps_an_earlier_confirmation(): void
+    {
+        $participant = $this->awaiting(GuestConfirmationMode::Hold);
+        $earlier = new DateTimeImmutable('2030-01-01 10:30:00');
+        $participant->markEmailConfirmed($earlier);
+
+        $participant->claimForUser('770e8400-e29b-41d4-a716-446655440002', new DateTimeImmutable('2030-01-01 11:00:00'));
+
+        $this->assertEquals($earlier, $participant->emailConfirmedAt());
+    }
+
+    public function test_a_withdrawn_user_row_takes_over_an_active_guest_registration(): void
+    {
+        $guest = $this->awaiting(GuestConfirmationMode::Hold);
+        $guest->confirm();
+        $own = $this->createParticipant(ParticipantStatus::Withdrawn);
+        $now = new DateTimeImmutable('2030-01-01 11:00:00');
+
+        $own->takeOverGuestRegistration($guest, $now);
+
+        $this->assertSame(ParticipantStatus::Confirmed, $own->status());
+        $this->assertEquals($now, $own->emailConfirmedAt());
+        $this->assertSame(GuestConfirmationMode::Hold, $own->confirmationMode());
+        $this->assertEquals(new DateTimeImmutable('2030-01-01 10:00:00'), $own->confirmationSentAt());
+        $this->assertNull($own->confirmationToken());
+        $this->assertNull($own->confirmationExpiresAt());
+        $this->assertNull($own->cancellationToken());
+        $this->assertSame('660e8400-e29b-41d4-a716-446655440001', $own->userId());
+    }
+
+    public function test_only_a_withdrawn_user_row_takes_over_a_guest_registration(): void
+    {
+        $own = $this->createParticipant(ParticipantStatus::Registered);
+
+        $this->expectException(InvalidStateTransitionException::class);
+
+        $own->takeOverGuestRegistration($this->createGuestParticipant(), new DateTimeImmutable('2030-01-01 11:00:00'));
+    }
+
+    public function test_an_inactive_guest_registration_cannot_be_taken_over(): void
+    {
+        $own = $this->createParticipant(ParticipantStatus::Withdrawn);
+
+        $this->expectException(InvalidStateTransitionException::class);
+
+        $own->takeOverGuestRegistration($this->createGuestParticipant(ParticipantStatus::Withdrawn), new DateTimeImmutable('2030-01-01 11:00:00'));
+    }
+
+    public function test_handing_a_guest_registration_over_withdraws_it_without_links(): void
+    {
+        $guest = $this->awaiting(GuestConfirmationMode::Hold);
+        $guest->setCancellationToken('cancel-1');
+
+        $guest->handOverToAccount();
+
+        $this->assertSame(ParticipantStatus::Withdrawn, $guest->status());
+        $this->assertNull($guest->cancellationToken());
+        $this->assertNull($guest->confirmationToken());
+        $this->assertNull($guest->confirmationExpiresAt());
+        $this->assertSame('john@example.com', $guest->guestEmail());
+    }
+
+    public function test_record_fingerprint(): void
+    {
+        $participant = $this->createGuestParticipant();
+
+        $participant->recordFingerprint('abc');
+        $this->assertSame('abc', $participant->fingerprint());
+
+        $participant->recordFingerprint(null);
+        $this->assertNull($participant->fingerprint());
+    }
+
+    public function test_rename_guest(): void
+    {
+        $participant = $this->createGuestParticipant(ParticipantStatus::Expired);
+
+        $participant->renameGuest('Ana María');
+
+        $this->assertSame('Ana María', $participant->guestName());
+    }
+
+    public function test_the_organisation_checks_in_a_registered_or_confirmed_participant(): void
+    {
+        $at = new DateTimeImmutable('2026-11-02 10:00:00');
+
+        foreach ([ParticipantStatus::Registered, ParticipantStatus::Confirmed] as $status) {
+            $participant = $this->createParticipant($status);
+
+            $participant->checkInByOrganization($at);
+
+            $this->assertSame(ParticipantStatus::CheckedIn, $participant->status());
+            $this->assertEquals($at, $participant->checkedInAt());
+        }
+    }
+
+    public function test_the_organisation_cannot_check_in_a_participant_already_checked_in_or_gone(): void
+    {
+        foreach ([ParticipantStatus::CheckedIn, ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
+            $participant = $this->createParticipant($status);
+
+            try {
+                $participant->checkInByOrganization(new DateTimeImmutable('2026-11-02 10:00:00'));
+                $this->fail("Checked in a {$status->value} participant.");
+            } catch (InvalidStateTransitionException) {
+                $this->assertSame($status, $participant->status());
+            }
+        }
+    }
+
+    public function test_the_organisation_disqualifies_any_active_participant(): void
+    {
+        foreach ([ParticipantStatus::Registered, ParticipantStatus::Confirmed, ParticipantStatus::CheckedIn] as $status) {
+            $participant = $this->createParticipant($status);
+
+            $participant->disqualifyByOrganization();
+
+            $this->assertSame(ParticipantStatus::Disqualified, $participant->status());
+        }
+    }
+
+    public function test_the_organisation_cannot_disqualify_an_inactive_participant(): void
+    {
+        foreach ([ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
+            $participant = $this->createParticipant($status);
+
+            try {
+                $participant->disqualifyByOrganization();
+                $this->fail("Disqualified a {$status->value} participant.");
+            } catch (InvalidStateTransitionException) {
+                $this->assertSame($status, $participant->status());
+            }
+        }
     }
 }

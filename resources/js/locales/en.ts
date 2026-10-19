@@ -21,6 +21,7 @@ export default {
             checked_in: 'Checked in',
             withdrawn: 'Withdrawn',
             disqualified: 'Disqualified',
+            expired: 'Expired',
         },
 
         // Round status
@@ -127,6 +128,10 @@ export default {
             withdrawn_successfully: 'You have cancelled your registration successfully',
             registration_error: 'Registration error',
             session_expired: 'Your session has expired. Reload the page and try again.',
+            guest_confirmation_hold: 'We will email you to confirm the registration. If you do not confirm it before {date}, the seat will be released.',
+            guest_confirmation_wait: 'We will email you to confirm the registration. Your seat is not guaranteed until you confirm it.',
+            already_registered_here: 'There is already a registration from this browser for this tournament.',
+            sign_in: 'Sign in',
         },
 
         // Guest cancellation page
@@ -142,6 +147,36 @@ export default {
             date: 'Date',
             guest: 'Guest',
             view_tournaments: 'View tournaments',
+        },
+
+        // Guest email confirmation page
+        confirmation: {
+            title: 'Confirm registration',
+            participant: 'Participant',
+            tournament: 'Tournament',
+            deadline: 'Confirm it before {date}',
+            wait_notice: 'Your place is not guaranteed until you confirm it.',
+            confirm_button: 'Confirm registration',
+            already_confirmed: 'Your registration was already confirmed.',
+            invalid: 'This link is no longer valid. If registration is still open, you can sign up again.',
+            view_tournament: 'View tournament',
+            view_tournaments: 'View tournaments',
+        },
+
+        // Public check-in page
+        check_in: {
+            title: 'Check-in',
+            enter_email: 'Enter your email to check in',
+            or_login: 'or sign in',
+            submit: 'Check in',
+            success: 'Checked in!',
+            success_time: 'Checked in at {time}',
+            not_allowed: 'Check-in is only available from the admin panel',
+            not_registered: 'You are not registered for this tournament',
+            window_opens_at: 'Check-in opens on {date} at {time}',
+            window_closed_started: 'Check-in has closed',
+            gdpr_consent: 'I accept the processing of my data according to the',
+            connection_error: 'The check-in could not be completed. Check your connection and try again.',
         },
     },
 };

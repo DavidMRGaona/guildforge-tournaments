@@ -52,6 +52,7 @@ export default {
             checked_in: 'Registrado',
             withdrawn: 'Retirado',
             disqualified: 'Descalificado',
+            expired: 'Caducada',
         },
 
         // Round status
@@ -158,6 +159,10 @@ export default {
             withdrawn_successfully: 'Has cancelado tu inscripción correctamente',
             registration_error: 'Error al inscribirse',
             session_expired: 'Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.',
+            guest_confirmation_hold: 'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {date}, la plaza se liberará.',
+            guest_confirmation_wait: 'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+            already_registered_here: 'Ya hay una inscripción desde este navegador para este torneo.',
+            sign_in: 'Inicia sesión',
         },
 
         // Guest cancellation page
@@ -173,6 +178,36 @@ export default {
             date: 'Fecha',
             guest: 'Invitado',
             view_tournaments: 'Ver torneos',
+        },
+
+        // Guest email confirmation page
+        confirmation: {
+            title: 'Confirmar inscripción',
+            participant: 'Participante',
+            tournament: 'Torneo',
+            deadline: 'Confírmala antes del {date}',
+            wait_notice: 'Tu plaza no está garantizada hasta que la confirmes.',
+            confirm_button: 'Confirmar inscripción',
+            already_confirmed: 'Tu inscripción ya estaba confirmada.',
+            invalid: 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
+            view_tournament: 'Ver torneo',
+            view_tournaments: 'Ver torneos',
+        },
+
+        // Public check-in page
+        check_in: {
+            title: 'Check-in',
+            enter_email: 'Introduce tu email para hacer check-in',
+            or_login: 'o inicia sesión',
+            submit: 'Hacer check-in',
+            success: '¡Check-in realizado!',
+            success_time: 'Check-in realizado a las {time}',
+            not_allowed: 'El check-in solo está disponible desde administración',
+            not_registered: 'No estás inscrito en este torneo',
+            window_opens_at: 'El check-in abre el {date} a las {time}',
+            window_closed_started: 'El check-in ha cerrado',
+            gdpr_consent: 'Acepto el tratamiento de mis datos según la',
+            connection_error: 'No se ha podido completar el check-in. Comprueba tu conexión e inténtalo de nuevo.',
         },
     },
 };

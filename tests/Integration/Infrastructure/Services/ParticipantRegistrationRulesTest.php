@@ -15,7 +15,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
 use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
-use Modules\Tournaments\Domain\Exceptions\GuestRegistrationNotAllowedException;
+use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Exceptions\TournamentFullException;
 use Modules\Tournaments\Domain\Exceptions\TournamentNotOpenException;
 use Modules\Tournaments\Domain\Exceptions\UserNotAllowedToRegisterException;
@@ -30,7 +30,7 @@ use Tests\TestCase;
 
 /**
  * Each rejected registration or withdrawal must raise the domain exception the
- * controllers turn into a message, never a PHP error (500).
+ * controllers turn into a message, never a PHP error (500). Guest registrations: GuestRegistrationTest.
  */
 final class ParticipantRegistrationRulesTest extends TestCase
 {
@@ -115,26 +115,6 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
     }
 
-    public function test_a_guest_cannot_register_when_guests_are_not_allowed(): void
-    {
-        $tournament = $this->tournament(['allow_guests' => false]);
-
-        $this->expectException(GuestRegistrationNotAllowedException::class);
-
-        $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
-    }
-
-    public function test_a_guest_cannot_register_twice_with_the_same_email(): void
-    {
-        $tournament = $this->tournament();
-        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com']);
-
-        $this->expectException(AlreadyRegisteredException::class);
-        $this->expectExceptionMessage('ana@example.com');
-
-        $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
-    }
-
     public function test_a_user_without_an_allowed_role_cannot_register(): void
     {
         $tournament = $this->tournament(['allowed_roles' => ['socio']]);
@@ -142,6 +122,31 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->expectException(UserNotAllowedToRegisterException::class);
 
         $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
+    }
+
+    public function test_a_returning_withdrawn_user_without_an_allowed_role_is_rejected(): void
+    {
+        $tournament = $this->tournament(['allowed_roles' => ['socio']]);
+        $user = UserModel::factory()->create();
+        $withdrawn = $this->participant($tournament, ['user_id' => $user->id, 'status' => ParticipantStatus::Withdrawn->value]);
+
+        try {
+            $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
+            $this->fail('A withdrawn user without the role came back');
+        } catch (UserNotAllowedToRegisterException) {
+            $this->assertSame(ParticipantStatus::Withdrawn, $withdrawn->fresh()?->status);
+        }
+    }
+
+    public function test_an_active_user_in_a_full_tournament_is_told_they_are_already_registered(): void
+    {
+        $tournament = $this->tournament(['max_participants' => 1]);
+        $user = UserModel::factory()->create();
+        $this->participant($tournament, ['user_id' => $user->id]);
+
+        $this->expectException(AlreadyRegisteredException::class);
+
+        $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
     }
 
     public function test_withdrawing_from_a_finished_tournament_is_rejected(): void
@@ -176,6 +181,19 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->expectExceptionMessage('already withdrawn');
 
         $this->service->withdrawByToken('twice-token');
+    }
+
+    public function test_an_unknown_cancellation_token_is_not_written_into_the_exception_message(): void
+    {
+        // Exception messages reach the logs and the token is a secret
+        $token = 'unknown-cancellation-token-0123456789abcdef';
+
+        try {
+            $this->service->withdrawByToken($token);
+            $this->fail('An unknown token must be refused.');
+        } catch (ParticipantNotFoundException $e) {
+            $this->assertStringNotContainsString($token, $e->getMessage());
+        }
     }
 
     public function test_withdrawing_twice_is_rejected(): void
@@ -216,25 +234,6 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
     }
 
-    public function test_a_disqualified_guest_cannot_register_again(): void
-    {
-        $tournament = $this->tournament();
-        $this->participant($tournament, [
-            'guest_name' => 'Ana',
-            'guest_email' => 'ana@example.com',
-            'status' => ParticipantStatus::Disqualified->value,
-        ]);
-
-        try {
-            $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
-            $this->fail('A disqualified guest registered again');
-        } catch (AlreadyRegisteredException $e) {
-            $this->assertStringContainsString('disqualified', $e->getMessage());
-        }
-
-        $this->assertSame(1, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
-    }
-
     public function test_registering_once_the_event_has_started_is_rejected_even_while_registration_is_open(): void
     {
         $tournament = $this->tournament(['event_id' => $this->eventStartingAt(now()->subMinute())]);
@@ -245,20 +244,6 @@ final class ParticipantRegistrationRulesTest extends TestCase
         } catch (TournamentNotOpenException $e) {
             $this->assertTrue($e->eventHasStarted());
             $this->assertStringContainsString('event started', $e->getMessage());
-        }
-
-        $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
-    }
-
-    public function test_a_guest_cannot_register_once_the_event_has_started(): void
-    {
-        $tournament = $this->tournament(['event_id' => $this->eventStartingAt(now()->subMinute())]);
-
-        try {
-            $this->service->register(new RegisterParticipantDTO($tournament->id, guestName: 'Ana', guestEmail: 'ana@example.com'));
-            $this->fail('A guest registered after the event started');
-        } catch (TournamentNotOpenException $e) {
-            $this->assertTrue($e->eventHasStarted());
         }
 
         $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
@@ -347,7 +332,12 @@ final class ParticipantRegistrationRulesTest extends TestCase
             'self_check_in_allowed' => true,
             'check_in_starts_before' => 30,
         ]);
-        $this->participant($tournament, ['guest_name' => 'Ana', 'guest_email' => 'ana@example.com', 'status' => ParticipantStatus::Confirmed->value]);
+        $this->participant($tournament, [
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'status' => ParticipantStatus::Confirmed->value,
+            'email_confirmed_at' => now()->subDay(),
+        ]);
 
         $result = $this->service->checkInByEmail($tournament->id, 'ana@example.com');
 
@@ -368,5 +358,45 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->expectExceptionMessage('has closed');
 
         $this->service->checkInByEmail($tournament->id, 'ana@example.com');
+    }
+
+    public function test_an_email_not_found_at_check_in_is_not_written_in_the_message(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => $this->eventStartingAt(now()->addMinutes(10)),
+            'status' => TournamentStatus::RegistrationClosed->value,
+            'requires_check_in' => true,
+            'self_check_in_allowed' => true,
+            'check_in_starts_before' => 30,
+        ]);
+
+        try {
+            $this->service->checkInByEmail($tournament->id, 'nadie@example.com');
+            $this->fail('An unknown email checked in');
+        } catch (ParticipantNotFoundException $e) {
+            $this->assertStringNotContainsString('nadie@example.com', $e->getMessage());
+            $this->assertStringContainsString($tournament->id, $e->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{ParticipantStatus, bool, bool}>
+     */
+    public static function checkInRule(): iterable
+    {
+        yield 'registered, no manual confirmation' => [ParticipantStatus::Registered, false, true];
+        yield 'confirmed, no manual confirmation' => [ParticipantStatus::Confirmed, false, true];
+        yield 'registered, manual confirmation' => [ParticipantStatus::Registered, true, false];
+        yield 'confirmed, manual confirmation' => [ParticipantStatus::Confirmed, true, true];
+        yield 'checked in' => [ParticipantStatus::CheckedIn, false, false];
+        yield 'withdrawn' => [ParticipantStatus::Withdrawn, false, false];
+        yield 'expired' => [ParticipantStatus::Expired, false, false];
+        yield 'disqualified' => [ParticipantStatus::Disqualified, true, false];
+    }
+
+    #[DataProvider('checkInRule')]
+    public function test_the_check_in_rule_shared_by_the_panel_and_self_check_in(ParticipantStatus $status, bool $manualConfirmation, bool $allowed): void
+    {
+        $this->assertSame($allowed, $this->service->canCheckIn($status, $manualConfirmation));
     }
 }

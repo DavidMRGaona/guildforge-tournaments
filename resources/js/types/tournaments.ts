@@ -9,7 +9,7 @@ export type TournamentStatus =
 // What the status badge shows: the raw status, or `registration_upcoming` before the opening date
 export type TournamentDisplayStatus = TournamentStatus | 'registration_upcoming';
 
-export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified';
+export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified' | 'expired';
 
 export type RoundStatus = 'pending' | 'in_progress' | 'finished';
 
@@ -84,6 +84,11 @@ export interface Participant {
     is_guest: boolean;
     is_checked_in: boolean;
 }
+
+/**
+ * A participant as public pages list them: without emails.
+ */
+export type PublicParticipant = Omit<Participant, 'user_email' | 'guest_email'>;
 
 export interface Standing {
     tournament_id: string;
@@ -206,15 +211,25 @@ export interface TournamentListItem {
 export type TournamentStatusFilter = 'all' | 'active' | 'upcoming' | 'past';
 
 /**
+ * What a guest must do to keep a registration, decided by the server: `hold` keeps the seat
+ * until `expires_at`, `wait` holds nothing until the email is confirmed.
+ */
+export interface GuestConfirmationTerms {
+    mode: 'hold' | 'wait';
+    expires_at: string | null;
+}
+
+/**
  * Props for the Tournaments/Show page.
  */
 export interface TournamentShowProps {
     tournament: Tournament;
     standings: Standing[];
-    participants: Participant[];
+    participants: PublicParticipant[];
     currentRound: Round | null;
     userRegistration: Participant | null;
     canRegister: boolean;
+    guestConfirmation: GuestConfirmationTerms | null;
 }
 
 /**
@@ -250,13 +265,16 @@ export type CheckInField = 'email' | 'gdpr_consent';
  */
 export interface RegistrationJsonResponse<TField extends string = GuestRegistrationField> {
     message?: string;
+    // Sent with the 409 of an email that belongs to an account
+    login_url?: string;
     errors?: Partial<Record<TField, string[]>>;
 }
 
 /**
- * JSON body of the check-in endpoint (`/torneos/{slug}/check-in`).
+ * JSON body of the check-in endpoint (`/torneos/{slug}/check-in`): the message of every
+ * outcome; a refusal also lists it under its field (`check_in` when it is not a form field).
  */
-export type CheckInJsonResponse = RegistrationJsonResponse<CheckInField>;
+export type CheckInJsonResponse = RegistrationJsonResponse<CheckInField | 'check_in'>;
 
 /**
  * Props for the event tournament section component.
@@ -265,6 +283,7 @@ export interface EventTournamentSectionProps {
     tournament: Tournament | null;
     userRegistration: Participant | null;
     canRegister: boolean;
+    guestConfirmation: GuestConfirmationTerms | null;
 }
 
 /**

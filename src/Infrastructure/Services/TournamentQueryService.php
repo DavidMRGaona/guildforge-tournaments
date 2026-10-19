@@ -99,7 +99,11 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
      */
     public function getParticipants(string $tournamentId): array
     {
-        $participants = $this->participantRepository->findByTournament($tournamentId);
+        // Guests who have not confirmed their email are not shown publicly
+        $participants = array_values(array_filter(
+            $this->participantRepository->findByTournament($tournamentId),
+            static fn ($participant): bool => ! ($participant->isGuest() && $participant->emailConfirmedAt() === null),
+        ));
 
         if ($participants === []) {
             return [];

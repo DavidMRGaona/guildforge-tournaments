@@ -13,12 +13,13 @@ final class ParticipantStatusTest extends TestCase
     {
         $cases = ParticipantStatus::cases();
 
-        $this->assertCount(5, $cases);
+        $this->assertCount(6, $cases);
         $this->assertContains(ParticipantStatus::Registered, $cases);
         $this->assertContains(ParticipantStatus::Confirmed, $cases);
         $this->assertContains(ParticipantStatus::CheckedIn, $cases);
         $this->assertContains(ParticipantStatus::Withdrawn, $cases);
         $this->assertContains(ParticipantStatus::Disqualified, $cases);
+        $this->assertContains(ParticipantStatus::Expired, $cases);
     }
 
     public function test_registered_can_transition_to_confirmed(): void
@@ -109,5 +110,16 @@ final class ParticipantStatusTest extends TestCase
         $this->assertEquals('success', ParticipantStatus::CheckedIn->color());
         $this->assertEquals('gray', ParticipantStatus::Withdrawn->color());
         $this->assertEquals('danger', ParticipantStatus::Disqualified->color());
+    }
+
+    public function test_expired_is_inactive_and_reactivable(): void
+    {
+        $this->assertFalse(ParticipantStatus::Expired->isActive());
+        $this->assertFalse(ParticipantStatus::Expired->isFinal());
+        $this->assertTrue(ParticipantStatus::Registered->canTransitionTo(ParticipantStatus::Expired));
+        $this->assertTrue(ParticipantStatus::Expired->canTransitionTo(ParticipantStatus::Registered));
+        $this->assertFalse(ParticipantStatus::Confirmed->canTransitionTo(ParticipantStatus::Expired));
+        $this->assertSame('expired', ParticipantStatus::Expired->value);
+        $this->assertSame('gray', ParticipantStatus::Expired->color());
     }
 }

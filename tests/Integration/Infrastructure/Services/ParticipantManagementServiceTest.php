@@ -89,41 +89,6 @@ final class ParticipantManagementServiceTest extends TestCase
         Event::assertDispatched(ParticipantRegistered::class);
     }
 
-    public function test_register_reactivates_withdrawn_guest_participant(): void
-    {
-        Event::fake([ParticipantRegistered::class]);
-
-        $guestEmail = 'guest@example.com';
-
-        // Create a withdrawn guest participant
-        $existingParticipant = ParticipantModel::create([
-            'id' => fake()->uuid(),
-            'tournament_id' => $this->tournament->id,
-            'user_id' => null,
-            'guest_name' => 'Old Guest Name',
-            'guest_email' => $guestEmail,
-            'status' => ParticipantStatus::Withdrawn->value,
-            'registered_at' => new DateTimeImmutable,
-        ]);
-
-        $dto = new RegisterParticipantDTO(
-            tournamentId: $this->tournament->id,
-            guestName: 'New Guest Name',
-            guestEmail: $guestEmail,
-        );
-
-        $result = $this->service->register($dto);
-
-        // Should reactivate the existing participant
-        $this->assertEquals($existingParticipant->id, $result->id);
-        $this->assertEquals(ParticipantStatus::Registered, $result->status);
-
-        // Should still only have one participant record
-        $this->assertDatabaseCount('tournaments_participants', 1);
-
-        Event::assertDispatched(ParticipantRegistered::class);
-    }
-
     public function test_register_creates_new_participant_for_new_user(): void
     {
         Event::fake([ParticipantRegistered::class]);
