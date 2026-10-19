@@ -271,9 +271,10 @@ export interface RegistrationJsonResponse<TField extends string = GuestRegistrat
 }
 
 /**
- * JSON body of the check-in endpoint (`/torneos/{slug}/check-in`).
+ * JSON body of the check-in endpoint (`/torneos/{slug}/check-in`): the message of every
+ * outcome; a refusal also lists it under its field (`check_in` when it is not a form field).
  */
-export type CheckInJsonResponse = RegistrationJsonResponse<CheckInField>;
+export type CheckInJsonResponse = RegistrationJsonResponse<CheckInField | 'check_in'>;
 
 /**
  * Props for the event tournament section component.

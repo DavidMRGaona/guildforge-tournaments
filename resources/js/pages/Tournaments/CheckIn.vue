@@ -67,6 +67,15 @@ const formatDateTime = (dateString: string | null): string => {
     });
 };
 
+// The endpoint answers every outcome with JSON; anything else (e.g. an error page) has no message
+const readBody = async (response: Awaited<ReturnType<typeof fetch>>): Promise<CheckInJsonResponse> => {
+    try {
+        return (await response.json()) as CheckInJsonResponse;
+    } catch {
+        return {};
+    }
+};
+
 // Handle check-in for authenticated user
 const handleAuthenticatedCheckIn = async (): Promise<void> => {
     if (gate.blocked.value) {
@@ -96,11 +105,12 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
             return;
         }
 
+        const data = await readBody(response);
+
         if (response.ok) {
-            notifySuccess(t('tournaments.check_in.success'));
+            notifySuccess(data.message || t('tournaments.check_in.success'));
             router.reload();
         } else {
-            const data: CheckInJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.check_in.window_closed'));
         }
     } catch {
@@ -141,12 +151,13 @@ const handleEmailCheckIn = async (): Promise<void> => {
             return;
         }
 
-        const data: CheckInJsonResponse = await response.json();
+        const data = await readBody(response);
 
         if (response.ok) {
-            notifySuccess(t('tournaments.check_in.success'));
+            notifySuccess(data.message || t('tournaments.check_in.success'));
             router.reload();
-        } else if (response.status === 422 && data.errors) {
+        } else if (response.status === 422 && (data.errors?.email || data.errors?.gdpr_consent)) {
+            // Shown under the field (invalid or unknown email, unconfirmed registration, consent)
             formErrors.email = data.errors.email?.[0];
             formErrors.gdpr_consent = data.errors.gdpr_consent?.[0];
         } else {

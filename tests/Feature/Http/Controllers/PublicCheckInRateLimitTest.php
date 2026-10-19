@@ -25,7 +25,7 @@ final class PublicCheckInRateLimitTest extends ModuleTestCase
 
         for ($attempt = 1; $attempt <= 10; $attempt++) {
             $this->postJson($this->checkInUrl($tournament), ['email' => "nadie{$attempt}@example.com", 'gdpr_consent' => true])
-                ->assertStatus(302);
+                ->assertStatus(422);
         }
 
         $this->postJson($this->checkInUrl($tournament), ['email' => 'nadie11@example.com', 'gdpr_consent' => true])
@@ -56,7 +56,7 @@ final class PublicCheckInRateLimitTest extends ModuleTestCase
         for ($minute = 1; $minute <= 6; $minute++) {
             for ($attempt = 1; $attempt <= 10; $attempt++) {
                 $this->postJson($this->checkInUrl($tournament), ['email' => "nadie{$minute}-{$attempt}@example.com", 'gdpr_consent' => true])
-                    ->assertStatus(302);
+                    ->assertStatus(422);
             }
 
             $this->travel(61)->seconds();
