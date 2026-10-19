@@ -85,6 +85,11 @@ export interface Participant {
     is_checked_in: boolean;
 }
 
+/**
+ * A participant as public pages list them: without emails.
+ */
+export type PublicParticipant = Omit<Participant, 'user_email' | 'guest_email'>;
+
 export interface Standing {
     tournament_id: string;
     participant_id: string;
@@ -220,7 +225,7 @@ export interface GuestConfirmationTerms {
 export interface TournamentShowProps {
     tournament: Tournament;
     standings: Standing[];
-    participants: Participant[];
+    participants: PublicParticipant[];
     currentRound: Round | null;
     userRegistration: Participant | null;
     canRegister: boolean;
