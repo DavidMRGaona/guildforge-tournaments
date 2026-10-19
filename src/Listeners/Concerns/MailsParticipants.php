@@ -13,8 +13,9 @@ use Modules\Tournaments\Notifications\AnonymousNotifiable;
 trait MailsParticipants
 {
     /**
-     * Where to mail a participant about a decision of the organisation: the account email,
-     * or a guest email only once confirmed (never an address nobody has vouched for).
+     * Where to mail a participant about a decision of the organisation: the account email (not
+     * of an anonymised account), or a guest email only once confirmed (never an address nobody
+     * has vouched for).
      */
     private function recipient(Participant $participant): ?AnonymousNotifiable
     {
@@ -23,7 +24,8 @@ trait MailsParticipants
         if ($userId !== null) {
             $user = UserModel::find($userId);
 
-            return $user !== null && $user->email !== ''
+            // An anonymised account keeps only a placeholder address
+            return $user !== null && $user->email !== '' && $user->anonymized_at === null
                 ? new AnonymousNotifiable($user->email, $user->name)
                 : null;
         }

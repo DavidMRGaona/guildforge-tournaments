@@ -89,6 +89,20 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $this->assertSame([], $this->mails());
     }
 
+    public function test_anonymised_accounts_and_unpublished_events_are_skipped(): void
+    {
+        $this->enable();
+        $tournament = $this->tournament($this->now->addHours(10));
+        $this->participant($tournament, ['user_id' => UserModel::factory()->create(['anonymized_at' => $this->now->subDay()])->id]);
+        $hidden = $this->tournament($this->now->addHours(10));
+        EventModel::query()->whereKey($hidden->event_id)->update(['is_published' => false]);
+        $this->participant($hidden, ['user_id' => UserModel::factory()->create()->id]);
+
+        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+
+        $this->assertSame([], $this->mails());
+    }
+
     public function test_the_lead_time_is_configurable(): void
     {
         $this->enable(hours: 48);
@@ -124,7 +138,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
     {
         return TournamentModel::create([
             'id' => (string) Str::uuid(),
-            'event_id' => EventModel::factory()->create(['start_date' => $startsAt, 'end_date' => $startsAt->addHours(5)])->id,
+            'event_id' => EventModel::factory()->published()->create(['start_date' => $startsAt, 'end_date' => $startsAt->addHours(5)])->id,
             'name' => 'Torneo de prueba',
             'slug' => 'torneo-'.Str::lower(Str::random(10)),
             'status' => TournamentStatus::RegistrationClosed->value,

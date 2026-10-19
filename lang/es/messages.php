@@ -438,7 +438,7 @@ return [
         'duplicate_window_hours' => 'Ventana de posible duplicado',
         'reminders' => 'Recordatorio',
         'reminders_enabled' => 'Enviar recordatorio antes del torneo',
-        'reminders_enabled_help' => 'Un correo a cada participante activo (con cuenta o con el email confirmado) las horas indicadas antes del inicio del evento. Desactivado por defecto.',
+        'reminders_enabled_help' => 'Un correo a cada inscripción activa (con cuenta o con el email confirmado) las horas indicadas antes del inicio del evento. Desactivado por defecto.',
         'reminders_hours_before' => 'Antelación del recordatorio',
         'send_registration_email' => 'Enviar email de confirmación de inscripción',
         'send_round_pairing_email' => 'Enviar email de emparejamientos',

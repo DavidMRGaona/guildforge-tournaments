@@ -47,7 +47,7 @@ final class SendTournamentRemindersCommand extends Command
 
         $tournaments = TournamentModel::query()
             ->whereIn('status', [TournamentStatus::RegistrationOpen->value, TournamentStatus::RegistrationClosed->value])
-            ->whereHas('event', fn ($event) => $event->where('start_date', '>', $now)->where('start_date', '<=', $until))
+            ->whereHas('event', fn ($event) => $event->where('is_published', true)->where('start_date', '>', $now)->where('start_date', '<=', $until))
             ->with('event:id,start_date')
             ->get();
 
@@ -77,6 +77,16 @@ final class SendTournamentRemindersCommand extends Command
                     continue;
                 }
 
+                // Claimed before sending, so a run started by hand next to the scheduled one never doubles it
+                $claimed = ParticipantModel::query()
+                    ->whereKey($participantId)
+                    ->whereNull('reminder_sent_at')
+                    ->update(['reminder_sent_at' => $now]) === 1;
+
+                if (! $claimed) {
+                    continue;
+                }
+
                 $recipient->notify(new TournamentReminderNotification(
                     participantName: $this->participantName($participant, $recipient),
                     tournamentName: $tournament->name(),
@@ -87,7 +97,6 @@ final class SendTournamentRemindersCommand extends Command
                     cancellationToken: $participant->userId() === null ? $participant->cancellationToken() : null,
                 ));
 
-                ParticipantModel::query()->whereKey($participantId)->update(['reminder_sent_at' => $now]);
                 $sent++;
             }
         }
