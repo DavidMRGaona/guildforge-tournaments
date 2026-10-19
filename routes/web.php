@@ -60,10 +60,10 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->name('check-in.show');
 
     // Open to guests; a signed-in user checks in as themselves, so the core's
-    // "email verification required" rule applies to them
+    // "email verification required" rule applies to them. Limited per IP
     Route::post('/{slug}/check-in', [TournamentCheckInController::class, 'store'])
         ->where('slug', '[a-z0-9-]+')
-        ->middleware('email.verified-if-required')
+        ->middleware(['throttle:tournaments-public-check-in', 'email.verified-if-required'])
         ->name('check-in.store');
 });
 
