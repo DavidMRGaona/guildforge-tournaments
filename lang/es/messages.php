@@ -41,6 +41,7 @@ return [
     'modal' => [
         'withdraw_description' => '¿Estás seguro de que quieres retirar a este participante del torneo?',
         'disqualify_description' => '¿Estás seguro de que quieres descalificar a este participante? Esta acción no se puede deshacer.',
+        'confirm_email_description' => 'El email del invitado quedará confirmado y le enviaremos el email de inscripción.',
         'cancel_description' => '¿Estás seguro de que quieres cancelar este torneo? Esta acción notificará a todos los participantes.',
     ],
 
@@ -71,6 +72,7 @@ return [
         'checked_in' => 'Registrado',
         'withdrawn' => 'Retirado',
         'disqualified' => 'Descalificado',
+        'expired' => 'Caducada',
     ],
 
     'round_status' => [
@@ -220,6 +222,10 @@ return [
         'result_disputed' => 'Resultado disputado',
         'results_updated' => 'Resultados actualizados',
         'registered_successfully' => 'Inscripción realizada correctamente',
+        'guest_registration_claimed' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
+        'guest_confirmation_sent_hold' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :date o la plaza se liberará.',
+        'guest_confirmation_sent_wait' => 'Te hemos enviado un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+        'guest_confirmation_pending' => 'Ya tienes una inscripción pendiente: revisa tu correo.',
         'withdrawn_successfully' => 'Retirada realizada correctamente',
         'checked_in_successfully' => 'Check-in realizado correctamente',
         'participant_disqualified' => 'Participante descalificado',
@@ -232,6 +238,10 @@ return [
         'tournament_started' => 'El torneo ya ha comenzado: la inscripción está cerrada',
         'tournament_full' => 'El torneo está completo',
         'already_registered' => 'Ya estás inscrito en este torneo',
+        'registration_with_your_email' => 'Ya hay una inscripción con tu email.',
+        'registration_with_this_email' => 'Ya hay una inscripción con este email.',
+        'guest_email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
+        'too_many_registration_attempts' => 'Has hecho demasiados intentos. Espera un momento y vuelve a probar.',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
         'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
         'cannot_cancel_started' => 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
@@ -270,6 +280,21 @@ return [
         'date' => 'Fecha',
         'guest' => 'Invitado',
         'view_tournaments' => 'Ver torneos',
+    ],
+
+    // Console commands
+    'console' => [
+        'expire_guest_registrations' => 'Inscripciones caducadas: :expired. Huellas borradas: :cleared.',
+    ],
+
+    // Guest email confirmation (link of the confirmation email)
+    'guest_confirmation' => [
+        'confirmed' => 'Inscripción confirmada. Te hemos enviado un email con los detalles.',
+        'already_confirmed' => 'Tu inscripción ya estaba confirmada.',
+        'invalid' => 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
+        'registration_closed' => 'Las inscripciones ya se han cerrado.',
+        'full' => 'Se ha llenado mientras confirmabas.',
+        'too_many_attempts' => 'Demasiados intentos con este enlace. Espera un momento y vuelve a intentarlo.',
     ],
 
     // Filament - Tournament configuration relation manager
@@ -347,6 +372,15 @@ return [
         'total' => 'total',
         'confirmed_count' => 'confirmados',
         'checked_in_count' => 'con check-in',
+        'confirm_email' => 'Marcar email como confirmado',
+        'email_confirmed' => 'Email confirmado',
+        'email_unconfirmed' => 'Email sin confirmar',
+        'email_unconfirmed_until' => 'Email sin confirmar · caduca el :date',
+        'email_unconfirmed_without_seat' => 'Email sin confirmar · sin plaza hasta confirmar',
+        'possible_duplicate' => 'Posible duplicado',
+        'possible_duplicate_tooltip' => 'Posible duplicado: misma conexión y navegador que otra inscripción',
+        'user_already_registered' => 'Este usuario ya tiene una inscripción en este torneo.',
+        'action_not_allowed' => 'Esta inscripción no admite esa acción en su estado actual.',
     ],
 
     // Filament - Notifications (toast messages)
@@ -358,6 +392,8 @@ return [
         'bulk_checked_in' => 'Check-in masivo realizado',
         'bulk_confirmed' => 'Confirmación masiva realizada',
         'bulk_disqualified' => 'Descalificación masiva realizada',
+        'bulk_refused' => 'Participantes sin cambios: :count',
+        'email_confirmed' => 'Email marcado como confirmado',
         'registration_confirmed_subject' => 'Inscripción confirmada - :tournament',
         'registration_confirmed_body' => 'Tu inscripción al torneo :tournament ha sido confirmada.',
         'round_pairings_subject' => 'Emparejamientos de la ronda :round - :tournament',
@@ -382,6 +418,24 @@ return [
         'default_check_in_starts_before' => 'Minutos antes para check-in',
         'default_check_in_starts_before_help' => 'Tiempo por defecto antes del evento',
         'minutes' => 'minutos',
+        'hours' => 'horas',
+        'guest_registrations' => 'Inscripciones de invitados',
+        'guest_confirmation_mode' => 'Plaza mientras no confirma',
+        'guest_confirmation_modes' => [
+            'hold' => 'Reserva la plaza con plazo',
+            'wait' => 'No ocupa plaza hasta confirmar',
+        ],
+        'guest_hold_hours' => 'Plazo de confirmación',
+        'guest_max_unconfirmed_held' => 'Máximo de plazas sin confirmar',
+        'guest_max_unconfirmed_held_help' => 'Las inscripciones por encima de este número esperan sin ocupar plaza hasta que confirmen.',
+        'guest_accounts_mode' => 'Email con cuenta registrada',
+        'guest_accounts_modes' => [
+            'require_login' => 'Pedir que inicie sesión',
+            'allow_guest' => 'Permitir como invitado',
+        ],
+        'guest_rate_per_minute' => 'Inscripciones por IP y minuto',
+        'guest_rate_per_hour' => 'Inscripciones por IP y hora',
+        'duplicate_window_hours' => 'Ventana de posible duplicado',
         'send_registration_email' => 'Enviar email de confirmación de inscripción',
         'send_round_pairing_email' => 'Enviar email de emparejamientos',
         'send_result_confirmation_email' => 'Enviar email de confirmación de resultado',
@@ -602,6 +656,9 @@ return [
         'not_found' => 'No encontramos inscripción con ese email',
         'already_done' => 'Ya has hecho check-in',
         'not_allowed' => 'El check-in solo está disponible desde administración',
+        'email_not_confirmed' => 'Confirma tu inscripción desde el enlace del email antes de hacer el check-in.',
+        'registration_not_confirmed' => 'La organización aún no ha confirmado tu inscripción: no puedes hacer el check-in todavía.',
+        'too_many_attempts' => 'Has hecho demasiados intentos de check-in. Espera un momento y vuelve a probar.',
         'window_closed' => 'La ventana de check-in está cerrada',
         'window_opens_at' => 'El check-in abre el :date a las :time',
         'window_closed_started' => 'El check-in ha cerrado',
@@ -623,6 +680,15 @@ return [
             'cancel_link' => 'Cancelar inscripción',
             'gdpr_notice' => 'Tus datos serán tratados conforme a nuestra política de privacidad.',
         ],
+        'guest_confirmation' => [
+            'subject' => 'Confirma tu inscripción en :tournament',
+            'greeting' => 'Hola, :name',
+            'body' => 'Has pedido inscribirte en :tournament. Confirma la inscripción con el botón.',
+            'hold_deadline' => 'Si no la confirmas antes del :date, la plaza se liberará.',
+            'wait_notice' => 'Tu plaza no está garantizada hasta que la confirmes.',
+            'action' => 'Confirmar inscripción',
+            'closing' => 'Si no has sido tú, ignora este mensaje.',
+        ],
         'withdrawal_confirmed' => [
             'subject' => 'Inscripción cancelada: :tournament',
             'greeting' => '¡Hola :name!',
@@ -641,6 +707,13 @@ return [
             'registered_user' => 'Usuario registrado',
             'capacity' => 'Participantes: :current / :max',
             'participants' => 'Total de participantes: :count',
+        ],
+        'guest_registration_expired' => [
+            'subject' => 'Tu inscripción en :tournament ha caducado',
+            'greeting' => 'Hola, :name',
+            'body' => 'No confirmaste tu inscripción a tiempo y la plaza se ha liberado.',
+            'rejoin' => 'Si quedan plazas, puedes volver a apuntarte.',
+            'action' => 'Ver el torneo',
         ],
         'withdrawal' => [
             'subject' => 'Cancelación: :tournament',
@@ -692,6 +765,12 @@ return [
         'tabLabel' => 'Torneos',
     ],
 
+    // Cookies declared to cookie-consent
+    'cookies' => [
+        'guest_registrations_purpose' => 'Recuerda en este navegador los torneos a los que te has apuntado como invitado, para avisarte si intentas apuntarte otra vez.',
+        'guest_registrations_duration' => '90 días',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'index_title' => 'Torneos',
@@ -703,5 +782,6 @@ return [
         'my_tournaments_title' => 'Mis torneos',
         'check_in_title' => 'Check-in - :name',
         'cancel_registration_title' => 'Cancelar inscripción',
+        'confirm_registration_title' => 'Confirmar inscripción',
     ],
 ];

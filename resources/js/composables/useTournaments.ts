@@ -27,6 +27,7 @@ const PARTICIPANT_STATUS_COLORS: Record<ParticipantStatus, StatusColor> = {
     checked_in: 'success',
     withdrawn: 'gray',
     disqualified: 'danger',
+    expired: 'gray',
 };
 
 const ROUND_STATUS_COLORS: Record<RoundStatus, StatusColor> = {

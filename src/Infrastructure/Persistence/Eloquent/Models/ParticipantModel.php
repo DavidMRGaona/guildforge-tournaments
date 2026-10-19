@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 
 /**
@@ -23,6 +24,12 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
  * @property bool $has_received_bye
  * @property \Carbon\Carbon|null $registered_at
  * @property \Carbon\Carbon|null $checked_in_at
+ * @property \Carbon\Carbon|null $email_confirmed_at
+ * @property \Carbon\Carbon|null $confirmation_expires_at
+ * @property string|null $confirmation_token
+ * @property \Carbon\Carbon|null $confirmation_sent_at
+ * @property GuestConfirmationMode|null $confirmation_mode
+ * @property string|null $fingerprint
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
  * @property-read TournamentModel $tournament
@@ -54,6 +61,12 @@ final class ParticipantModel extends Model
         'has_received_bye',
         'registered_at',
         'checked_in_at',
+        'email_confirmed_at',
+        'confirmation_expires_at',
+        'confirmation_token',
+        'confirmation_sent_at',
+        'confirmation_mode',
+        'fingerprint',
     ];
 
     /**
@@ -67,6 +80,10 @@ final class ParticipantModel extends Model
             'has_received_bye' => 'boolean',
             'registered_at' => 'datetime',
             'checked_in_at' => 'datetime',
+            'email_confirmed_at' => 'datetime',
+            'confirmation_expires_at' => 'datetime',
+            'confirmation_sent_at' => 'datetime',
+            'confirmation_mode' => GuestConfirmationMode::class,
         ];
     }
 

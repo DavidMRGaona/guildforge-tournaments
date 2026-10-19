@@ -6,12 +6,15 @@ namespace Modules\Tournaments\Domain\Repositories;
 
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 
 interface ParticipantRepositoryInterface
 {
     /**
-     * Save a participant (create or update).
+     * Save a participant (create or update). The guest email is stored trimmed and lowercased.
+     *
+     * @throws AlreadyRegisteredException when another active guest already uses the email in the tournament
      */
     public function save(Participant $participant): void;
 
@@ -50,9 +53,11 @@ interface ParticipantRepositoryInterface
     public function findByGuestEmailAndTournament(string $email, string $tournamentId): ?Participant;
 
     /**
-     * Find a participant by email (either guest_email or user's email) and tournament.
+     * Find an active (registered, confirmed or checked-in) participant by email and tournament:
+     * the active guest registration with that email first, then the account's. Withdrawn, expired
+     * and disqualified rows are ignored.
      */
-    public function findByEmailAndTournament(string $email, string $tournamentId): ?Participant;
+    public function findActiveByEmailAndTournament(string $email, string $tournamentId): ?Participant;
 
     /**
      * Count participants for a tournament.
@@ -80,4 +85,43 @@ interface ParticipantRepositoryInterface
      * Find a participant by cancellation token.
      */
     public function findByCancellationToken(string $token): ?Participant;
+
+    /**
+     * Find a participant by the token of its email confirmation link.
+     */
+    public function findByConfirmationToken(string $token): ?Participant;
+
+    /**
+     * Count active guest registrations holding a seat while their email is still unconfirmed.
+     */
+    public function countUnconfirmedHeldByTournament(string $tournamentId): int;
+
+    /**
+     * IDs of active guest registrations whose email is not confirmed yet.
+     *
+     * @return list<string>
+     */
+    public function findIdsAwaitingConfirmation(): array;
+
+    /**
+     * IDs of the tournaments that still store at least one fingerprint.
+     *
+     * @return list<string>
+     */
+    public function findTournamentIdsWithFingerprints(): array;
+
+    /**
+     * Erase the fingerprints of a tournament's registrations.
+     *
+     * @return int number of rows cleared
+     */
+    public function clearFingerprints(string $tournamentId): int;
+
+    /**
+     * IDs of active registrations that share a fingerprint with another active registration of the tournament,
+     * where at least one of the pair is a guest and both were made within the window.
+     *
+     * @return list<string>
+     */
+    public function findPossibleDuplicateIds(string $tournamentId, int $windowHours): array;
 }

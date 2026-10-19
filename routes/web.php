@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Tournaments\Http\Controllers\GuestCancellationController;
+use Modules\Tournaments\Http\Controllers\GuestConfirmationController;
 use Modules\Tournaments\Http\Controllers\MyTournamentsController;
 use Modules\Tournaments\Http\Controllers\TournamentCheckInController;
 use Modules\Tournaments\Http\Controllers\TournamentController;
@@ -23,6 +24,14 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->name('cancel-confirmation');
     Route::delete('/cancelar/{token}', [GuestCancellationController::class, 'destroy'])
         ->name('cancel-by-token');
+
+    // Guest email confirmation (public): the page only shows, the button confirms
+    Route::get('/confirmar/{token}', [GuestConfirmationController::class, 'show'])
+        ->middleware('throttle:tournaments-guest-confirmation')
+        ->name('confirm-registration');
+    Route::post('/confirmar/{token}', [GuestConfirmationController::class, 'store'])
+        ->middleware('throttle:tournaments-guest-confirmation')
+        ->name('confirm-registration.store');
 
     // My tournaments (authenticated users only)
     Route::get('/mis-torneos', MyTournamentsController::class)
@@ -51,10 +60,10 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
         ->name('check-in.show');
 
     // Open to guests; a signed-in user checks in as themselves, so the core's
-    // "email verification required" rule applies to them
+    // "email verification required" rule applies to them. Limited per IP
     Route::post('/{slug}/check-in', [TournamentCheckInController::class, 'store'])
         ->where('slug', '[a-z0-9-]+')
-        ->middleware('email.verified-if-required')
+        ->middleware(['throttle:tournaments-public-check-in', 'email.verified-if-required'])
         ->name('check-in.store');
 });
 
@@ -68,8 +77,9 @@ Route::prefix('torneos/{tournamentId}')
 
         // Public: register (authenticated user or guest if allowed). A signed-in user
         // registers as themselves, so the core's "email verification required" rule applies
+        // Guests (no session) are limited per IP
         Route::post('/inscripcion', [TournamentRegistrationController::class, 'store'])
-            ->middleware('email.verified-if-required')
+            ->middleware(['throttle:tournaments-guest-registration', 'email.verified-if-required'])
             ->name('tournaments.registration.store');
 
         // Only authenticated users can withdraw

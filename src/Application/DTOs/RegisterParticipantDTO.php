@@ -12,6 +12,7 @@ final readonly class RegisterParticipantDTO
         public ?string $guestName = null,
         public ?string $guestEmail = null,
         public ?int $seed = null,
+        public ?string $fingerprint = null,
     ) {
     }
 
@@ -31,6 +32,7 @@ final readonly class RegisterParticipantDTO
             guestName: $data['guest_name'] ?? null,
             guestEmail: $data['guest_email'] ?? null,
             seed: $data['seed'] ?? null,
+            fingerprint: $data['fingerprint'] ?? null,
         );
     }
 
@@ -45,6 +47,7 @@ final readonly class RegisterParticipantDTO
             'guest_name' => $this->guestName,
             'guest_email' => $this->guestEmail,
             'seed' => $this->seed,
+            'fingerprint' => $this->fingerprint,
         ];
     }
 }

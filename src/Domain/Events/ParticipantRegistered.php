@@ -16,6 +16,7 @@ final readonly class ParticipantRegistered
         public bool $isGuest,
         public ?string $cancellationToken,
         public DateTimeImmutable $occurredAt,
+        public bool $notifyOrganizer = true,
     ) {
     }
 
@@ -26,6 +27,7 @@ final readonly class ParticipantRegistered
         ?string $guestEmail,
         bool $isGuest,
         ?string $cancellationToken = null,
+        bool $notifyOrganizer = true,
     ): self {
         return new self(
             participantId: $participantId,
@@ -35,6 +37,7 @@ final readonly class ParticipantRegistered
             isGuest: $isGuest,
             cancellationToken: $cancellationToken,
             occurredAt: new DateTimeImmutable(),
+            notifyOrganizer: $notifyOrganizer,
         );
     }
 }

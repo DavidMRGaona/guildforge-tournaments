@@ -8,8 +8,9 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Inscripción**: usuarios con cuenta e invitados sin cuenta (si el torneo lo permite), con límite de plazas. Solo se aceptan inscripciones con el torneo en **Inscripción abierta**, dentro de las fechas de apertura y cierre si se han configurado y antes del inicio del evento. Desde el inicio del evento nadie puede inscribirse ni retirarse desde la web (tampoco con el enlace de cancelación de invitados), aunque el torneo siga en **Inscripción abierta** o **Inscripción cerrada**; desde el panel se pueden seguir añadiendo y retirando participantes. Si no se puede leer el inicio del evento, la inscripción y la retirada quedan cerradas por seguridad.
   Con la verificación de email obligatoria activa en el sitio, las cuentas a las que el core se la exige deben verificar su email antes de inscribirse, retirarse o hacer check-in; los invitados no se ven afectados.
   Mientras tanto, en la página del torneo, en la sección del torneo de la página del evento y en la página de check-in los botones de inscribirse, retirarse y hacer check-in aparecen desactivados, con el motivo debajo y un enlace «Ver cómo» a la página de verificación. Si la cuenta pasa a necesitar la verificación con la página ya abierta (por ejemplo, desde otra pestaña), al pulsar el botón se abre la página de verificación en lugar de un mensaje de error. Las cuentas que no deben verificar y los invitados ven la página igual que antes.
+- **Inscripciones de invitados con confirmación por email**: un invitado solo puede tener una inscripción activa por torneo (el email se compara sin mayúsculas ni espacios) y la confirma desde un enlace antes de que la organización sepa de ella. Ver [Inscripciones de invitados](#inscripciones-de-invitados).
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
-- **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública.
+- **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública. Con confirmación manual solo hacen check-in los participantes confirmados; sin ella, también los inscritos (la misma regla en el panel y en la web). La web solo tiene en cuenta inscripciones activas: la del email indicado o, con sesión, la de la cuenta. Admite 10 intentos por minuto y 60 por hora y IP.
 - **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.
 - **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel; cada resultado recalcula la clasificación.
 - **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
@@ -58,6 +59,15 @@ En **Módulos**, la acción **Configuración** del módulo guarda los valores in
 | `default_allow_guests` | Permitir invitados | No |
 | `default_requires_check_in` | Requiere check-in | No |
 | `default_check_in_starts_before` | Minutos antes para check-in | 30 |
+| `guest_confirmation.mode` | Plaza de un invitado sin confirmar: `hold` (reserva con plazo) o `wait` (no ocupa plaza hasta confirmar) | `hold` |
+| `guest_confirmation.hold_hours` | Horas para confirmar en modo `hold` | 2 |
+| `guest_confirmation.max_unconfirmed_held` | Plazas sin confirmar que puede reservar un torneo a la vez | 2 |
+| `guest_accounts.mode` | Email que ya tiene cuenta: `require_login` (pedir que inicie sesión) o `allow_guest` (permitir como invitado) | `require_login` |
+| `guest_rate_limit.per_minute` | Inscripciones de invitado aceptadas por IP y minuto | 5 |
+| `guest_rate_limit.per_hour` | Inscripciones de invitado aceptadas por IP y hora | 20 |
+| `duplicate_signal.window_hours` | Horas en que dos inscripciones desde la misma conexión y navegador se marcan como posible duplicado | 24 |
+
+Los ajustes de invitados se validan en el servidor (enteros positivos y modos conocidos).
 
 ## Gestión de torneos
 
@@ -226,9 +236,10 @@ Solo se aceptan inscripciones en `registration_open`, dentro de las fechas confi
 | Confirmado | `confirmed` | `checked_in`, `withdrawn`, `disqualified` |
 | Registrado (check-in hecho) | `checked_in` | `withdrawn`, `disqualified` |
 | Retirado | `withdrawn` | `registered` (se vuelve a inscribir) |
+| Caducada | `expired` | — (el invitado puede volver a apuntarse) |
 | Descalificado | `disqualified` | — |
 
-Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
+Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes (inscritos, confirmados o con check-in hecho) y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
 
 ### Resultado de partida
 
@@ -263,6 +274,28 @@ La clasificación se calcula así:
 
 Los perfiles del sistema no se pueden borrar y solo se puede editar su descripción; la acción **Duplicar** crea una copia editable. Las actualizaciones del módulo pueden renovar las reglas de los perfiles del sistema, nunca los perfiles creados por los administradores.
 
+## Inscripciones de invitados
+
+Un invitado se inscribe con nombre, email y consentimiento, y su inscripción no cuenta hasta que confirma el email.
+
+- **Confirmación.** Al enviar el formulario recibe un email con un enlace (`/torneos/confirmar/{token}`). La página solo muestra la inscripción: el botón **Confirmar inscripción** la confirma, de modo que un rastreador de enlaces no confirma nada. Al confirmar se envía el email de inscripción habitual y se avisa a la organización. Un enlace vencido muestra «Este enlace ya no es válido» y, si las inscripciones siguen abiertas, invita a volver a apuntarse.
+- **Modo `hold`.** La plaza queda reservada hasta el plazo (`hold_hours`), que nunca pasa del cierre de inscripciones (o del inicio del evento si no hay cierre). Un torneo reserva como máximo `max_unconfirmed_held` plazas sin confirmar a la vez: las demás inscripciones esperan sin plaza.
+- **Modo `wait`.** Nada se reserva hasta confirmar; si el torneo se llena mientras tanto, la inscripción caduca con «Se ha llenado mientras confirmabas». Las inscripciones en espera no cuentan en las plazas.
+- **Reenvío.** Repetir el formulario con una inscripción pendiente no amplía el plazo ni cambia el nombre guardado: la respuesta es «Ya tienes una inscripción pendiente: revisa tu correo» y, pasados 5 minutos, se reenvía el email.
+- **Caducidad.** `php artisan tournaments:expire-guest-registrations` (programado cada 5 minutos) marca como **Caducada** las inscripciones sin confirmar fuera de plazo, libera la plaza y avisa al invitado. También borra las huellas de los torneos que ya empezaron, terminaron o se cancelaron.
+- **Emails con cuenta.** Con `require_login`, un email que pertenece a una cuenta verificada recibe un 409 con enlace para iniciar sesión; con `allow_guest` se inscribe como invitado. Una cuenta sin verificar no bloquea a nadie. Si un usuario se inscribe con la sesión iniciada y tiene una inscripción de invitado con el mismo email, esa inscripción pasa a su cuenta.
+- **Límites.** Las inscripciones de invitado se limitan por IP (`per_minute` y `per_hour`; los usuarios con sesión no tienen límite). El enlace de confirmación admite 20 intentos por minuto y 100 por hora y IP. Al superar un límite la web responde 429 («Has hecho demasiados intentos…») o vuelve al formulario con el error.
+- **Posible duplicado.** Cada inscripción guarda una huella (HMAC de IP y navegador) mientras el torneo no ha empezado. En la pestaña **Participantes** del panel, la columna **Posible duplicado** marca las inscripciones activas con la misma huella creadas dentro de `duplicate_signal.window_hours` una de otra. Es una pista para la organización, no bloquea nada.
+- **Panel.** **Confirmar** y **Marcar email como confirmado** confirman el email y envían al invitado el email de inscripción habitual; el check-in (también en bloque) y descalificar lo confirman sin enviar nada; retirar no lo confirma. El invitado con el email sin confirmar no puede hacer check-in desde la web.
+- **Aviso en el formulario.** Antes de enviar, el formulario explica qué pasará según los términos del servidor: con `hold`, que la plaza se libera si no confirma antes de la fecha del plazo; con `wait`, que la plaza no está garantizada.
+
+### Cookie `tn_guest_registrations`
+
+Tras una inscripción de invitado correcta, el navegador guarda los identificadores de los torneos (nunca emails ni nombres) para avisar de que ya hay una inscripción desde ese navegador si se intenta otra vez. El aviso no bloquea el envío. La cookie dura 90 días (`Max-Age`, que vuelve a contar con cada inscripción). Cada torneo guardado en ella caduca por su cuenta al cerrarse sus inscripciones (a los 90 días como máximo, o si no tienen fecha de cierre): desde entonces ya no avisa y se descarta en la siguiente escritura.
+
+- Categoría `preferences`: solo se escribe y se lee si el visitante la ha aceptado en el banner (`globalThis.GuildForgeCookieConsent?.hasConsent('preferences')`); sin el módulo `cookie-consent` en la página no se guarda nada.
+- El módulo no depende de `cookie-consent`: si está instalado, declara la cookie en su registro y aparece en la categoría de preferencias del banner y de la política de cookies. Los textos están en `lang/es/messages.php` (`cookies.*`).
+
 ## Web pública
 
 ### Rutas
@@ -279,6 +312,8 @@ Los perfiles del sistema no se pueden borrar y solo se puede editar su descripci
 | GET | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.show` | Público |
 | POST | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.store` | Público (invitados si el torneo los permite) |
 | DELETE | `/torneos/{tournamentId}/inscripcion` | `tournaments.registration.destroy` | Usuarios autenticados |
+| GET | `/torneos/confirmar/{token}` | `tournaments.confirm-registration` | Invitados con enlace |
+| POST | `/torneos/confirmar/{token}` | `tournaments.confirm-registration.store` | Invitados con enlace |
 | GET | `/torneos/cancelar/{token}` | `tournaments.cancel-confirmation` | Invitados con enlace |
 | DELETE | `/torneos/cancelar/{token}` | `tournaments.cancel-by-token` | Invitados con enlace |
 
@@ -294,6 +329,7 @@ Los perfiles del sistema no se pueden borrar y solo se puede editar su descripci
 | `Tournaments/Rounds` | Rondas y partidas |
 | `Tournaments/CheckIn` | Check-in |
 | `Tournaments/CancelRegistration` | Cancelación de invitados por token |
+| `Tournaments/ConfirmRegistration` | Confirmación del email de un invitado por token |
 | `Tournaments/MyTournaments` | Torneos del usuario |
 
 ### Componentes Vue
@@ -316,8 +352,10 @@ El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts
 |---------|---------------|
 | Inscripción (`ParticipantRegistered`) | Participante y email de notificaciones del torneo |
 | Cancelación de la inscripción (`ParticipantWithdrawn`) | Participante y email de notificaciones del torneo |
+| Inscripción de invitado pendiente (`GuestConfirmationRequested`) | Invitado, con el enlace de confirmación |
+| Inscripción de invitado caducada | Invitado, con la invitación a volver a apuntarse |
 
-Son los dos eventos de dominio que el módulo dispara hoy. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
+Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Son los eventos de dominio de inscripción que el módulo dispara hoy. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
 
 ## Permisos
 

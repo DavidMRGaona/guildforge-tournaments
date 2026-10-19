@@ -10,6 +10,7 @@ use DateTimeInterface;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -69,6 +70,28 @@ final class TournamentQueryServiceRegistrationTest extends ModuleTestCase
         $this->assertTrue($before['can_withdraw']);
         $this->assertFalse($after['is_registration_open']);
         $this->assertFalse($after['can_withdraw']);
+    }
+
+    public function test_public_participants_hide_unconfirmed_guests(): void
+    {
+        $tournament = $this->tournament(now()->addWeek());
+        foreach ([['Confirmada', 'a@example.com', now()], ['Pendiente', 'b@example.com', null]] as [$name, $email, $confirmedAt]) {
+            ParticipantModel::create([
+                'id' => (string) Str::uuid(),
+                'tournament_id' => $tournament->id,
+                'guest_name' => $name,
+                'guest_email' => $email,
+                'status' => 'registered',
+                'email_confirmed_at' => $confirmedAt,
+            ]);
+        }
+
+        $names = array_map(
+            static fn ($participant): string => $participant->displayName(),
+            $this->service->getParticipants($tournament->id),
+        );
+
+        $this->assertSame(['Confirmada'], $names);
     }
 
     /**

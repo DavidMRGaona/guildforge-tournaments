@@ -9,7 +9,9 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
@@ -426,5 +428,312 @@ final class EloquentParticipantRepositoryTest extends TestCase
         $this->assertNotNull($retrieved);
         $this->assertNotNull($retrieved->checkedInAt());
         $this->assertEquals('2026-02-15', $retrieved->checkedInAt()->format('Y-m-d'));
+    }
+
+    private function guest(
+        string $email,
+        ParticipantStatus $status = ParticipantStatus::Registered,
+        ?string $tournamentId = null,
+    ): Participant {
+        return new Participant(
+            id: ParticipantId::generate(),
+            tournamentId: $tournamentId ?? $this->tournament->id,
+            status: $status,
+            guestName: 'Ana',
+            guestEmail: $email,
+            registeredAt: new DateTimeImmutable(),
+        );
+    }
+
+    private function otherTournament(): TournamentModel
+    {
+        return TournamentModel::create([
+            'event_id' => EventModel::factory()->create()->id,
+            'name' => 'Otro torneo',
+            'slug' => 'otro-torneo',
+            'status' => 'draft',
+            'result_reporting' => 'admin_only',
+        ]);
+    }
+
+    public function test_save_translates_the_violation(): void
+    {
+        $this->repository->save($this->guest('ana@example.com'));
+
+        $this->expectException(AlreadyRegisteredException::class);
+
+        $this->repository->save($this->guest('ANA@example.com'));
+    }
+
+    public function test_the_translated_violation_does_not_name_the_email(): void
+    {
+        $this->repository->save($this->guest('ana@example.com'));
+        $second = $this->guest('ana@example.com');
+
+        try {
+            $this->repository->save($second);
+            $this->fail('The duplicate email was saved');
+        } catch (AlreadyRegisteredException $e) {
+            $this->assertStringNotContainsString('ana@example.com', $e->getMessage());
+            $this->assertStringContainsString($second->id()->value, $e->getMessage());
+        }
+    }
+
+    public function test_save_allows_the_same_email_after_the_first_registration_was_withdrawn(): void
+    {
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Withdrawn));
+
+        $this->repository->save($this->guest('ana@example.com'));
+
+        $this->assertSame(2, $this->repository->countByTournament($this->tournament->id));
+    }
+
+    public function test_guest_email_is_stored_normalised(): void
+    {
+        $participant = $this->guest('  Ana@Example.COM ');
+
+        $this->repository->save($participant);
+
+        $this->assertDatabaseHas('tournaments_participants', [
+            'id' => $participant->id()->value,
+            'guest_email' => 'ana@example.com',
+        ]);
+    }
+
+    public function test_it_saves_and_reads_the_confirmation_state(): void
+    {
+        $participant = $this->guest('ana@example.com');
+        $participant->startEmailConfirmation(
+            'token-abc',
+            GuestConfirmationMode::Hold,
+            new DateTimeImmutable('2030-01-01 12:00:00'),
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+        $participant->recordFingerprint('fp-1');
+        $this->repository->save($participant);
+
+        $found = $this->repository->findByConfirmationToken('token-abc');
+
+        $this->assertNotNull($found);
+        $this->assertSame($participant->id()->value, $found->id()->value);
+        $this->assertSame(GuestConfirmationMode::Hold, $found->confirmationMode());
+        $this->assertSame('fp-1', $found->fingerprint());
+        $this->assertSame('2030-01-01 12:00:00', $found->confirmationExpiresAt()?->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-01-01 10:00:00', $found->confirmationSentAt()?->format('Y-m-d H:i:s'));
+        $this->assertNull($found->emailConfirmedAt());
+        $this->assertNull($this->repository->findByConfirmationToken('nope'));
+    }
+
+    public function test_find_by_guest_email_ignores_case_and_spaces(): void
+    {
+        $participant = $this->guest('ana@example.com');
+        $this->repository->save($participant);
+
+        $found = $this->repository->findByGuestEmailAndTournament('  ANA@Example.com ', $this->tournament->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($participant->id()->value, $found->id()->value);
+    }
+
+    public function test_find_by_guest_email_prefers_the_active_row(): void
+    {
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Withdrawn));
+        $active = $this->guest('ana@example.com');
+        $this->repository->save($active);
+
+        $found = $this->repository->findByGuestEmailAndTournament('ana@example.com', $this->tournament->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($active->id()->value, $found->id()->value);
+    }
+
+    public function test_find_active_by_email_matches_a_user_email_in_another_case(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'Maria@Example.com']);
+        ParticipantModel::create([
+            'id' => ParticipantId::generate()->value,
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $user->id,
+            'status' => 'registered',
+        ]);
+
+        $found = $this->repository->findActiveByEmailAndTournament(' maria@example.COM ', $this->tournament->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($user->id, $found->userId());
+    }
+
+    public function test_find_active_by_email_matches_a_guest_email_in_another_case(): void
+    {
+        $this->repository->save($this->guest('ana@example.com'));
+
+        $this->assertNotNull($this->repository->findActiveByEmailAndTournament('ANA@example.com', $this->tournament->id));
+    }
+
+    public function test_find_active_by_email_skips_inactive_guest_rows_for_the_account_row(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Expired));
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Withdrawn));
+        ParticipantModel::create([
+            'id' => ParticipantId::generate()->value,
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $user->id,
+            'status' => 'confirmed',
+        ]);
+
+        $found = $this->repository->findActiveByEmailAndTournament('ana@example.com', $this->tournament->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($user->id, $found->userId());
+    }
+
+    public function test_find_active_by_email_ignores_inactive_rows(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Expired));
+        ParticipantModel::create([
+            'id' => ParticipantId::generate()->value,
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $user->id,
+            'status' => 'withdrawn',
+        ]);
+
+        $this->assertNull($this->repository->findActiveByEmailAndTournament('ana@example.com', $this->tournament->id));
+    }
+
+    public function test_wait_rows_awaiting_confirmation_do_not_count(): void
+    {
+        $confirmed = $this->guest('a@example.com');
+        $confirmed->markEmailConfirmed(new DateTimeImmutable('2030-01-01 10:00:00'));
+        $this->repository->save($confirmed);
+
+        $held = $this->guest('b@example.com');
+        $held->startEmailConfirmation('t-b', GuestConfirmationMode::Hold, null, new DateTimeImmutable('2030-01-01 10:00:00'));
+        $this->repository->save($held);
+
+        $waiting = $this->guest('c@example.com');
+        $waiting->startEmailConfirmation('t-c', GuestConfirmationMode::Wait, null, new DateTimeImmutable('2030-01-01 10:00:00'));
+        $this->repository->save($waiting);
+
+        $this->assertSame(2, $this->repository->countActiveByTournament($this->tournament->id));
+        $this->assertSame(1, $this->repository->countUnconfirmedHeldByTournament($this->tournament->id));
+    }
+
+    public function test_find_ids_awaiting_confirmation_lists_active_unconfirmed_guests(): void
+    {
+        $pending = $this->guest('a@example.com');
+        $pending->startEmailConfirmation('t-a', GuestConfirmationMode::Hold, null, new DateTimeImmutable('2030-01-01 10:00:00'));
+        $this->repository->save($pending);
+
+        $confirmed = $this->guest('b@example.com');
+        $confirmed->markEmailConfirmed(new DateTimeImmutable('2030-01-01 10:00:00'));
+        $this->repository->save($confirmed);
+
+        $withdrawn = $this->guest('c@example.com', ParticipantStatus::Withdrawn);
+        $this->repository->save($withdrawn);
+
+        $this->assertSame([$pending->id()->value], $this->repository->findIdsAwaitingConfirmation());
+    }
+
+    public function test_fingerprints_can_be_listed_and_cleared_per_tournament(): void
+    {
+        $other = $this->otherTournament();
+        $a = $this->guest('a@example.com');
+        $a->recordFingerprint('fp');
+        $this->repository->save($a);
+        $b = $this->guest('b@example.com', tournamentId: $other->id);
+        $b->recordFingerprint('fp');
+        $this->repository->save($b);
+        $this->repository->save($this->guest('c@example.com'));
+
+        $ids = $this->repository->findTournamentIdsWithFingerprints();
+        sort($ids);
+        $expected = [$this->tournament->id, $other->id];
+        sort($expected);
+        $this->assertSame($expected, $ids);
+
+        $this->assertSame(1, $this->repository->clearFingerprints($this->tournament->id));
+
+        $this->assertSame([$other->id], $this->repository->findTournamentIdsWithFingerprints());
+        $this->assertNull($this->repository->find($a->id())?->fingerprint());
+    }
+
+    public function test_possible_duplicates_share_fingerprint_within_the_window(): void
+    {
+        $first = $this->guest('a@example.com');
+        $first->recordFingerprint('fp');
+        $this->repository->save($first);
+        $second = $this->guest('b@example.com');
+        $second->recordFingerprint('fp');
+        $this->repository->save($second);
+
+        ParticipantModel::where('id', $first->id()->value)->update(['created_at' => '2030-01-01 10:00:00']);
+        ParticipantModel::where('id', $second->id()->value)->update(['created_at' => '2030-01-01 13:00:00']);
+
+        $ids = $this->repository->findPossibleDuplicateIds($this->tournament->id, 24);
+        sort($ids);
+        $expected = [$first->id()->value, $second->id()->value];
+        sort($expected);
+        $this->assertSame($expected, $ids);
+    }
+
+    public function test_possible_duplicates_ignore_rows_outside_the_window(): void
+    {
+        $first = $this->guest('a@example.com');
+        $first->recordFingerprint('fp');
+        $this->repository->save($first);
+        $second = $this->guest('b@example.com');
+        $second->recordFingerprint('fp');
+        $this->repository->save($second);
+
+        ParticipantModel::where('id', $first->id()->value)->update(['created_at' => '2030-01-01 10:00:00']);
+        ParticipantModel::where('id', $second->id()->value)->update(['created_at' => '2030-01-02 16:00:00']);
+
+        $this->assertSame([], $this->repository->findPossibleDuplicateIds($this->tournament->id, 24));
+    }
+
+    public function test_possible_duplicates_ignore_other_tournaments_and_pairs_of_users(): void
+    {
+        $other = $this->otherTournament();
+        $a = $this->guest('a@example.com');
+        $a->recordFingerprint('fp');
+        $this->repository->save($a);
+        $b = $this->guest('b@example.com', tournamentId: $other->id);
+        $b->recordFingerprint('fp');
+        $this->repository->save($b);
+
+        $this->assertSame([], $this->repository->findPossibleDuplicateIds($this->tournament->id, 24));
+
+        $userA = UserModel::factory()->create();
+        $userB = UserModel::factory()->create();
+        foreach ([$userA, $userB] as $user) {
+            ParticipantModel::create([
+                'id' => ParticipantId::generate()->value,
+                'tournament_id' => $this->tournament->id,
+                'user_id' => $user->id,
+                'status' => 'registered',
+                'fingerprint' => 'fp-users',
+            ]);
+        }
+
+        $this->assertSame([], $this->repository->findPossibleDuplicateIds($this->tournament->id, 24));
+    }
+
+    public function test_possible_duplicates_pair_by_the_confirmation_send_time(): void
+    {
+        $first = $this->guest('a@example.com');
+        $first->recordFingerprint('fp');
+        $this->repository->save($first);
+        $second = $this->guest('b@example.com');
+        $second->recordFingerprint('fp');
+        $second->startEmailConfirmation('t-b', GuestConfirmationMode::Hold, null, new DateTimeImmutable('2030-01-05 10:00:00'));
+        $this->repository->save($second);
+
+        // The second row is an old reactivated one: only its send time is recent
+        ParticipantModel::where('id', $first->id()->value)->update(['created_at' => '2030-01-05 09:00:00']);
+        ParticipantModel::where('id', $second->id()->value)->update(['created_at' => '2029-01-01 09:00:00']);
+
+        $this->assertCount(2, $this->repository->findPossibleDuplicateIds($this->tournament->id, 24));
     }
 }

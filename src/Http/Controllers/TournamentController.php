@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
@@ -30,6 +31,7 @@ final class TournamentController extends Controller
         private readonly UserDataProviderInterface $userDataProvider,
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly EventQueryServiceInterface $events,
+        private readonly GuestConfirmationQueryInterface $guestConfirmation,
     ) {}
 
     public function show(string $identifier): Response|RedirectResponse
@@ -87,10 +89,12 @@ final class TournamentController extends Controller
         return Inertia::render('Tournaments/Show', [
             'tournament' => $tournament->toArray(),
             'standings' => array_map(fn ($s) => $s->toArray(), $topStandings),
-            'participants' => array_map(fn ($p) => $p->toArray(), $participants),
+            // Other people's registrations: never their emails
+            'participants' => array_map(fn ($p) => $p->toPublicArray(), $participants),
             'currentRound' => $currentRound?->toArray(),
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
+            'guestConfirmation' => $this->guestConfirmation->forTournament($tournament->id),
             'seo' => $this->showSeo($tournament),
         ]);
     }

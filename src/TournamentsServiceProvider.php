@@ -17,19 +17,30 @@ use App\Modules\ModuleServiceProvider;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
+use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
+use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
+use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
+use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
+use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
@@ -61,6 +72,9 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
+use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
@@ -74,10 +88,12 @@ use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
 use Modules\Tournaments\Policies\GameProfilePolicy;
 use Modules\Tournaments\Policies\TournamentPolicy;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class TournamentsServiceProvider extends ModuleServiceProvider
 {
@@ -101,16 +117,137 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->registerEventListeners();
+        $this->registerCommands();
+        $this->registerSchedule();
+        $this->registerRateLimiters();
+        $this->declareGuestCookie();
         $this->shareInertiaData();
         $this->shareProfileTournamentsData();
         $this->registerLivewireComponents();
         $this->registerFilamentExtensions();
     }
 
+    /**
+     * The browser remembers guest registrations in a `preferences` cookie. The module does not
+     * require cookie-consent: the declaration is only made when its registry exists.
+     */
+    private function declareGuestCookie(): void
+    {
+        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(
+            CookieDeclarationRegistryInterface::class,
+            function (CookieDeclarationRegistryInterface $registry): void {
+                $registry->declare(new DeclaredCookieDTO(
+                    name: 'tn_guest_registrations',
+                    categorySlug: 'preferences',
+                    provider: (string) config('app.name'),
+                    purpose: (string) __('tournaments::messages.cookies.guest_registrations_purpose'),
+                    duration: (string) __('tournaments::messages.cookies.guest_registrations_duration'),
+                ));
+            },
+        );
+    }
+
+    private function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ExpireGuestRegistrationsCommand::class,
+            ]);
+        }
+    }
+
+    /**
+     * Unconfirmed guest registrations lapse with the clock.
+     */
+    private function registerSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('tournaments:expire-guest-registrations')
+                ->everyFiveMinutes()
+                // A run takes seconds; a killed one must not block the expiry for a day
+                ->withoutOverlapping(10);
+        });
+    }
+
     private function registerEventListeners(): void
     {
         Event::listen(ParticipantRegistered::class, SendParticipantRegisteredEmails::class);
         Event::listen(ParticipantWithdrawn::class, SendParticipantWithdrawnEmail::class);
+        Event::listen(GuestConfirmationRequested::class, SendGuestConfirmationRequest::class);
+    }
+
+    /**
+     * Guest registrations per IP, from the module settings; signed-in users are not limited (the
+     * route is shared). The guest confirmation link (page and button) per IP, wide enough for a
+     * person and tight enough to stop guessing tokens. The public check-in per IP, for everyone,
+     * so emails cannot be tried in bulk. Over any limit: a translated message, never an error page.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('tournaments-guest-registration', static function (Request $request): Limit|array {
+            if ($request->user() !== null) {
+                return Limit::none();
+            }
+
+            $settings = app(GuestRegistrationSettingsInterface::class);
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.errors.too_many_registration_attempts');
+
+                // Inertia visits go back to the form with the error, like any other refusal
+                if ($request->header('X-Inertia') === null && $request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                return back()->withErrors(['registration' => $message])->with('error', $message);
+            };
+
+            return [
+                Limit::perMinute($settings->perMinute())->by('tn-guest-min|'.$ip)->response($tooMany),
+                Limit::perHour($settings->perHour())->by('tn-guest-hour|'.$ip)->response($tooMany),
+            ];
+        });
+
+        RateLimiter::for('tournaments-guest-confirmation', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.guest_confirmation.too_many_attempts');
+
+                return $request->expectsJson()
+                    ? response()->json(['message' => $message], 429, $headers)
+                    : response($message, 429, $headers);
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(20)->by('minute:'.$ip)->response($tooMany),
+                Limit::perHour(100)->by('hour:'.$ip)->response($tooMany),
+            ];
+        });
+
+        RateLimiter::for('tournaments-public-check-in', static function (Request $request): array {
+            $ip = $request->ip() ?? 'unknown';
+            $tooMany = static function (Request $request, array $headers): HttpResponse {
+                $message = (string) __('tournaments::messages.check_in.too_many_attempts');
+
+                // Inertia visits go back to the form with the error, like any other refusal
+                if ($request->header('X-Inertia') === null && $request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                return back()->withErrors(['check_in' => $message])->with('error', $message);
+            };
+
+            // Distinct keys: limits sharing a key would share one counter
+            return [
+                Limit::perMinute(10)->by('tn-check-in-min|'.$ip)->response($tooMany),
+                Limit::perHour(60)->by('tn-check-in-hour|'.$ip)->response($tooMany),
+            ];
+        });
     }
 
     private function registerModelExtensions(): void
@@ -222,6 +359,21 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             ScoringRuleEvaluatorInterface::class,
             ScoringRuleEvaluator::class
         );
+
+        $this->app->bind(
+            GuestRegistrationSettingsInterface::class,
+            GuestRegistrationSettings::class
+        );
+
+        $this->app->bind(
+            RegistrationLockInterface::class,
+            DatabaseRegistrationLock::class
+        );
+
+        $this->app->bind(
+            GuestConfirmationQueryInterface::class,
+            GuestConfirmationQuery::class
+        );
     }
 
     private function registerLivewireComponents(): void
@@ -302,7 +454,28 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             'tournament' => fn () => $this->getTournamentForCurrentRoute(),
             'userRegistration' => fn () => $this->getUserRegistrationForCurrentRoute(),
             'canRegister' => fn () => $this->getCanRegisterForCurrentRoute(),
+            'guestConfirmation' => fn () => $this->getGuestConfirmationForCurrentRoute(),
         ]);
+    }
+
+    /**
+     * What the guest form of the event page says before submitting.
+     *
+     * @return array{mode: 'hold'|'wait', expires_at: string|null}|null
+     */
+    private function getGuestConfirmationForCurrentRoute(): ?array
+    {
+        $eventId = $this->getEventIdFromCurrentRoute();
+        if ($eventId === null) {
+            return null;
+        }
+
+        $tournament = $this->findTournamentByEventId($eventId);
+        if ($tournament === null) {
+            return null;
+        }
+
+        return app(GuestConfirmationQueryInterface::class)->forTournament($tournament->id);
     }
 
     /**
@@ -616,6 +789,73 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                         ->suffix(__('tournaments::messages.settings.minutes'))
                         ->default(30),
                 ]),
+            Section::make(__('tournaments::messages.settings.guest_registrations'))
+                ->schema([
+                    Select::make('guest_confirmation.mode')
+                        ->label(__('tournaments::messages.settings.guest_confirmation_mode'))
+                        ->options([
+                            'hold' => __('tournaments::messages.settings.guest_confirmation_modes.hold'),
+                            'wait' => __('tournaments::messages.settings.guest_confirmation_modes.wait'),
+                        ])
+                        ->in(['hold', 'wait'])
+                        ->native(false)
+                        ->default('hold')
+                        ->required(),
+                    TextInput::make('guest_confirmation.hold_hours')
+                        ->label(__('tournaments::messages.settings.guest_hold_hours'))
+                        ->suffix(__('tournaments::messages.settings.hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(168)
+                        ->default(2)
+                        ->required(),
+                    TextInput::make('guest_confirmation.max_unconfirmed_held')
+                        ->label(__('tournaments::messages.settings.guest_max_unconfirmed_held'))
+                        ->helperText(__('tournaments::messages.settings.guest_max_unconfirmed_held_help'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(0)
+                        ->maxValue(50)
+                        ->default(2)
+                        ->required(),
+                    Select::make('guest_accounts.mode')
+                        ->label(__('tournaments::messages.settings.guest_accounts_mode'))
+                        ->options([
+                            'require_login' => __('tournaments::messages.settings.guest_accounts_modes.require_login'),
+                            'allow_guest' => __('tournaments::messages.settings.guest_accounts_modes.allow_guest'),
+                        ])
+                        ->in(['require_login', 'allow_guest'])
+                        ->native(false)
+                        ->default('require_login')
+                        ->required(),
+                    TextInput::make('guest_rate_limit.per_minute')
+                        ->label(__('tournaments::messages.settings.guest_rate_per_minute'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(100)
+                        ->default(5)
+                        ->required(),
+                    TextInput::make('guest_rate_limit.per_hour')
+                        ->label(__('tournaments::messages.settings.guest_rate_per_hour'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(1000)
+                        ->default(20)
+                        ->required(),
+                    TextInput::make('duplicate_signal.window_hours')
+                        ->label(__('tournaments::messages.settings.duplicate_window_hours'))
+                        ->suffix(__('tournaments::messages.settings.hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(720)
+                        ->default(24)
+                        ->required(),
+                ])
+                ->columns(2),
         ];
     }
 
@@ -633,7 +873,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 module: $this->moduleName(),
                 order: 20, // After game-tables (10)
                 props: [],
-                dataKeys: ['tournament', 'userRegistration', 'canRegister'],
+                dataKeys: ['tournament', 'userRegistration', 'canRegister', 'guestConfirmation'],
             ),
             new SlotRegistrationDTO(
                 slot: 'profile-sections',

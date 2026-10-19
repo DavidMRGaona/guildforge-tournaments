@@ -23,6 +23,7 @@ final readonly class ParticipantResponseDTO
         public bool $hasReceivedBye,
         public DateTimeImmutable $registeredAt,
         public ?DateTimeImmutable $checkedInAt,
+        public bool $claimedGuestRegistration = false,
     ) {
     }
 
@@ -30,6 +31,7 @@ final readonly class ParticipantResponseDTO
         Participant $participant,
         ?string $userName = null,
         ?string $userEmail = null,
+        bool $claimedGuestRegistration = false,
     ): self {
         return new self(
             id: $participant->id()->value,
@@ -44,6 +46,7 @@ final readonly class ParticipantResponseDTO
             hasReceivedBye: $participant->hasReceivedBye(),
             registeredAt: $participant->registeredAt() ?? new DateTimeImmutable(),
             checkedInAt: $participant->checkedInAt(),
+            claimedGuestRegistration: $claimedGuestRegistration,
         );
     }
 
@@ -84,6 +87,20 @@ final readonly class ParticipantResponseDTO
             'display_name' => $this->displayName(),
             'is_guest' => $this->isGuest(),
             'is_checked_in' => $this->isCheckedIn(),
+            'claimed_guest_registration' => $this->claimedGuestRegistration,
         ];
+    }
+
+    /**
+     * What a public page may show of any participant: everything but the emails.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPublicArray(): array
+    {
+        $data = $this->toArray();
+        unset($data['user_email'], $data['guest_email']);
+
+        return $data;
     }
 }

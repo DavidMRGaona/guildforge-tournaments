@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
+use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -48,6 +52,65 @@ final class TournamentCheckInWindowTest extends ModuleTestCase
         $this->get(route('tournaments.check-in.show', $tournament->slug))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('checkInWindow.status', 'closed'));
+    }
+
+    public function test_an_unconfirmed_guest_cannot_self_check_in(): void
+    {
+        $tournament = $this->tournament(now()->addMinutes(10));
+        $participant = $this->guest($tournament, [
+            'email_confirmed_at' => null,
+            'confirmation_token' => 'pending-confirmation-token',
+            'confirmation_mode' => GuestConfirmationMode::Hold->value,
+            'confirmation_expires_at' => now()->addMinutes(10),
+            'confirmation_sent_at' => now()->subHour(),
+        ]);
+
+        $this->from(route('tournaments.check-in.show', $tournament->slug))
+            ->post(route('tournaments.check-in.store', $tournament->slug), [
+                'email' => 'ana@example.com',
+                'gdpr_consent' => true,
+            ])
+            ->assertRedirect(route('tournaments.check-in.show', $tournament->slug))
+            ->assertSessionHasErrors([
+                'email' => 'Confirma tu inscripción desde el enlace del email antes de hacer el check-in.',
+            ]);
+
+        $this->assertSame(ParticipantStatus::Registered, $participant->fresh()?->status);
+        $this->assertNull($participant->fresh()?->checked_in_at);
+    }
+
+    public function test_check_in_by_email_ignores_case(): void
+    {
+        $tournament = $this->tournament(now()->addMinutes(10));
+        $participant = $this->guest($tournament, [
+            'status' => ParticipantStatus::Confirmed->value,
+            'email_confirmed_at' => now()->subDay(),
+        ]);
+
+        $this->post(route('tournaments.check-in.store', $tournament->slug), [
+            'email' => 'Ana@Example.COM',
+            'gdpr_consent' => true,
+        ])
+            ->assertRedirect(route('tournaments.check-in.show', $tournament->slug))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(ParticipantStatus::CheckedIn, $participant->fresh()?->status);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function guest(TournamentModel $tournament, array $attributes): ParticipantModel
+    {
+        return ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'tournament_id' => $tournament->id,
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'status' => ParticipantStatus::Registered->value,
+            'registered_at' => now()->subDay(),
+            ...$attributes,
+        ]);
     }
 
     private function tournament(\DateTimeInterface|string $eventStartsAt): TournamentModel

@@ -76,4 +76,23 @@ final readonly class UserDataProvider implements UserDataProviderInterface
 
         return array_intersect($userRoles, $roles) !== [];
     }
+
+    /**
+     * @return array{id: string, email_verified: bool}|null
+     */
+    public function findAccountByEmail(string $email): ?array
+    {
+        $user = UserModel::query()
+            ->whereRaw('lower(email) = ?', [mb_strtolower(trim($email))])
+            ->first(['id', 'email_verified_at']);
+
+        if ($user === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $user->id,
+            'email_verified' => $user->email_verified_at !== null,
+        ];
+    }
 }
