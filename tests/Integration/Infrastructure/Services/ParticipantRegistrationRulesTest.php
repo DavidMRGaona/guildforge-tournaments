@@ -124,6 +124,31 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service->register(new RegisterParticipantDTO($tournament->id, UserModel::factory()->create()->id));
     }
 
+    public function test_a_returning_withdrawn_user_without_an_allowed_role_is_rejected(): void
+    {
+        $tournament = $this->tournament(['allowed_roles' => ['socio']]);
+        $user = UserModel::factory()->create();
+        $withdrawn = $this->participant($tournament, ['user_id' => $user->id, 'status' => ParticipantStatus::Withdrawn->value]);
+
+        try {
+            $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
+            $this->fail('A withdrawn user without the role came back');
+        } catch (UserNotAllowedToRegisterException) {
+            $this->assertSame(ParticipantStatus::Withdrawn, $withdrawn->fresh()?->status);
+        }
+    }
+
+    public function test_an_active_user_in_a_full_tournament_is_told_they_are_already_registered(): void
+    {
+        $tournament = $this->tournament(['max_participants' => 1]);
+        $user = UserModel::factory()->create();
+        $this->participant($tournament, ['user_id' => $user->id]);
+
+        $this->expectException(AlreadyRegisteredException::class);
+
+        $this->service->register(new RegisterParticipantDTO($tournament->id, $user->id));
+    }
+
     public function test_withdrawing_from_a_finished_tournament_is_rejected(): void
     {
         $tournament = $this->tournament(['status' => TournamentStatus::Finished->value]);
@@ -321,7 +346,6 @@ final class ParticipantRegistrationRulesTest extends TestCase
 
         $this->service->checkInByEmail($tournament->id, 'ana@example.com');
     }
-}
 
     public function test_an_email_not_found_at_check_in_is_not_written_in_the_message(): void
     {
@@ -362,3 +386,4 @@ final class ParticipantRegistrationRulesTest extends TestCase
     {
         $this->assertSame($allowed, $this->service->canCheckIn($status, $manualConfirmation));
     }
+}
