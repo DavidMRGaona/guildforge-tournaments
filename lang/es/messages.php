@@ -689,6 +689,20 @@ return [
             'action' => 'Confirmar inscripción',
             'closing' => 'Si no has sido tú, ignora este mensaje.',
         ],
+        'tournament_cancelled' => [
+            'subject' => 'Torneo cancelado: :tournament',
+            'greeting' => '¡Hola, :name!',
+            'intro' => 'La organización ha cancelado el torneo «:tournament». Tu inscripción queda anulada.',
+            'event_date' => 'Fecha prevista',
+            'outro' => 'Sentimos las molestias. Si tienes dudas, ponte en contacto con la organización.',
+        ],
+        'participant_disqualified' => [
+            'subject' => 'Descalificación: :tournament',
+            'greeting' => '¡Hola, :name!',
+            'intro' => 'La organización te ha descalificado del torneo «:tournament».',
+            'reason' => 'Motivo',
+            'outro' => 'Si crees que se trata de un error, ponte en contacto con la organización.',
+        ],
         'withdrawal_confirmed' => [
             'subject' => 'Inscripción cancelada: :tournament',
             'greeting' => '¡Hola :name!',

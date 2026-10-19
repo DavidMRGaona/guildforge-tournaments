@@ -25,6 +25,7 @@ use Modules\Tournaments\Domain\Enums\GuestAccountPolicy;
 use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
@@ -367,7 +368,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function disqualify(string $participantId, ?string $reason = null): ParticipantResponseDTO
     {
-        return $this->actAsOrganization(
+        $response = $this->actAsOrganization(
             $participantId,
             takesSeat: false,
             act: static function (Participant $participant): void {
@@ -375,6 +376,11 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             },
             announce: false,
         );
+
+        // Mailed once the change is committed
+        event(ParticipantDisqualified::create($response->id, $response->tournamentId, $response->userId, $reason));
+
+        return $response;
     }
 
     /**

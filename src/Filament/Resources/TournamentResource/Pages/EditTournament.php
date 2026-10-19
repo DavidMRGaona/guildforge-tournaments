@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -133,10 +134,15 @@ final class EditTournament extends EditRecord
                 ->modalHeading(__('tournaments::messages.actions.cancel_tournament'))
                 ->modalDescription(__('tournaments::messages.modal.cancel_description'))
                 ->action(function (): void {
+                    $previousStatus = $this->record->status;
+
                     $this->record->update([
                         'status' => TournamentStatus::Cancelled->value,
                     ]);
                     $this->refreshFormData(['status']);
+
+                    // Participants are told by email
+                    event(TournamentCancelled::create($this->record->id, $previousStatus));
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.tournament_cancelled'))

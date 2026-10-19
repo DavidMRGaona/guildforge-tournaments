@@ -41,8 +41,10 @@ use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
+use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
+use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
@@ -89,8 +91,10 @@ use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
+use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
+use Modules\Tournaments\Listeners\SendTournamentCancelledEmails;
 use Modules\Tournaments\Policies\GameProfilePolicy;
 use Modules\Tournaments\Policies\TournamentPolicy;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -178,6 +182,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         Event::listen(ParticipantRegistered::class, SendParticipantRegisteredEmails::class);
         Event::listen(ParticipantWithdrawn::class, SendParticipantWithdrawnEmail::class);
         Event::listen(GuestConfirmationRequested::class, SendGuestConfirmationRequest::class);
+        Event::listen(TournamentCancelled::class, SendTournamentCancelledEmails::class);
+        Event::listen(ParticipantDisqualified::class, SendParticipantDisqualifiedEmail::class);
     }
 
     /**
