@@ -23,6 +23,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -368,5 +369,60 @@ final class ParticipantsPanelGuestTest extends ModuleTestCase
             ->callTableAction('delete', $expired);
 
         $this->assertNull(ParticipantModel::query()->find($expired->id));
+    }
+
+    public function test_the_check_in_action_follows_the_manual_confirmation_rule(): void
+    {
+        $open = $this->tournament();
+        $registered = $this->confirmedGuest($open, 'ana@example.com');
+        $this->manager($open)->assertTableActionVisible('check_in', $registered);
+
+        $manual = $this->tournament(['requires_manual_confirmation' => true]);
+        $pending = $this->confirmedGuest($manual, 'berta@example.com');
+        $confirmed = $this->confirmedGuest($manual, 'carla@example.com', ParticipantStatus::Confirmed);
+        $this->manager($manual)
+            ->assertTableActionHidden('check_in', $pending)
+            ->assertTableActionVisible('check_in', $confirmed);
+    }
+
+    /**
+     * @return iterable<string, array{ParticipantStatus}>
+     */
+    public static function inactiveStatuses(): iterable
+    {
+        yield 'expired' => [ParticipantStatus::Expired];
+        yield 'withdrawn' => [ParticipantStatus::Withdrawn];
+        yield 'disqualified' => [ParticipantStatus::Disqualified];
+    }
+
+    #[DataProvider('inactiveStatuses')]
+    public function test_a_participant_cannot_be_added_with_an_inactive_status(ParticipantStatus $status): void
+    {
+        $tournament = $this->tournament();
+
+        $this->manager($tournament)
+            ->callTableAction('create', data: [
+                'guest_name' => 'Ana',
+                'guest_email' => 'ana@example.com',
+                'status' => $status->value,
+            ])
+            ->assertHasTableActionErrors(['status']);
+
+        $this->assertSame(0, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_a_participant_can_be_added_already_checked_in(): void
+    {
+        $tournament = $this->tournament();
+
+        $this->manager($tournament)
+            ->callTableAction('create', data: [
+                'guest_name' => 'Ana',
+                'guest_email' => 'ana@example.com',
+                'status' => ParticipantStatus::CheckedIn->value,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ParticipantStatus::CheckedIn, ParticipantModel::query()->where('tournament_id', $tournament->id)->sole()->status);
     }
 }
