@@ -354,8 +354,10 @@ El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts
 | Cancelación de la inscripción (`ParticipantWithdrawn`) | Participante y email de notificaciones del torneo |
 | Inscripción de invitado pendiente (`GuestConfirmationRequested`) | Invitado, con el enlace de confirmación |
 | Inscripción de invitado caducada | Invitado, con la invitación a volver a apuntarse |
+| Torneo cancelado desde el panel (`TournamentCancelled`) | Cada participante activo |
+| Descalificación desde el panel (`ParticipantDisqualified`) | El participante descalificado |
 
-Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Son los eventos de dominio de inscripción que el módulo dispara hoy. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
+Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Los avisos de cancelación y descalificación van al email de la cuenta o al del invitado solo si este lo confirmó (o la organización lo avaló antes, por ejemplo al hacer el check-in); a una dirección sin confirmar no se envía nada. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
 
 ## Permisos
 
