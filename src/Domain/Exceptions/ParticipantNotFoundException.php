@@ -23,9 +23,12 @@ final class ParticipantNotFoundException extends DomainException
         return new self("User {$userId} is not registered in tournament {$tournamentId}.");
     }
 
-    public static function withEmail(string $email, string $tournamentId): self
+    /**
+     * The email is left out: exception messages reach the logs.
+     */
+    public static function byEmail(string $tournamentId): self
     {
-        return new self("No participant found with email {$email} in tournament {$tournamentId}.");
+        return new self("No active participant found with the given email in tournament {$tournamentId}.");
     }
 
     public static function byToken(string $token): self

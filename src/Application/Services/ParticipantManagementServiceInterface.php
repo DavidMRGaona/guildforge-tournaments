@@ -143,16 +143,34 @@ interface ParticipantManagementServiceInterface
     public function findByUserAndTournament(string $userId, string $tournamentId): ?ParticipantResponseDTO;
 
     /**
-     * Check-in a participant by email (for public self check-in).
-     * Finds participant by email (guest_email or user email) and performs check-in.
+     * Whether a participant in this status may be checked in, from the panel or by themselves:
+     * with manual confirmation only confirmed participants, otherwise registered ones too.
+     */
+    public function canCheckIn(ParticipantStatus $status, bool $requiresManualConfirmation): bool;
+
+    /**
+     * Public self check-in by email: the active guest registration with that email, or else the
+     * active registration of the account with it. Inactive rows are ignored. Follows canCheckIn().
      *
-     * @throws ParticipantNotFoundException When no participant found with that email
-     * @throws CheckInNotAllowedException When self check-in is disabled for the tournament, or the
-     *                                     guest registration found has not confirmed its email
+     * @throws ParticipantNotFoundException When no active participant has that email
+     * @throws CheckInNotAllowedException When self check-in is disabled for the tournament, the
+     *                                     guest registration found has not confirmed its email, or
+     *                                     the organisation has not confirmed the registration yet
      * @throws CheckInWindowClosedException When check-in window is not active
      * @throws AlreadyCheckedInException When participant has already checked in
      */
     public function checkInByEmail(string $tournamentId, string $email): ParticipantResponseDTO;
+
+    /**
+     * Public self check-in of a signed-in user: the user's own active registration, by user id.
+     * Same rules as checkInByEmail().
+     *
+     * @throws ParticipantNotFoundException When the user has no active registration
+     * @throws CheckInNotAllowedException
+     * @throws CheckInWindowClosedException
+     * @throws AlreadyCheckedInException
+     */
+    public function checkInByUser(string $tournamentId, string $userId): ParticipantResponseDTO;
 
     /**
      * Find a participant by cancellation token.

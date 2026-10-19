@@ -130,18 +130,27 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         return $this->toEntity($model);
     }
 
-    public function findByEmailAndTournament(string $email, string $tournamentId): ?Participant
+    public function findActiveByEmailAndTournament(string $email, string $tournamentId): ?Participant
     {
-        // First check guest_email
-        $model = $this->guestEmailQuery($email, $tournamentId)->first();
+        $activeStatuses = [
+            ParticipantStatus::Registered,
+            ParticipantStatus::Confirmed,
+            ParticipantStatus::CheckedIn,
+        ];
+
+        // An active guest registration with the email first (at most one: partial unique index)
+        $model = $this->guestEmailQuery($email, $tournamentId)
+            ->whereIn('status', $activeStatuses)
+            ->first();
 
         if ($model !== null) {
             return $this->toEntity($model);
         }
 
-        // Then check user's email through the user relation
+        // Then the active registration of the account with that email
         $normalized = $this->normalizeEmail($email);
         $model = ParticipantModel::where('tournament_id', $tournamentId)
+            ->whereIn('status', $activeStatuses)
             ->whereHas('user', function ($query) use ($normalized): void {
                 $query->whereRaw('lower(email) = ?', [$normalized]);
             })

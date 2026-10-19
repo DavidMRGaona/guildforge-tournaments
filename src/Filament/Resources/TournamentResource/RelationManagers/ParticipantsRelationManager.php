@@ -408,21 +408,11 @@ final class ParticipantsRelationManager extends RelationManager
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(function (ParticipantModel $record): bool {
-                        if ($record->status === ParticipantStatus::CheckedIn) {
-                            return false;
-                        }
-
                         /** @var TournamentModel $tournament */
                         $tournament = $this->getOwnerRecord();
 
-                        // If manual confirmation is required, only confirmed participants can check in
-                        if ($tournament->requires_manual_confirmation) {
-                            return $record->status === ParticipantStatus::Confirmed;
-                        }
-
-                        // Otherwise, registered participants can check in directly
-                        return $record->status === ParticipantStatus::Registered
-                            || $record->status === ParticipantStatus::Confirmed;
+                        // The rule self check-in follows too
+                        return $this->participants()->canCheckIn($record->status, $tournament->requires_manual_confirmation);
                     })
                     ->requiresConfirmation()
                     ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
@@ -496,14 +486,11 @@ final class ParticipantsRelationManager extends RelationManager
                             /** @var TournamentModel $tournament */
                             $tournament = $this->getOwnerRecord();
 
-                            // With manual confirmation only confirmed participants check in; otherwise registered ones too
-                            $allowed = $tournament->requires_manual_confirmation
-                                ? [ParticipantStatus::Confirmed]
-                                : [ParticipantStatus::Registered, ParticipantStatus::Confirmed];
+                            $manualConfirmation = $tournament->requires_manual_confirmation;
 
                             /** @var Collection<int, ParticipantModel> $records */
                             $this->runOnParticipants(
-                                $records->filter(fn (ParticipantModel $participant): bool => in_array($participant->status, $allowed, true)),
+                                $records->filter(fn (ParticipantModel $participant): bool => $this->participants()->canCheckIn($participant->status, $manualConfirmation)),
                                 fn (string $id) => $this->participants()->checkIn($id),
                                 __('tournaments::messages.notifications.bulk_checked_in'),
                             );
