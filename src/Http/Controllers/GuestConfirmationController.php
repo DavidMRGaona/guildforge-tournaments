@@ -19,6 +19,8 @@ use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterfa
  */
 final class GuestConfirmationController extends Controller
 {
+    private const string RESULT_KEY = 'guest_confirmation_outcome';
+
     public function __construct(
         private readonly ParticipantManagementServiceInterface $participantService,
         private readonly SeoMetadataFactoryInterface $seo,
@@ -38,6 +40,7 @@ final class GuestConfirmationController extends Controller
         return Inertia::render('Tournaments/ConfirmRegistration', [
             'confirmation' => $confirmation,
             'token' => $token,
+            'result' => $this->result(),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('tournaments::messages.seo.confirm_registration_title'),
                 noindex: true,
@@ -45,20 +48,28 @@ final class GuestConfirmationController extends Controller
         ]);
     }
 
+    /**
+     * Back to the confirmation page, which shows the outcome: the tournament page renders no flashes.
+     */
     public function store(string $token): RedirectResponse
     {
         $result = $this->participantService->confirmGuestEmail($token);
 
-        $redirect = $result->tournamentSlug === null
-            ? redirect()->route('tournaments.index')
-            : redirect()->route('tournaments.show', $result->tournamentSlug);
+        return redirect()
+            ->route('tournaments.confirm-registration', $token)
+            ->with(self::RESULT_KEY, $result->outcome->value);
+    }
 
-        return match ($result->outcome) {
-            GuestConfirmationOutcome::Confirmed => $redirect->with('success', __('tournaments::messages.guest_confirmation.confirmed')),
-            GuestConfirmationOutcome::AlreadyConfirmed => $redirect->with('success', __('tournaments::messages.guest_confirmation.already_confirmed')),
-            GuestConfirmationOutcome::Invalid => $redirect->with('error', __('tournaments::messages.guest_confirmation.invalid')),
-            GuestConfirmationOutcome::RegistrationClosed => $redirect->with('error', __('tournaments::messages.guest_confirmation.registration_closed')),
-            GuestConfirmationOutcome::Full => $redirect->with('error', __('tournaments::messages.guest_confirmation.full')),
-        };
+    /**
+     * @return array{outcome: string, message: string}|null
+     */
+    private function result(): ?array
+    {
+        $outcome = GuestConfirmationOutcome::tryFrom((string) session(self::RESULT_KEY));
+
+        return $outcome === null ? null : [
+            'outcome' => $outcome->value,
+            'message' => (string) __('tournaments::messages.guest_confirmation.'.$outcome->value),
+        ];
     }
 }

@@ -80,6 +80,16 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         return ParticipantModel::query()->where('confirmation_token', self::TOKEN)->firstOrFail();
     }
 
+    private function assertResultPage(string $url, string $outcome, string $message): void
+    {
+        $this->get($url)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tournaments/ConfirmRegistration', false)
+                ->where('result.outcome', $outcome)
+                ->where('result.message', $message));
+    }
+
     public function test_the_link_shows_the_page_without_confirming(): void
     {
         $this->pendingGuest();
@@ -93,6 +103,7 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
                 ->where('confirmation.tournament_name', 'Torneo de Warhammer')
                 ->where('confirmation.tournament_slug', 'torneo-warhammer')
                 ->where('confirmation.guest_name', 'Ana')
+                ->where('result', null)
                 ->where('confirmation.expires_at', $this->now->addHours(2)->format('c'))
                 ->where('confirmation.seat_held', true))
             ->assertSee('<meta name="robots" content="noindex, nofollow" data-seo-server>', false);
@@ -109,16 +120,18 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Tournaments/ConfirmRegistration', false)
-                ->where('confirmation.state', 'invalid'));
+                ->where('confirmation.state', 'invalid')
+                ->where('result', null));
     }
 
-    public function test_the_button_confirms_and_returns_to_the_tournament(): void
+    public function test_the_button_confirms_and_returns_to_the_confirmation_page(): void
     {
         $this->pendingGuest();
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('success', 'Inscripción confirmada. Te hemos enviado un email con los detalles.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'confirmed', 'Inscripción confirmada. Te hemos enviado un email con los detalles.');
 
         $this->assertEquals($this->now, $this->row()->email_confirmed_at);
         Event::assertDispatchedTimes(ParticipantRegistered::class, 1);
@@ -129,17 +142,19 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->pendingGuest(participantAttributes: ['email_confirmed_at' => $this->now, 'confirmation_expires_at' => null]);
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('success', 'Tu inscripción ya estaba confirmada.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'already_confirmed', 'Tu inscripción ya estaba confirmada.');
 
         Event::assertNotDispatched(ParticipantRegistered::class);
     }
 
-    public function test_an_unknown_link_returns_to_the_tournament_list(): void
+    public function test_an_unknown_link_returns_to_the_confirmation_page(): void
     {
         $this->post('/torneos/confirmar/no-such-token')
-            ->assertRedirect(route('tournaments.index'))
-            ->assertSessionHas('error', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
+            ->assertRedirect('/torneos/confirmar/'.'no-such-token');
+
+        $this->assertResultPage('/torneos/confirmar/'.'no-such-token', 'invalid', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
     }
 
     public function test_a_cancelled_registration_link_is_no_longer_valid(): void
@@ -147,8 +162,9 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->pendingGuest(participantAttributes: ['status' => ParticipantStatus::Withdrawn->value]);
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('error', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'invalid', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
     }
 
     public function test_an_overdue_link_is_no_longer_valid(): void
@@ -157,8 +173,9 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->travelTo($this->now->addHours(2)->addMinute());
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('error', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'invalid', 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.');
 
         $this->assertSame(ParticipantStatus::Expired, $this->row()->status);
     }
@@ -168,8 +185,9 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         $this->pendingGuest(['status' => TournamentStatus::RegistrationClosed->value]);
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('error', 'Las inscripciones ya se han cerrado.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'registration_closed', 'Las inscripciones ya se han cerrado.');
 
         $this->assertSame(ParticipantStatus::Expired, $this->row()->status);
     }
@@ -191,8 +209,9 @@ final class GuestConfirmationControllerTest extends ModuleTestCase
         ]);
 
         $this->post('/torneos/confirmar/'.self::TOKEN)
-            ->assertRedirect(route('tournaments.show', 'torneo-warhammer'))
-            ->assertSessionHas('error', 'Se ha llenado mientras confirmabas.');
+            ->assertRedirect('/torneos/confirmar/'.self::TOKEN);
+
+        $this->assertResultPage('/torneos/confirmar/'.self::TOKEN, 'full', 'Se ha llenado mientras confirmabas.');
 
         $this->assertSame(ParticipantStatus::Expired, $this->row()->status);
     }
