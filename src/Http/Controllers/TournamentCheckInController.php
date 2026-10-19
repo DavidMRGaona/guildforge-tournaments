@@ -8,6 +8,7 @@ use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
 use DateTimeImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -70,7 +71,7 @@ final class TournamentCheckInController extends Controller
         ]);
     }
 
-    public function store(CheckInRequest $request, string $slug): RedirectResponse
+    public function store(CheckInRequest $request, string $slug): JsonResponse|RedirectResponse
     {
         $tournament = $this->findTournament($slug);
 
@@ -80,9 +81,7 @@ final class TournamentCheckInController extends Controller
 
         // Validate self check-in is allowed
         if (! $tournament->selfCheckInAllowed) {
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.not_allowed'),
-            ]);
+            return $this->refusal($request, 'check_in', 'not_allowed', 403);
         }
 
         // Validate check-in window
@@ -90,9 +89,7 @@ final class TournamentCheckInController extends Controller
         $checkInWindow = $this->calculateCheckInWindow($tournament, $eventStartDate);
 
         if ($checkInWindow['status'] !== 'open') {
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.window_closed'),
-            ]);
+            return $this->refusal($request, 'check_in', 'window_closed', 409);
         }
 
         $user = auth()->user();
@@ -106,43 +103,70 @@ final class TournamentCheckInController extends Controller
                 $this->participantManagement->checkInByEmail($tournament->id, (string) $request->validated('email'));
             }
 
+            $message = (string) __('tournaments::messages.check_in.success');
+
+            if ($this->wantsJsonResponse($request)) {
+                return response()->json(['message' => $message]);
+            }
+
             return redirect()
                 ->route('tournaments.check-in.show', $tournament->slug)
-                ->with('success', __('tournaments::messages.check_in.success'));
+                ->with('success', $message);
         } catch (ParticipantNotFoundException) {
             return $user !== null
-                ? back()->withErrors(['check_in' => __('tournaments::messages.check_in.not_registered')])
-                : back()->withErrors(['email' => __('tournaments::messages.check_in.not_found')]);
+                ? $this->refusal($request, 'check_in', 'not_registered', 422)
+                : $this->refusal($request, 'email', 'not_found', 422);
         } catch (AlreadyCheckedInException) {
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.already_done'),
-            ]);
+            return $this->refusal($request, 'check_in', 'already_done', 409);
         } catch (CheckInNotAllowedException $e) {
             if ($e->emailIsUnconfirmed()) {
-                return back()->withErrors([
-                    'email' => __('tournaments::messages.check_in.email_not_confirmed'),
-                ]);
+                return $this->refusal($request, 'email', 'email_not_confirmed', 422);
             }
 
             if ($e->registrationIsUnconfirmed()) {
-                return back()->withErrors([
-                    'check_in' => __('tournaments::messages.check_in.registration_not_confirmed'),
-                ]);
+                return $this->refusal($request, 'check_in', 'registration_not_confirmed', 409);
             }
 
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.not_allowed'),
-            ]);
+            return $this->refusal($request, 'check_in', 'not_allowed', 403);
         } catch (CheckInWindowClosedException) {
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.window_closed'),
-            ]);
+            return $this->refusal($request, 'check_in', 'window_closed', 409);
         } catch (InvalidStateTransitionException) {
             // Fallback: the rules above should have refused the check-in already
-            return back()->withErrors([
-                'check_in' => __('tournaments::messages.check_in.not_allowed'),
-            ]);
+            return $this->refusal($request, 'check_in', 'not_allowed', 409);
         }
+    }
+
+    /**
+     * The check-in page posts with fetch and reads JSON; Inertia visits and plain forms
+     * expect a redirect.
+     */
+    private function wantsJsonResponse(CheckInRequest $request): bool
+    {
+        if ($request->header('X-Inertia') !== null) {
+            return false;
+        }
+
+        return $request->expectsJson();
+    }
+
+    /**
+     * A refused check-in: JSON with the message (also under the field, like a validation
+     * error) for fetch, or back to the form with the error.
+     *
+     * @param  string  $reason  key under tournaments::messages.check_in
+     */
+    private function refusal(CheckInRequest $request, string $field, string $reason, int $status): JsonResponse|RedirectResponse
+    {
+        $message = (string) __('tournaments::messages.check_in.'.$reason);
+
+        if ($this->wantsJsonResponse($request)) {
+            return response()->json([
+                'message' => $message,
+                'errors' => [$field => [$message]],
+            ], $status);
+        }
+
+        return back()->withErrors([$field => $message]);
     }
 
     private function findTournament(string $identifier): ?TournamentResponseDTO
