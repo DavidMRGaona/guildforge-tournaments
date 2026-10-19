@@ -183,6 +183,19 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service->withdrawByToken('twice-token');
     }
 
+    public function test_an_unknown_cancellation_token_is_not_written_into_the_exception_message(): void
+    {
+        // Exception messages reach the logs and the token is a secret
+        $token = 'unknown-cancellation-token-0123456789abcdef';
+
+        try {
+            $this->service->withdrawByToken($token);
+            $this->fail('An unknown token must be refused.');
+        } catch (ParticipantNotFoundException $e) {
+            $this->assertStringNotContainsString($token, $e->getMessage());
+        }
+    }
+
     public function test_withdrawing_twice_is_rejected(): void
     {
         $tournament = $this->tournament();

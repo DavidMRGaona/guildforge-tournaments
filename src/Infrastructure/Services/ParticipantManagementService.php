@@ -333,7 +333,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $participant = $this->participantRepository->findByCancellationToken($token);
 
         if ($participant === null) {
-            throw ParticipantNotFoundException::byToken($token);
+            throw ParticipantNotFoundException::byToken();
         }
 
         $this->ensureCanWithdraw($participant);
