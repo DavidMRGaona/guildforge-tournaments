@@ -159,6 +159,10 @@ export default {
             withdrawn_successfully: 'Has cancelado tu inscripción correctamente',
             registration_error: 'Error al inscribirse',
             session_expired: 'Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.',
+            guest_confirmation_hold: 'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {date}, la plaza se liberará.',
+            guest_confirmation_wait: 'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+            already_registered_here: 'Ya hay una inscripción desde este navegador para este torneo.',
+            sign_in: 'Inicia sesión',
         },
 
         // Guest cancellation page

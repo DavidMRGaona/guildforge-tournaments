@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
+use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
@@ -118,10 +120,35 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->registerCommands();
         $this->registerSchedule();
         $this->registerRateLimiters();
+        $this->declareGuestCookie();
         $this->shareInertiaData();
         $this->shareProfileTournamentsData();
         $this->registerLivewireComponents();
         $this->registerFilamentExtensions();
+    }
+
+    /**
+     * The browser remembers guest registrations in a `preferences` cookie. The module does not
+     * require cookie-consent: the declaration is only made when its registry exists.
+     */
+    private function declareGuestCookie(): void
+    {
+        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(
+            CookieDeclarationRegistryInterface::class,
+            function (CookieDeclarationRegistryInterface $registry): void {
+                $registry->declare(new DeclaredCookieDTO(
+                    name: 'tn_guest_registrations',
+                    categorySlug: 'preferences',
+                    provider: (string) config('app.name'),
+                    purpose: (string) __('tournaments::messages.cookies.guest_registrations_purpose'),
+                    duration: (string) __('tournaments::messages.cookies.guest_registrations_duration'),
+                ));
+            },
+        );
     }
 
     private function registerCommands(): void

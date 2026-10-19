@@ -128,6 +128,10 @@ export default {
             withdrawn_successfully: 'You have cancelled your registration successfully',
             registration_error: 'Registration error',
             session_expired: 'Your session has expired. Reload the page and try again.',
+            guest_confirmation_hold: 'We will email you to confirm the registration. If you do not confirm it before {date}, the seat will be released.',
+            guest_confirmation_wait: 'We will email you to confirm the registration. Your seat is not guaranteed until you confirm it.',
+            already_registered_here: 'There is already a registration from this browser for this tournament.',
+            sign_in: 'Sign in',
         },
 
         // Guest cancellation page
