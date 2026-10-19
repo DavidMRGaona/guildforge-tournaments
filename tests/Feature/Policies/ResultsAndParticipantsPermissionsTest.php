@@ -141,6 +141,7 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
     {
         return [
             'confirm' => ['confirm', ParticipantStatus::Registered],
+            'confirm email' => ['confirm_email', ParticipantStatus::Registered],
             'check in' => ['check_in', ParticipantStatus::Confirmed],
             'withdraw' => ['withdraw', ParticipantStatus::Confirmed],
             'disqualify' => ['disqualify', ParticipantStatus::Confirmed],

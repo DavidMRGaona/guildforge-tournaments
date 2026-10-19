@@ -466,4 +466,57 @@ final class ParticipantTest extends TestCase
 
         $this->assertSame('Ana María', $participant->guestName());
     }
+
+    public function test_the_organisation_checks_in_a_registered_or_confirmed_participant(): void
+    {
+        $at = new DateTimeImmutable('2026-11-02 10:00:00');
+
+        foreach ([ParticipantStatus::Registered, ParticipantStatus::Confirmed] as $status) {
+            $participant = $this->createParticipant($status);
+
+            $participant->checkInByOrganization($at);
+
+            $this->assertSame(ParticipantStatus::CheckedIn, $participant->status());
+            $this->assertEquals($at, $participant->checkedInAt());
+        }
+    }
+
+    public function test_the_organisation_cannot_check_in_a_participant_already_checked_in_or_gone(): void
+    {
+        foreach ([ParticipantStatus::CheckedIn, ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
+            $participant = $this->createParticipant($status);
+
+            try {
+                $participant->checkInByOrganization(new DateTimeImmutable('2026-11-02 10:00:00'));
+                $this->fail("Checked in a {$status->value} participant.");
+            } catch (InvalidStateTransitionException) {
+                $this->assertSame($status, $participant->status());
+            }
+        }
+    }
+
+    public function test_the_organisation_disqualifies_any_active_participant(): void
+    {
+        foreach ([ParticipantStatus::Registered, ParticipantStatus::Confirmed, ParticipantStatus::CheckedIn] as $status) {
+            $participant = $this->createParticipant($status);
+
+            $participant->disqualifyByOrganization();
+
+            $this->assertSame(ParticipantStatus::Disqualified, $participant->status());
+        }
+    }
+
+    public function test_the_organisation_cannot_disqualify_an_inactive_participant(): void
+    {
+        foreach ([ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
+            $participant = $this->createParticipant($status);
+
+            try {
+                $participant->disqualifyByOrganization();
+                $this->fail("Disqualified a {$status->value} participant.");
+            } catch (InvalidStateTransitionException) {
+                $this->assertSame($status, $participant->status());
+            }
+        }
+    }
 }

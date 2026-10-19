@@ -41,6 +41,7 @@ return [
     'modal' => [
         'withdraw_description' => '¿Estás seguro de que quieres retirar a este participante del torneo?',
         'disqualify_description' => '¿Estás seguro de que quieres descalificar a este participante? Esta acción no se puede deshacer.',
+        'confirm_email_description' => 'El email del invitado quedará confirmado y le enviaremos el email de inscripción.',
         'cancel_description' => '¿Estás seguro de que quieres cancelar este torneo? Esta acción notificará a todos los participantes.',
     ],
 
@@ -366,6 +367,15 @@ return [
         'total' => 'total',
         'confirmed_count' => 'confirmados',
         'checked_in_count' => 'con check-in',
+        'confirm_email' => 'Marcar email como confirmado',
+        'email_confirmed' => 'Email confirmado',
+        'email_unconfirmed' => 'Email sin confirmar',
+        'email_unconfirmed_until' => 'Email sin confirmar · caduca el :date',
+        'email_unconfirmed_without_seat' => 'Email sin confirmar · sin plaza hasta confirmar',
+        'possible_duplicate' => 'Posible duplicado',
+        'possible_duplicate_tooltip' => 'Posible duplicado: misma conexión y navegador que otra inscripción',
+        'user_already_registered' => 'Este usuario ya tiene una inscripción en este torneo.',
+        'action_not_allowed' => 'Esta inscripción no admite esa acción en su estado actual.',
     ],
 
     // Filament - Notifications (toast messages)
@@ -377,6 +387,8 @@ return [
         'bulk_checked_in' => 'Check-in masivo realizado',
         'bulk_confirmed' => 'Confirmación masiva realizada',
         'bulk_disqualified' => 'Descalificación masiva realizada',
+        'bulk_refused' => 'Participantes sin cambios: :count',
+        'email_confirmed' => 'Email marcado como confirmado',
         'registration_confirmed_subject' => 'Inscripción confirmada - :tournament',
         'registration_confirmed_body' => 'Tu inscripción al torneo :tournament ha sido confirmada.',
         'round_pairings_subject' => 'Emparejamientos de la ronda :round - :tournament',

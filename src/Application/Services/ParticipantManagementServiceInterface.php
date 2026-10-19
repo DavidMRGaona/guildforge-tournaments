@@ -9,6 +9,7 @@ use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestConfirmationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
+use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
@@ -69,16 +70,41 @@ interface ParticipantManagementServiceInterface
     public function findGuestConfirmation(string $token): ?array;
 
     /**
-     * Confirm a participant's registration.
+     * Add a participant from the panel. The organisation vouches for the guest's email: no
+     * confirmation, no fingerprint and no email. The registration window does not apply, but
+     * duplicates and capacity do; the guest email is compared trimmed and lowercased.
+     *
+     * @throws InvalidArgumentException When a guest has no name
+     * @throws TournamentNotFoundException
+     * @throws AlreadyRegisteredException When the user, or the guest email, already has a registration
+     * @throws TournamentFullException When an active registration finds no seat
+     */
+    public function registerByOrganization(RegisterParticipantDTO $dto, ParticipantStatus $status = ParticipantStatus::Registered): ParticipantResponseDTO;
+
+    /**
+     * The organisation vouches for a guest's email from the panel: the guest gets the usual
+     * registration email, the organisation no notice. Nothing changes when it is already confirmed.
      *
      * @throws ParticipantNotFoundException
+     * @throws TournamentFullException When a registration waiting without a seat finds none
+     */
+    public function confirmEmailByOrganization(string $participantId): ParticipantResponseDTO;
+
+    /**
+     * Confirm a participant's registration from the panel. An unconfirmed guest email counts as
+     * confirmed, and the guest gets the usual registration email.
+     *
+     * @throws ParticipantNotFoundException
+     * @throws TournamentFullException When a registration waiting without a seat finds none
      */
     public function confirm(string $participantId): ParticipantResponseDTO;
 
     /**
-     * Check-in a participant.
+     * Check in a registered or confirmed participant from the panel. An unconfirmed guest email
+     * counts as confirmed, without an email.
      *
      * @throws ParticipantNotFoundException
+     * @throws TournamentFullException When a registration waiting without a seat finds none
      */
     public function checkIn(string $participantId): ParticipantResponseDTO;
 
@@ -91,14 +117,15 @@ interface ParticipantManagementServiceInterface
     public function withdraw(string $participantId): ParticipantResponseDTO;
 
     /**
-     * Disqualify a participant.
+     * Disqualify an active participant from the panel. An unconfirmed guest email counts as
+     * confirmed, without an email.
      *
      * @throws ParticipantNotFoundException
      */
     public function disqualify(string $participantId, ?string $reason = null): ParticipantResponseDTO;
 
     /**
-     * Bulk check-in multiple participants.
+     * Bulk check-in multiple participants, as checkIn() does for each; unknown IDs are skipped.
      *
      * @param  array<string>  $participantIds
      * @return array<ParticipantResponseDTO>
