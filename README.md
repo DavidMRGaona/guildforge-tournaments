@@ -239,7 +239,7 @@ Solo se aceptan inscripciones en `registration_open`, dentro de las fechas confi
 | Caducada | `expired` | — (el invitado puede volver a apuntarse) |
 | Descalificado | `disqualified` | — |
 
-Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
+Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes (inscritos, confirmados o con check-in hecho) y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
 
 ### Resultado de partida
 

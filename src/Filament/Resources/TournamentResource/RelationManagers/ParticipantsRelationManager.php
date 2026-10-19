@@ -71,9 +71,14 @@ final class ParticipantsRelationManager extends RelationManager
                     ->label(__('tournaments::messages.participants.guest_email'))
                     ->email()
                     ->maxLength(255),
+                // A participant is added in an active status only
                 Select::make('status')
                     ->label(__('tournaments::messages.participants.status'))
-                    ->options(ParticipantStatus::options())
+                    ->options(array_filter(
+                        ParticipantStatus::options(),
+                        static fn (string $status): bool => ParticipantStatus::from($status)->isActive(),
+                        ARRAY_FILTER_USE_KEY,
+                    ))
                     ->required()
                     ->default(ParticipantStatus::Registered->value),
                 TextInput::make('seed')
