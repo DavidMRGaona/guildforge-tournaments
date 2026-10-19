@@ -43,6 +43,7 @@ use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
+use Modules\Tournaments\Notifications\GuestRegistrationExpiredNotification;
 
 final readonly class ParticipantManagementService implements ParticipantManagementServiceInterface
 {
@@ -115,17 +116,22 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $now = CarbonImmutable::now();
 
-        /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null} $outcome */
+        /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{email: string, name: string, tournament: string, slug: string}|null} $outcome */
         $outcome = $this->lock->forConfirmationToken(
             $token,
             fn (): array => $this->confirmUnderLock($token, $now),
         );
 
-        [$result, $registered] = $outcome;
+        [$result, $registered, $lapsed] = $outcome;
 
         // Mailed once the confirmation is committed
         if ($registered !== null) {
             event($registered);
+        }
+
+        // A held seat that lapsed here is told exactly as the expiry command would
+        if ($lapsed !== null) {
+            GuestRegistrationExpiredNotification::sendTo($lapsed['email'], $lapsed['name'], $lapsed['tournament'], $lapsed['slug']);
         }
 
         return $result;
@@ -949,7 +955,9 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      * form left it lapses instead when registration closed, its deadline passed, or it waits
      * without a seat in a full tournament.
      *
-     * @return array{GuestConfirmationResultDTO, ParticipantRegistered|null}
+     * The third element is the expiry email to send once the lock is released, for a held seat that lapsed.
+     *
+     * @return array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{email: string, name: string, tournament: string, slug: string}|null}
      */
     private function confirmUnderLock(string $token, CarbonImmutable $now): array
     {
@@ -959,7 +967,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             : $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
         if ($participant === null || $tournament === null) {
-            return [new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid, null, null), null];
+            return [new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid, null, null), null, null];
         }
 
         $answer = static fn (GuestConfirmationOutcome $outcome): GuestConfirmationResultDTO => new GuestConfirmationResultDTO(
@@ -969,11 +977,11 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         );
 
         if (! $participant->isActive()) {
-            return [$answer(GuestConfirmationOutcome::Invalid), null];
+            return [$answer(GuestConfirmationOutcome::Invalid), null, null];
         }
 
         if (! $participant->isAwaitingEmailConfirmation()) {
-            return [$answer(GuestConfirmationOutcome::AlreadyConfirmed), null];
+            return [$answer(GuestConfirmationOutcome::AlreadyConfirmed), null, null];
         }
 
         // A row the organisation already moved on (confirmed, checked in) has been vouched for: it never lapses here
@@ -986,10 +994,19 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             };
 
             if ($lapse !== null) {
+                $heldSeat = $participant->confirmationMode() === GuestConfirmationMode::Hold;
                 $participant->expire();
                 $this->participantRepository->save($participant);
 
-                return [$answer($lapse), null];
+                $email = $participant->guestEmail();
+
+                return [
+                    $answer($lapse),
+                    null,
+                    $heldSeat && $email !== null
+                        ? ['email' => $email, 'name' => $participant->guestName() ?? $email, 'tournament' => $tournament->name(), 'slug' => $tournament->slug()]
+                        : null,
+                ];
             }
         }
 
@@ -999,6 +1016,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return [
             $answer(GuestConfirmationOutcome::Confirmed),
             $this->guestRegistered($participant, notifyOrganizer: true),
+            null,
         ];
     }
 
