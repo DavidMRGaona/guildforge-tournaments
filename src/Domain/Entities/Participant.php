@@ -329,6 +329,25 @@ final class Participant
     }
 
     /**
+     * Check in the participant from the panel: the organisation may skip confirming a registered one.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function checkInByOrganization(DateTimeImmutable $at): void
+    {
+        if (! in_array($this->status, [ParticipantStatus::Registered, ParticipantStatus::Confirmed], true)) {
+            throw InvalidStateTransitionException::participant(
+                $this->id->value,
+                $this->status->value,
+                ParticipantStatus::CheckedIn->value
+            );
+        }
+
+        $this->status = ParticipantStatus::CheckedIn;
+        $this->checkedInAt = $at;
+    }
+
+    /**
      * Withdraw the participant.
      *
      * @throws InvalidStateTransitionException
@@ -346,6 +365,24 @@ final class Participant
     public function disqualify(): void
     {
         $this->transitionTo(ParticipantStatus::Disqualified);
+    }
+
+    /**
+     * Disqualify the participant from the panel: the organisation may disqualify any active registration.
+     *
+     * @throws InvalidStateTransitionException
+     */
+    public function disqualifyByOrganization(): void
+    {
+        if (! $this->isActive()) {
+            throw InvalidStateTransitionException::participant(
+                $this->id->value,
+                $this->status->value,
+                ParticipantStatus::Disqualified->value
+            );
+        }
+
+        $this->status = ParticipantStatus::Disqualified;
     }
 
     /**

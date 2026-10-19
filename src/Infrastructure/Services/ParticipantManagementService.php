@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Services;
 
 use Carbon\CarbonImmutable;
+use Closure;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
@@ -163,32 +164,104 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         ];
     }
 
-    public function confirm(string $participantId): ParticipantResponseDTO
+    public function registerByOrganization(RegisterParticipantDTO $dto, ParticipantStatus $status = ParticipantStatus::Registered): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
+        $userId = $dto->userId;
+        $guestName = $userId === null ? $dto->guestName : null;
 
-        if ($participant === null) {
-            throw ParticipantNotFoundException::withId($participantId);
+        if ($userId === null && ($guestName === null || trim($guestName) === '')) {
+            throw new InvalidArgumentException('A guest added by the organisation needs a name.');
         }
 
-        $participant->confirm();
-        $this->participantRepository->save($participant);
+        $guestEmail = $userId === null && $dto->guestEmail !== null && trim($dto->guestEmail) !== ''
+            ? mb_strtolower(trim($dto->guestEmail))
+            : null;
+        $now = CarbonImmutable::now()->toDateTimeImmutable();
 
-        return $this->createResponseDTO($participant);
+        return $this->lock->forTournament(
+            $dto->tournamentId,
+            function () use ($dto, $status, $userId, $guestName, $guestEmail, $now): ParticipantResponseDTO {
+                $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
+
+                if ($tournament === null) {
+                    throw TournamentNotFoundException::withId($dto->tournamentId);
+                }
+
+                if ($userId !== null) {
+                    $existing = $this->participantRepository->findByUserAndTournament($userId, $dto->tournamentId);
+
+                    // One row per user and tournament, whatever its status
+                    if ($existing !== null) {
+                        $this->rejectDisqualified($existing);
+
+                        throw AlreadyRegisteredException::userAlreadyRegistered($dto->tournamentId, $userId);
+                    }
+                } elseif ($guestEmail !== null) {
+                    $existing = $this->participantRepository->findByGuestEmailAndTournament($guestEmail, $dto->tournamentId);
+
+                    if ($existing !== null) {
+                        $this->rejectDisqualified($existing);
+
+                        if ($existing->isActive()) {
+                            throw AlreadyRegisteredException::guestWithEmailAlreadyRegistered($dto->tournamentId, $guestEmail);
+                        }
+                    }
+                }
+
+                if ($status->isActive()) {
+                    $this->ensureCapacity($tournament);
+                }
+
+                // The organisation vouches for the email: confirmed, with no confirmation link or fingerprint
+                $participant = new Participant(
+                    id: ParticipantId::generate(),
+                    tournamentId: $dto->tournamentId,
+                    status: $status,
+                    userId: $userId,
+                    guestName: $guestName,
+                    guestEmail: $guestEmail,
+                    cancellationToken: $userId === null ? bin2hex(random_bytes(32)) : null,
+                    seed: $dto->seed,
+                    hasReceivedBye: false,
+                    registeredAt: $now,
+                    checkedInAt: $status === ParticipantStatus::CheckedIn ? $now : null,
+                    emailConfirmedAt: $now,
+                );
+
+                $this->participantRepository->save($participant);
+
+                return $this->createResponseDTO($participant);
+            },
+        );
+    }
+
+    public function confirmEmailByOrganization(string $participantId): ParticipantResponseDTO
+    {
+        // Vouching for the email is the whole action
+        return $this->actAsOrganization($participantId, takesSeat: true, act: static function (): void {});
+    }
+
+    public function confirm(string $participantId): ParticipantResponseDTO
+    {
+        return $this->actAsOrganization(
+            $participantId,
+            takesSeat: true,
+            act: static function (Participant $participant): void {
+                $participant->confirm();
+            },
+        );
     }
 
     public function checkIn(string $participantId): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
-
-        if ($participant === null) {
-            throw ParticipantNotFoundException::withId($participantId);
-        }
-
-        $participant->checkIn();
-        $this->participantRepository->save($participant);
-
-        return $this->createResponseDTO($participant);
+        return $this->actAsOrganization(
+            $participantId,
+            takesSeat: true,
+            act: static function (Participant $participant, CarbonImmutable $now): void {
+                $participant->checkInByOrganization($now->toDateTimeImmutable());
+            },
+            announce: false,
+        );
     }
 
     public function withdraw(string $participantId): ParticipantResponseDTO
@@ -278,16 +351,14 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function disqualify(string $participantId, ?string $reason = null): ParticipantResponseDTO
     {
-        $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
-
-        if ($participant === null) {
-            throw ParticipantNotFoundException::withId($participantId);
-        }
-
-        $participant->disqualify();
-        $this->participantRepository->save($participant);
-
-        return $this->createResponseDTO($participant);
+        return $this->actAsOrganization(
+            $participantId,
+            takesSeat: false,
+            act: static function (Participant $participant): void {
+                $participant->disqualifyByOrganization();
+            },
+            announce: false,
+        );
     }
 
     /**
@@ -299,16 +370,11 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $results = [];
 
         foreach ($participantIds as $participantId) {
-            $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
-
-            if ($participant === null) {
+            if ($this->participantRepository->find(ParticipantId::fromString($participantId)) === null) {
                 continue;
             }
 
-            $participant->checkIn();
-            $this->participantRepository->save($participant);
-
-            $results[] = $this->createResponseDTO($participant);
+            $results[] = $this->checkIn($participantId);
         }
 
         return $results;
@@ -475,6 +541,78 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         if (! $this->isActiveParticipant($participant)) {
             throw CannotWithdrawException::alreadyWithdrawn($participant->id()->value);
         }
+    }
+
+    /**
+     * An organisation action on a registration, under the tournament lock. Acting on a guest
+     * registration still awaiting confirmation vouches for its email first: it no longer expires,
+     * and one waiting without a seat takes one when the action needs it. The guest then gets the
+     * usual registration email, unless the action is one where it would be of no use; the
+     * organisation is never told, since it acted itself.
+     *
+     * @param  Closure(Participant, CarbonImmutable): void  $act
+     *
+     * @throws ParticipantNotFoundException
+     * @throws TournamentFullException
+     */
+    private function actAsOrganization(string $participantId, bool $takesSeat, Closure $act, bool $announce = true): ParticipantResponseDTO
+    {
+        $now = CarbonImmutable::now();
+
+        /** @var array{ParticipantResponseDTO, ParticipantRegistered|null} $outcome */
+        $outcome = $this->lock->forParticipant($participantId, function () use ($participantId, $takesSeat, $act, $announce, $now): array {
+            $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
+
+            if ($participant === null) {
+                throw ParticipantNotFoundException::withId($participantId);
+            }
+
+            $endorsed = $participant->isAwaitingEmailConfirmation();
+
+            if ($endorsed && $takesSeat && ! $participant->holdsSeat()) {
+                $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
+
+                if ($tournament === null) {
+                    throw TournamentNotFoundException::withId($participant->tournamentId());
+                }
+
+                $this->ensureCapacity($tournament);
+            }
+
+            if ($endorsed) {
+                $participant->markEmailConfirmed($now->toDateTimeImmutable());
+            }
+
+            $act($participant, $now);
+            $this->participantRepository->save($participant);
+
+            return [
+                $this->createResponseDTO($participant),
+                $endorsed && $announce ? $this->guestRegistered($participant, notifyOrganizer: false) : null,
+            ];
+        });
+
+        [$response, $registered] = $outcome;
+
+        // Mailed once the change is committed
+        if ($registered !== null) {
+            event($registered);
+        }
+
+        return $response;
+    }
+
+    private function guestRegistered(Participant $participant, bool $notifyOrganizer): ParticipantRegistered
+    {
+        return ParticipantRegistered::create(
+            participantId: $participant->id()->value,
+            tournamentId: $participant->tournamentId(),
+            userId: null,
+            guestEmail: $participant->guestEmail(),
+            isGuest: true,
+            cancellationToken: $participant->cancellationToken(),
+            notifyOrganizer: $notifyOrganizer,
+        );
     }
 
     private function isActiveParticipant(Participant $participant): bool
@@ -860,14 +998,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         return [
             $answer(GuestConfirmationOutcome::Confirmed),
-            ParticipantRegistered::create(
-                participantId: $participant->id()->value,
-                tournamentId: $participant->tournamentId(),
-                userId: null,
-                guestEmail: $participant->guestEmail(),
-                isGuest: true,
-                cancellationToken: $participant->cancellationToken(),
-            ),
+            $this->guestRegistered($participant, notifyOrganizer: true),
         ];
     }
 
