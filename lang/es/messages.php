@@ -657,6 +657,7 @@ return [
         'already_done' => 'Ya has hecho check-in',
         'not_allowed' => 'El check-in solo está disponible desde administración',
         'email_not_confirmed' => 'Confirma tu inscripción desde el enlace del email antes de hacer el check-in.',
+        'registration_not_confirmed' => 'La organización aún no ha confirmado tu inscripción: no puedes hacer el check-in todavía.',
         'window_closed' => 'La ventana de check-in está cerrada',
         'window_opens_at' => 'El check-in abre el :date a las :time',
         'window_closed_started' => 'El check-in ha cerrado',

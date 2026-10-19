@@ -15,6 +15,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
 use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
+use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Exceptions\TournamentFullException;
 use Modules\Tournaments\Domain\Exceptions\TournamentNotOpenException;
 use Modules\Tournaments\Domain\Exceptions\UserNotAllowedToRegisterException;
@@ -321,3 +322,43 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service->checkInByEmail($tournament->id, 'ana@example.com');
     }
 }
+
+    public function test_an_email_not_found_at_check_in_is_not_written_in_the_message(): void
+    {
+        $tournament = $this->tournament([
+            'event_id' => $this->eventStartingAt(now()->addMinutes(10)),
+            'status' => TournamentStatus::RegistrationClosed->value,
+            'requires_check_in' => true,
+            'self_check_in_allowed' => true,
+            'check_in_starts_before' => 30,
+        ]);
+
+        try {
+            $this->service->checkInByEmail($tournament->id, 'nadie@example.com');
+            $this->fail('An unknown email checked in');
+        } catch (ParticipantNotFoundException $e) {
+            $this->assertStringNotContainsString('nadie@example.com', $e->getMessage());
+            $this->assertStringContainsString($tournament->id, $e->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{ParticipantStatus, bool, bool}>
+     */
+    public static function checkInRule(): iterable
+    {
+        yield 'registered, no manual confirmation' => [ParticipantStatus::Registered, false, true];
+        yield 'confirmed, no manual confirmation' => [ParticipantStatus::Confirmed, false, true];
+        yield 'registered, manual confirmation' => [ParticipantStatus::Registered, true, false];
+        yield 'confirmed, manual confirmation' => [ParticipantStatus::Confirmed, true, true];
+        yield 'checked in' => [ParticipantStatus::CheckedIn, false, false];
+        yield 'withdrawn' => [ParticipantStatus::Withdrawn, false, false];
+        yield 'expired' => [ParticipantStatus::Expired, false, false];
+        yield 'disqualified' => [ParticipantStatus::Disqualified, true, false];
+    }
+
+    #[DataProvider('checkInRule')]
+    public function test_the_check_in_rule_shared_by_the_panel_and_self_check_in(ParticipantStatus $status, bool $manualConfirmation, bool $allowed): void
+    {
+        $this->assertSame($allowed, $this->service->canCheckIn($status, $manualConfirmation));
+    }

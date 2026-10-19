@@ -418,7 +418,43 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return $this->createResponseDTO($participant);
     }
 
+    public function canCheckIn(ParticipantStatus $status, bool $requiresManualConfirmation): bool
+    {
+        return $requiresManualConfirmation
+            ? $status === ParticipantStatus::Confirmed
+            : in_array($status, [ParticipantStatus::Registered, ParticipantStatus::Confirmed], true);
+    }
+
     public function checkInByEmail(string $tournamentId, string $email): ParticipantResponseDTO
+    {
+        return $this->selfCheckIn(
+            $tournamentId,
+            fn (): ?Participant => $this->participantRepository->findActiveByEmailAndTournament($email, $tournamentId),
+            static fn (): ParticipantNotFoundException => ParticipantNotFoundException::byEmail($tournamentId),
+        );
+    }
+
+    public function checkInByUser(string $tournamentId, string $userId): ParticipantResponseDTO
+    {
+        return $this->selfCheckIn(
+            $tournamentId,
+            function () use ($tournamentId, $userId): ?Participant {
+                $participant = $this->participantRepository->findByUserAndTournament($userId, $tournamentId);
+
+                return $participant !== null && $participant->isActive() ? $participant : null;
+            },
+            static fn (): ParticipantNotFoundException => ParticipantNotFoundException::forUserInTournament($userId, $tournamentId),
+        );
+    }
+
+    /**
+     * The participant is looked up and checked in under the tournament lock, so a second submit
+     * or a concurrent panel action sees the committed state.
+     *
+     * @param  Closure(): ?Participant  $find  the active registration checking in
+     * @param  Closure(): ParticipantNotFoundException  $notFound
+     */
+    private function selfCheckIn(string $tournamentId, Closure $find, Closure $notFound): ParticipantResponseDTO
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
@@ -438,28 +474,35 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         // Validate check-in window
         $this->validateCheckInWindow($tournament);
 
-        // Find participant by email
-        $participant = $this->participantRepository->findByEmailAndTournament($email, $tournamentId);
+        return $this->lock->forTournament(
+            $tournamentId,
+            function () use ($tournament, $tournamentId, $find, $notFound): ParticipantResponseDTO {
+                $participant = $find();
 
-        if ($participant === null) {
-            throw ParticipantNotFoundException::withEmail($email, $tournamentId);
-        }
+                if ($participant === null) {
+                    throw $notFound();
+                }
 
-        // Knowing the email of an unconfirmed guest registration proves nothing
-        if ($participant->isAwaitingEmailConfirmation()) {
-            throw CheckInNotAllowedException::emailNotConfirmed($tournamentId);
-        }
+                // Knowing the email of an unconfirmed guest registration proves nothing
+                if ($participant->isAwaitingEmailConfirmation()) {
+                    throw CheckInNotAllowedException::emailNotConfirmed($tournamentId);
+                }
 
-        // Check if already checked in
-        if ($participant->status() === ParticipantStatus::CheckedIn) {
-            throw AlreadyCheckedInException::forParticipant($participant->id()->value);
-        }
+                if ($participant->status() === ParticipantStatus::CheckedIn) {
+                    throw AlreadyCheckedInException::forParticipant($participant->id()->value);
+                }
 
-        // Perform check-in
-        $participant->checkIn();
-        $this->participantRepository->save($participant);
+                if (! $this->canCheckIn($participant->status(), $tournament->requiresManualConfirmation())) {
+                    throw CheckInNotAllowedException::registrationNotConfirmed($tournamentId);
+                }
 
-        return $this->createResponseDTO($participant);
+                // The same transition as the panel's check-in, now that canCheckIn() allowed it
+                $participant->checkInByOrganization(CarbonImmutable::now()->toDateTimeImmutable());
+                $this->participantRepository->save($participant);
+
+                return $this->createResponseDTO($participant);
+            },
+        );
     }
 
     private function validateCheckInWindow(Tournament $tournament): void

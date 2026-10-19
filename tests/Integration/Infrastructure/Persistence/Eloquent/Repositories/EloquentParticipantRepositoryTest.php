@@ -547,7 +547,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
         $this->assertSame($active->id()->value, $found->id()->value);
     }
 
-    public function test_find_by_email_matches_a_user_email_in_another_case(): void
+    public function test_find_active_by_email_matches_a_user_email_in_another_case(): void
     {
         $user = UserModel::factory()->create(['email' => 'Maria@Example.com']);
         ParticipantModel::create([
@@ -557,17 +557,49 @@ final class EloquentParticipantRepositoryTest extends TestCase
             'status' => 'registered',
         ]);
 
-        $found = $this->repository->findByEmailAndTournament(' maria@example.COM ', $this->tournament->id);
+        $found = $this->repository->findActiveByEmailAndTournament(' maria@example.COM ', $this->tournament->id);
 
         $this->assertNotNull($found);
         $this->assertSame($user->id, $found->userId());
     }
 
-    public function test_find_by_email_matches_a_guest_email_in_another_case(): void
+    public function test_find_active_by_email_matches_a_guest_email_in_another_case(): void
     {
         $this->repository->save($this->guest('ana@example.com'));
 
-        $this->assertNotNull($this->repository->findByEmailAndTournament('ANA@example.com', $this->tournament->id));
+        $this->assertNotNull($this->repository->findActiveByEmailAndTournament('ANA@example.com', $this->tournament->id));
+    }
+
+    public function test_find_active_by_email_skips_inactive_guest_rows_for_the_account_row(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Expired));
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Withdrawn));
+        ParticipantModel::create([
+            'id' => ParticipantId::generate()->value,
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $user->id,
+            'status' => 'confirmed',
+        ]);
+
+        $found = $this->repository->findActiveByEmailAndTournament('ana@example.com', $this->tournament->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($user->id, $found->userId());
+    }
+
+    public function test_find_active_by_email_ignores_inactive_rows(): void
+    {
+        $user = UserModel::factory()->create(['email' => 'ana@example.com']);
+        $this->repository->save($this->guest('ana@example.com', ParticipantStatus::Expired));
+        ParticipantModel::create([
+            'id' => ParticipantId::generate()->value,
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $user->id,
+            'status' => 'withdrawn',
+        ]);
+
+        $this->assertNull($this->repository->findActiveByEmailAndTournament('ana@example.com', $this->tournament->id));
     }
 
     public function test_wait_rows_awaiting_confirmation_do_not_count(): void

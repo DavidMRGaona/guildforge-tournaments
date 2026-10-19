@@ -53,9 +53,11 @@ interface ParticipantRepositoryInterface
     public function findByGuestEmailAndTournament(string $email, string $tournamentId): ?Participant;
 
     /**
-     * Find a participant by email (either guest_email or user's email) and tournament.
+     * Find an active (registered, confirmed or checked-in) participant by email and tournament:
+     * the active guest registration with that email first, then the account's. Withdrawn, expired
+     * and disqualified rows are ignored.
      */
-    public function findByEmailAndTournament(string $email, string $tournamentId): ?Participant;
+    public function findActiveByEmailAndTournament(string $email, string $tournamentId): ?Participant;
 
     /**
      * Count participants for a tournament.

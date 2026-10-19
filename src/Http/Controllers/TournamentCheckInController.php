@@ -15,10 +15,11 @@ use Inertia\Response;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
-use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
 use Modules\Tournaments\Domain\Exceptions\CheckInNotAllowedException;
 use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Http\Requests\CheckInRequest;
 
@@ -27,7 +28,6 @@ final class TournamentCheckInController extends Controller
     public function __construct(
         private readonly TournamentQueryServiceInterface $tournamentQuery,
         private readonly ParticipantManagementServiceInterface $participantManagement,
-        private readonly UserDataProviderInterface $userDataProvider,
         private readonly SeoMetadataFactoryInterface $seo,
     ) {}
 
@@ -99,31 +99,34 @@ final class TournamentCheckInController extends Controller
 
         try {
             if ($user !== null) {
-                // Authenticated user - find by user ID
-                $participant = $this->participantManagement->checkInByEmail(
-                    $tournament->id,
-                    $this->userDataProvider->getUserInfo((string) $user->id)['email'] ?? ''
-                );
+                // A signed-in user checks in their own registration, found by user id
+                $this->participantManagement->checkInByUser($tournament->id, (string) $user->id);
             } else {
                 // Guest - find by provided email
-                $email = $request->validated('email');
-                $participant = $this->participantManagement->checkInByEmail(
-                    $tournament->id,
-                    $email
-                );
+                $this->participantManagement->checkInByEmail($tournament->id, (string) $request->validated('email'));
             }
 
             return redirect()
                 ->route('tournaments.check-in.show', $tournament->slug)
                 ->with('success', __('tournaments::messages.check_in.success'));
         } catch (ParticipantNotFoundException) {
+            return $user !== null
+                ? back()->withErrors(['check_in' => __('tournaments::messages.check_in.not_registered')])
+                : back()->withErrors(['email' => __('tournaments::messages.check_in.not_found')]);
+        } catch (AlreadyCheckedInException) {
             return back()->withErrors([
-                'email' => __('tournaments::messages.check_in.not_found'),
+                'check_in' => __('tournaments::messages.check_in.already_done'),
             ]);
         } catch (CheckInNotAllowedException $e) {
             if ($e->emailIsUnconfirmed()) {
                 return back()->withErrors([
                     'email' => __('tournaments::messages.check_in.email_not_confirmed'),
+                ]);
+            }
+
+            if ($e->registrationIsUnconfirmed()) {
+                return back()->withErrors([
+                    'check_in' => __('tournaments::messages.check_in.registration_not_confirmed'),
                 ]);
             }
 
@@ -133,6 +136,11 @@ final class TournamentCheckInController extends Controller
         } catch (CheckInWindowClosedException) {
             return back()->withErrors([
                 'check_in' => __('tournaments::messages.check_in.window_closed'),
+            ]);
+        } catch (InvalidStateTransitionException) {
+            // Fallback: the rules above should have refused the check-in already
+            return back()->withErrors([
+                'check_in' => __('tournaments::messages.check_in.not_allowed'),
             ]);
         }
     }

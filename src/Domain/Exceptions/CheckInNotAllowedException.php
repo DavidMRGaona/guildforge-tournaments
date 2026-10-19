@@ -8,8 +8,11 @@ use DomainException;
 
 final class CheckInNotAllowedException extends DomainException
 {
-    private function __construct(string $message, private readonly bool $unconfirmedEmail = false)
-    {
+    private function __construct(
+        string $message,
+        private readonly bool $unconfirmedEmail = false,
+        private readonly bool $unconfirmedRegistration = false,
+    ) {
         parent::__construct($message);
     }
 
@@ -32,10 +35,26 @@ final class CheckInNotAllowedException extends DomainException
     }
 
     /**
+     * With manual confirmation, a registration the organisation has not confirmed yet.
+     */
+    public static function registrationNotConfirmed(string $tournamentId): self
+    {
+        return new self("The registration found in tournament {$tournamentId} has not been confirmed by the organisation yet.", unconfirmedRegistration: true);
+    }
+
+    /**
      * Whether the check-in is refused because the registration has not confirmed its email.
      */
     public function emailIsUnconfirmed(): bool
     {
         return $this->unconfirmedEmail;
+    }
+
+    /**
+     * Whether the check-in is refused because the organisation has not confirmed the registration.
+     */
+    public function registrationIsUnconfirmed(): bool
+    {
+        return $this->unconfirmedRegistration;
     }
 }
