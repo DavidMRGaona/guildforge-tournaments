@@ -763,6 +763,12 @@ return [
         'tabLabel' => 'Torneos',
     ],
 
+    // Cookies declared to cookie-consent
+    'cookies' => [
+        'guest_registrations_purpose' => 'Recuerda en este navegador los torneos a los que te has apuntado como invitado, para avisarte si intentas apuntarte otra vez.',
+        'guest_registrations_duration' => '90 días',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'seo' => [
         'index_title' => 'Torneos',

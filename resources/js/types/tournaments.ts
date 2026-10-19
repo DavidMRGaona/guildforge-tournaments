@@ -206,6 +206,15 @@ export interface TournamentListItem {
 export type TournamentStatusFilter = 'all' | 'active' | 'upcoming' | 'past';
 
 /**
+ * What a guest must do to keep a registration, decided by the server: `hold` keeps the seat
+ * until `expires_at`, `wait` holds nothing until the email is confirmed.
+ */
+export interface GuestConfirmationTerms {
+    mode: 'hold' | 'wait';
+    expires_at: string | null;
+}
+
+/**
  * Props for the Tournaments/Show page.
  */
 export interface TournamentShowProps {
@@ -215,6 +224,7 @@ export interface TournamentShowProps {
     currentRound: Round | null;
     userRegistration: Participant | null;
     canRegister: boolean;
+    guestConfirmation: GuestConfirmationTerms | null;
 }
 
 /**
@@ -250,6 +260,8 @@ export type CheckInField = 'email' | 'gdpr_consent';
  */
 export interface RegistrationJsonResponse<TField extends string = GuestRegistrationField> {
     message?: string;
+    // Sent with the 409 of an email that belongs to an account
+    login_url?: string;
     errors?: Partial<Record<TField, string[]>>;
 }
 
@@ -265,6 +277,7 @@ export interface EventTournamentSectionProps {
     tournament: Tournament | null;
     userRegistration: Participant | null;
     canRegister: boolean;
+    guestConfirmation: GuestConfirmationTerms | null;
 }
 
 /**

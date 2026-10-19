@@ -2,6 +2,7 @@
 import { computed, ref, reactive, watch, nextTick, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { useGuestRegistrationMemory } from '../../composables/useGuestRegistrationMemory';
 import type { TournamentShowProps, Standing, GuestRegistrationField, RegistrationJsonResponse } from '../../types/tournaments';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -51,6 +52,33 @@ const canWithdraw = computed(() => {
 const showGateReason = computed(() =>
     gate.blocked.value && (isRegistered.value ? canWithdraw.value : props.canRegister)
 );
+
+// Guest notice: the terms come from the server, the browser only remembers earlier attempts
+const { wasRegisteredHere, remember } = useGuestRegistrationMemory();
+const registeredFromThisBrowser = computed(() => wasRegisteredHere(props.tournament.id));
+const guestLoginUrl = ref<string | null>(null);
+const guestFormMessage = ref('');
+
+const formatDeadline = (isoDate: string): string =>
+    new Date(isoDate).toLocaleString(locale.value, {
+        timeZone: VENUE_TIMEZONE,
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+const guestConfirmationNotice = computed((): string | null => {
+    const terms = props.guestConfirmation;
+    if (terms === null) {
+        return null;
+    }
+    if (terms.mode === 'hold' && terms.expires_at !== null) {
+        return t('tournaments.public.guest_confirmation_hold', { date: formatDeadline(terms.expires_at) });
+    }
+    return t('tournaments.public.guest_confirmation_wait');
+});
 
 // Guest registration modal state
 const showGuestModal = ref(false);
@@ -134,11 +162,13 @@ const handleRegister = async (): Promise<void> => {
             return;
         }
 
+        const data: RegistrationJsonResponse = await response.json();
+
         if (response.ok) {
-            notifySuccess(t('tournaments.public.registered_successfully'));
+            // The server words it: registered, or a guest registration moved to the account
+            notifySuccess(data.message || t('tournaments.public.registered_successfully'));
             router.reload();
         } else {
-            const data: RegistrationJsonResponse = await response.json();
             notifyError(data.message || t('tournaments.public.cannot_register'));
         }
     } catch {
@@ -151,6 +181,8 @@ const submitGuestRegistration = async (): Promise<void> => {
     delete guestFormErrors.guest_name;
     delete guestFormErrors.guest_email;
     delete guestFormErrors.gdpr_consent;
+    guestLoginUrl.value = null;
+    guestFormMessage.value = '';
 
     try {
         const response = await fetch(`/torneos/${props.tournament.id}/inscripcion`, {
@@ -186,13 +218,18 @@ const submitGuestRegistration = async (): Promise<void> => {
             guestForm.guest_name = '';
             guestForm.guest_email = '';
             guestForm.gdpr_consent = false;
-            notifySuccess(t('tournaments.public.registered_successfully'));
+            remember(props.tournament.id, props.tournament.registration_closes_at);
+            notifySuccess(data.message || t('tournaments.public.registered_successfully'));
             router.reload();
         } else if (response.status === 422 && data.errors) {
             // Validation errors
             guestFormErrors.guest_name = data.errors.guest_name?.[0];
             guestFormErrors.guest_email = data.errors.guest_email?.[0];
             guestFormErrors.gdpr_consent = data.errors.gdpr_consent?.[0];
+        } else if (response.status === 409 && data.login_url) {
+            // The email belongs to an account: the message needs the link to sign in
+            guestFormMessage.value = data.message ?? '';
+            guestLoginUrl.value = data.login_url;
         } else {
             notifyError(data.message || t('tournaments.public.cannot_register'));
         }
@@ -211,6 +248,8 @@ const closeGuestModal = (): void => {
     delete guestFormErrors.guest_name;
     delete guestFormErrors.guest_email;
     delete guestFormErrors.gdpr_consent;
+    guestLoginUrl.value = null;
+    guestFormMessage.value = '';
 };
 
 const handleKeydown = (event: KeyboardEvent): void => {
@@ -733,6 +772,22 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     {{ guestFormErrors.gdpr_consent }}
                                 </p>
                             </div>
+
+                            <!-- Before sending: what happens next, and whether this browser already registered -->
+                            <p
+                                v-if="registeredFromThisBrowser"
+                                class="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                                role="status"
+                            >
+                                {{ t('tournaments.public.already_registered_here') }}
+                            </p>
+                            <p v-if="guestConfirmationNotice" class="text-sm text-base-muted">
+                                {{ guestConfirmationNotice }}
+                            </p>
+                            <p v-if="guestLoginUrl" class="text-sm text-error" role="alert">
+                                {{ guestFormMessage }}
+                                <a :href="guestLoginUrl" class="font-medium underline">{{ t('tournaments.public.sign_in') }}</a>
+                            </p>
 
                             <!-- Actions -->
                             <div class="mt-6 flex justify-end gap-3">
