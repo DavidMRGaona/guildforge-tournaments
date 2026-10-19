@@ -193,5 +193,21 @@ export default {
             view_tournament: 'Ver torneo',
             view_tournaments: 'Ver torneos',
         },
+
+        // Public check-in page
+        check_in: {
+            title: 'Check-in',
+            enter_email: 'Introduce tu email para hacer check-in',
+            or_login: 'o inicia sesión',
+            submit: 'Hacer check-in',
+            success: '¡Check-in realizado!',
+            success_time: 'Check-in realizado a las {time}',
+            not_allowed: 'El check-in solo está disponible desde administración',
+            not_registered: 'No estás inscrito en este torneo',
+            window_opens_at: 'El check-in abre el {date} a las {time}',
+            window_closed_started: 'El check-in ha cerrado',
+            gdpr_consent: 'Acepto el tratamiento de mis datos según la',
+            connection_error: 'No se ha podido completar el check-in. Comprueba tu conexión e inténtalo de nuevo.',
+        },
     },
 };

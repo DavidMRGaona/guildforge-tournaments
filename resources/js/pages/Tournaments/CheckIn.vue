@@ -111,10 +111,10 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
             notifySuccess(data.message || t('tournaments.check_in.success'));
             router.reload();
         } else {
-            notifyError(data.message || t('tournaments.check_in.window_closed'));
+            notifyError(data.message || t('tournaments.check_in.connection_error'));
         }
     } catch {
-        notifyError(t('tournaments.check_in.window_closed'));
+        notifyError(t('tournaments.check_in.connection_error'));
     } finally {
         isProcessing.value = false;
     }
@@ -161,10 +161,10 @@ const handleEmailCheckIn = async (): Promise<void> => {
             formErrors.email = data.errors.email?.[0];
             formErrors.gdpr_consent = data.errors.gdpr_consent?.[0];
         } else {
-            notifyError(data.message || t('tournaments.check_in.not_found'));
+            notifyError(data.message || t('tournaments.check_in.connection_error'));
         }
     } catch {
-        notifyError(t('tournaments.check_in.window_closed'));
+        notifyError(t('tournaments.check_in.connection_error'));
     } finally {
         isProcessing.value = false;
     }
