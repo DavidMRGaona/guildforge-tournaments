@@ -95,6 +95,18 @@ final class TournamentCancellationEmailsTest extends ModuleTestCase
         $this->assertSame('Descalificación: Torneo de prueba', $mails['cuenta@example.com']['subject']);
     }
 
+    public function test_disqualifying_a_guest_who_never_confirmed_the_email_sends_nothing(): void
+    {
+        $tournament = $this->tournament(['status' => TournamentStatus::InProgress->value]);
+        $row = $this->participant($tournament, ['guest_name' => 'Sin confirmar', 'guest_email' => 'pendiente@example.com', 'email_confirmed_at' => null]);
+
+        Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
+            ->callTableAction('disqualify', $row);
+
+        $this->assertSame(ParticipantStatus::Disqualified, $row->fresh()?->status);
+        $this->assertSame([], $this->mails());
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      */

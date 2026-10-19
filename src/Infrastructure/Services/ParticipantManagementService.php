@@ -368,6 +368,12 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function disqualify(string $participantId, ?string $reason = null): ParticipantResponseDTO
     {
+        // Read before acting: the organisation's action confirms a pending guest's email, but an
+        // address nobody confirmed is never mailed
+        $wasAwaitingConfirmation = $this->participantRepository
+            ->find(ParticipantId::fromString($participantId))
+            ?->isAwaitingEmailConfirmation() ?? false;
+
         $response = $this->actAsOrganization(
             $participantId,
             takesSeat: false,
@@ -378,7 +384,9 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         );
 
         // Mailed once the change is committed
-        event(ParticipantDisqualified::create($response->id, $response->tournamentId, $response->userId, $reason));
+        if (! $wasAwaitingConfirmation) {
+            event(ParticipantDisqualified::create($response->id, $response->tournamentId, $response->userId, $reason));
+        }
 
         return $response;
     }
