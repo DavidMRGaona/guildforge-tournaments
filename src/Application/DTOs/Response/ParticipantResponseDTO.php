@@ -90,4 +90,17 @@ final readonly class ParticipantResponseDTO
             'claimed_guest_registration' => $this->claimedGuestRegistration,
         ];
     }
+
+    /**
+     * What a public page may show of any participant: everything but the emails.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPublicArray(): array
+    {
+        $data = $this->toArray();
+        unset($data['user_email'], $data['guest_email']);
+
+        return $data;
+    }
 }

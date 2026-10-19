@@ -89,7 +89,8 @@ final class TournamentController extends Controller
         return Inertia::render('Tournaments/Show', [
             'tournament' => $tournament->toArray(),
             'standings' => array_map(fn ($s) => $s->toArray(), $topStandings),
-            'participants' => array_map(fn ($p) => $p->toArray(), $participants),
+            // Other people's registrations: never their emails
+            'participants' => array_map(fn ($p) => $p->toPublicArray(), $participants),
             'currentRound' => $currentRound?->toArray(),
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
