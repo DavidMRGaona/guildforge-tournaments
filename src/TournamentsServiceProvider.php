@@ -40,6 +40,7 @@ use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
+use Modules\Tournaments\Console\Commands\SendTournamentRemindersCommand;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
@@ -77,6 +78,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
+use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
@@ -160,6 +162,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ExpireGuestRegistrationsCommand::class,
+                SendTournamentRemindersCommand::class,
             ]);
         }
     }
@@ -173,6 +176,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             $schedule->command('tournaments:expire-guest-registrations')
                 ->everyFiveMinutes()
                 // A run takes seconds; a killed one must not block the expiry for a day
+                ->withoutOverlapping(10);
+
+            // Does nothing until reminders are enabled in the module settings
+            $schedule->command('tournaments:send-reminders')
+                ->hourly()
                 ->withoutOverlapping(10);
         });
     }
@@ -859,6 +867,23 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                         ->minValue(1)
                         ->maxValue(720)
                         ->default(24)
+                        ->required(),
+                ])
+                ->columns(2),
+            Section::make(__('tournaments::messages.settings.reminders'))
+                ->schema([
+                    Toggle::make('reminders.enabled')
+                        ->label(__('tournaments::messages.settings.reminders_enabled'))
+                        ->helperText(__('tournaments::messages.settings.reminders_enabled_help'))
+                        ->default(false),
+                    TextInput::make('reminders.hours_before')
+                        ->label(__('tournaments::messages.settings.reminders_hours_before'))
+                        ->suffix(__('tournaments::messages.settings.hours'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(TournamentReminderSettings::MAX_HOURS_BEFORE)
+                        ->default(TournamentReminderSettings::DEFAULT_HOURS_BEFORE)
                         ->required(),
                 ])
                 ->columns(2),

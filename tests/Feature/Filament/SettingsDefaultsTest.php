@@ -99,6 +99,7 @@ final class SettingsDefaultsTest extends ModuleTestCase
             'guest_accounts' => ['mode' => 'require_login'],
             'guest_rate_limit' => ['per_minute' => 5, 'per_hour' => 20],
             'duplicate_signal' => ['window_hours' => 24],
+            'reminders' => ['enabled' => false, 'hours_before' => 24],
         ], $shipped);
     }
 

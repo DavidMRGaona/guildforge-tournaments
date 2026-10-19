@@ -72,11 +72,11 @@ final class OrganizerEndorsementTest extends ModuleTestCase
     /**
      * A guest registration awaiting confirmation, as the form leaves it.
      */
-    private function pendingGuest(TournamentModel $tournament, string $email = 'ana@example.com'): ParticipantModel
+    private function pendingGuest(TournamentModel $tournament, string $email = 'john@example.com'): ParticipantModel
     {
         $result = $this->service()->registerGuest(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
+            guestName: 'John',
             guestEmail: $email,
             fingerprint: str_repeat('a', 64),
         ));
@@ -90,7 +90,7 @@ final class OrganizerEndorsementTest extends ModuleTestCase
             'id' => fake()->uuid(),
             'tournament_id' => $tournament->id,
             'status' => ParticipantStatus::Registered->value,
-            'guest_name' => 'Berta',
+            'guest_name' => 'Jane',
             'guest_email' => $email,
             'registered_at' => $this->now,
             'email_confirmed_at' => $this->now->subDay(),
@@ -118,7 +118,7 @@ final class OrganizerEndorsementTest extends ModuleTestCase
         Event::assertDispatched(ParticipantRegistered::class, fn (ParticipantRegistered $event): bool => $event->participantId === $row->id
             && $event->isGuest
             && $event->userId === null
-            && $event->guestEmail === 'ana@example.com'
+            && $event->guestEmail === 'john@example.com'
             && $event->cancellationToken !== null
             && $event->cancellationToken === $row->cancellation_token
             && ! $event->notifyOrganizer);
@@ -140,13 +140,13 @@ final class OrganizerEndorsementTest extends ModuleTestCase
             $recipients[] = $email->getTo()[0]->getAddress();
         }
 
-        $this->assertSame(['ana@example.com'], $recipients);
+        $this->assertSame(['john@example.com'], $recipients);
     }
 
     public function test_confirming_a_confirmed_guest_sends_nothing(): void
     {
         $this->fakeEvents();
-        $row = $this->confirmedGuest($this->tournament(), 'berta@example.com');
+        $row = $this->confirmedGuest($this->tournament(), 'jane@example.com');
 
         $this->service()->confirm($row->id);
 
@@ -176,8 +176,8 @@ final class OrganizerEndorsementTest extends ModuleTestCase
     {
         $this->fakeEvents();
         $tournament = $this->tournament(['requires_manual_confirmation' => false]);
-        $first = $this->pendingGuest($tournament, 'ana@example.com');
-        $second = $this->pendingGuest($tournament, 'carla@example.com');
+        $first = $this->pendingGuest($tournament, 'john@example.com');
+        $second = $this->pendingGuest($tournament, 'mary@example.com');
 
         $results = $this->service()->bulkCheckIn([$first->id, $second->id]);
 
@@ -208,9 +208,9 @@ final class OrganizerEndorsementTest extends ModuleTestCase
     {
         $this->fakeEvents();
         $tournament = $this->tournament();
-        $first = $this->pendingGuest($tournament, 'ana@example.com');
-        $second = $this->pendingGuest($tournament, 'carla@example.com');
-        $confirmed = $this->confirmedGuest($tournament, 'berta@example.com');
+        $first = $this->pendingGuest($tournament, 'john@example.com');
+        $second = $this->pendingGuest($tournament, 'mary@example.com');
+        $confirmed = $this->confirmedGuest($tournament, 'jane@example.com');
 
         foreach ([$first, $second, $confirmed] as $row) {
             $this->service()->confirm($row->id);
@@ -257,7 +257,7 @@ final class OrganizerEndorsementTest extends ModuleTestCase
         $tournament = $this->tournament(['max_participants' => 1, 'requires_manual_confirmation' => false]);
         $row = $this->pendingGuest($tournament);
         $this->assertSame(GuestConfirmationMode::Wait, $row->confirmation_mode);
-        $this->confirmedGuest($tournament, 'berta@example.com');
+        $this->confirmedGuest($tournament, 'jane@example.com');
 
         foreach ([
             fn () => $this->service()->confirmEmailByOrganization($row->id),
@@ -297,12 +297,12 @@ final class OrganizerEndorsementTest extends ModuleTestCase
 
         $created = $this->service()->registerByOrganization(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
-            guestEmail: 'ANA@x.com ',
+            guestName: 'John',
+            guestEmail: 'JOHN@x.com ',
         ));
 
         $row = ParticipantModel::query()->findOrFail($created->id);
-        $this->assertSame('ana@x.com', $row->guest_email);
+        $this->assertSame('john@x.com', $row->guest_email);
         $this->assertSame(ParticipantStatus::Registered, $row->status);
         $this->assertEquals($this->now, $row->email_confirmed_at);
         $this->assertEquals($this->now, $row->registered_at);
@@ -315,8 +315,8 @@ final class OrganizerEndorsementTest extends ModuleTestCase
         try {
             $this->service()->registerByOrganization(new RegisterParticipantDTO(
                 tournamentId: $tournament->id,
-                guestName: 'Ana otra vez',
-                guestEmail: 'ana@x.com',
+                guestName: 'John otra vez',
+                guestEmail: 'john@x.com',
             ));
         } finally {
             $this->assertSame(1, ParticipantModel::query()->where('tournament_id', $tournament->id)->count());
@@ -329,14 +329,14 @@ final class OrganizerEndorsementTest extends ModuleTestCase
     {
         $this->fakeEvents();
         $tournament = $this->tournament();
-        $this->pendingGuest($tournament, 'ana@example.com');
+        $this->pendingGuest($tournament, 'john@example.com');
 
         $this->expectException(AlreadyRegisteredException::class);
 
         $this->service()->registerByOrganization(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
-            guestEmail: ' Ana@Example.com',
+            guestName: 'John',
+            guestEmail: ' John@Example.com',
         ));
     }
 
@@ -363,13 +363,13 @@ final class OrganizerEndorsementTest extends ModuleTestCase
     {
         $this->fakeEvents();
         $tournament = $this->tournament(['max_participants' => 1]);
-        $this->confirmedGuest($tournament, 'berta@example.com');
+        $this->confirmedGuest($tournament, 'jane@example.com');
 
         try {
             $this->service()->registerByOrganization(new RegisterParticipantDTO(
                 tournamentId: $tournament->id,
-                guestName: 'Ana',
-                guestEmail: 'ana@example.com',
+                guestName: 'John',
+                guestEmail: 'john@example.com',
             ));
             $this->fail('The organisation added a participant to a full tournament.');
         } catch (TournamentFullException) {
@@ -379,8 +379,8 @@ final class OrganizerEndorsementTest extends ModuleTestCase
         // A registration that ended takes no seat
         $created = $this->service()->registerByOrganization(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
-            guestEmail: 'ana@example.com',
+            guestName: 'John',
+            guestEmail: 'john@example.com',
         ), ParticipantStatus::Withdrawn);
 
         $this->assertSame(ParticipantStatus::Withdrawn, $created->status);
@@ -393,7 +393,7 @@ final class OrganizerEndorsementTest extends ModuleTestCase
 
         $created = $this->service()->registerByOrganization(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
+            guestName: 'John',
         ), ParticipantStatus::CheckedIn);
 
         $row = ParticipantModel::query()->findOrFail($created->id);

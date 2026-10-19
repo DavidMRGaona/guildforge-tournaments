@@ -33,4 +33,11 @@ return [
         // Hours a registration counts as a possible duplicate of another from the same device
         'window_hours' => 24,
     ],
+
+    'reminders' => [
+        // Off until an admin enables it: active participants get one email before the tournament
+        'enabled' => false,
+        // Hours before the event start the reminder goes out
+        'hours_before' => 24,
+    ],
 ];

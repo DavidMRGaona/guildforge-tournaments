@@ -57,6 +57,7 @@ final readonly class SendParticipantRegisteredEmails
             requiresCheckIn: $tournament->requiresCheckIn(),
             checkInStartsBefore: $tournament->checkInStartsBefore(),
             cancellationToken: $event->isGuest ? $event->cancellationToken : null,
+            tournamentSlug: $tournament->slug(),
         ));
 
         // Send to organizer, unless the registration is not news to them

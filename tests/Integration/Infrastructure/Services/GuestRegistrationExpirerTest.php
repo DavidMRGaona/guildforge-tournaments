@@ -89,11 +89,11 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         ]);
     }
 
-    private function pendingGuest(TournamentModel $tournament, string $email = 'ana@example.com'): ParticipantModel
+    private function pendingGuest(TournamentModel $tournament, string $email = 'john@example.com'): ParticipantModel
     {
         $result = app(ParticipantManagementServiceInterface::class)->registerGuest(new RegisterParticipantDTO(
             tournamentId: $tournament->id,
-            guestName: 'Ana',
+            guestName: 'John',
             guestEmail: $email,
             fingerprint: str_repeat('a', 64),
         ));
@@ -117,7 +117,7 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $emails = $this->expiryEmails();
         $this->assertCount(1, $emails);
         [$recipient, $subject, $body] = $emails[0];
-        $this->assertSame('ana@example.com', $recipient);
+        $this->assertSame('john@example.com', $recipient);
         $this->assertSame('Tu inscripción en Torneo de primavera ha caducado', $subject);
         $this->assertStringContainsString('No confirmaste tu inscripción a tiempo y la plaza se ha liberado.', $body);
         $this->assertStringContainsString('Si quedan plazas, puedes volver a apuntarte.', $body);
@@ -186,8 +186,8 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
     public function test_one_failing_row_does_not_stop_the_others(): void
     {
         $tournament = $this->tournament();
-        $first = $this->pendingGuest($tournament, 'ana@example.com');
-        $second = $this->pendingGuest($tournament, 'berta@example.com');
+        $first = $this->pendingGuest($tournament, 'john@example.com');
+        $second = $this->pendingGuest($tournament, 'jane@example.com');
         $failing = $first->id;
         $real = app(RegistrationLockInterface::class);
 
@@ -239,9 +239,9 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
 
     public function test_fingerprints_are_cleared_when_the_tournament_is_finished_or_cancelled(): void
     {
-        $finished = $this->pendingGuest($this->tournament(), 'ana@example.com');
-        $cancelled = $this->pendingGuest($this->tournament(), 'berta@example.com');
-        $running = $this->pendingGuest($this->tournament(), 'carla@example.com');
+        $finished = $this->pendingGuest($this->tournament(), 'john@example.com');
+        $cancelled = $this->pendingGuest($this->tournament(), 'jane@example.com');
+        $running = $this->pendingGuest($this->tournament(), 'mary@example.com');
         TournamentModel::query()->whereKey($finished->tournament_id)->update(['status' => TournamentStatus::Finished->value]);
         TournamentModel::query()->whereKey($cancelled->tournament_id)->update(['status' => TournamentStatus::Cancelled->value]);
 

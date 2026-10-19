@@ -17,6 +17,7 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Sh
         private readonly string $participantName,
         private readonly string $tournamentName,
         private readonly ?string $eventDate,
+        private readonly ?string $tournamentSlug = null,
     ) {}
 
     /**
@@ -45,7 +46,11 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Sh
             $message->line('**' . __('tournaments::messages.emails.withdrawal_confirmed.event_date') . ':** ' . $this->eventDate);
         }
 
-        return $message
-            ->line(__('tournaments::messages.emails.withdrawal_confirmed.gdpr_notice'));
+        // isset(): a notification queued before this property existed comes back without it
+        if (isset($this->tournamentSlug)) {
+            $message->action(__('tournaments::messages.emails.view_tournament'), route('tournaments.show', $this->tournamentSlug));
+        }
+
+        return $message;
     }
 }
