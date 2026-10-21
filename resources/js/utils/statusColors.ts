@@ -2,12 +2,12 @@
 export type StatusColor = 'success' | 'info' | 'warning' | 'danger' | 'gray' | 'primary';
 
 const BADGE_CLASSES: Record<StatusColor, string> = {
-    success: 'bg-success-light text-success',
-    info: 'bg-info-light text-info',
-    warning: 'bg-warning-light text-warning',
-    danger: 'bg-error-light text-error',
-    gray: 'bg-muted text-base-secondary',
-    primary: 'bg-primary-light text-primary',
+    success: 'bg-success-light text-base-primary',
+    info: 'bg-info-light text-base-primary',
+    warning: 'bg-warning-light text-base-primary',
+    danger: 'bg-error-light text-base-primary',
+    gray: 'bg-base-secondary/10 text-base-secondary',
+    primary: 'bg-primary-light text-base-primary',
 };
 
 export function statusBadgeClasses(color: string | null | undefined): string {

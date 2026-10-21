@@ -39,17 +39,17 @@ const positionText = computed(() => {
 <template>
     <Link
         :href="tournamentUrl"
-        class="group block rounded-lg border border-default bg-surface p-4 transition-all hover:border-primary-300 hover:shadow-sm dark:hover:border-primary-600"
+        class="group block rounded-lg border border-[color:var(--color-border)] bg-surface p-4 transition-all hover:border-primary hover:shadow-sm"
     >
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <!-- Left: Title and details -->
             <div class="min-w-0 flex-1">
                 <h4
-                    class="truncate text-base font-medium text-base-primary group-hover:text-primary dark:group-hover:text-primary-400"
+                    class="truncate text-base font-medium text-[color:var(--color-text-primary)] group-hover:text-primary"
                 >
                     {{ tournament.name }}
                 </h4>
-                <p v-if="tournament.eventName" class="mt-0.5 text-sm text-primary dark:text-primary-400">
+                <p v-if="tournament.eventName" class="mt-0.5 text-sm text-primary">
                     {{ tournament.eventName }}
                 </p>
 

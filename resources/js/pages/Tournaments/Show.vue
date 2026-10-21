@@ -328,7 +328,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
             <div class="mb-6">
                 <Link
                     href="/eventos"
-                    class="inline-flex items-center text-sm text-base-muted hover:text-base-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -349,7 +349,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
             </div>
 
             <article
-                class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50"
+                class="overflow-hidden rounded-lg bg-surface shadow"
             >
                 <div class="p-6 sm:p-8">
                     <!-- Header -->
@@ -378,7 +378,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </div>
 
                     <!-- Tournament Stats -->
-                    <div class="mb-6 rounded-lg bg-muted p-4">
+                    <div class="mb-6 rounded-lg bg-page p-4">
                         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
                             <div>
                                 <h3 class="text-sm font-medium text-base-muted">
@@ -386,7 +386,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 </h3>
                                 <p class="mt-1 text-2xl font-semibold text-base-primary">
                                     {{ tournament.participant_count }}
-                                    <span v-if="tournament.max_participants" class="text-base text-stone-500">
+                                    <span v-if="tournament.max_participants" class="text-base text-base-muted">
                                         / {{ tournament.max_participants }}
                                     </span>
                                 </p>
@@ -398,7 +398,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 </h3>
                                 <p class="mt-1 text-2xl font-semibold text-base-primary">
                                     {{ tournament.current_round }}
-                                    <span v-if="tournament.max_rounds" class="text-base text-stone-500">
+                                    <span v-if="tournament.max_rounds" class="text-base text-base-muted">
                                         / {{ tournament.max_rounds }}
                                     </span>
                                 </p>
@@ -516,12 +516,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <!-- Current Round -->
                     <div
                         v-if="currentRound"
-                        class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30"
+                        class="mb-6 rounded-lg border border-info/40 bg-info-light p-4"
                     >
-                        <h2 class="mb-2 font-semibold text-blue-900 dark:text-blue-100">
+                        <h2 class="mb-2 font-semibold text-base-primary">
                             {{ t('tournaments.public.current_round_title', { round: currentRound.round_number }) }}
                         </h2>
-                        <div class="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
+                        <div class="flex items-center gap-4 text-sm text-base-secondary">
                             <span>
                                 {{ t('tournaments.public.matches_completed', {
                                     completed: currentRound.completed_match_count,
@@ -532,7 +532,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 {{ currentRound.completion_percentage.toFixed(0) }}%
                             </span>
                         </div>
-                        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-base-secondary/10">
                             <div
                                 class="h-full bg-info transition-all"
                                 :style="{ width: `${currentRound.completion_percentage}%` }"
@@ -549,7 +549,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             <span
                                 v-for="participant in participants"
                                 :key="participant.id"
-                                class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-medium text-base-secondary"
+                                class="inline-flex items-center rounded-full bg-base-secondary/10 px-3 py-1 text-sm font-medium text-base-secondary"
                             >
                                 {{ participant.display_name }}
                             </span>
@@ -589,7 +589,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                         <td class="px-3 py-2 font-medium">{{ standing.rank }}</td>
                                         <td class="px-3 py-2">{{ standing.participant_name }}</td>
                                         <td class="px-3 py-2 text-right font-semibold">{{ formatPoints(standing.points) }}</td>
-                                        <td class="hidden px-3 py-2 text-right text-sm text-stone-500 sm:table-cell dark:text-stone-400">
+                                        <td class="hidden px-3 py-2 text-right text-sm text-base-secondary sm:table-cell">
                                             {{ formatRecord(standing) }}
                                         </td>
                                     </tr>
@@ -649,7 +649,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <!-- Close button -->
                         <button
                             type="button"
-                            class="absolute right-4 top-4 text-base-muted hover:text-base-secondary"
+                            class="absolute right-4 top-4 text-[color:var(--color-text-secondary)] hover:text-primary"
                             :aria-label="t('common.close')"
                             @click="closeGuestModal"
                         >
@@ -686,7 +686,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     :disabled="guestFormProcessing"
                                     :aria-invalid="!!guestFormErrors.guest_name"
                                     :aria-describedby="guestFormErrors.guest_name ? 'guest-name-error' : undefined"
-                                    class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-muted dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                    class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-base-secondary/10"
                                     :class="{
                                         'border-error focus:border-error focus:ring-error':
                                             guestFormErrors.guest_name,
@@ -719,7 +719,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     :disabled="guestFormProcessing"
                                     :aria-invalid="!!guestFormErrors.guest_email"
                                     :aria-describedby="guestFormErrors.guest_email ? 'guest-email-error' : undefined"
-                                    class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-muted dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                    class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-base-secondary/10"
                                     :class="{
                                         'border-error focus:border-error focus:ring-error':
                                             guestFormErrors.guest_email,
@@ -746,7 +746,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                         :disabled="guestFormProcessing"
                                         :aria-invalid="!!guestFormErrors.gdpr_consent"
                                         :aria-describedby="guestFormErrors.gdpr_consent ? 'guest-gdpr-error' : undefined"
-                                        class="mt-1 h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary-500 disabled:cursor-not-allowed dark:border-stone-600 dark:bg-stone-700"
+                                        class="mt-1 h-4 w-4 rounded border-strong text-primary focus:ring-primary-500 disabled:cursor-not-allowed"
                                     />
                                     <label
                                         for="guest-gdpr"
@@ -756,7 +756,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                         <a
                                             href="/politica-de-privacidad"
                                             target="_blank"
-                                            class="text-primary underline hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                                            class="text-primary underline hover:no-underline"
                                         >
                                             {{ t('tournaments.public.privacy_policy') }}
                                         </a>
@@ -776,7 +776,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             <!-- Before sending: what happens next, and whether this browser already registered -->
                             <p
                                 v-if="registeredFromThisBrowser"
-                                class="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                                class="rounded-md bg-warning-light p-3 text-sm text-base-primary"
                                 role="status"
                             >
                                 {{ t('tournaments.public.already_registered_here') }}

@@ -339,14 +339,14 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-    <div v-if="tournament" class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-900 dark:bg-purple-950/30">
+    <div v-if="tournament" class="rounded-lg border border-primary-500/30 bg-primary-500/10 p-4">
         <div class="flex items-start justify-between gap-4">
             <div class="flex-1">
                 <!-- Tournament Info Header -->
                 <div class="mb-3 flex items-center gap-2">
                     <!-- Trophy icon -->
                     <svg
-                        class="h-5 w-5 text-purple-600 dark:text-purple-400"
+                        class="h-5 w-5 text-primary"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -359,7 +359,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             d="M8 21h8m-4-4v4m-4-8a4 4 0 01-4-4V5a2 2 0 012-2h8a2 2 0 012 2v4a4 4 0 01-4 4m-4 0h8"
                         />
                     </svg>
-                    <h3 class="font-semibold text-purple-900 dark:text-purple-100">
+                    <h3 class="font-semibold text-base-primary">
                         {{ t('tournaments.public.event_tournament') }}
                     </h3>
                     <span
@@ -371,7 +371,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 </div>
 
                 <!-- Tournament Stats -->
-                <div class="mb-3 flex flex-wrap gap-4 text-sm text-purple-700 dark:text-purple-300">
+                <div class="mb-3 flex flex-wrap gap-4 text-sm text-base-secondary">
                     <span class="flex items-center gap-1">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -393,7 +393,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                 <!-- Registration Status -->
                 <div v-if="isRegistered" class="mb-3">
-                    <span class="inline-flex items-center gap-1 text-sm font-medium text-green-700 dark:text-green-400">
+                    <span class="inline-flex items-center gap-1 text-sm font-medium text-success">
                         <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
@@ -405,7 +405,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 <div v-else-if="tournament.is_registration_open && spotsRemaining !== null" class="mb-3">
                     <span
                         class="text-sm"
-                        :class="isFull ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400'"
+                        :class="isFull ? 'text-error' : 'text-primary'"
                     >
                         {{ isFull
                             ? t('tournaments.public.tournament_full')
@@ -417,7 +417,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 <!-- Link to Tournament Page -->
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="text-sm text-purple-600 hover:text-purple-800 hover:underline dark:text-purple-400 dark:hover:text-purple-300"
+                    class="text-sm text-primary hover:underline"
                 >
                     {{ t('tournaments.public.view_tournament') }}
                     <span aria-hidden="true">&rarr;</span>
@@ -499,7 +499,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <!-- Close button -->
                     <button
                         type="button"
-                        class="absolute right-4 top-4 text-base-muted hover:text-base-secondary"
+                        class="absolute right-4 top-4 text-[color:var(--color-text-secondary)] hover:text-primary"
                         :aria-label="t('common.close')"
                         @click="closeGuestModal"
                     >
@@ -525,7 +525,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 class="block text-sm font-medium text-base-secondary mb-1"
                             >
                                 {{ t('tournaments.public.guest_name') }}
-                                <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
+                                <span class="text-error" aria-label="required">*</span>
                             </label>
                             <input
                                 id="guest-name"
@@ -536,16 +536,16 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 :disabled="guestFormProcessing"
                                 :aria-invalid="!!guestFormErrors.guest_name"
                                 :aria-describedby="guestFormErrors.guest_name ? 'guest-name-error' : undefined"
-                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-base-secondary/10 disabled:cursor-not-allowed transition-colors"
                                 :class="{
-                                    'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
+                                    'border-error focus:ring-error focus:border-error':
                                         guestFormErrors.guest_name,
                                 }"
                             />
                             <p
                                 v-if="guestFormErrors.guest_name"
                                 id="guest-name-error"
-                                class="mt-1 text-sm text-red-600 dark:text-red-400"
+                                class="mt-1 text-sm text-error"
                                 role="alert"
                             >
                                 {{ guestFormErrors.guest_name }}
@@ -559,7 +559,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 class="block text-sm font-medium text-base-secondary mb-1"
                             >
                                 {{ t('tournaments.public.guest_email') }}
-                                <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
+                                <span class="text-error" aria-label="required">*</span>
                             </label>
                             <input
                                 id="guest-email"
@@ -569,16 +569,16 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 :disabled="guestFormProcessing"
                                 :aria-invalid="!!guestFormErrors.guest_email"
                                 :aria-describedby="guestFormErrors.guest_email ? 'guest-email-error' : undefined"
-                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-stone-100 disabled:cursor-not-allowed transition-colors dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 dark:focus:ring-primary-400 dark:focus:border-primary-400 dark:disabled:bg-stone-800 dark:disabled:text-stone-500"
+                                class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-base-secondary/10 disabled:cursor-not-allowed transition-colors"
                                 :class="{
-                                    'border-red-500 focus:ring-red-500 focus:border-red-500 dark:border-red-400':
+                                    'border-error focus:ring-error focus:border-error':
                                         guestFormErrors.guest_email,
                                 }"
                             />
                             <p
                                 v-if="guestFormErrors.guest_email"
                                 id="guest-email-error"
-                                class="mt-1 text-sm text-red-600 dark:text-red-400"
+                                class="mt-1 text-sm text-error"
                                 role="alert"
                             >
                                 {{ guestFormErrors.guest_email }}
@@ -596,7 +596,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     :disabled="guestFormProcessing"
                                     :aria-invalid="!!guestFormErrors.gdpr_consent"
                                     :aria-describedby="guestFormErrors.gdpr_consent ? 'event-guest-gdpr-error' : undefined"
-                                    class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed dark:bg-stone-700"
+                                    class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed"
                                 />
                                 <label
                                     for="event-guest-gdpr"
@@ -606,17 +606,17 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     <a
                                         href="/politica-de-privacidad"
                                         target="_blank"
-                                        class="text-primary underline hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                                        class="text-primary underline hover:no-underline"
                                     >
                                         {{ t('tournaments.public.privacy_policy') }}
                                     </a>
-                                    <span class="text-red-500 dark:text-red-400" aria-label="required">*</span>
+                                    <span class="text-error" aria-label="required">*</span>
                                 </label>
                             </div>
                             <p
                                 v-if="guestFormErrors.gdpr_consent"
                                 id="event-guest-gdpr-error"
-                                class="mt-1 text-sm text-red-600 dark:text-red-400"
+                                class="mt-1 text-sm text-error"
                                 role="alert"
                             >
                                 {{ guestFormErrors.gdpr_consent }}
@@ -626,7 +626,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <!-- Before sending: what happens next, and whether this browser already registered -->
                         <p
                             v-if="registeredFromThisBrowser"
-                            class="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                            class="rounded-md bg-warning-light p-3 text-sm text-base-primary"
                             role="status"
                         >
                             {{ t('tournaments.public.already_registered_here') }}
@@ -693,9 +693,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl"
                 >
                     <!-- Warning icon -->
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
                         <svg
-                            class="h-6 w-6 text-red-600 dark:text-red-400"
+                            class="h-6 w-6 text-error"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"

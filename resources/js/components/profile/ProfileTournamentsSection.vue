@@ -67,7 +67,7 @@ function loadMore(): void {
         <section v-if="inProgressTournaments.length > 0">
             <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
                 <span
-                    class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-info-light text-xs font-bold text-base-primary"
                 >
                     {{ inProgressTournaments.length }}
                 </span>
@@ -87,7 +87,7 @@ function loadMore(): void {
         <section>
             <h2 class="mb-6 flex items-center gap-2 text-lg font-semibold text-base-primary">
                 <span
-                    class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500/10 text-xs font-bold text-primary"
                 >
                     {{ upcomingTournaments.length }}
                 </span>
@@ -104,7 +104,7 @@ function loadMore(): void {
 
             <p
                 v-else
-                class="rounded-lg border border-dashed border-default bg-muted p-6 text-center text-sm text-base-muted"
+                class="rounded-lg border border-dashed border-default bg-base-secondary/10 p-6 text-center text-sm text-base-muted"
             >
                 {{ t('tournaments.my_tournaments.no_upcoming') }}
             </p>
@@ -114,20 +114,20 @@ function loadMore(): void {
         <section v-if="pastTournaments.length > 0" class="border-t border-default pt-8">
             <button
                 type="button"
-                class="mb-4 flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+                class="mb-4 flex w-full items-center justify-between rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20"
                 :aria-expanded="showPastSection"
                 @click="togglePastSection"
             >
                 <span class="flex items-center gap-2 text-lg font-semibold text-base-primary">
                     <span
-                        class="flex h-6 w-6 items-center justify-center rounded-full bg-stone-200 text-xs font-bold text-stone-600 dark:bg-stone-700 dark:text-stone-400"
+                        class="flex h-6 w-6 items-center justify-center rounded-full bg-base-secondary/10 text-xs font-bold text-base-secondary"
                     >
                         {{ pastTournaments.length }}
                     </span>
                     {{ t('tournaments.my_tournaments.history') }}
                 </span>
                 <svg
-                    :class="['h-5 w-5 text-stone-500 transition-transform', showPastSection ? 'rotate-180' : '']"
+                    :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -148,7 +148,7 @@ function loadMore(): void {
                 <button
                     v-if="hasMorePast"
                     type="button"
-                    class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-surface py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-stone-50 dark:hover:bg-stone-700"
+                    class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-transparent py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                     @click="loadMore"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -168,10 +168,10 @@ function loadMore(): void {
     <!-- Empty state when no tournaments at all -->
     <div
         v-else
-        class="rounded-lg border border-dashed border-default bg-muted p-12 text-center"
+        class="rounded-lg border border-dashed border-default bg-base-secondary/10 p-12 text-center"
     >
         <svg
-            class="mx-auto h-12 w-12 text-stone-400"
+            class="mx-auto h-12 w-12 text-base-muted"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

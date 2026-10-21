@@ -21,12 +21,12 @@ final class StatusColorsTest extends TestCase
     public static function serverColors(): array
     {
         return [
-            'success' => ['success', 'bg-success-light text-success'],
-            'info' => ['info', 'bg-info-light text-info'],
-            'warning' => ['warning', 'bg-warning-light text-warning'],
-            'danger' => ['danger', 'bg-error-light text-error'],
-            'gray' => ['gray', 'bg-muted text-base-secondary'],
-            'primary' => ['primary', 'bg-primary-light text-primary'],
+            'success' => ['success', 'bg-success-light text-base-primary'],
+            'info' => ['info', 'bg-info-light text-base-primary'],
+            'warning' => ['warning', 'bg-warning-light text-base-primary'],
+            'danger' => ['danger', 'bg-error-light text-base-primary'],
+            'gray' => ['gray', 'bg-base-secondary/10 text-base-secondary'],
+            'primary' => ['primary', 'bg-primary-light text-base-primary'],
         ];
     }
 
@@ -41,7 +41,7 @@ final class StatusColorsTest extends TestCase
         $source = $this->source('utils/statusColors.ts');
 
         $this->assertStringContainsString('Object.hasOwn(', $source);
-        $this->assertStringContainsString("'bg-muted text-base-secondary'", $source);
+        $this->assertStringContainsString("'bg-base-secondary/10 text-base-secondary'", $source);
     }
 
     /**

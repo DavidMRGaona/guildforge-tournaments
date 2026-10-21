@@ -38,7 +38,7 @@ function handleNext(): void {
 
 <template>
     <DefaultLayout>
-        <div class="bg-surface shadow dark:shadow-stone-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                     {{ t('tournaments.title') }}

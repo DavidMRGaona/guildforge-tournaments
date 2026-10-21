@@ -37,7 +37,7 @@ function loadMore(): void {
 <template>
     <DefaultLayout>
         <!-- Header -->
-        <div class="bg-surface shadow dark:shadow-stone-900/50">
+        <div class="bg-surface shadow">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -131,13 +131,13 @@ function loadMore(): void {
                 <section v-if="past.length > 0" class="border-t border-default pt-8">
                     <button
                         type="button"
-                        class="mb-4 flex w-full items-center justify-between rounded-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-muted-hover"
+                        class="mb-4 flex w-full items-center justify-between rounded-lg bg-base-secondary/10 px-4 py-3 text-left transition-colors hover:bg-base-secondary/20"
                         :aria-expanded="showPastSection"
                         @click="togglePastSection"
                     >
                         <span class="flex items-center gap-2 text-xl font-semibold text-base-primary">
                             <span
-                                class="flex h-7 w-7 items-center justify-center rounded-full bg-base-secondary/20 text-sm font-bold text-base-secondary dark:bg-base-secondary/10"
+                                class="flex h-7 w-7 items-center justify-center rounded-full bg-base-secondary/20 text-sm font-bold text-base-secondary"
                             >
                                 {{ past.length }}
                             </span>
@@ -165,7 +165,7 @@ function loadMore(): void {
                         <button
                             v-if="hasMorePast"
                             type="button"
-                            class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-surface py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-muted"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-transparent py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                             @click="loadMore"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

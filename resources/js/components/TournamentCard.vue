@@ -83,7 +83,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
     <Link
         :href="`/torneos/${props.tournament.slug}`"
         :aria-label="t('tournaments.listing.viewTournament', { name: props.tournament.name })"
-        class="block transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-page"
+        class="block transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
     >
         <BaseCard :padding="false">
             <!-- Image section -->
@@ -97,7 +97,7 @@ function getExcerpt(text: string | null, maxLength: number): string {
             </template>
             <template v-else #header>
                 <div
-                    class="flex aspect-video h-40 w-full items-center justify-center bg-gradient-to-br from-primary-500 to-stone-600 dark:from-primary-600 dark:to-stone-700"
+                    class="flex aspect-video h-40 w-full items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700"
                 >
                     <svg
                         class="h-12 w-12 text-white/50"
