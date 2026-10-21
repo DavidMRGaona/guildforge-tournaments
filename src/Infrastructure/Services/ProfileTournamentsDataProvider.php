@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\ProfileTournamentParticipationDTO;
+use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
@@ -18,6 +19,10 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel
 
 final readonly class ProfileTournamentsDataProvider
 {
+    public function __construct(
+        private ParticipantManagementServiceInterface $participantManagement,
+    ) {}
+
     /**
      * Get tournament participation data for a user's profile page.
      *
@@ -203,8 +208,9 @@ final readonly class ProfileTournamentsDataProvider
         $canCheckIn = false;
         $checkInDeadline = null;
 
+        // The registration must be one the check-in accepts: confirmed when the organisation confirms by hand
         if ($tournament->requires_check_in
-            && $participant->status !== ParticipantStatus::CheckedIn
+            && $this->participantManagement->canCheckIn($participant->status, (bool) $tournament->requires_manual_confirmation)
             && $startsAt !== null
             && $tournament->check_in_starts_before !== null
             && $tournament->self_check_in_allowed

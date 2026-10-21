@@ -229,6 +229,7 @@ export interface TournamentShowProps {
     currentRound: Round | null;
     userRegistration: Participant | null;
     canRegister: boolean;
+    canCheckIn: boolean;
     guestConfirmation: GuestConfirmationTerms | null;
 }
 

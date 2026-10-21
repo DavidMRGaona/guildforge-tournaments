@@ -85,6 +85,7 @@ export default {
             privacy_policy: 'privacy policy',
             already_registered: 'Already registered',
             registered_status: 'Status: {status}',
+            check_in_now: 'Check in',
             registration_open: 'Registration open',
             registration_upcoming: 'Registration opening soon',
             registration_opens_on: 'Registration opens on {date}',
