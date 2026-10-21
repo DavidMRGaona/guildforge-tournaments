@@ -28,9 +28,11 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
-use Modules\Tournaments\Tests\Integration\Infrastructure\Services\RoundManagementServiceTest;
+use Modules\Tournaments\Tests\Support\StaleRoundRepository;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
+
+require_once dirname(__DIR__, 2).'/Support/StaleRoundRepository.php';
 
 /**
  * "Generar ronda" pairs the players and recording results updates the standings.
@@ -94,7 +96,7 @@ final class RoundsPanelTest extends ModuleTestCase
         $tournament = $this->tournament();
         $this->participants($tournament, 4);
         $this->roundsManager($tournament)->callTableAction('generateRound');
-        $this->app->instance(RoundRepositoryInterface::class, RoundManagementServiceTest::staleRounds(new EloquentRoundRepository()));
+        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository()));
 
         $this->roundsManager($tournament)
             ->callTableAction('generateRound')

@@ -20,11 +20,9 @@ use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
-use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
-use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
@@ -32,7 +30,10 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\StaleRoundRepository;
 use Tests\Support\Modules\ModuleTestCase;
+
+require_once dirname(__DIR__, 3).'/Support/StaleRoundRepository.php';
 
 /**
  * Round generation (Swiss pairing) and result recording with standings, as the panel runs them.
@@ -68,7 +69,7 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->participants($tournament, 4);
         $this->rounds()->generateNextRound($tournament->id);
         // The second click read the rounds before the first one saved its round
-        $this->app->instance(RoundRepositoryInterface::class, self::staleRounds(new EloquentRoundRepository()));
+        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository()));
 
         $this->expectException(RoundAlreadyGeneratedException::class);
 
@@ -78,57 +79,6 @@ final class RoundManagementServiceTest extends ModuleTestCase
             $this->assertSame(1, RoundModel::query()->count());
             $this->assertSame(2, MatchModel::query()->count());
         }
-    }
-
-    /**
-     * A round repository that has not seen the tournament's rounds yet.
-     */
-    public static function staleRounds(RoundRepositoryInterface $inner): RoundRepositoryInterface
-    {
-        return new class($inner) implements RoundRepositoryInterface
-        {
-            public function __construct(private readonly RoundRepositoryInterface $inner) {}
-
-            public function save(Round $round): void
-            {
-                $this->inner->save($round);
-            }
-
-            public function find(RoundId $id): ?Round
-            {
-                return $this->inner->find($id);
-            }
-
-            public function findOrFail(RoundId $id): Round
-            {
-                return $this->inner->findOrFail($id);
-            }
-
-            public function findByTournament(string $tournamentId): array
-            {
-                return [];
-            }
-
-            public function findCurrentRound(string $tournamentId): ?Round
-            {
-                return null;
-            }
-
-            public function findByTournamentAndNumber(string $tournamentId, int $roundNumber): ?Round
-            {
-                return $this->inner->findByTournamentAndNumber($tournamentId, $roundNumber);
-            }
-
-            public function findLatestCompletedRound(string $tournamentId): ?Round
-            {
-                return null;
-            }
-
-            public function delete(RoundId $id): void
-            {
-                $this->inner->delete($id);
-            }
-        };
     }
 
     public function test_an_odd_participant_gets_a_bye_that_scores_at_once(): void
