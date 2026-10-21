@@ -18,7 +18,7 @@ const { formatPoints, formatPercentage } = useTournaments();
             <div class="mb-6">
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-base-muted hover:text-base-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -38,7 +38,7 @@ const { formatPoints, formatPercentage } = useTournaments();
                 </Link>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50">
+            <div class="overflow-hidden rounded-lg bg-surface shadow">
                 <div class="border-b border-default p-6">
                     <h1 class="text-2xl font-bold text-base-primary sm:text-3xl">
                         {{ t('tournaments.public.standings') }}
@@ -68,24 +68,24 @@ const { formatPoints, formatPercentage } = useTournaments();
                                     <th class="hidden px-3 py-3 text-right lg:table-cell">{{ t('tournaments.public.owp') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+                            <tbody class="divide-y divide-default">
                                 <tr
                                     v-for="standing in standings"
                                     :key="standing.participant_id"
-                                    class="text-base-primary hover:bg-muted"
+                                    class="text-base-primary hover:bg-base-secondary/10"
                                     :class="{
-                                        'bg-primary-50 dark:bg-primary-900/10': standing.rank === 1,
-                                        'bg-muted': standing.rank === 2,
-                                        'bg-orange-50 dark:bg-orange-900/10': standing.rank === 3,
+                                        'bg-primary-500/10': standing.rank === 1,
+                                        'bg-base-secondary/10': standing.rank === 2,
+                                        'bg-warning-light': standing.rank === 3,
                                     }"
                                 >
                                     <td class="px-3 py-3">
                                         <span
                                             class="font-bold"
                                             :class="{
-                                                'text-primary dark:text-primary-400': standing.rank === 1,
+                                                'text-primary': standing.rank === 1,
                                                 'text-base-muted': standing.rank === 2,
-                                                'text-orange-600 dark:text-orange-400': standing.rank === 3,
+                                                'text-warning': standing.rank === 3,
                                             }"
                                         >
                                             {{ standing.rank }}
@@ -95,20 +95,20 @@ const { formatPoints, formatPercentage } = useTournaments();
                                         {{ standing.participant_name }}
                                     </td>
                                     <td class="px-3 py-3 text-right">
-                                        <span class="font-bold text-primary dark:text-primary-400">
+                                        <span class="font-bold text-primary">
                                             {{ formatPoints(standing.points) }}
                                         </span>
                                     </td>
                                     <td class="px-3 py-3 text-center text-base-secondary">
                                         {{ standing.matches_played }}
                                     </td>
-                                    <td class="hidden px-3 py-3 text-center text-green-600 md:table-cell dark:text-green-400">
+                                    <td class="hidden px-3 py-3 text-center text-success md:table-cell">
                                         {{ standing.wins }}
                                     </td>
-                                    <td class="hidden px-3 py-3 text-center text-yellow-600 md:table-cell dark:text-yellow-400">
+                                    <td class="hidden px-3 py-3 text-center text-warning md:table-cell">
                                         {{ standing.draws }}
                                     </td>
-                                    <td class="hidden px-3 py-3 text-center text-red-600 md:table-cell dark:text-red-400">
+                                    <td class="hidden px-3 py-3 text-center text-error md:table-cell">
                                         {{ standing.losses }}
                                     </td>
                                     <td class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell">

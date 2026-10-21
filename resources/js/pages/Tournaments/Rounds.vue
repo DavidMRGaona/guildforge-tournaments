@@ -48,7 +48,7 @@ const sortedRounds = computed(() => {
             <div class="mb-6">
                 <Link
                     :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-base-muted hover:text-base-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                    class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                     <svg
                         class="mr-1 h-4 w-4"
@@ -68,7 +68,7 @@ const sortedRounds = computed(() => {
                 </Link>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-surface shadow dark:shadow-stone-900/50">
+            <div class="overflow-hidden rounded-lg bg-surface shadow">
                 <div class="border-b border-default p-6">
                     <h1 class="text-2xl font-bold text-base-primary sm:text-3xl">
                         {{ t('tournaments.public.rounds') }}
@@ -93,9 +93,9 @@ const sortedRounds = computed(() => {
                             <!-- Round Header (clickable) -->
                             <button
                                 type="button"
-                                class="flex w-full items-center justify-between p-4 text-left hover:bg-muted"
+                                class="flex w-full items-center justify-between p-4 text-left hover:bg-base-secondary/10"
                                 :class="{
-                                    'bg-blue-50 dark:bg-blue-900/20': roundData.round.status === 'in_progress',
+                                    'bg-info-light': roundData.round.status === 'in_progress',
                                 }"
                                 @click="toggleRound(roundData.round.id)"
                             >
@@ -117,7 +117,7 @@ const sortedRounds = computed(() => {
                                         {{ t('tournaments.public.matches_label') }}
                                     </span>
                                     <svg
-                                        class="h-5 w-5 text-stone-400 transition-transform"
+                                        class="h-5 w-5 text-base-muted transition-transform"
                                         :class="{ 'rotate-180': isExpanded(roundData.round.id) }"
                                         fill="none"
                                         stroke="currentColor"
@@ -143,7 +143,7 @@ const sortedRounds = computed(() => {
                                     {{ t('tournaments.public.no_matches') }}
                                 </div>
 
-                                <div v-else class="divide-y divide-stone-100 dark:divide-stone-800">
+                                <div v-else class="divide-y divide-default">
                                     <div
                                         v-for="match in roundData.matches"
                                         :key="match.id"
@@ -154,7 +154,7 @@ const sortedRounds = computed(() => {
                                             <!-- Table Number -->
                                             <div
                                                 v-if="match.table_number"
-                                                class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-muted text-sm font-medium text-base-secondary"
+                                                class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-base-secondary/10 text-sm font-medium text-base-secondary"
                                             >
                                                 {{ match.table_number }}
                                             </div>
@@ -165,14 +165,14 @@ const sortedRounds = computed(() => {
                                                     <span
                                                         class="font-medium text-base-primary"
                                                         :class="{
-                                                            'text-green-600 dark:text-green-400': match.result === 'player_one_win',
+                                                            'text-success': match.result === 'player_one_win',
                                                         }"
                                                     >
                                                         {{ match.player_1_name }}
                                                     </span>
                                                     <span
                                                         v-if="match.player_1_score !== null"
-                                                        class="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
+                                                        class="rounded bg-base-secondary/10 px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
                                                     >
                                                         {{ match.player_1_score }}
                                                     </span>
@@ -182,14 +182,14 @@ const sortedRounds = computed(() => {
                                                     <span
                                                         class="font-medium text-base-primary"
                                                         :class="{
-                                                            'text-green-600 dark:text-green-400': match.result === 'player_two_win',
+                                                            'text-success': match.result === 'player_two_win',
                                                         }"
                                                     >
                                                         {{ match.player_2_name }}
                                                     </span>
                                                     <span
                                                         v-if="match.player_2_score !== null"
-                                                        class="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
+                                                        class="rounded bg-base-secondary/10 px-1.5 py-0.5 text-sm font-semibold text-base-secondary"
                                                     >
                                                         {{ match.player_2_score }}
                                                     </span>
@@ -213,7 +213,7 @@ const sortedRounds = computed(() => {
                                             <!-- Disputed indicator -->
                                             <span
                                                 v-if="match.is_disputed"
-                                                class="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                                class="ml-2 rounded-full bg-error-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                             >
                                                 {{ t('tournaments.public.disputed') }}
                                             </span>
@@ -221,7 +221,7 @@ const sortedRounds = computed(() => {
                                             <!-- Needs confirmation indicator -->
                                             <span
                                                 v-else-if="match.needs_confirmation"
-                                                class="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                class="ml-2 rounded-full bg-warning-light px-2 py-0.5 text-xs font-medium text-base-primary"
                                             >
                                                 {{ t('tournaments.public.pending_confirmation') }}
                                             </span>

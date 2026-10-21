@@ -63,7 +63,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
 
 <template>
     <div
-        class="group relative overflow-hidden rounded-lg border border-default bg-surface transition-all hover:border-primary-300 hover:shadow-md dark:hover:border-primary-600"
+        class="group relative overflow-hidden rounded-lg border border-[color:var(--color-border)] bg-surface transition-all hover:border-primary hover:shadow-md"
     >
         <div class="flex flex-col sm:flex-row">
             <!-- Image section -->
@@ -77,7 +77,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                 />
                 <div
                     v-else
-                    class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 to-stone-600 dark:from-primary-600 dark:to-stone-700"
+                    class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700"
                 >
                     <svg
                         class="h-10 w-10 text-white/50"
@@ -103,7 +103,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                     <div class="min-w-0 flex-1">
                         <Link
                             :href="tournamentUrl"
-                            class="block text-lg font-semibold text-base-primary hover:text-primary dark:hover:text-primary-400"
+                            class="block text-lg font-semibold text-[color:var(--color-text-primary)] hover:text-primary"
                         >
                             {{ tournament.name }}
                         </Link>
@@ -206,7 +206,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                 <!-- Next match info - only for in progress tournaments -->
                 <div
                     v-if="tournament.isInProgress && tournament.nextMatch"
-                    class="mb-3 rounded-md bg-muted p-2.5"
+                    class="mb-3 rounded-md bg-page p-2.5"
                 >
                     <div class="flex items-center gap-2 text-sm">
                         <svg
@@ -226,7 +226,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                         <div class="flex flex-wrap items-center gap-x-2 text-base-secondary">
                             <span class="font-medium">{{ t('tournaments.my_tournaments.next_match') }}:</span>
                             <span>{{ t('tournaments.my_tournaments.round') }} {{ tournament.nextMatch.roundNumber }}</span>
-                            <span v-if="tournament.nextMatch.isBye" class="text-primary dark:text-primary-400">
+                            <span v-if="tournament.nextMatch.isBye" class="text-primary">
                                 ({{ t('tournaments.my_tournaments.bye') }})
                             </span>
                             <template v-else-if="tournament.nextMatch.opponentName">
@@ -245,7 +245,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                     <Link
                         v-if="tournament.canCheckIn"
                         :href="checkInUrl"
-                        class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-stone-800"
+                        class="inline-flex items-center gap-1.5 rounded-md bg-green-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface"
                     >
                         <svg
                             class="h-4 w-4"
@@ -262,7 +262,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                             />
                         </svg>
                         {{ t('tournaments.my_tournaments.check_in_now') }}
-                        <span v-if="checkInDeadlineFormatted" class="text-green-200">
+                        <span v-if="checkInDeadlineFormatted" class="text-white/90">
                             ({{ t('tournaments.my_tournaments.until') }} {{ checkInDeadlineFormatted }})
                         </span>
                     </Link>
@@ -270,7 +270,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                     <!-- View tournament link -->
                     <Link
                         :href="tournamentUrl"
-                        class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                        class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                     >
                         {{ t('tournaments.my_tournaments.view_tournament') }}
                         <svg
