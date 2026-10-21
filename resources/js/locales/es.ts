@@ -116,6 +116,7 @@ export default {
             privacy_policy: 'política de privacidad',
             already_registered: 'Ya estás inscrito',
             registered_status: 'Estado: {status}',
+            check_in_now: 'Hacer check-in',
             registration_open: 'Inscripción abierta',
             registration_upcoming: 'Inscripción próximamente',
             registration_opens_on: 'La inscripción se abre el {date}',

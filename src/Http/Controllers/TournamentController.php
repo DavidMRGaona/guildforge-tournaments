@@ -20,6 +20,7 @@ use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterfa
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Http\CheckInWindow;
 
 final class TournamentController extends Controller
 {
@@ -32,6 +33,7 @@ final class TournamentController extends Controller
         private readonly SeoMetadataFactoryInterface $seo,
         private readonly EventQueryServiceInterface $events,
         private readonly GuestConfirmationQueryInterface $guestConfirmation,
+        private readonly CheckInWindow $checkInWindow,
     ) {}
 
     public function show(string $identifier): Response|RedirectResponse
@@ -64,6 +66,7 @@ final class TournamentController extends Controller
         $user = auth()->user();
         $userRegistration = null;
         $canRegister = false;
+        $canCheckIn = false;
 
         if ($user !== null) {
             $registration = $this->participantManagement->findByUserAndTournament(
@@ -72,6 +75,11 @@ final class TournamentController extends Controller
             );
 
             $userRegistration = $registration?->toArray();
+
+            // The rule of the check-in itself: self check-in open now and the registration may check in
+            $canCheckIn = $registration !== null
+                && $this->checkInWindow->calculate($tournament, $tournament->eventStartsAt)['status'] === 'open'
+                && $this->participantManagement->canCheckIn($registration->status, $tournament->requiresManualConfirmation);
 
             $canRegister = $this->tournamentQuery->canUserRegister(
                 $tournament->id,
@@ -94,6 +102,7 @@ final class TournamentController extends Controller
             'currentRound' => $currentRound?->toArray(),
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
+            'canCheckIn' => $canCheckIn,
             'guestConfirmation' => $this->guestConfirmation->forTournament($tournament->id),
             'seo' => $this->showSeo($tournament),
         ]);

@@ -48,6 +48,9 @@ const canWithdraw = computed(() => {
     return isRegistered.value && props.tournament.can_withdraw;
 });
 
+// The server decides who may check in now (registered, window open); the page lives under the same slug
+const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
+
 // The register or withdraw button is on screen, so its disabled reason must be too
 const showGateReason = computed(() =>
     gate.blocked.value && (isRegistered.value ? canWithdraw.value : props.canRegister)
@@ -448,25 +451,35 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                             ? 'border-success bg-success-light'
                             : 'border-primary bg-primary-light'"
                     >
-                        <div v-if="isRegistered" class="flex items-center justify-between">
-                            <div>
-                                <h3 class="font-semibold text-success">
-                                    {{ t('tournaments.public.already_registered') }}
-                                </h3>
-                                <p class="mt-1 text-sm text-success">
-                                    {{ t('tournaments.public.registered_status', { status: userRegistration?.status_label }) }}
-                                </p>
+                        <div v-if="isRegistered">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-success">
+                                        {{ t('tournaments.public.already_registered') }}
+                                    </h3>
+                                    <p class="mt-1 text-sm text-success">
+                                        {{ t('tournaments.public.registered_status', { status: userRegistration?.status_label }) }}
+                                    </p>
+                                </div>
+                                <BaseButton
+                                    v-if="canWithdraw"
+                                    variant="danger"
+                                    size="sm"
+                                    :disabled="gate.blocked.value"
+                                    :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
+                                    @click="handleWithdraw"
+                                >
+                                    {{ t('tournaments.public.withdraw') }}
+                                </BaseButton>
                             </div>
-                            <BaseButton
-                                v-if="canWithdraw"
-                                variant="danger"
-                                size="sm"
-                                :disabled="gate.blocked.value"
-                                :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
-                                @click="handleWithdraw"
+
+                            <Link
+                                v-if="canCheckIn"
+                                :href="checkInUrl"
+                                class="mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-base font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
                             >
-                                {{ t('tournaments.public.withdraw') }}
-                            </BaseButton>
+                                {{ t('tournaments.public.check_in_now') }}
+                            </Link>
                         </div>
 
                         <div v-else-if="canRegister" class="flex items-center justify-between">

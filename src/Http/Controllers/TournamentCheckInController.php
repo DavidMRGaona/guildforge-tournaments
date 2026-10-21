@@ -7,7 +7,6 @@ namespace Modules\Tournaments\Http\Controllers;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Http\Controllers\Controller;
-use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -16,12 +15,12 @@ use Inertia\Response;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
-use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
 use Modules\Tournaments\Domain\Exceptions\CheckInNotAllowedException;
 use Modules\Tournaments\Domain\Exceptions\CheckInWindowClosedException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
+use Modules\Tournaments\Http\CheckInWindow;
 use Modules\Tournaments\Http\Requests\CheckInRequest;
 
 final class TournamentCheckInController extends Controller
@@ -30,6 +29,7 @@ final class TournamentCheckInController extends Controller
         private readonly TournamentQueryServiceInterface $tournamentQuery,
         private readonly ParticipantManagementServiceInterface $participantManagement,
         private readonly SeoMetadataFactoryInterface $seo,
+        private readonly CheckInWindow $checkInWindow,
     ) {}
 
     public function show(string $slug): Response|RedirectResponse
@@ -49,7 +49,7 @@ final class TournamentCheckInController extends Controller
 
         $user = auth()->user();
         $userRegistration = null;
-        $checkInWindow = $this->calculateCheckInWindow($tournament, $eventStartDate);
+        $checkInWindow = $this->checkInWindow->calculate($tournament, $eventStartDate);
 
         if ($user !== null) {
             $registration = $this->participantManagement->findByUserAndTournament(
@@ -86,7 +86,7 @@ final class TournamentCheckInController extends Controller
 
         // Validate check-in window
         $eventStartDate = $tournament->eventStartsAt;
-        $checkInWindow = $this->calculateCheckInWindow($tournament, $eventStartDate);
+        $checkInWindow = $this->checkInWindow->calculate($tournament, $eventStartDate);
 
         if ($checkInWindow['status'] !== 'open') {
             return $this->refusal($request, 'check_in', 'window_closed', 409);
@@ -179,67 +179,5 @@ final class TournamentCheckInController extends Controller
         }
 
         return $this->tournamentQuery->findBySlug($identifier);
-    }
-
-    /**
-     * Calculate the check-in window status.
-     *
-     * @return array{status: string, opens_at: string|null, closes_at: string|null}
-     */
-    private function calculateCheckInWindow(TournamentResponseDTO $tournament, ?DateTimeImmutable $eventStartDate): array
-    {
-        // If check-in is not required or self check-in not allowed, window is closed
-        if (! $tournament->requiresCheckIn || ! $tournament->selfCheckInAllowed) {
-            return [
-                'status' => 'not_available',
-                'opens_at' => null,
-                'closes_at' => null,
-            ];
-        }
-
-        // If tournament is already in progress or finished, window is closed
-        if (in_array($tournament->status, [TournamentStatus::InProgress, TournamentStatus::Finished, TournamentStatus::Cancelled], true)) {
-            return [
-                'status' => 'closed',
-                'opens_at' => null,
-                'closes_at' => null,
-            ];
-        }
-
-        if ($eventStartDate === null) {
-            return [
-                'status' => 'not_available',
-                'opens_at' => null,
-                'closes_at' => null,
-            ];
-        }
-
-        $checkInMinutesBefore = $tournament->checkInStartsBefore ?? 30;
-        $windowOpensAt = $eventStartDate->modify("-{$checkInMinutesBefore} minutes");
-        $windowClosesAt = $eventStartDate;
-
-        $now = new DateTimeImmutable;
-
-        if ($now < $windowOpensAt) {
-            return [
-                'status' => 'not_yet',
-                'opens_at' => $windowOpensAt->format('c'),
-                'closes_at' => $windowClosesAt->format('c'),
-            ];
-        }
-
-        if ($now > $windowClosesAt) {
-            return [
-                'status' => 'closed',
-                'opens_at' => $windowOpensAt->format('c'),
-                'closes_at' => $windowClosesAt->format('c'),
-            ];
-        }
-
-        return [
-            'status' => 'open',
-            'opens_at' => $windowOpensAt->format('c'),
-            'closes_at' => $windowClosesAt->format('c'),
-        ];
     }
 }
