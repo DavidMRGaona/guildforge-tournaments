@@ -1,3 +1,5 @@
+import type { StatusColor } from '../utils/statusColors';
+
 export type TournamentStatus =
     | 'draft'
     | 'registration_open'
@@ -192,7 +194,7 @@ export interface TournamentListItem {
     status: TournamentStatus;
     displayStatus: TournamentDisplayStatus;
     statusLabel: string;
-    statusColor: string;
+    statusColor: StatusColor;
     currentRound: number | null;
     maxRounds: number | null;
     participantCount: number;
@@ -332,7 +334,7 @@ export interface UserTournament {
     imagePublicId: string | null;
     status: TournamentStatus;
     statusLabel: string;
-    statusColor: string;
+    statusColor: StatusColor;
     startsAt: string | null;
     eventName: string | null;
     totalParticipants: number;
@@ -340,7 +342,7 @@ export interface UserTournament {
     participantId: string;
     participantStatus: ParticipantStatus;
     participantStatusLabel: string;
-    participantStatusColor: string;
+    participantStatusColor: StatusColor;
     // Standings data
     position: number | null;
     points: number;
