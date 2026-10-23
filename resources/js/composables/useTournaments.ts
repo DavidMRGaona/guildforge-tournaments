@@ -52,9 +52,6 @@ interface StatusInfo {
 
 interface UseTournamentsReturn {
     formatStatus: (status: TournamentDisplayStatus) => StatusInfo;
-    formatParticipantStatus: (status: ParticipantStatus) => StatusInfo;
-    formatRoundStatus: (status: RoundStatus) => StatusInfo;
-    formatMatchResult: (result: MatchResult) => StatusInfo;
     canShowStandings: (tournament: Tournament) => boolean;
     canShowRounds: (tournament: Tournament) => boolean;
     hasStarted: (tournament: Tournament) => boolean;
@@ -65,7 +62,6 @@ interface UseTournamentsReturn {
     getMatchResultColor: (result: MatchResult) => StatusColor;
     formatPoints: (points: number) => string;
     formatPercentage: (percentage: number) => string;
-    formatRank: (rank: number) => string;
     formatRecord: (standing: Standing) => string;
     spotsRemaining: (tournament: Tournament) => number | null;
     isTournamentFull: (tournament: Tournament) => boolean;
@@ -89,33 +85,12 @@ export function useTournaments(): UseTournamentsReturn {
         return pickColor(PARTICIPANT_STATUS_COLORS, status);
     }
 
-    function formatParticipantStatus(status: ParticipantStatus): StatusInfo {
-        return {
-            label: t(`tournaments.participant_status.${status}`),
-            color: getParticipantStatusColor(status),
-        };
-    }
-
     function getRoundStatusColor(status: RoundStatus): StatusColor {
         return pickColor(ROUND_STATUS_COLORS, status);
     }
 
-    function formatRoundStatus(status: RoundStatus): StatusInfo {
-        return {
-            label: t(`tournaments.round_status.${status}`),
-            color: getRoundStatusColor(status),
-        };
-    }
-
     function getMatchResultColor(result: MatchResult): StatusColor {
         return pickColor(MATCH_RESULT_COLORS, result);
-    }
-
-    function formatMatchResult(result: MatchResult): StatusInfo {
-        return {
-            label: t(`tournaments.match_result.${result}`),
-            color: getMatchResultColor(result),
-        };
     }
 
     function hasStarted(tournament: Tournament): boolean {
@@ -140,10 +115,6 @@ export function useTournaments(): UseTournamentsReturn {
 
     function formatPercentage(percentage: number): string {
         return `${percentage.toFixed(1)}%`;
-    }
-
-    function formatRank(rank: number): string {
-        return `#${rank}`;
     }
 
     function formatRecord(standing: Standing): string {
@@ -171,9 +142,6 @@ export function useTournaments(): UseTournamentsReturn {
 
     return {
         formatStatus,
-        formatParticipantStatus,
-        formatRoundStatus,
-        formatMatchResult,
         canShowStandings,
         canShowRounds,
         hasStarted,
@@ -184,7 +152,6 @@ export function useTournaments(): UseTournamentsReturn {
         getMatchResultColor,
         formatPoints,
         formatPercentage,
-        formatRank,
         formatRecord,
         spotsRemaining,
         isTournamentFull,
