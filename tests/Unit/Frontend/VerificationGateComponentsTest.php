@@ -8,9 +8,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Source guards, not behaviour tests: the module has no Vue test runner, so this reads the
- * sources of the pages and the event section that sign up, withdraw and check in a signed-in
- * user. While the account must verify its email (the core's useVerificationGate), each of
+ * Source guards, not behaviour tests: this reads the sources of the pages that sign up, withdraw
+ * and check in a signed-in user (the event section has Vue tests in tests/js). While the account must verify its email (the core's useVerificationGate), each of
  * those buttons is disabled with the reason tied to it, the handler sends nothing, and a
  * verification 403 that arrives anyway (state changed in another tab) closes any open dialog
  * and leads to the notice instead of an error message.
@@ -31,11 +30,6 @@ final class VerificationGateComponentsTest extends TestCase
             'actions' => ['register', 'withdraw'],
             'buttons' => 2,
         ],
-        'components/EventTournamentSection.vue' => [
-            'handlers' => ['handleRegister', 'handleWithdraw', 'confirmWithdraw'],
-            'actions' => ['register', 'withdraw'],
-            'buttons' => 2,
-        ],
         'pages/Tournaments/CheckIn.vue' => [
             'handlers' => ['handleAuthenticatedCheckIn'],
             'actions' => ['checkIn'],
@@ -50,7 +44,6 @@ final class VerificationGateComponentsTest extends TestCase
     {
         return [
             'tournament page' => ['pages/Tournaments/Show.vue'],
-            'event tournament section' => ['components/EventTournamentSection.vue'],
             'check-in page' => ['pages/Tournaments/CheckIn.vue'],
         ];
     }
@@ -133,7 +126,7 @@ final class VerificationGateComponentsTest extends TestCase
         preg_match_all('/:aria-describedby="gate\.blocked\.value \? (\w+) : undefined"/', $source, $matches);
         $this->assertCount($buttons, $matches[1], 'Every gated button is described by the reason');
 
-        // Ids unique per instance: the section and the page are separate components
+        // Ids unique per instance (useId), one reason element each
         foreach (array_unique($matches[1]) as $id) {
             $this->assertStringContainsString("const {$id} = useId();", $source);
             $this->assertSame(1, substr_count($source, ":id=\"{$id}\""), "One reason element carries :id=\"{$id}\"");

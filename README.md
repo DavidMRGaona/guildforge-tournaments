@@ -419,11 +419,13 @@ src/modules/tournaments/
 ├── tests/
 │   ├── Unit/
 │   ├── Integration/
-│   └── Feature/
+│   ├── Feature/
+│   └── js/                     # Tests de los componentes Vue (Vitest)
 ├── module.json
 ├── package.json
 ├── phpunit.xml
-└── vite.config.ts
+├── vite.config.ts
+└── vitest.config.ts
 ```
 
 ## Tests
@@ -436,6 +438,15 @@ vendor/bin/phpunit -c modules/tournaments/phpunit.xml --testsuite=Unit
 ```
 
 `php artisan test` no ejecuta los tests de los módulos.
+
+Los componentes Vue tienen sus propios tests en `tests/js` (Vitest, Vue Test Utils y happy-dom). Se ejecutan con el módulo dentro del core, porque los componentes importan sus fuentes con `@/`, y con las dependencias de npm del core y del módulo instaladas:
+
+```bash
+cd modules/tournaments
+npm test
+```
+
+`tests/js/setup.ts` carga los textos del core y del módulo en castellano y sustituye Inertia (router y enlaces) y el layout del sitio. En cada pull request los ejecuta el job *Vue tests* de `tests.yml`.
 
 ## Publicar una versión
 
