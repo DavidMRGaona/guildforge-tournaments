@@ -3,7 +3,6 @@ import { computed, ref, reactive, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentCheckInProps, CheckInJsonResponse, CheckInField } from '../../types/tournaments';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
@@ -172,16 +171,50 @@ const handleEmailCheckIn = async (): Promise<void> => {
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
-            <!-- Back link -->
-            <div class="mb-6">
-                <Link
-                    :href="`/torneos/${tournament.slug}`"
-                    class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+    <div class="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Back link -->
+        <div class="mb-6">
+            <Link
+                :href="`/torneos/${tournament.slug}`"
+                class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+                <svg
+                    class="mr-1 h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"
+                    />
+                </svg>
+                {{ t('common.back') }}
+            </Link>
+        </div>
+
+        <div class="overflow-hidden rounded-lg bg-surface shadow">
+            <div class="p-6 sm:p-8">
+                <!-- Header -->
+                <div class="mb-6 text-center">
+                    <h1 class="text-2xl font-bold text-base-primary">
+                        {{ t('tournaments.check_in.title') }}
+                    </h1>
+                    <p class="mt-2 text-base-muted">
+                        {{ tournament.name }}
+                    </p>
+                </div>
+
+                <!-- Not Available State -->
+                <div
+                    v-if="isNotAvailable"
+                    class="rounded-lg bg-page p-6 text-center"
                 >
                     <svg
-                        class="mr-1 h-4 w-4"
+                        class="mx-auto h-12 w-12 text-base-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -191,32 +224,74 @@ const handleEmailCheckIn = async (): Promise<void> => {
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M15 19l-7-7 7-7"
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                         />
                     </svg>
-                    {{ t('common.back') }}
-                </Link>
-            </div>
+                    <p class="mt-4 text-base-muted">
+                        {{ t('tournaments.check_in.not_allowed') }}
+                    </p>
+                </div>
 
-            <div class="overflow-hidden rounded-lg bg-surface shadow">
-                <div class="p-6 sm:p-8">
-                    <!-- Header -->
-                    <div class="mb-6 text-center">
-                        <h1 class="text-2xl font-bold text-base-primary">
-                            {{ t('tournaments.check_in.title') }}
-                        </h1>
-                        <p class="mt-2 text-base-muted">
-                            {{ tournament.name }}
-                        </p>
-                    </div>
+                <!-- Window Not Yet Open -->
+                <div
+                    v-else-if="isWindowNotYet"
+                    class="rounded-lg bg-primary-light p-6 text-center"
+                >
+                    <svg
+                        class="mx-auto h-12 w-12 text-primary"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    <p class="mt-4 font-medium text-base-primary">
+                        {{ t('tournaments.check_in.window_opens_at', {
+                            date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
+                            time: formatDateTime(checkInWindow.opens_at)?.split(',')[1]?.trim() || ''
+                        }) }}
+                    </p>
+                </div>
 
-                    <!-- Not Available State -->
+                <!-- Window Closed -->
+                <div
+                    v-else-if="isWindowClosed"
+                    class="rounded-lg bg-error-light p-6 text-center"
+                >
+                    <svg
+                        class="mx-auto h-12 w-12 text-error"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
+                    </svg>
+                    <p class="mt-4 font-medium text-base-primary">
+                        {{ t('tournaments.check_in.window_closed_started') }}
+                    </p>
+                </div>
+
+                <!-- Window Open -->
+                <div v-else-if="isWindowOpen">
+                    <!-- Already Checked In -->
                     <div
-                        v-if="isNotAvailable"
-                        class="rounded-lg bg-page p-6 text-center"
+                        v-if="isAlreadyCheckedIn"
+                        class="rounded-lg bg-success/10 p-6 text-center"
                     >
                         <svg
-                            class="mx-auto h-12 w-12 text-base-muted"
+                            class="mx-auto h-12 w-12 text-success"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -226,245 +301,167 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 stroke-width="2"
-                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
-                        <p class="mt-4 text-base-muted">
-                            {{ t('tournaments.check_in.not_allowed') }}
+                        <p class="mt-4 font-medium text-success">
+                            {{ t('tournaments.check_in.success') }}
+                        </p>
+                        <p v-if="checkedInTime" class="mt-2 text-sm text-success">
+                            {{ t('tournaments.check_in.success_time', { time: checkedInTime }) }}
                         </p>
                     </div>
 
-                    <!-- Window Not Yet Open -->
+                    <!-- Authenticated User - Button to check in -->
+                    <div v-else-if="isAuthenticated && isRegistered">
+                        <p class="mb-4 text-center text-base-muted">
+                            {{ t('tournaments.check_in.enter_email') }}
+                        </p>
+                        <BaseButton
+                            variant="primary"
+                            class="w-full"
+                            :loading="isProcessing"
+                            :disabled="isProcessing || gate.blocked.value"
+                            :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
+                            @click="handleAuthenticatedCheckIn"
+                        >
+                            {{ t('tournaments.check_in.submit') }}
+                        </BaseButton>
+                        <p
+                            v-if="gate.blocked.value"
+                            :id="gateReasonId"
+                            class="mt-3 rounded-md bg-warning-light p-3 text-sm text-base-primary"
+                        >
+                            {{ gate.reason('checkIn') }}
+                            <Link
+                                :href="gate.noticeUrl"
+                                class="font-semibold underline underline-offset-2 hover:no-underline"
+                            >
+                                {{ gate.linkLabel.value }}
+                                <span aria-hidden="true">→</span>
+                            </Link>
+                        </p>
+                    </div>
+
+                    <!-- Authenticated but not registered -->
                     <div
-                        v-else-if="isWindowNotYet"
+                        v-else-if="isAuthenticated && !isRegistered"
                         class="rounded-lg bg-primary-light p-6 text-center"
                     >
-                        <svg
-                            class="mx-auto h-12 w-12 text-primary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                        <p class="mt-4 font-medium text-base-primary">
-                            {{ t('tournaments.check_in.window_opens_at', {
-                                date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
-                                time: formatDateTime(checkInWindow.opens_at)?.split(',')[1]?.trim() || ''
-                            }) }}
+                        <p class="text-base-primary">
+                            {{ t('tournaments.check_in.not_registered') }}
                         </p>
+                        <Link
+                            :href="`/torneos/${tournament.slug}`"
+                            class="mt-4 inline-block text-primary hover:underline"
+                        >
+                            {{ t('tournaments.public.register') }}
+                        </Link>
                     </div>
 
-                    <!-- Window Closed -->
-                    <div
-                        v-else-if="isWindowClosed"
-                        class="rounded-lg bg-error-light p-6 text-center"
-                    >
-                        <svg
-                            class="mx-auto h-12 w-12 text-error"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                        <p class="mt-4 font-medium text-base-primary">
-                            {{ t('tournaments.check_in.window_closed_started') }}
+                    <!-- Guest / Not authenticated - Email form -->
+                    <div v-else>
+                        <p class="mb-4 text-center text-base-muted">
+                            {{ t('tournaments.check_in.enter_email') }}
                         </p>
-                    </div>
 
-                    <!-- Window Open -->
-                    <div v-else-if="isWindowOpen">
-                        <!-- Already Checked In -->
-                        <div
-                            v-if="isAlreadyCheckedIn"
-                            class="rounded-lg bg-success/10 p-6 text-center"
-                        >
-                            <svg
-                                class="mx-auto h-12 w-12 text-success"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        <form @submit.prevent="handleEmailCheckIn" class="space-y-4">
+                            <div>
+                                <label
+                                    for="check-in-email"
+                                    class="mb-1 block text-sm font-medium text-base-secondary"
+                                >
+                                    {{ t('common.email') }}
+                                    <span class="text-error" aria-label="required">*</span>
+                                </label>
+                                <input
+                                    id="check-in-email"
+                                    v-model="emailForm.email"
+                                    type="email"
+                                    required
+                                    :disabled="isProcessing"
+                                    :aria-invalid="!!formErrors.email"
+                                    :aria-describedby="formErrors.email ? 'email-error' : undefined"
+                                    class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-base-secondary/10 bg-surface text-base-primary placeholder-base-muted"
+                                    :class="{
+                                        'border-error focus:border-error focus:ring-error':
+                                            formErrors.email,
+                                    }"
                                 />
-                            </svg>
-                            <p class="mt-4 font-medium text-success">
-                                {{ t('tournaments.check_in.success') }}
-                            </p>
-                            <p v-if="checkedInTime" class="mt-2 text-sm text-success">
-                                {{ t('tournaments.check_in.success_time', { time: checkedInTime }) }}
-                            </p>
-                        </div>
+                                <p
+                                    v-if="formErrors.email"
+                                    id="email-error"
+                                    class="mt-1 text-sm text-error"
+                                    role="alert"
+                                >
+                                    {{ formErrors.email }}
+                                </p>
+                            </div>
 
-                        <!-- Authenticated User - Button to check in -->
-                        <div v-else-if="isAuthenticated && isRegistered">
-                            <p class="mb-4 text-center text-base-muted">
-                                {{ t('tournaments.check_in.enter_email') }}
-                            </p>
+                            <!-- GDPR Consent -->
+                            <div>
+                                <div class="flex items-start gap-2">
+                                    <input
+                                        id="checkin-gdpr"
+                                        v-model="emailForm.gdpr_consent"
+                                        type="checkbox"
+                                        required
+                                        :disabled="isProcessing"
+                                        :aria-invalid="!!formErrors.gdpr_consent"
+                                        :aria-describedby="formErrors.gdpr_consent ? 'checkin-gdpr-error' : undefined"
+                                        class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed bg-surface"
+                                    />
+                                    <label
+                                        for="checkin-gdpr"
+                                        class="text-sm text-base-muted"
+                                    >
+                                        {{ t('tournaments.check_in.gdpr_consent') }}
+                                        <a
+                                            href="/politica-de-privacidad"
+                                            target="_blank"
+                                            class="text-primary underline hover:no-underline"
+                                        >
+                                            {{ t('tournaments.public.privacy_policy') }}
+                                        </a>
+                                        <span class="text-error" aria-label="required">*</span>
+                                    </label>
+                                </div>
+                                <p
+                                    v-if="formErrors.gdpr_consent"
+                                    id="checkin-gdpr-error"
+                                    class="mt-1 text-sm text-error"
+                                    role="alert"
+                                >
+                                    {{ formErrors.gdpr_consent }}
+                                </p>
+                            </div>
+
                             <BaseButton
+                                type="submit"
                                 variant="primary"
                                 class="w-full"
                                 :loading="isProcessing"
-                                :disabled="isProcessing || gate.blocked.value"
-                                :aria-describedby="gate.blocked.value ? gateReasonId : undefined"
-                                @click="handleAuthenticatedCheckIn"
+                                :disabled="isProcessing"
                             >
                                 {{ t('tournaments.check_in.submit') }}
                             </BaseButton>
-                            <p
-                                v-if="gate.blocked.value"
-                                :id="gateReasonId"
-                                class="mt-3 rounded-md bg-warning-light p-3 text-sm text-base-primary"
-                            >
-                                {{ gate.reason('checkIn') }}
-                                <Link
-                                    :href="gate.noticeUrl"
-                                    class="font-semibold underline underline-offset-2 hover:no-underline"
-                                >
-                                    {{ gate.linkLabel.value }}
-                                    <span aria-hidden="true">→</span>
-                                </Link>
-                            </p>
-                        </div>
+                        </form>
 
-                        <!-- Authenticated but not registered -->
-                        <div
-                            v-else-if="isAuthenticated && !isRegistered"
-                            class="rounded-lg bg-primary-light p-6 text-center"
-                        >
-                            <p class="text-base-primary">
-                                {{ t('tournaments.check_in.not_registered') }}
-                            </p>
+                        <!-- Login link -->
+                        <div class="mt-4 text-center">
+                            <span class="text-sm text-base-muted">
+                                {{ t('tournaments.check_in.or_login') }}:
+                            </span>
                             <Link
-                                :href="`/torneos/${tournament.slug}`"
-                                class="mt-4 inline-block text-primary hover:underline"
+                                href="/iniciar-sesion"
+                                class="ml-1 text-sm font-medium text-primary hover:underline"
                             >
-                                {{ t('tournaments.public.register') }}
+                                {{ t('common.login') }}
                             </Link>
-                        </div>
-
-                        <!-- Guest / Not authenticated - Email form -->
-                        <div v-else>
-                            <p class="mb-4 text-center text-base-muted">
-                                {{ t('tournaments.check_in.enter_email') }}
-                            </p>
-
-                            <form @submit.prevent="handleEmailCheckIn" class="space-y-4">
-                                <div>
-                                    <label
-                                        for="check-in-email"
-                                        class="mb-1 block text-sm font-medium text-base-secondary"
-                                    >
-                                        {{ t('common.email') }}
-                                        <span class="text-error" aria-label="required">*</span>
-                                    </label>
-                                    <input
-                                        id="check-in-email"
-                                        v-model="emailForm.email"
-                                        type="email"
-                                        required
-                                        :disabled="isProcessing"
-                                        :aria-invalid="!!formErrors.email"
-                                        :aria-describedby="formErrors.email ? 'email-error' : undefined"
-                                        class="w-full rounded-md border border-default px-4 py-2 shadow-sm transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-base-secondary/10 bg-surface text-base-primary placeholder-base-muted"
-                                        :class="{
-                                            'border-error focus:border-error focus:ring-error':
-                                                formErrors.email,
-                                        }"
-                                    />
-                                    <p
-                                        v-if="formErrors.email"
-                                        id="email-error"
-                                        class="mt-1 text-sm text-error"
-                                        role="alert"
-                                    >
-                                        {{ formErrors.email }}
-                                    </p>
-                                </div>
-
-                                <!-- GDPR Consent -->
-                                <div>
-                                    <div class="flex items-start gap-2">
-                                        <input
-                                            id="checkin-gdpr"
-                                            v-model="emailForm.gdpr_consent"
-                                            type="checkbox"
-                                            required
-                                            :disabled="isProcessing"
-                                            :aria-invalid="!!formErrors.gdpr_consent"
-                                            :aria-describedby="formErrors.gdpr_consent ? 'checkin-gdpr-error' : undefined"
-                                            class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed bg-surface"
-                                        />
-                                        <label
-                                            for="checkin-gdpr"
-                                            class="text-sm text-base-muted"
-                                        >
-                                            {{ t('tournaments.check_in.gdpr_consent') }}
-                                            <a
-                                                href="/politica-de-privacidad"
-                                                target="_blank"
-                                                class="text-primary underline hover:no-underline"
-                                            >
-                                                {{ t('tournaments.public.privacy_policy') }}
-                                            </a>
-                                            <span class="text-error" aria-label="required">*</span>
-                                        </label>
-                                    </div>
-                                    <p
-                                        v-if="formErrors.gdpr_consent"
-                                        id="checkin-gdpr-error"
-                                        class="mt-1 text-sm text-error"
-                                        role="alert"
-                                    >
-                                        {{ formErrors.gdpr_consent }}
-                                    </p>
-                                </div>
-
-                                <BaseButton
-                                    type="submit"
-                                    variant="primary"
-                                    class="w-full"
-                                    :loading="isProcessing"
-                                    :disabled="isProcessing"
-                                >
-                                    {{ t('tournaments.check_in.submit') }}
-                                </BaseButton>
-                            </form>
-
-                            <!-- Login link -->
-                            <div class="mt-4 text-center">
-                                <span class="text-sm text-base-muted">
-                                    {{ t('tournaments.check_in.or_login') }}:
-                                </span>
-                                <Link
-                                    href="/iniciar-sesion"
-                                    class="ml-1 text-sm font-medium text-primary hover:underline"
-                                >
-                                    {{ t('common.login') }}
-                                </Link>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </DefaultLayout>
+    </div>
 </template>

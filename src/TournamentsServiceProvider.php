@@ -932,7 +932,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     public function registerPagePrefixes(): array
     {
         return [
-            new PagePrefixDTO(prefix: 'Tournaments', module: $this->moduleName()),
+            new PagePrefixDTO(prefix: 'Tournaments', module: $this->moduleName(), usesCoreLayout: true),
         ];
     }
 }
