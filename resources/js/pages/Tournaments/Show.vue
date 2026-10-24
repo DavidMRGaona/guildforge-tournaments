@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronLeft, TriangleAlert, X } from '@lucide/vue';
 import { computed, ref, reactive, watch, nextTick, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -331,20 +332,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 href="/eventos"
                 class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg
-                    class="mr-1 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
                 {{ t('common.back') }}
             </Link>
         </div>
@@ -664,9 +652,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         :aria-label="t('common.close')"
                         @click="closeGuestModal"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <X class="h-5 w-5" aria-hidden="true" />
                     </button>
 
                     <!-- Modal header -->
@@ -855,20 +841,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 >
                     <!-- Warning icon -->
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
-                        <svg
-                            class="h-6 w-6 text-error"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                        </svg>
+                        <TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
                     </div>
 
                     <!-- Modal header -->

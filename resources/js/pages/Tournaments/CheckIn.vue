@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Ban, ChevronLeft, CircleCheck, Clock, X } from '@lucide/vue';
 import { computed, ref, reactive, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -178,20 +179,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 :href="`/torneos/${tournament.slug}`"
                 class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg
-                    class="mr-1 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
                 {{ t('common.back') }}
             </Link>
         </div>
@@ -213,20 +201,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     v-if="isNotAvailable"
                     class="rounded-lg bg-page p-6 text-center"
                 >
-                    <svg
-                        class="mx-auto h-12 w-12 text-base-muted"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                        />
-                    </svg>
+                    <Ban class="mx-auto h-12 w-12 text-base-muted" aria-hidden="true" />
                     <p class="mt-4 text-base-muted">
                         {{ t('tournaments.check_in.not_allowed') }}
                     </p>
@@ -237,20 +212,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     v-else-if="isWindowNotYet"
                     class="rounded-lg bg-primary-light p-6 text-center"
                 >
-                    <svg
-                        class="mx-auto h-12 w-12 text-primary"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                    </svg>
+                    <Clock class="mx-auto h-12 w-12 text-primary" aria-hidden="true" />
                     <p class="mt-4 font-medium text-base-primary">
                         {{ t('tournaments.check_in.window_opens_at', {
                             date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
@@ -264,20 +226,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     v-else-if="isWindowClosed"
                     class="rounded-lg bg-error-light p-6 text-center"
                 >
-                    <svg
-                        class="mx-auto h-12 w-12 text-error"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
+                    <X class="mx-auto h-12 w-12 text-error" aria-hidden="true" />
                     <p class="mt-4 font-medium text-base-primary">
                         {{ t('tournaments.check_in.window_closed_started') }}
                     </p>
@@ -290,20 +239,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                         v-if="isAlreadyCheckedIn"
                         class="rounded-lg bg-success/10 p-6 text-center"
                     >
-                        <svg
-                            class="mx-auto h-12 w-12 text-success"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
+                        <CircleCheck class="mx-auto h-12 w-12 text-success" aria-hidden="true" />
                         <p class="mt-4 font-medium text-success">
                             {{ t('tournaments.check_in.success') }}
                         </p>

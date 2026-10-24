@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TriangleAlert } from '@lucide/vue';
 import { computed } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -76,19 +77,7 @@ function handleCancel(): void {
             <!-- Header -->
             <div class="mb-6 text-center">
                 <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning-light">
-                    <svg
-                        class="h-8 w-8 text-warning"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                    </svg>
+                    <TriangleAlert class="h-8 w-8 text-warning" aria-hidden="true" />
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
                     {{ t('tournaments.cancellation.title') }}

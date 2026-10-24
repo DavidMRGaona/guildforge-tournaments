@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronLeft } from '@lucide/vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { TournamentStandingsProps } from '../../types/tournaments';
@@ -18,20 +19,7 @@ const { formatPoints, formatPercentage } = useTournaments();
                 :href="`/torneos/${tournament.slug}`"
                 class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
             >
-                <svg
-                    class="mr-1 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                    />
-                </svg>
+                <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
                 {{ t('common.back') }}
             </Link>
         </div>

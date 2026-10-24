@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronDown, ChevronRight, Plus } from '@lucide/vue';
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -51,20 +52,7 @@ function loadMore(): void {
                     class="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-hover"
                 >
                     {{ t('tournaments.my_tournaments.browse_tournaments') }}
-                    <svg
-                        class="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 5l7 7-7 7"
-                        />
-                    </svg>
+                    <ChevronRight class="h-4 w-4" aria-hidden="true" />
                 </Link>
             </div>
         </div>
@@ -141,15 +129,10 @@ function loadMore(): void {
                         </span>
                         {{ t('tournaments.my_tournaments.history') }}
                     </span>
-                    <svg
+                    <ChevronDown
                         :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
                         aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    />
                 </button>
 
                 <div v-if="showPastSection" class="space-y-4">
@@ -166,9 +149,7 @@ function loadMore(): void {
                         class="flex w-full items-center justify-center gap-2 rounded-lg border border-default bg-transparent py-3 text-sm font-medium text-base-secondary transition-colors hover:bg-base-secondary/10"
                         @click="loadMore"
                     >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
+                        <Plus class="h-4 w-4" aria-hidden="true" />
                         {{ t('tournaments.my_tournaments.load_more', { count: remainingPastCount }) }}
                     </button>
                 </div>

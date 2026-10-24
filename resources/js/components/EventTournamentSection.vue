@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CircleCheck, RefreshCw, TriangleAlert, Trophy, Users, X } from '@lucide/vue';
 import { computed, ref, reactive, watch, nextTick, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -345,20 +346,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 <!-- Tournament Info Header -->
                 <div class="mb-3 flex items-center gap-2">
                     <!-- Trophy icon -->
-                    <svg
-                        class="h-5 w-5 text-primary"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M8 21h8m-4-4v4m-4-8a4 4 0 01-4-4V5a2 2 0 012-2h8a2 2 0 012 2v4a4 4 0 01-4 4m-4 0h8"
-                        />
-                    </svg>
+                    <Trophy class="h-5 w-5 text-primary" aria-hidden="true" />
                     <h3 class="font-semibold text-base-primary">
                         {{ t('tournaments.public.event_tournament') }}
                     </h3>
@@ -373,9 +361,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 <!-- Tournament Stats -->
                 <div class="mb-3 flex flex-wrap gap-4 text-sm text-base-secondary">
                     <span class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                        <Users class="h-4 w-4" aria-hidden="true" />
                         {{ tournament.participant_count }}
                         <template v-if="tournament.max_participants">
                             / {{ tournament.max_participants }}
@@ -384,9 +370,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </span>
 
                     <span v-if="tournament.current_round > 0" class="flex items-center gap-1">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
+                        <RefreshCw class="h-4 w-4" aria-hidden="true" />
                         {{ t('tournaments.public.round_label', { current: tournament.current_round, max: tournament.max_rounds || '?' }) }}
                     </span>
                 </div>
@@ -394,9 +378,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 <!-- Registration Status -->
                 <div v-if="isRegistered" class="mb-3">
                     <span class="inline-flex items-center gap-1 text-sm font-medium text-success">
-                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
+                        <CircleCheck class="h-4 w-4" aria-hidden="true" />
                         {{ t('tournaments.public.already_registered') }}
                     </span>
                 </div>
@@ -503,9 +485,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         :aria-label="t('common.close')"
                         @click="closeGuestModal"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <X class="h-5 w-5" aria-hidden="true" />
                     </button>
 
                     <!-- Modal header -->
@@ -694,20 +674,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 >
                     <!-- Warning icon -->
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
-                        <svg
-                            class="h-6 w-6 text-error"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                        </svg>
+                        <TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
                     </div>
 
                     <!-- Modal header -->
