@@ -18,3 +18,46 @@ jobs:
       host_ref: ${{ vars.GUILDFORGE_HOST_REF || 'main' }}
     permissions:
       contents: read
+
+  # The Vue tests (tests/js) run inside the core, whose sources the components import through '@/'
+  vue:
+    name: Vue tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout host application
+        uses: actions/checkout@v7
+        with:
+          repository: DavidMRGaona/GuildForge
+          ref: ${{ vars.GUILDFORGE_HOST_REF || 'main' }}
+          persist-credentials: false
+          sparse-checkout: |
+            src/resources/js
+
+      - name: Checkout module
+        uses: actions/checkout@v7
+        with:
+          path: src/modules/tournaments
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            src/package-lock.json
+            src/modules/tournaments/package-lock.json
+
+      - name: Install host dependencies
+        working-directory: src
+        run: npm ci
+
+      - name: Install module dependencies
+        working-directory: src/modules/tournaments
+        run: npm ci
+
+      - name: Run Vue tests
+        working-directory: src/modules/tournaments
+        run: npm test

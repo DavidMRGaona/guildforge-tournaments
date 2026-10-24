@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Source guards, not behaviour tests: the module has no Vue test runner. The withdraw buttons
- * follow the server's `can_withdraw` (event not started, tournament not running), not the
- * registration flag, and the guest cancellation page says why it cannot cancel with texts
- * that exist in both locales.
+ * Source guards, not behaviour tests: the withdraw button of the tournament page follows the
+ * server's `can_withdraw` (event not started, tournament not running), not the registration flag,
+ * and the guest cancellation page uses texts that exist in both locales. The event section and
+ * the cancellation page themselves have Vue tests in tests/js.
  */
 final class WithdrawAvailabilityComponentsTest extends TestCase
 {
@@ -24,7 +24,6 @@ final class WithdrawAvailabilityComponentsTest extends TestCase
     {
         return [
             'tournament page' => ['pages/Tournaments/Show.vue'],
-            'event tournament section' => ['components/EventTournamentSection.vue'],
         ];
     }
 
@@ -44,17 +43,6 @@ final class WithdrawAvailabilityComponentsTest extends TestCase
             '/is_registration_open: boolean;\s*can_withdraw: boolean;/',
             $this->source('types/tournaments.ts'),
         );
-    }
-
-    public function test_the_cancellation_page_shows_why_it_cannot_cancel(): void
-    {
-        $source = $this->source('pages/Tournaments/CancelRegistration.vue');
-
-        $this->assertStringContainsString('cancelBlockedReason: CancelBlockedReason | null;', $source);
-        $this->assertStringContainsString("t('tournaments.cancellation.tournament_started')", $source);
-        $this->assertStringContainsString("t('tournaments.cancellation.tournament_cancelled')", $source);
-        $this->assertStringContainsString('{{ blockedMessage }}', $source);
-        $this->assertStringNotContainsString("{{ t('tournaments.cancellation.already_cancelled') }}", $source);
     }
 
     /**

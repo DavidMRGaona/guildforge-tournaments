@@ -8,41 +8,12 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Source guards, not behaviour tests: the module has no Vue test runner. Every status badge
- * gets its classes from the one shared map, keyed by the colors the server sends.
+ * Source guards, not behaviour tests: every status badge gets its classes from the one shared map
+ * (utils/statusColors.ts, whose behaviour has Vue tests in tests/js).
  */
 final class StatusColorsTest extends TestCase
 {
     private const string JS = __DIR__ . '/../../../resources/js/';
-
-    /**
-     * @return array<string, array{string, string}>
-     */
-    public static function serverColors(): array
-    {
-        return [
-            'success' => ['success', 'bg-success-light text-base-primary'],
-            'info' => ['info', 'bg-info-light text-base-primary'],
-            'warning' => ['warning', 'bg-warning-light text-base-primary'],
-            'danger' => ['danger', 'bg-error-light text-base-primary'],
-            'gray' => ['gray', 'bg-base-secondary/10 text-base-secondary'],
-            'primary' => ['primary', 'bg-primary-light text-base-primary'],
-        ];
-    }
-
-    #[DataProvider('serverColors')]
-    public function test_the_shared_map_has_every_server_color(string $key, string $classes): void
-    {
-        $this->assertStringContainsString("{$key}: '{$classes}'", $this->source('utils/statusColors.ts'));
-    }
-
-    public function test_an_unknown_color_falls_back_to_gray_without_touching_the_prototype(): void
-    {
-        $source = $this->source('utils/statusColors.ts');
-
-        $this->assertStringContainsString('Object.hasOwn(', $source);
-        $this->assertStringContainsString("'bg-base-secondary/10 text-base-secondary'", $source);
-    }
 
     /**
      * @return array<string, array{string}>
