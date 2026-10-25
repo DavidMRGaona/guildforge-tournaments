@@ -12,6 +12,7 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Services\SiteBrandingServiceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -147,7 +148,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 $registry->declare(new DeclaredCookieDTO(
                     name: 'tn_guest_registrations',
                     categorySlug: 'preferences',
-                    provider: (string) config('app.name'),
+                    // The association's name from the site settings, APP_NAME when it is blank
+                    provider: $this->app->make(SiteBrandingServiceInterface::class)->siteName(),
                     purpose: (string) __('tournaments::messages.cookies.guest_registrations_purpose'),
                     duration: (string) __('tournaments::messages.cookies.guest_registrations_duration'),
                 ));

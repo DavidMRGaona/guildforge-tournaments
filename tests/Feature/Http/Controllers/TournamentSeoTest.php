@@ -21,7 +21,7 @@ final class TournamentSeoTest extends ModuleTestCase
         parent::setUp();
         app()->setLocale('es');
         config([
-            'app.name' => 'Tolerol',
+            'app.name' => 'Example guild',
             'cloudinary.cloud_name' => 'demo',
             'cloudinary.prefix' => 'guildforge',
         ]);
@@ -58,7 +58,7 @@ final class TournamentSeoTest extends ModuleTestCase
         $response = $this->get('/torneos/torneo-warhammer');
 
         $response->assertOk();
-        $response->assertSee('<title>Torneo de Warhammer - Tolerol</title>', false);
+        $response->assertSee('<title>Torneo de Warhammer - Example guild</title>', false);
         $response->assertSee('content="14 de marzo de 2026, 10:00 · Centro cívico · Ven a competir"', false);
         $response->assertSee('/guildforge/tournaments/warhammer" data-seo-server>', false);
         $response->assertSee('"@type":"Event"', false);
@@ -77,14 +77,14 @@ final class TournamentSeoTest extends ModuleTestCase
         $this->tournament(null);
 
         $this->get('/torneos/torneo-warhammer/clasificacion')
-            ->assertSee('<title>Clasificación - Torneo de Warhammer - Tolerol</title>', false);
+            ->assertSee('<title>Clasificación - Torneo de Warhammer - Example guild</title>', false);
         $this->get('/torneos/torneo-warhammer/rondas')
-            ->assertSee('<title>Rondas - Torneo de Warhammer - Tolerol</title>', false);
+            ->assertSee('<title>Rondas - Torneo de Warhammer - Example guild</title>', false);
     }
 
     public function test_listing_has_its_title(): void
     {
-        $this->get('/torneos')->assertSee('<title>Torneos - Tolerol</title>', false);
+        $this->get('/torneos')->assertSee('<title>Torneos - Example guild</title>', false);
     }
 
     public function test_listing_page_component_exists_where_the_manifest_lookup_expects_it(): void
