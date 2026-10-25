@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Features\SupportTesting\Testable;
@@ -329,7 +330,7 @@ final class EventTournamentTabTest extends ModuleTestCase
 
     public function test_the_registration_cannot_close_after_the_event_starts(): void
     {
-        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         $tab = $this->tab($event)
             ->set('configData.tournament_enabled', true)
@@ -347,7 +348,7 @@ final class EventTournamentTabTest extends ModuleTestCase
 
     public function test_the_registration_can_close_when_the_event_starts(): void
     {
-        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         $this->tab($event)
             ->set('configData.tournament_enabled', true)
@@ -357,12 +358,12 @@ final class EventTournamentTabTest extends ModuleTestCase
             ->assertHasNoErrors();
 
         $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
-        $this->assertSame('2036-11-20 10:00:00', $tournament->registration_closes_at?->format('Y-m-d H:i:s'));
+        $this->assertTrue($tournament->registration_closes_at?->equalTo(CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')) ?? false);
     }
 
     public function test_a_garbage_closing_date_never_throws(): void
     {
-        $event = EventModel::factory()->create(['start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         $this->tab($event)
             ->set('configData.tournament_enabled', true)

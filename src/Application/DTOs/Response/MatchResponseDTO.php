@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs\Response;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
@@ -87,6 +88,8 @@ final readonly class MatchResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'round_id' => $this->roundId,
@@ -101,10 +104,10 @@ final readonly class MatchResponseDTO
             'player_2_score' => $this->player2Score,
             'reported_by_id' => $this->reportedById,
             'reported_by_name' => $this->reportedByName,
-            'reported_at' => $this->reportedAt?->format('c'),
+            'reported_at' => $timezone->iso($this->reportedAt),
             'confirmed_by_id' => $this->confirmedById,
             'confirmed_by_name' => $this->confirmedByName,
-            'confirmed_at' => $this->confirmedAt?->format('c'),
+            'confirmed_at' => $timezone->iso($this->confirmedAt),
             'is_disputed' => $this->isDisputed,
             'is_bye' => $this->isBye(),
             'is_reported' => $this->isReported(),

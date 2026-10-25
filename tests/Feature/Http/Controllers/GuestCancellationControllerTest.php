@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -41,9 +42,8 @@ final class GuestCancellationControllerTest extends ModuleTestCase
                 'end_date' => now()->addHours(8),
             ]
             : [
-                // app.timezone is Europe/Madrid, so this is a venue local time
-                'start_date' => '2036-03-14 10:00:00',
-                'end_date' => '2036-03-14 20:00:00',
+                'start_date' => CarbonImmutable::parse('2036-03-14 10:00:00', 'Europe/Madrid'),
+                'end_date' => CarbonImmutable::parse('2036-03-14 20:00:00', 'Europe/Madrid'),
             ]);
 
         $tournament = TournamentModel::create([

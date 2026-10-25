@@ -16,11 +16,12 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
 - **Perfiles de juego**: plantillas con estadísticas, reglas, desempates y emparejamiento; incluye perfiles del sistema.
 - **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción.
+- **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve una persona (emails, panel, web) se muestra en la zona de visualización del sitio (por defecto Europe/Madrid).
 - **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
 
 ## Requisitos
 
-- GuildForge core `^3.10`
+- GuildForge core `^3.22` (almacenamiento de fechas en UTC y zona horaria de visualización)
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).

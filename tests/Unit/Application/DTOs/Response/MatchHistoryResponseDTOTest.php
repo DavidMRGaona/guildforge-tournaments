@@ -7,7 +7,7 @@ namespace Modules\Tournaments\Tests\Unit\Application\DTOs\Response;
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\MatchHistoryResponseDTO;
 use Modules\Tournaments\Domain\Enums\MatchResult;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 final class MatchHistoryResponseDTOTest extends TestCase
 {

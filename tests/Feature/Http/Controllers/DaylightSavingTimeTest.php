@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -16,6 +19,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Tests\Support\FixedClock;
 use Tests\Support\Modules\ModuleTestCase;
+use Tests\Support\Time\UsesUtcStorage;
 
 /**
  * The event start, the registration and the check-in window on the two nights the clocks
@@ -24,6 +28,8 @@ use Tests\Support\Modules\ModuleTestCase;
  */
 final class DaylightSavingTimeTest extends ModuleTestCase
 {
+    use UsesUtcStorage;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;
@@ -38,7 +44,7 @@ final class DaylightSavingTimeTest extends ModuleTestCase
     public function test_at_the_first_pass_of_the_repeated_hour_an_event_that_began_before_it_has_started(): void
     {
         $this->clockAt('2026-10-25T02:15:00+02:00');
-        $tournament = $this->tournament('2026-10-25 01:30:00');
+        $tournament = $this->tournament(CarbonImmutable::parse('2026-10-25T01:30:00+02:00'));
 
         $this->get(route('tournaments.show', $tournament->slug))
             ->assertOk()
@@ -50,7 +56,7 @@ final class DaylightSavingTimeTest extends ModuleTestCase
     public function test_at_the_first_pass_of_the_repeated_hour_an_event_later_that_night_is_still_open(): void
     {
         $this->clockAt('2026-10-25T02:15:00+02:00');
-        $tournament = $this->tournament('2026-10-25 03:30:00');
+        $tournament = $this->tournament(CarbonImmutable::parse('2026-10-25T03:30:00+01:00'));
 
         $this->get(route('tournaments.show', $tournament->slug))
             ->assertOk()
@@ -69,7 +75,7 @@ final class DaylightSavingTimeTest extends ModuleTestCase
     {
         // 03:30 CET is 02:30 UTC, so a 30-minute window opens at 02:00 UTC: 03:00 CET
         $this->clockAt('2026-10-25T02:15:00+02:00');
-        $tournament = $this->tournament('2026-10-25 03:30:00');
+        $tournament = $this->tournament(CarbonImmutable::parse('2026-10-25T03:30:00+01:00'));
 
         $this->get(route('tournaments.check-in.show', $tournament->slug))
             ->assertOk()
@@ -83,7 +89,7 @@ final class DaylightSavingTimeTest extends ModuleTestCase
     {
         // 03:10 CET is 02:10 UTC; an hour before is 01:10 UTC, five minutes before this clock
         $this->clockAt('2026-10-25T02:15:00+01:00');
-        $tournament = $this->tournament('2026-10-25 03:10:00', checkInMinutesBefore: 60);
+        $tournament = $this->tournament(CarbonImmutable::parse('2026-10-25T03:10:00+01:00'), checkInMinutesBefore: 60);
         $participant = $this->confirmedGuest($tournament);
 
         $this->get(route('tournaments.check-in.show', $tournament->slug))
@@ -104,7 +110,7 @@ final class DaylightSavingTimeTest extends ModuleTestCase
     {
         // 03:10 CEST is 01:10 UTC; thirty minutes before is 00:40 UTC (01:40 CET), not 03:40
         $this->clockAt('2027-03-28T01:50:00+01:00');
-        $tournament = $this->tournament('2027-03-28 03:10:00');
+        $tournament = $this->tournament(CarbonImmutable::parse('2027-03-28T03:10:00+02:00'));
         $participant = $this->confirmedGuest($tournament);
 
         $this->get(route('tournaments.check-in.show', $tournament->slug))
@@ -124,9 +130,12 @@ final class DaylightSavingTimeTest extends ModuleTestCase
 
     public function test_a_start_stored_inside_the_repeated_hour_reads_as_its_second_pass(): void
     {
-        // Known limitation: dates are stored as Europe/Madrid wall times, so 02:30 that night
-        // cannot tell CEST from CET and PHP reads the second pass (CET). It goes once the core
-        // stores dates in UTC.
+        if (app(TimezoneServiceInterface::class)->storageTimezone()->getName() !== 'Europe/Madrid') {
+            $this->markTestSkipped('Only Madrid storage holds the wall time, which cannot tell the two passes apart; the UTC test covers the other.');
+        }
+
+        // Dates are stored as Europe/Madrid wall times, so 02:30 that night cannot tell CEST
+        // from CET and PHP reads the second pass (CET)
         $this->clockAt('2026-10-25T01:00:00+02:00');
         $tournament = $this->tournament('2026-10-25 02:30:00');
 
@@ -136,17 +145,34 @@ final class DaylightSavingTimeTest extends ModuleTestCase
                 ->where('eventStartDate', '2026-10-25T02:30:00+01:00'));
     }
 
+    public function test_a_start_stored_as_an_instant_keeps_its_pass_of_the_repeated_hour(): void
+    {
+        $this->useUtcStorage();
+        $this->clockAt('2026-10-25T01:00:00+02:00');
+
+        $first = $this->tournament(CarbonImmutable::parse('2026-10-25T00:30:00Z'));
+        $second = $this->tournament(CarbonImmutable::parse('2026-10-25T01:30:00Z'));
+
+        $this->assertSame('2026-10-25 00:30:00', DB::table('events')->where('id', $first->event_id)->value('start_date'));
+        $this->assertSame('2026-10-25 01:30:00', DB::table('events')->where('id', $second->event_id)->value('start_date'));
+
+        $this->get(route('tournaments.check-in.show', $first->slug))
+            ->assertInertia(fn (Assert $page) => $page->where('eventStartDate', '2026-10-25T02:30:00+02:00'));
+        $this->get(route('tournaments.check-in.show', $second->slug))
+            ->assertInertia(fn (Assert $page) => $page->where('eventStartDate', '2026-10-25T02:30:00+01:00'));
+    }
+
     private function clockAt(string $instant): void
     {
         $this->app->instance(Clock::class, FixedClock::at($instant));
     }
 
-    private function tournament(string $eventStartsAt, int $checkInMinutesBefore = 30): TournamentModel
+    private function tournament(string|CarbonImmutable $eventStartsAt, int $checkInMinutesBefore = 30): TournamentModel
     {
-        // app.timezone is Europe/Madrid, so the start is a venue local time
+        // A string is a raw column value (storage wall time); an instant is stored as given
         $event = EventModel::factory()->published()->create([
             'start_date' => $eventStartsAt,
-            'end_date' => '2027-12-31 23:00:00',
+            'end_date' => CarbonImmutable::parse('2027-12-31 23:00:00', 'Europe/Madrid'),
         ]);
 
         return TournamentModel::create([
@@ -171,8 +197,8 @@ final class DaylightSavingTimeTest extends ModuleTestCase
             'guest_name' => 'Ana',
             'guest_email' => 'ana@example.com',
             'status' => ParticipantStatus::Confirmed->value,
-            'registered_at' => '2026-10-20 18:00:00',
-            'email_confirmed_at' => '2026-10-20 18:00:00',
+            'registered_at' => CarbonImmutable::parse('2026-10-20 18:00:00', 'Europe/Madrid'),
+            'email_confirmed_at' => CarbonImmutable::parse('2026-10-20 18:00:00', 'Europe/Madrid'),
         ]);
     }
 }

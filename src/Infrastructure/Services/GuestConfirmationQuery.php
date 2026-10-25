@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
@@ -24,6 +25,8 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
 
     public function forTournament(string $tournamentId): ?array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
         if (! $tournament instanceof Tournament || ! $tournament->allowGuests()) {
@@ -39,7 +42,7 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
 
         return [
             'mode' => $terms['mode']->value,
-            'expires_at' => $terms['expiresAt']?->format('c'),
+            'expires_at' => $timezone->iso($terms['expiresAt']),
         ];
     }
 }

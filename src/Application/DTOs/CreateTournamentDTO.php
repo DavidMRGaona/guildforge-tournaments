@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -102,6 +103,8 @@ final readonly class CreateTournamentDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'event_id' => $this->eventId,
             'name' => $this->name,
@@ -117,8 +120,8 @@ final readonly class CreateTournamentDTO
             'result_reporting' => $this->resultReporting->value,
             'requires_check_in' => $this->requiresCheckIn,
             'check_in_starts_before' => $this->checkInStartsBefore,
-            'registration_opens_at' => $this->registrationOpensAt?->format('c'),
-            'registration_closes_at' => $this->registrationClosesAt?->format('c'),
+            'registration_opens_at' => $timezone->iso($this->registrationOpensAt),
+            'registration_closes_at' => $timezone->iso($this->registrationClosesAt),
             'notification_email' => $this->notificationEmail,
             'self_check_in_allowed' => $this->selfCheckInAllowed,
         ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonInterface;
 use Closure;
@@ -30,10 +31,13 @@ final class RegistrationClosingDateRule
                 return;
             }
 
+            $timezone = app(TimezoneServiceInterface::class);
+
             try {
+                // A picker's string is the wall time the admin sees, so it is read in the display zone
                 $closesAt = match (true) {
                     $value instanceof DateTimeInterface => Carbon::instance($value),
-                    is_string($value) && $value !== '' => Carbon::parse($value),
+                    is_string($value) && $value !== '' => Carbon::parse($value, $timezone->displayTimezone()),
                     default => null,
                 };
             } catch (Throwable) {
@@ -43,7 +47,7 @@ final class RegistrationClosingDateRule
 
             if ($closesAt instanceof Carbon && $closesAt->greaterThan($eventStartsAt)) {
                 $fail(__('tournaments::messages.validation.registration_closes_after_start', [
-                    'date' => $eventStartsAt->format('d/m/Y H:i'),
+                    'date' => $timezone->format($eventStartsAt),
                 ]));
             }
         };

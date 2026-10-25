@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs\Response;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -69,6 +70,8 @@ final readonly class ParticipantResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'tournament_id' => $this->tournamentId,
@@ -81,8 +84,8 @@ final readonly class ParticipantResponseDTO
             'status_label' => $this->status->label(),
             'seed' => $this->seed,
             'has_received_bye' => $this->hasReceivedBye,
-            'registered_at' => $this->registeredAt->format('c'),
-            'checked_in_at' => $this->checkedInAt?->format('c'),
+            'registered_at' => (string) $timezone->iso($this->registeredAt),
+            'checked_in_at' => $timezone->iso($this->checkedInAt),
             'display_name' => $this->displayName(),
             'is_guest' => $this->isGuest(),
             'is_checked_in' => $this->isCheckedIn(),

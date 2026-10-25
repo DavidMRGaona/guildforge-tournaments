@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -231,7 +232,7 @@ final class ParticipantsRelationManager extends RelationManager
 
         if ($record->confirmation_expires_at !== null) {
             return __('tournaments::messages.participants.email_unconfirmed_until', [
-                'date' => $record->confirmation_expires_at->format('d/m/Y H:i'),
+                'date' => app(TimezoneServiceInterface::class)->format($record->confirmation_expires_at),
             ]);
         }
 

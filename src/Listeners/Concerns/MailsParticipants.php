@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners\Concerns;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Domain\Entities\Participant;
@@ -49,6 +50,6 @@ trait MailsParticipants
         $eventId = TournamentModel::query()->whereKey($tournamentId)->value('event_id');
         $start = $eventId !== null ? EventModel::query()->whereKey($eventId)->first(['start_date'])?->start_date : null;
 
-        return $start?->format('d/m/Y H:i');
+        return $start !== null ? app(TimezoneServiceInterface::class)->format($start) : null;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Domain\Entities\Tournament;
@@ -23,6 +24,8 @@ final readonly class CheckInWindow
      */
     public function calculate(TournamentResponseDTO $tournament, ?DateTimeImmutable $eventStartDate): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         // If check-in is not required or self check-in not allowed, window is closed
         if (! $tournament->requiresCheckIn || ! $tournament->selfCheckInAllowed) {
             return [
@@ -57,23 +60,23 @@ final readonly class CheckInWindow
         if ($now < $windowOpensAt) {
             return [
                 'status' => 'not_yet',
-                'opens_at' => $windowOpensAt->format('c'),
-                'closes_at' => $windowClosesAt->format('c'),
+                'opens_at' => (string) $timezone->iso($windowOpensAt),
+                'closes_at' => (string) $timezone->iso($windowClosesAt),
             ];
         }
 
         if ($now > $windowClosesAt) {
             return [
                 'status' => 'closed',
-                'opens_at' => $windowOpensAt->format('c'),
-                'closes_at' => $windowClosesAt->format('c'),
+                'opens_at' => (string) $timezone->iso($windowOpensAt),
+                'closes_at' => (string) $timezone->iso($windowClosesAt),
             ];
         }
 
         return [
             'status' => 'open',
-            'opens_at' => $windowOpensAt->format('c'),
-            'closes_at' => $windowClosesAt->format('c'),
+            'opens_at' => (string) $timezone->iso($windowOpensAt),
+            'closes_at' => (string) $timezone->iso($windowClosesAt),
         ];
     }
 }

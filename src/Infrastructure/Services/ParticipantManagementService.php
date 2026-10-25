@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeImmutable;
@@ -152,6 +153,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function findGuestConfirmation(string $token): ?array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $participant = $this->participantRepository->findByConfirmationToken($token);
 
         if (! $participant instanceof Participant) {
@@ -178,7 +181,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             'tournament_name' => $tournament->name(),
             'tournament_slug' => $tournament->slug(),
             'guest_name' => $participant->guestName(),
-            'expires_at' => $state === 'pending' ? $expiresAt?->format('c') : null,
+            'expires_at' => $state === 'pending' ? $timezone->iso($expiresAt) : null,
             'seat_held' => $state === 'pending' && $participant->holdsSeat(),
         ];
     }

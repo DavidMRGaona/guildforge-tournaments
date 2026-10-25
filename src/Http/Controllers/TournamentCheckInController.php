@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Http\Controllers;
 
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,6 +35,8 @@ final class TournamentCheckInController extends Controller
 
     public function show(string $slug): Response|RedirectResponse
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $tournament = $this->findTournament($slug);
 
         if (! $tournament instanceof TournamentResponseDTO) {
@@ -63,7 +66,7 @@ final class TournamentCheckInController extends Controller
             'tournament' => $tournament->toArray(),
             'userRegistration' => $userRegistration,
             'checkInWindow' => $checkInWindow,
-            'eventStartDate' => $eventStartDate?->format('c'),
+            'eventStartDate' => $timezone->iso($eventStartDate),
             'seo' => $this->seo->forPage(new SeoPageDTO(
                 title: (string) __('tournaments::messages.seo.check_in_title', ['name' => $tournament->name]),
                 noindex: true,

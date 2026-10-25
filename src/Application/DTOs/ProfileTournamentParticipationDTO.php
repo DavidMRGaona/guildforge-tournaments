@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -48,6 +49,8 @@ final readonly class ProfileTournamentParticipationDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             // Tournament
             'id' => $this->id,
@@ -57,7 +60,7 @@ final readonly class ProfileTournamentParticipationDTO
             'status' => $this->status->value,
             'statusLabel' => $this->status->label(),
             'statusColor' => $this->status->color(),
-            'startsAt' => $this->startsAt?->format('c'),
+            'startsAt' => $timezone->iso($this->startsAt),
             'eventName' => $this->eventName,
             'totalParticipants' => $this->totalParticipants,
             // Participant
@@ -72,7 +75,7 @@ final readonly class ProfileTournamentParticipationDTO
             'nextMatch' => $this->nextMatch,
             // Check-in
             'canCheckIn' => $this->canCheckIn,
-            'checkInDeadline' => $this->checkInDeadline?->format('c'),
+            'checkInDeadline' => $timezone->iso($this->checkInDeadline),
             // Classification
             'isUpcoming' => $this->isUpcoming,
             'isInProgress' => $this->isInProgress,
