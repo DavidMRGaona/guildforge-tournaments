@@ -6,10 +6,16 @@ namespace Modules\Tournaments\Http;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Services\Clock;
 
-final class CheckInWindow
+final readonly class CheckInWindow
 {
+    public function __construct(
+        private Clock $clock,
+    ) {}
+
     /**
      * The check-in window status of a tournament, shared by the check-in page and the tournament page.
      *
@@ -43,11 +49,10 @@ final class CheckInWindow
             ];
         }
 
-        $checkInMinutesBefore = $tournament->checkInStartsBefore ?? 30;
-        $windowOpensAt = $eventStartDate->modify("-{$checkInMinutesBefore} minutes");
+        $windowOpensAt = Tournament::checkInOpensAt($eventStartDate, $tournament->checkInStartsBefore);
         $windowClosesAt = $eventStartDate;
 
-        $now = new DateTimeImmutable;
+        $now = $this->clock->now();
 
         if ($now < $windowOpensAt) {
             return [

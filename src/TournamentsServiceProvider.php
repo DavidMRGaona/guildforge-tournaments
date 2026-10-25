@@ -53,6 +53,7 @@ use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
 use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
@@ -89,6 +90,7 @@ use Modules\Tournaments\Infrastructure\Services\ScoringRuleEvaluator;
 use Modules\Tournaments\Infrastructure\Services\StandingCalculatorService;
 use Modules\Tournaments\Infrastructure\Services\StandingsService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
+use Modules\Tournaments\Infrastructure\Services\SystemClock;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
@@ -324,6 +326,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             TiebreakerCalculatorInterface::class,
             TiebreakerCalculator::class
+        );
+
+        $this->app->bind(
+            Clock::class,
+            SystemClock::class
         );
     }
 

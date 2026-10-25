@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Domain\Entities;
 
+use DateInterval;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
@@ -21,6 +22,8 @@ use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 
 final class Tournament
 {
+    private const int DEFAULT_CHECK_IN_MINUTES_BEFORE = 30;
+
     /**
      * @param  array<ScoreWeight>  $scoreWeights
      * @param  array<Tiebreaker>  $tiebreakers
@@ -141,6 +144,18 @@ final class Tournament
     public function checkInStartsBefore(): ?int
     {
         return $this->checkInStartsBefore;
+    }
+
+    /**
+     * When the check-in opens: the given minutes before the event start (30 when unset, never
+     * after the start). Elapsed minutes, so it holds across a clock change, where modify()
+     * would count wall-clock minutes and land an hour off.
+     */
+    public static function checkInOpensAt(DateTimeImmutable $eventStartsAt, ?int $minutesBefore): DateTimeImmutable
+    {
+        $minutes = max(0, $minutesBefore ?? self::DEFAULT_CHECK_IN_MINUTES_BEFORE);
+
+        return $eventStartsAt->sub(new DateInterval("PT{$minutes}M"));
     }
 
     public function allowGuests(): bool
@@ -266,10 +281,8 @@ final class Tournament
      * Whether the event has started. An unknown start counts as started, so nobody
      * registers or withdraws from the web without a known start.
      */
-    public function hasEventStarted(?DateTimeImmutable $now = null): bool
+    public function hasEventStarted(DateTimeImmutable $now): bool
     {
-        $now ??= new DateTimeImmutable();
-
         return $this->eventStartsAt === null || $now >= $this->eventStartsAt;
     }
 
@@ -277,10 +290,8 @@ final class Tournament
      * Whether users and guests can register now: open status, inside the configured opening
      * and closing dates, and before the event starts (the start caps any closing date).
      */
-    public function isRegistrationOpen(?DateTimeImmutable $now = null): bool
+    public function isRegistrationOpen(DateTimeImmutable $now): bool
     {
-        $now ??= new DateTimeImmutable();
-
         if (! $this->status->isRegistrationOpen()) {
             return false;
         }
@@ -301,7 +312,7 @@ final class Tournament
      * the tournament is not running, finished or cancelled. Staff withdrawals in the panel
      * are not bound by this.
      */
-    public function canWithdraw(?DateTimeImmutable $now = null): bool
+    public function canWithdraw(DateTimeImmutable $now): bool
     {
         if (in_array($this->status, [TournamentStatus::InProgress, TournamentStatus::Finished, TournamentStatus::Cancelled], true)) {
             return false;

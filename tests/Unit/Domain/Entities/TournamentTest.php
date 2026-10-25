@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -259,10 +260,30 @@ final class TournamentTest extends TestCase
         $this->assertSame($expected, $tournament->isRegistrationOpen(new DateTimeImmutable($now)));
     }
 
-    public function test_is_registration_open_uses_the_current_time_by_default(): void
+    public function test_the_check_in_opens_the_configured_minutes_before_the_start(): void
     {
-        $this->assertTrue($this->tournamentWith(eventStartsAt: '+1 day')->isRegistrationOpen());
-        $this->assertFalse($this->tournamentWith(eventStartsAt: '-1 minute')->isRegistrationOpen());
+        $start = new DateTimeImmutable('2026-11-20 10:00:00', new DateTimeZone('Europe/Madrid'));
+
+        $this->assertSame('2026-11-20T09:15:00+01:00', Tournament::checkInOpensAt($start, 45)->format('c'));
+        $this->assertSame('2026-11-20T09:30:00+01:00', Tournament::checkInOpensAt($start, null)->format('c'));
+        $this->assertSame('2026-11-20T10:00:00+01:00', Tournament::checkInOpensAt($start, -10)->format('c'));
+    }
+
+    public function test_the_check_in_opening_counts_elapsed_minutes_across_a_clock_change(): void
+    {
+        $madrid = new DateTimeZone('Europe/Madrid');
+
+        // Clocks go forward at 02:00 CET: 03:10 CEST minus 30 minutes is 01:40 CET, not 03:40
+        $this->assertSame(
+            '2027-03-28T01:40:00+01:00',
+            Tournament::checkInOpensAt(new DateTimeImmutable('2027-03-28 03:10:00', $madrid), 30)->format('c'),
+        );
+
+        // Clocks go back at 03:00 CEST: 03:10 CET minus 90 minutes is the first 02:40 (CEST)
+        $this->assertSame(
+            '2026-10-25T02:40:00+02:00',
+            Tournament::checkInOpensAt(new DateTimeImmutable('2026-10-25 03:10:00', $madrid), 90)->format('c'),
+        );
     }
 
     public function test_has_event_started(): void

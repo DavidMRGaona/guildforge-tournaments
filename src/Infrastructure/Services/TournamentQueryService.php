@@ -17,6 +17,7 @@ use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -29,6 +30,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         private RoundRepositoryInterface $roundRepository,
         private MatchRepositoryInterface $matchRepository,
         private UserDataProviderInterface $userDataProvider,
+        private Clock $clock,
     ) {}
 
     public function find(string $tournamentId): ?TournamentResponseDTO
@@ -43,7 +45,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
 
         $participantCount = $this->participantRepository->countActiveByTournament($tournamentId);
 
-        return TournamentResponseDTO::fromEntity($tournament, $participantCount);
+        return TournamentResponseDTO::fromEntity($tournament, $participantCount, $this->clock->now());
     }
 
     public function findBySlug(string $slug): ?TournamentResponseDTO
@@ -56,7 +58,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
 
         $participantCount = $this->participantRepository->countActiveByTournament($tournament->id()->value);
 
-        return TournamentResponseDTO::fromEntity($tournament, $participantCount);
+        return TournamentResponseDTO::fromEntity($tournament, $participantCount, $this->clock->now());
     }
 
     public function findByEventId(string $eventId): ?TournamentResponseDTO
@@ -69,7 +71,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
 
         $participantCount = $this->participantRepository->countActiveByTournament($tournament->id()->value);
 
-        return TournamentResponseDTO::fromEntity($tournament, $participantCount);
+        return TournamentResponseDTO::fromEntity($tournament, $participantCount, $this->clock->now());
     }
 
     /**
@@ -137,7 +139,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             return false;
         }
 
-        if (! $tournament->isRegistrationOpen()) {
+        if (! $tournament->isRegistrationOpen($this->clock->now())) {
             return false;
         }
 
@@ -343,11 +345,14 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             ->pluck('id')
             ->all();
 
+        $now = $this->clock->now();
+
         // Through the entity, so the listing gets the same registration verdict as the pages
         return array_map(
             fn (Tournament $tournament): TournamentResponseDTO => TournamentResponseDTO::fromEntity(
                 $tournament,
                 $this->participantRepository->countActiveByTournament($tournament->id()->value),
+                $now,
             ),
             $this->tournamentRepository->findByIds($ids),
         );

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\ProfileTournamentParticipationDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
@@ -21,6 +22,7 @@ final readonly class ProfileTournamentsDataProvider
 {
     public function __construct(
         private ParticipantManagementServiceInterface $participantManagement,
+        private Clock $clock,
     ) {}
 
     /**
@@ -169,7 +171,7 @@ final readonly class ProfileTournamentsDataProvider
         $eventName = $event?->title;
 
         // Determine tournament phase
-        $now = new DateTimeImmutable();
+        $now = $this->clock->now();
         $status = $tournament->status;
 
         $isInProgress = $status === TournamentStatus::InProgress;
@@ -215,7 +217,7 @@ final readonly class ProfileTournamentsDataProvider
             && $tournament->check_in_starts_before !== null
             && $tournament->self_check_in_allowed
         ) {
-            $checkInOpensAt = $startsAt->modify("-{$tournament->check_in_starts_before} minutes");
+            $checkInOpensAt = Tournament::checkInOpensAt($startsAt, $tournament->check_in_starts_before);
             $checkInDeadline = $startsAt;
 
             if ($now >= $checkInOpensAt && $now < $startsAt) {

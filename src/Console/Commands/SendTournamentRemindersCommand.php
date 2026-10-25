@@ -10,6 +10,7 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -34,6 +35,7 @@ final class SendTournamentRemindersCommand extends Command
         TournamentReminderSettings $settings,
         TournamentRepositoryInterface $tournamentRepository,
         ParticipantRepositoryInterface $participantRepository,
+        Clock $clock,
     ): int {
         if (! $settings->enabled()) {
             $this->info('Tournament reminders are disabled.');
@@ -41,7 +43,7 @@ final class SendTournamentRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        $now = CarbonImmutable::now();
+        $now = CarbonImmutable::instance($clock->now());
         $until = $now->addHours($settings->hoursBefore());
         $sent = 0;
 
