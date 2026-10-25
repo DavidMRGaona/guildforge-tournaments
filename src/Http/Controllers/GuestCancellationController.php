@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Http\Controllers;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Application\Services\EventQueryServiceInterface;
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -60,7 +61,7 @@ final class GuestCancellationController extends Controller
             'tournament' => [
                 'id' => $tournament->id,
                 'name' => $tournament->name,
-                'eventDate' => $this->events->findById($tournament->eventId)?->startDate->format('c'),
+                'eventDate' => app(TimezoneServiceInterface::class)->iso($this->events->findById($tournament->eventId)?->startDate),
             ],
             'token' => $token,
             'canCancel' => $cancelBlockedReason === null,

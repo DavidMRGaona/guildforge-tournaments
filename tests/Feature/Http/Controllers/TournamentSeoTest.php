@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -32,8 +33,8 @@ final class TournamentSeoTest extends ModuleTestCase
     {
         $event = EventModel::factory()->published()->create([
             'title' => 'Jornadas',
-            'start_date' => '2026-03-14 10:00:00',
-            'end_date' => '2026-03-14 20:00:00',
+            'start_date' => CarbonImmutable::parse('2026-03-14 10:00:00', 'Europe/Madrid'),
+            'end_date' => CarbonImmutable::parse('2026-03-14 20:00:00', 'Europe/Madrid'),
             'location' => 'Centro cívico',
             'image_public_id' => $eventImage,
         ]);

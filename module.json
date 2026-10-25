@@ -8,11 +8,12 @@
   "description": "Sistema de torneos con emparejamiento suizo para eventos",
   "author": "GuildForge",
   "requires": {
-    "core": "^3.21",
+    "core": "^3.22",
     "filament": "^5.0",
     "php": ">=8.5",
     "laravel": ">=13.0"
   },
+  "storesUtc": true,
   "dependencies": [],
   "provides": {
     "permissions": [

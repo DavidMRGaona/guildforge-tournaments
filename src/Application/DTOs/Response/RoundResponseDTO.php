@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs\Response;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
@@ -62,6 +63,8 @@ final readonly class RoundResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'tournament_id' => $this->tournamentId,
@@ -73,8 +76,8 @@ final readonly class RoundResponseDTO
             'pending_match_count' => $this->pendingMatchCount(),
             'completion_percentage' => $this->completionPercentage(),
             'is_completed' => $this->isCompleted(),
-            'started_at' => $this->startedAt?->format('c'),
-            'completed_at' => $this->completedAt?->format('c'),
+            'started_at' => $timezone->iso($this->startedAt),
+            'completed_at' => $timezone->iso($this->completedAt),
         ];
     }
 }

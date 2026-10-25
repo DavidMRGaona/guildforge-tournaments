@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
@@ -125,6 +126,6 @@ final readonly class SendParticipantRegisteredEmails
             return null;
         }
 
-        return $event->start_date->format('d/m/Y H:i');
+        return app(TimezoneServiceInterface::class)->format($event->start_date);
     }
 }

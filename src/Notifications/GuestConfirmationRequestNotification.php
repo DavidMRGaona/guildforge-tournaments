@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Notifications;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -48,7 +49,7 @@ final class GuestConfirmationRequestNotification extends Notification implements
 
         if ($this->seatHeld && $this->expiresAt instanceof DateTimeImmutable) {
             $message->line(__('tournaments::messages.emails.guest_confirmation.hold_deadline', [
-                'date' => $this->expiresAt->format('d/m/Y H:i'),
+                'date' => app(TimezoneServiceInterface::class)->format($this->expiresAt),
             ]));
         } else {
             $message->line(__('tournaments::messages.emails.guest_confirmation.wait_notice'));

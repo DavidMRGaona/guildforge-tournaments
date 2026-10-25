@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\Pages;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
@@ -167,7 +168,7 @@ final class EditTournament extends EditRecord
             $eventStartsAt === null || $now->greaterThanOrEqualTo($eventStartsAt) => __('tournaments::messages.registration_still_closed.event_started'),
             $record->registration_closes_at !== null && $now->greaterThanOrEqualTo($record->registration_closes_at) => __('tournaments::messages.registration_still_closed.closing_date_passed'),
             $record->registration_opens_at !== null && $now->lessThan($record->registration_opens_at) => __('tournaments::messages.registration_still_closed.opens_later', [
-                'date' => $record->registration_opens_at->format('d/m/Y H:i'),
+                'date' => app(TimezoneServiceInterface::class)->format($record->registration_opens_at),
             ]),
             default => null,
         };

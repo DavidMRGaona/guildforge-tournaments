@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs\Response;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
@@ -175,6 +176,8 @@ final readonly class TournamentResponseDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->id,
             'event_id' => $this->eventId,
@@ -198,12 +201,12 @@ final readonly class TournamentResponseDTO
             'result_reporting' => $this->resultReporting->value,
             'requires_check_in' => $this->requiresCheckIn,
             'check_in_starts_before' => $this->checkInStartsBefore,
-            'registration_opens_at' => $this->registrationOpensAt?->format('c'),
-            'registration_closes_at' => $this->registrationClosesAt?->format('c'),
-            'started_at' => $this->startedAt?->format('c'),
-            'completed_at' => $this->completedAt?->format('c'),
-            'created_at' => $this->createdAt->format('c'),
-            'updated_at' => $this->updatedAt->format('c'),
+            'registration_opens_at' => $timezone->iso($this->registrationOpensAt),
+            'registration_closes_at' => $timezone->iso($this->registrationClosesAt),
+            'started_at' => $timezone->iso($this->startedAt),
+            'completed_at' => $timezone->iso($this->completedAt),
+            'created_at' => (string) $timezone->iso($this->createdAt),
+            'updated_at' => (string) $timezone->iso($this->updatedAt),
             'is_registration_open' => $this->isRegistrationOpen(),
             'can_withdraw' => $this->canWithdraw,
             'is_in_progress' => $this->isInProgress(),

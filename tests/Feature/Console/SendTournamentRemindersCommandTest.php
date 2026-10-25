@@ -39,7 +39,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         parent::setUp();
 
         app()->setLocale('es');
-        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00');
+        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid');
         $this->travelTo($this->now);
         config()->set('modules.settings.tournaments', []);
         $this->app->make(Kernel::class)->registerCommand($this->app->make(SendTournamentRemindersCommand::class));

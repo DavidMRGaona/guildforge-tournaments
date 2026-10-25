@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs;
 
+use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -37,6 +38,8 @@ final readonly class UpdateTournamentDTO
     ) {}
 
     /**
+     * Naive date strings are read in the app (storage) zone.
+     *
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
@@ -103,6 +106,8 @@ final readonly class UpdateTournamentDTO
      */
     public function toArray(): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         $result = ['tournament_id' => $this->tournamentId];
 
         if ($this->name !== null) {
@@ -145,10 +150,10 @@ final readonly class UpdateTournamentDTO
             $result['check_in_starts_before'] = $this->checkInStartsBefore;
         }
         if ($this->registrationOpensAt instanceof DateTimeImmutable) {
-            $result['registration_opens_at'] = $this->registrationOpensAt->format('c');
+            $result['registration_opens_at'] = (string) $timezone->iso($this->registrationOpensAt);
         }
         if ($this->registrationClosesAt instanceof DateTimeImmutable) {
-            $result['registration_closes_at'] = $this->registrationClosesAt->format('c');
+            $result['registration_closes_at'] = (string) $timezone->iso($this->registrationClosesAt);
         }
         if ($this->notificationEmail !== null) {
             $result['notification_email'] = $this->notificationEmail;

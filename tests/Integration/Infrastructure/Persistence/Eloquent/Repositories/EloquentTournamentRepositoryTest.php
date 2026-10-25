@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Integration\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -368,29 +370,29 @@ final class EloquentTournamentRepositoryTest extends TestCase
     public function test_it_reads_the_event_start_in_the_venue_time_zone(): void
     {
         // 25 October 2026 is the day Europe/Madrid (app.timezone) goes back from CEST to CET
-        $event = EventModel::factory()->create(['start_date' => '2026-10-25 10:00:00']);
+        $event = EventModel::factory()->create(['start_date' => CarbonImmutable::parse('2026-10-25 10:00:00', 'Europe/Madrid')]);
         $id = $this->createTournamentFor($event->id, 'dst-tournament');
 
         $tournament = $this->repository->find(TournamentId::fromString($id));
 
         $this->assertNotNull($tournament);
-        $this->assertSame('2026-10-25T10:00:00+01:00', $tournament->eventStartsAt()?->format('c'));
-        $this->assertSame($event->refresh()->start_date->getTimestamp(), $tournament->eventStartsAt()->getTimestamp());
+        $this->assertSame('2026-10-25T10:00:00+01:00', app(TimezoneServiceInterface::class)->iso($tournament->eventStartsAt()));
+        $this->assertSame($event->refresh()->start_date->getTimestamp(), $tournament->eventStartsAt()?->getTimestamp());
     }
 
     public function test_every_finder_reads_the_event_start(): void
     {
-        $event = EventModel::factory()->create(['start_date' => '2026-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['start_date' => CarbonImmutable::parse('2026-11-20 10:00:00', 'Europe/Madrid')]);
         $id = $this->createTournamentFor($event->id, 'finder-tournament');
         $expected = '2026-11-20T10:00:00+01:00';
 
-        $this->assertSame($expected, $this->repository->find(TournamentId::fromString($id))?->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->findOrFail(TournamentId::fromString($id))->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->findBySlug('finder-tournament')?->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->findByEventId($event->id)?->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->findByStatus(TournamentStatus::RegistrationOpen)[0]->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->all()[0]->eventStartsAt()?->format('c'));
-        $this->assertSame($expected, $this->repository->findByIds([$id])[0]->eventStartsAt()?->format('c'));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->find(TournamentId::fromString($id))?->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->findOrFail(TournamentId::fromString($id))->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->findBySlug('finder-tournament')?->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->findByEventId($event->id)?->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->findByStatus(TournamentStatus::RegistrationOpen)[0]->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->all()[0]->eventStartsAt()));
+        $this->assertSame($expected, app(TimezoneServiceInterface::class)->iso($this->repository->findByIds([$id])[0]->eventStartsAt()));
     }
 
     public function test_list_finders_do_not_query_the_event_per_tournament(): void

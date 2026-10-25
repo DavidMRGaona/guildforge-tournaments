@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -173,7 +174,7 @@ final class TournamentRegistrationController extends Controller
 
             $message = $result->seatHeld && $result->expiresAt instanceof \DateTimeImmutable
                 ? __('tournaments::messages.messages.guest_confirmation_sent_hold', [
-                    'date' => $result->expiresAt->format('d/m/Y H:i'),
+                    'date' => app(TimezoneServiceInterface::class)->format($result->expiresAt),
                 ])
                 : __('tournaments::messages.messages.guest_confirmation_sent_wait');
 

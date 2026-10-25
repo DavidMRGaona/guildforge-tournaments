@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -167,7 +168,7 @@ final class RegistrationClosesAtStartTest extends ModuleTestCase
      */
     private function tournament(DateTimeInterface|string $eventStartsAt, array $attributes = []): TournamentModel
     {
-        $event = EventModel::factory()->published()->create(['start_date' => $eventStartsAt]);
+        $event = EventModel::factory()->published()->create(['start_date' => is_string($eventStartsAt) ? CarbonImmutable::parse($eventStartsAt, 'Europe/Madrid') : $eventStartsAt]);
 
         return TournamentModel::create([
             'event_id' => $event->id,

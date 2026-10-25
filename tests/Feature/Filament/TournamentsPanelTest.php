@@ -8,6 +8,7 @@ use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
@@ -255,7 +256,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_registration_cannot_close_after_the_event_starts(): void
     {
-        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         $component = Livewire::test(CreateTournament::class)
             ->fillForm($this->closingFormData($event->id, '2036-11-20 10:30:00'))
@@ -271,7 +272,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_registration_can_close_when_the_event_starts(): void
     {
-        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         Livewire::test(CreateTournament::class)
             ->fillForm($this->closingFormData($event->id, '2036-11-20 10:00:00'))
@@ -279,7 +280,7 @@ final class TournamentsPanelTest extends ModuleTestCase
             ->assertHasNoFormErrors();
 
         $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
-        $this->assertSame('2036-11-20 10:00:00', $tournament->registration_closes_at?->format('Y-m-d H:i:s'));
+        $this->assertTrue($tournament->registration_closes_at?->equalTo(CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')) ?? false);
     }
 
     public function test_the_closing_date_is_not_checked_until_an_event_is_chosen(): void
@@ -315,7 +316,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_a_garbage_closing_date_is_reported_without_an_exception(): void
     {
-        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => '2036-11-20 10:00:00']);
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => CarbonImmutable::parse('2036-11-20 10:00:00', 'Europe/Madrid')]);
 
         $component = Livewire::test(CreateTournament::class)
             ->fillForm($this->closingFormData($event->id, 'definitely not a date'))
@@ -329,7 +330,7 @@ final class TournamentsPanelTest extends ModuleTestCase
     public function test_opening_registration_warns_when_the_opening_date_is_still_ahead(): void
     {
         $tournament = $this->tournamentWithEventStart('2036-11-20 10:00:00', [
-            'registration_opens_at' => '2036-05-01 09:30:00',
+            'registration_opens_at' => CarbonImmutable::parse('2036-05-01 09:30:00', 'Europe/Madrid'),
         ]);
 
         Livewire::test(EditTournament::class, ['record' => $tournament->getRouteKey()])
@@ -400,7 +401,7 @@ final class TournamentsPanelTest extends ModuleTestCase
     private function tournamentWithEventStart(\DateTimeInterface|string $eventStartsAt, array $attributes = []): TournamentModel
     {
         return $this->tournament([
-            'event_id' => EventModel::factory()->create(['start_date' => $eventStartsAt])->id,
+            'event_id' => EventModel::factory()->create(['start_date' => is_string($eventStartsAt) ? CarbonImmutable::parse($eventStartsAt, 'Europe/Madrid') : $eventStartsAt])->id,
             ...$attributes,
         ]);
     }

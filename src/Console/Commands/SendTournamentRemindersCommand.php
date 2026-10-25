@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Console\Commands;
 
-use Carbon\CarbonImmutable;
+use App\Application\Services\TimezoneServiceInterface;
+use DateInterval;
 use Illuminate\Console\Command;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Tournament;
@@ -46,8 +47,10 @@ final class SendTournamentRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        $now = CarbonImmutable::instance($clock->now());
-        $until = $now->addHours($settings->hoursBefore());
+        $timezone = app(TimezoneServiceInterface::class);
+        // Bound in the storage zone: bindings skip the model's conversion
+        $now = $timezone->toStorage($clock->now());
+        $until = $now->add(new DateInterval(sprintf('PT%dH', $settings->hoursBefore())));
         $sent = 0;
 
         $tournaments = TournamentModel::query()
@@ -96,7 +99,7 @@ final class SendTournamentRemindersCommand extends Command
                     participantName: $this->participantName($participant, $recipient),
                     tournamentName: $tournament->name(),
                     tournamentSlug: $tournament->slug(),
-                    eventDate: $startsAt->format('d/m/Y H:i'),
+                    eventDate: $timezone->format($startsAt),
                     requiresCheckIn: $tournament->requiresCheckIn(),
                     checkInStartsBefore: $tournament->checkInStartsBefore(),
                     cancellationToken: $participant->userId() === null ? $participant->cancellationToken() : null,

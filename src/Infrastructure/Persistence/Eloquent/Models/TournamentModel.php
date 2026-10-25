@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -67,6 +68,7 @@ final class TournamentModel extends Model
     use DeletesCloudinaryImages;
     use HasSlug;
     use HasUuids;
+    use StoresInstantsInStorageTimezone;
 
     /** @var array<string> */
     protected array $cloudinaryImageFields = ['image_public_id'];

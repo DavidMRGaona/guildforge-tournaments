@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
@@ -54,7 +55,7 @@ final class GuestRegistrationTest extends ModuleTestCase
     {
         parent::setUp();
 
-        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00');
+        $this->now = CarbonImmutable::parse('2026-11-02 10:00:00', 'Europe/Madrid');
         $this->travelTo($this->now);
         config()->set('modules.settings.tournaments', []);
     }
@@ -139,8 +140,8 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->assertSame(ParticipantStatus::Registered, $row->status);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame(GuestConfirmationMode::Hold, $row->confirmation_mode);
-        $this->assertSame($this->now->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
-        $this->assertSame($this->now->format('Y-m-d H:i:s'), $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
+        $this->assertSame($this->now->addHours(2)->getTimestamp(), $row->confirmation_expires_at?->getTimestamp());
+        $this->assertSame($this->now->getTimestamp(), $row->confirmation_sent_at?->getTimestamp());
         $this->assertSame(64, strlen((string) $row->confirmation_token));
         $this->assertNotNull($row->cancellation_token);
         $this->assertNotSame($row->cancellation_token, $row->confirmation_token);
@@ -153,7 +154,7 @@ final class GuestRegistrationTest extends ModuleTestCase
             && $event->guestName === 'John'
             && $event->confirmationToken === $row->confirmation_token
             && $event->seatHeld
-            && $event->expiresAt?->format('Y-m-d H:i:s') === $this->now->addHours(2)->format('Y-m-d H:i:s'));
+            && $event->expiresAt?->getTimestamp() === $this->now->addHours(2)->getTimestamp());
         Event::assertNotDispatched(ParticipantRegistered::class);
     }
 
@@ -165,14 +166,14 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $this->assertEquals($this->now->addMinutes(10), $this->registerGuest($closingSoon)->expiresAt);
         $this->assertSame(
-            $this->now->addMinutes(10)->format('Y-m-d H:i:s'),
-            $this->onlyRow($closingSoon)->confirmation_expires_at?->format('Y-m-d H:i:s'),
+            $this->now->addMinutes(10)->getTimestamp(),
+            $this->onlyRow($closingSoon)->confirmation_expires_at?->getTimestamp(),
         );
 
         $this->assertEquals($this->now->addMinutes(30), $this->registerGuest($startingSoon)->expiresAt);
         $this->assertSame(
-            $this->now->addMinutes(30)->format('Y-m-d H:i:s'),
-            $this->onlyRow($startingSoon)->confirmation_expires_at?->format('Y-m-d H:i:s'),
+            $this->now->addMinutes(30)->getTimestamp(),
+            $this->onlyRow($startingSoon)->confirmation_expires_at?->getTimestamp(),
         );
     }
 
@@ -219,7 +220,7 @@ final class GuestRegistrationTest extends ModuleTestCase
         $row = $this->onlyRow($tournament);
         $this->assertEquals($expiresAt, $row->confirmation_expires_at);
         $this->assertSame('John', $row->guest_name);
-        $this->assertSame($this->now->addMinutes(6)->format('Y-m-d H:i:s'), $row->confirmation_sent_at?->format('Y-m-d H:i:s'));
+        $this->assertSame($this->now->addMinutes(6)->getTimestamp(), $row->confirmation_sent_at?->getTimestamp());
 
         // The margin counts from the last send
         $this->travelTo($this->now->addMinutes(10));
@@ -406,12 +407,12 @@ final class GuestRegistrationTest extends ModuleTestCase
         $row = $this->onlyRow($tournament);
         $this->assertSame(ParticipantStatus::Registered, $row->status);
         $this->assertSame('Jane Doe', $row->guest_name);
-        $this->assertSame($later->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame($later->addHours(2)->getTimestamp(), $row->confirmation_expires_at?->getTimestamp());
         $this->assertNotSame($before->confirmation_token, $row->confirmation_token);
         $this->assertNotSame($before->cancellation_token, $row->cancellation_token);
         Event::assertDispatchedTimes(GuestConfirmationRequested::class, 2);
         Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->confirmationToken === $row->confirmation_token
-            && $event->expiresAt?->format('Y-m-d H:i:s') === $later->addHours(2)->format('Y-m-d H:i:s'));
+            && $event->expiresAt?->getTimestamp() === $later->addHours(2)->getTimestamp());
     }
 
     /**
@@ -447,7 +448,7 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->assertSame('Jane Doe', $row->guest_name);
         $this->assertNull($row->email_confirmed_at);
         $this->assertSame(GuestConfirmationMode::Hold, $row->confirmation_mode);
-        $this->assertSame($this->now->addHours(2)->format('Y-m-d H:i:s'), $row->confirmation_expires_at?->format('Y-m-d H:i:s'));
+        $this->assertSame($this->now->addHours(2)->getTimestamp(), $row->confirmation_expires_at?->getTimestamp());
         $this->assertNotNull($row->cancellation_token);
         $this->assertNotSame(str_repeat('c', 64), $row->cancellation_token);
         $this->assertNotSame(str_repeat('t', 64), $row->confirmation_token);
@@ -549,7 +550,7 @@ final class GuestRegistrationTest extends ModuleTestCase
             tournamentName: 'Torneo de primavera',
             guestName: 'John',
             confirmationToken: 'token-de-prueba',
-            expiresAt: new DateTimeImmutable('2026-11-02 12:00:00'),
+            expiresAt: new DateTimeImmutable('2026-11-02 12:00:00', new DateTimeZone('Europe/Madrid')),
             seatHeld: true,
         ))->toMail($notifiable);
 

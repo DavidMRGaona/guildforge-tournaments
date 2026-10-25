@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
+use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -36,6 +37,7 @@ final class GameProfileModel extends Model
 {
     use HasSlug;
     use HasUuids;
+    use StoresInstantsInStorageTimezone;
 
     protected $table = 'tournaments_game_profiles';
 

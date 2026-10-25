@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Resources;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
@@ -20,6 +21,8 @@ final class TournamentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $timezone = app(TimezoneServiceInterface::class);
+
         return [
             'id' => $this->resource->id,
             'name' => $this->resource->name,
@@ -35,10 +38,10 @@ final class TournamentResource extends JsonResource
             'participantCount' => $this->resource->participantCount,
             'maxParticipants' => $this->resource->maxParticipants,
             'minParticipants' => $this->resource->minParticipants,
-            'registrationOpensAt' => $this->resource->registrationOpensAt?->format('c'),
-            'registrationClosesAt' => $this->resource->registrationClosesAt?->format('c'),
-            'startedAt' => $this->resource->startedAt?->format('c'),
-            'completedAt' => $this->resource->completedAt?->format('c'),
+            'registrationOpensAt' => $timezone->iso($this->resource->registrationOpensAt),
+            'registrationClosesAt' => $timezone->iso($this->resource->registrationClosesAt),
+            'startedAt' => $timezone->iso($this->resource->startedAt),
+            'completedAt' => $timezone->iso($this->resource->completedAt),
             'isRegistrationOpen' => $this->resource->isRegistrationOpen(),
             'isInProgress' => $this->resource->isInProgress(),
             'isFinished' => $this->resource->isFinished(),

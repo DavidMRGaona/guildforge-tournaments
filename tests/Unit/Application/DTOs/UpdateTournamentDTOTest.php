@@ -7,7 +7,7 @@ namespace Modules\Tournaments\Tests\Unit\Application\DTOs;
 use Modules\Tournaments\Application\DTOs\UpdateTournamentDTO;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 final class UpdateTournamentDTOTest extends TestCase
 {

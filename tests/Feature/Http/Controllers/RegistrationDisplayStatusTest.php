@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -59,7 +61,7 @@ final class RegistrationDisplayStatusTest extends ModuleTestCase
                 ->where('tournament.status', 'registration_open')
                 ->where('tournament.display_status', 'registration_upcoming')
                 ->where('tournament.status_label', 'Inscripción próximamente')
-                ->where('tournament.registration_opens_at', $opensAt->format('c')));
+                ->where('tournament.registration_opens_at', app(TimezoneServiceInterface::class)->iso($opensAt)));
     }
 
     public function test_the_page_says_registration_is_closed_after_the_closing_date(): void
@@ -140,7 +142,7 @@ final class RegistrationDisplayStatusTest extends ModuleTestCase
      */
     private function tournament(DateTimeInterface|string $eventStartsAt, array $attributes = []): TournamentModel
     {
-        $event = EventModel::factory()->published()->create(['start_date' => $eventStartsAt]);
+        $event = EventModel::factory()->published()->create(['start_date' => is_string($eventStartsAt) ? CarbonImmutable::parse($eventStartsAt, 'Europe/Madrid') : $eventStartsAt]);
 
         return TournamentModel::create([
             'event_id' => $event->id,
