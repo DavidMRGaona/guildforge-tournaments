@@ -423,7 +423,6 @@ src/modules/tournaments/
 │   └── js/                     # Tests de los componentes Vue (Vitest)
 ├── module.json
 ├── package.json
-├── phpstan.neon
 ├── phpunit.xml
 ├── vite.config.ts
 └── vitest.config.ts
@@ -447,17 +446,15 @@ cd modules/tournaments
 npm test
 ```
 
-`tests/js/setup.ts` carga los textos del core y del módulo en castellano y sustituye Inertia (router y enlaces) y el layout del sitio. En cada pull request los ejecuta el job *Vue tests* de `tests.yml`.
+`tests/js/setup.ts` carga los textos del core y del módulo en castellano y sustituye Inertia (router y enlaces) y el layout del sitio. En cada pull request los ejecuta el job *Quality*.
 
-## Análisis estático
+## Calidad del código
 
-PHPStan (Larastan, nivel 8) analiza `src/` y `tests/` con la configuración del core. `phpstan.neon` la incluye y añade las rutas del módulo, sus migraciones (para conocer las columnas de los modelos), los seeders y `tests/Support`. Desde `src/` del core:
+El módulo pasa las mismas herramientas que el core y con su configuración: Rector, Pint, PHPStan (Larastan, nivel 8, sobre `src/` y `tests/`), ESLint, Prettier, `vue-tsc` (con `tsconfig.json`, la plantilla del core) y los tests de Vitest. En cada pull request las ejecuta el job *Quality* de `tests.yml` (`quality: true`), que es obligatorio para fusionar. Desde la raíz del core:
 
 ```bash
-vendor/bin/phpstan analyse -c modules/tournaments/phpstan.neon --memory-limit=2G
+make check MODULE=tournaments
 ```
-
-Sin baseline ni errores ignorados: en cada pull request lo ejecuta el job *PHPStan* de `tests.yml`.
 
 ## Publicar una versión
 
