@@ -33,8 +33,6 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 use Modules\Tournaments\Tests\Support\StaleRoundRepository;
 use Tests\Support\Modules\ModuleTestCase;
 
-require_once dirname(__DIR__, 3).'/Support/StaleRoundRepository.php';
-
 /**
  * Round generation (Swiss pairing) and result recording with standings, as the panel runs them.
  */

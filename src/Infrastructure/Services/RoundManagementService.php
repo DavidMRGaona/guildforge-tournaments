@@ -24,6 +24,7 @@ use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
 use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
 use Modules\Tournaments\Domain\ValueObjects\PairingConfig;
@@ -43,6 +44,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         private SwissPairingServiceInterface $pairing,
         private StandingsServiceInterface $standings,
         private GameProfileRepositoryInterface $gameProfiles,
+        private Clock $clock,
     ) {
     }
 
@@ -125,7 +127,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     public function startRound(string $roundId): RoundResponseDTO
     {
         $round = $this->rounds->findOrFail(RoundId::fromString($roundId));
-        $round->start();
+        $round->start($this->clock->now());
         $this->rounds->save($round);
 
         return $this->toResponse($round);
@@ -140,7 +142,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
             throw PreviousRoundNotCompletedException::hasUnreportedMatches($roundId, $unreported);
         }
 
-        $round->complete();
+        $round->complete($this->clock->now());
         $this->rounds->save($round);
 
         return $this->toResponse($round);

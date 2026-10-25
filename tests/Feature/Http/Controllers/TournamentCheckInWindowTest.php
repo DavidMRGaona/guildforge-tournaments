@@ -12,6 +12,7 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -19,6 +20,8 @@ use Tests\Support\Modules\ModuleTestCase;
  */
 final class TournamentCheckInWindowTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;

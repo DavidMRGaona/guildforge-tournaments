@@ -25,6 +25,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -34,6 +35,8 @@ use Tests\TestCase;
  */
 final class ParticipantRegistrationRulesTest extends TestCase
 {
+    use PinsTheClock;
+
     use RefreshDatabase;
 
     private ParticipantManagementService $service;

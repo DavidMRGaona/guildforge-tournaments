@@ -9,6 +9,7 @@ use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 
 final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInterface
@@ -17,6 +18,7 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
         private GuestRegistrationSettingsInterface $settings,
+        private Clock $clock,
     ) {}
 
     public function forTournament(string $tournamentId): ?array
@@ -31,7 +33,7 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
             $tournament,
             $this->participantRepository->countUnconfirmedHeldByTournament($tournamentId),
             $this->settings,
-            CarbonImmutable::now(),
+            CarbonImmutable::instance($this->clock->now()),
         );
 
         return [

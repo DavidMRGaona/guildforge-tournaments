@@ -57,10 +57,8 @@ final readonly class TournamentResponseDTO
     ) {
     }
 
-    public static function fromEntity(Tournament $tournament, int $participantCount = 0, ?DateTimeImmutable $now = null): self
+    public static function fromEntity(Tournament $tournament, int $participantCount, DateTimeImmutable $now): self
     {
-        $now ??= new DateTimeImmutable();
-
         return new self(
             id: $tournament->id()->value,
             eventId: $tournament->eventId(),

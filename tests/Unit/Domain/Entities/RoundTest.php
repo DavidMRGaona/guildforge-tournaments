@@ -37,20 +37,20 @@ final class RoundTest extends TestCase
     {
         $round = $this->createRound(RoundStatus::Pending);
 
-        $round->start();
+        $round->start(new DateTimeImmutable('2026-11-20 10:00:00'));
 
         $this->assertEquals(RoundStatus::InProgress, $round->status());
-        $this->assertInstanceOf(DateTimeImmutable::class, $round->startedAt());
+        $this->assertEquals(new DateTimeImmutable('2026-11-20 10:00:00'), $round->startedAt());
     }
 
     public function test_in_progress_can_complete(): void
     {
         $round = $this->createRound(RoundStatus::InProgress);
 
-        $round->complete();
+        $round->complete(new DateTimeImmutable('2026-11-20 12:30:00'));
 
         $this->assertEquals(RoundStatus::Finished, $round->status());
-        $this->assertInstanceOf(DateTimeImmutable::class, $round->completedAt());
+        $this->assertEquals(new DateTimeImmutable('2026-11-20 12:30:00'), $round->completedAt());
     }
 
     public function test_pending_cannot_complete_directly(): void
@@ -59,7 +59,7 @@ final class RoundTest extends TestCase
 
         $this->expectException(InvalidStateTransitionException::class);
 
-        $round->complete();
+        $round->complete(new DateTimeImmutable('2026-11-20 12:30:00'));
     }
 
     public function test_finished_cannot_start(): void
@@ -68,7 +68,7 @@ final class RoundTest extends TestCase
 
         $this->expectException(InvalidStateTransitionException::class);
 
-        $round->start();
+        $round->start(new DateTimeImmutable('2026-11-20 10:00:00'));
     }
 
     public function test_is_active_returns_correct_values(): void

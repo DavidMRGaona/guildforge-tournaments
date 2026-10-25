@@ -10,10 +10,13 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class GuestCancellationControllerTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;

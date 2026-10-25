@@ -43,6 +43,7 @@ use Modules\Tournaments\Domain\Exceptions\TournamentNotOpenException;
 use Modules\Tournaments\Domain\Exceptions\UserNotAllowedToRegisterException;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Notifications\GuestRegistrationExpiredNotification;
@@ -59,6 +60,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         private UserDataProviderInterface $userDataProvider,
         private RegistrationLockInterface $lock = new DatabaseRegistrationLock,
         private GuestRegistrationSettingsInterface $guestSettings = new GuestRegistrationSettings,
+        private Clock $clock = new SystemClock,
     ) {}
 
     public function register(RegisterParticipantDTO $dto): ParticipantResponseDTO
@@ -69,7 +71,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw new InvalidArgumentException('Guests register through registerGuest().');
         }
 
-        $now = CarbonImmutable::now();
+        $now = $this->now();
 
         /** @var array{ParticipantResponseDTO, ParticipantRegistered|null} $outcome */
         $outcome = $this->lock->forTournament(
@@ -97,7 +99,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         $email = mb_strtolower(trim($email));
-        $now = CarbonImmutable::now();
+        $now = $this->now();
 
         /** @var array{GuestRegistrationResultDTO, GuestConfirmationRequested|null} $outcome */
         $outcome = $this->lock->forTournament(
@@ -117,7 +119,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function confirmGuestEmail(string $token): GuestConfirmationResultDTO
     {
-        $now = CarbonImmutable::now();
+        $now = $this->now();
 
         /** @var array{GuestConfirmationResultDTO, ParticipantRegistered|null, array{participant: string, email: string, name: string, tournament: string, slug: string}|null} $outcome */
         $outcome = $this->lock->forConfirmationToken(
@@ -167,7 +169,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $state = match (true) {
             ! $participant->isActive() => 'invalid',
             $participant->emailConfirmedAt() !== null => 'already_confirmed',
-            $this->isOverdue($participant, CarbonImmutable::now()) => 'invalid',
+            $this->isOverdue($participant, $this->now()) => 'invalid',
             default => 'pending',
         };
 
@@ -193,7 +195,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $guestEmail = $userId === null && $dto->guestEmail !== null && trim($dto->guestEmail) !== ''
             ? mb_strtolower(trim($dto->guestEmail))
             : null;
-        $now = CarbonImmutable::now()->toDateTimeImmutable();
+        $now = $this->clock->now();
 
         return $this->lock->forTournament(
             $dto->tournamentId,
@@ -511,7 +513,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                 }
 
                 // The same transition as the panel's check-in, now that canCheckIn() allowed it
-                $participant->checkInByOrganization(CarbonImmutable::now()->toDateTimeImmutable());
+                $participant->checkInByOrganization($this->clock->now());
                 $this->participantRepository->save($participant);
 
                 return $this->createResponseDTO($participant);
@@ -532,10 +534,9 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             throw CheckInWindowClosedException::alreadyClosed($tournament->id()->value);
         }
 
-        $checkInMinutesBefore = $tournament->checkInStartsBefore() ?? 30;
-        $windowOpensAt = $eventStartDate->modify("-{$checkInMinutesBefore} minutes");
+        $windowOpensAt = Tournament::checkInOpensAt($eventStartDate, $tournament->checkInStartsBefore());
 
-        $now = new DateTimeImmutable;
+        $now = $this->clock->now();
 
         if ($now < $windowOpensAt) {
             throw CheckInWindowClosedException::notYetOpen($tournament->id()->value);
@@ -576,7 +577,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      */
     private function ensureTournamentAllowsWithdrawal(Tournament $tournament, string $participantId): void
     {
-        if ($tournament->canWithdraw()) {
+        if ($tournament->canWithdraw($this->clock->now())) {
             return;
         }
 
@@ -587,6 +588,14 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             $tournament->eventStartsAt() === null => CannotWithdrawException::eventStartUnknown($participantId),
             default => CannotWithdrawException::tournamentStarted($participantId),
         };
+    }
+
+    /**
+     * The current instant as Carbon, the type the registration rules work with.
+     */
+    private function now(): CarbonImmutable
+    {
+        return CarbonImmutable::instance($this->clock->now());
     }
 
     /**
@@ -630,7 +639,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      */
     private function actAsOrganization(string $participantId, bool $takesSeat, Closure $act, bool $announce = true): ParticipantResponseDTO
     {
-        $now = CarbonImmutable::now();
+        $now = $this->now();
 
         /** @var array{ParticipantResponseDTO, ParticipantRegistered|null} $outcome */
         $outcome = $this->lock->forParticipant($participantId, function () use ($participantId, $takesSeat, $act, $announce, $now): array {

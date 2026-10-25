@@ -84,10 +84,10 @@ final class Round
      *
      * @throws InvalidStateTransitionException
      */
-    public function start(): void
+    public function start(DateTimeImmutable $now): void
     {
         $this->transitionTo(RoundStatus::InProgress);
-        $this->startedAt = new DateTimeImmutable();
+        $this->startedAt = $now;
     }
 
     /**
@@ -95,10 +95,10 @@ final class Round
      *
      * @throws InvalidStateTransitionException
      */
-    public function complete(): void
+    public function complete(DateTimeImmutable $now): void
     {
         $this->transitionTo(RoundStatus::Finished);
-        $this->completedAt = new DateTimeImmutable();
+        $this->completedAt = $now;
     }
 
     /**
