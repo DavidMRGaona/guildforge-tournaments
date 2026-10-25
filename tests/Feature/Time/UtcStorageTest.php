@@ -18,12 +18,19 @@ use Illuminate\Testing\PendingCommand;
 use Inertia\Testing\AssertableInertia as Assert;
 use Livewire\Livewire;
 use Modules\Tournaments\Console\Commands\SendTournamentRemindersCommand;
+use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
+use Modules\Tournaments\Filament\Resources\GameProfileResource;
+use Modules\Tournaments\Filament\Resources\TournamentResource;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
+use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
@@ -164,6 +171,75 @@ final class UtcStorageTest extends ModuleTestCase
             ->set('configData.registration_closes_at', '2026-07-01 12:00:00')
             ->call('save')
             ->assertHasNoErrors();
+    }
+
+    public function test_the_guest_registration_message_names_the_hold_deadline_in_madrid_time(): void
+    {
+        // Two hours of hold from 09:00Z would end at 11:00Z; the event start (10:00Z) caps it
+        $this->travelTo(CarbonImmutable::parse('2026-07-01T09:00:00Z'));
+        $tournament = $this->tournament();
+
+        $this->json('POST', "/torneos/{$tournament->id}/inscripcion", [
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'gdpr_consent' => true,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del 01/07/2026 12:00 o la plaza se liberará.')
+            ->assertJsonPath('data.expires_at', self::MADRID_ISO);
+    }
+
+    public function test_the_participants_table_names_the_guest_deadline_in_madrid_time(): void
+    {
+        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class]);
+        $this->actingAsPanelAdmin();
+        $tournament = $this->tournament();
+        $guest = ParticipantModel::create([
+            'id' => (string) Str::uuid(),
+            'tournament_id' => $tournament->id,
+            'guest_name' => 'Ana',
+            'guest_email' => 'ana@example.com',
+            'status' => ParticipantStatus::Registered->value,
+            'cancellation_token' => Str::random(64),
+            'confirmation_token' => Str::random(64),
+            'confirmation_mode' => GuestConfirmationMode::Hold->value,
+            'confirmation_expires_at' => CarbonImmutable::parse(self::EVENT_START),
+            'registered_at' => CarbonImmutable::parse('2026-06-01T08:00:00Z'),
+        ]);
+
+        Livewire::test(ParticipantsRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
+            ->assertTableColumnHasDescription('status', 'Email sin confirmar · caduca el 01/07/2026 12:00', $guest);
+    }
+
+    public function test_the_tournament_form_accepts_the_closing_at_the_madrid_start_and_refuses_a_minute_later(): void
+    {
+        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class]);
+        $this->actingAsPanelAdmin();
+        $event = EventModel::factory()->create(['is_published' => true, 'start_date' => CarbonImmutable::parse(self::EVENT_START)]);
+        $profile = GameProfileModel::query()->where('is_system', true)->firstOrFail();
+        $form = fn (string $closesAt): array => [
+            'event_id' => $event->id,
+            'name' => 'Torneo de prueba',
+            'notification_email' => 'torneos@example.com',
+            'game_profile_id' => $profile->id,
+            'registration_closes_at' => $closesAt,
+        ];
+
+        $component = Livewire::test(CreateTournament::class)
+            ->fillForm($form('2026-07-01 12:01:00'))
+            ->call('create')
+            ->assertHasFormErrors(['registration_closes_at']);
+        $this->assertContains(
+            'El cierre de inscripción no puede ser posterior al inicio del evento (01/07/2026 12:00)',
+            $component->errors()->get('data.registration_closes_at'),
+        );
+
+        Livewire::test(CreateTournament::class)
+            ->fillForm($form('2026-07-01 12:00:00'))
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('2026-07-01 10:00:00', $this->storedValue(TournamentModel::query()->where('event_id', $event->id)->sole(), 'registration_closes_at'));
     }
 
     public function test_the_guest_confirmation_mail_names_the_deadline_in_madrid_time(): void

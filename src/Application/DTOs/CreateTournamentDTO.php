@@ -38,6 +38,8 @@ final readonly class CreateTournamentDTO
     ) {}
 
     /**
+     * Naive date strings are read in the app (storage) zone.
+     *
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
