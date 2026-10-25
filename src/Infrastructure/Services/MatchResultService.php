@@ -73,7 +73,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             // The next round was paired from this result: it may change, not disappear
             if ($match->isCompleted()
                 && $round->isFinished()
-                && $this->rounds->findByTournamentAndNumber($round->tournamentId(), $round->roundNumber() + 1) !== null) {
+                && $this->rounds->findByTournamentAndNumber($round->tournamentId(), $round->roundNumber() + 1) instanceof \Modules\Tournaments\Domain\Entities\Round) {
                 throw MatchResultLockedException::laterRoundExists($dto->matchId);
             }
 

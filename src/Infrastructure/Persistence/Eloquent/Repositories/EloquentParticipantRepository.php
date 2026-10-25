@@ -77,7 +77,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     {
         $participant = $this->find($id);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
             throw ParticipantNotFoundException::withId($id->value);
         }
 
@@ -281,7 +281,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             $rows = $group->values()->all();
 
             foreach ($rows as $i => $a) {
-                for ($j = $i + 1; $j < count($rows); $j++) {
+                $counter = count($rows);
+                for ($j = $i + 1; $j < $counter; $j++) {
                     $b = $rows[$j];
 
                     if ($a->user_id !== null && $b->user_id !== null) {
@@ -302,7 +303,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
             }
         }
 
-        return array_map('strval', array_keys($duplicates));
+        return array_map(strval(...), array_keys($duplicates));
     }
 
     /**

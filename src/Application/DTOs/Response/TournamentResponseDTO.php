@@ -108,7 +108,7 @@ final readonly class TournamentResponseDTO
 
         $opensAt = $tournament->registrationOpensAt();
 
-        return $opensAt !== null && $now < $opensAt
+        return $opensAt instanceof \DateTimeImmutable && $now < $opensAt
             ? self::DISPLAY_REGISTRATION_UPCOMING
             : TournamentStatus::RegistrationClosed->value;
     }

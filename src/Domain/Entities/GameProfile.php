@@ -27,7 +27,7 @@ final class GameProfile
         private array $scoringRules,
         private array $tiebreakerConfig,
         private PairingConfig $pairingConfig,
-        private bool $isSystem = false,
+        private readonly bool $isSystem = false,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
     ) {
@@ -178,7 +178,7 @@ final class GameProfile
      */
     public function hasStatDefinition(string $key): bool
     {
-        return $this->getStatDefinition($key) !== null;
+        return $this->getStatDefinition($key) instanceof \Modules\Tournaments\Domain\ValueObjects\StatDefinition;
     }
 
     /**

@@ -77,14 +77,14 @@ final class GameProfileResource extends BaseResource
                                     ->label(__('tournaments::messages.game_profile.fields.is_system'))
                                     ->hiddenLabel()
                                     ->state(__('tournaments::messages.game_profile.system_warning'))
-                                    ->visible(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
+                                    ->visible(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system)
                                     ->columnSpanFull(),
 
                                 TextInput::make('name')
                                     ->label(__('tournaments::messages.game_profile.fields.name'))
                                     ->required()
                                     ->maxLength(255)
-                                    ->disabled(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system),
+                                    ->disabled(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system),
 
                                 Textarea::make('description')
                                     ->label(__('tournaments::messages.game_profile.fields.description'))
@@ -95,7 +95,7 @@ final class GameProfileResource extends BaseResource
                                 Toggle::make('is_system')
                                     ->label(__('tournaments::messages.game_profile.fields.is_system'))
                                     ->disabled()
-                                    ->visible(fn (?GameProfileModel $record): bool => $record !== null),
+                                    ->visible(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel),
                             ])
                             ->columns(2),
 
@@ -147,7 +147,7 @@ final class GameProfileResource extends BaseResource
                                     ->addActionLabel(__('tournaments::messages.stat_definitions.add'))
                                     ->reorderable()
                                     ->collapsible()
-                                    ->disabled(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
+                                    ->disabled(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system)
                                     ->columnSpanFull(),
                             ]),
 
@@ -240,7 +240,7 @@ final class GameProfileResource extends BaseResource
                                     ->addActionLabel(__('tournaments::messages.scoring_rules.add'))
                                     ->reorderable()
                                     ->collapsible()
-                                    ->disabled(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
+                                    ->disabled(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system)
                                     ->columnSpanFull(),
                             ]),
 
@@ -303,7 +303,7 @@ final class GameProfileResource extends BaseResource
                                     ->addActionLabel(__('tournaments::messages.tiebreaker_config.add'))
                                     ->reorderable()
                                     ->collapsible()
-                                    ->disabled(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system)
+                                    ->disabled(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system)
                                     ->columnSpanFull(),
                             ]),
 
@@ -347,7 +347,7 @@ final class GameProfileResource extends BaseResource
                                             ->native(false),
                                     ])
                                     ->columns(2)
-                                    ->disabled(fn (?GameProfileModel $record): bool => $record !== null && $record->is_system),
+                                    ->disabled(fn (?GameProfileModel $record): bool => $record instanceof \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel && $record->is_system),
                             ]),
                     ])
                     ->columnSpanFull(),

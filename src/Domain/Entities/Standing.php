@@ -188,9 +188,7 @@ final class Standing
      */
     public function addToAccumulatedStat(string $key, float $value): void
     {
-        if (! isset($this->accumulatedStats[$key])) {
-            $this->accumulatedStats[$key] = 0.0;
-        }
+        $this->accumulatedStats[$key] ??= 0.0;
         $this->accumulatedStats[$key] += $value;
     }
 

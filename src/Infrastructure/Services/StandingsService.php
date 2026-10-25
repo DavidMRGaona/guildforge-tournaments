@@ -129,7 +129,7 @@ final readonly class StandingsService implements StandingsServiceInterface
         }
 
         return array_map(
-            static fn (array $rule): ScoringRule => ScoringRule::fromArray($rule),
+            ScoringRule::fromArray(...),
             [
                 ['name' => 'Victoria', 'points' => 3, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'win', 'stat' => null, 'operator' => null, 'value' => null]],
                 ['name' => 'Empate', 'points' => 1, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => 'draw', 'stat' => null, 'operator' => null, 'value' => null]],

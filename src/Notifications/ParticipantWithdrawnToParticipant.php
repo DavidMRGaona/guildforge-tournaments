@@ -46,9 +46,12 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Sh
             $message->line('**' . __('tournaments::messages.emails.withdrawal_confirmed.event_date') . ':** ' . $this->eventDate);
         }
 
-        // isset(): a notification queued before this property existed comes back without it
-        if (isset($this->tournamentSlug)) {
-            $message->action(__('tournaments::messages.emails.view_tournament'), route('tournaments.show', $this->tournamentSlug));
+        // ?? like isset(): a notification queued before this property existed comes back without
+        // it, and reading an uninitialized property directly throws
+        $tournamentSlug = $this->tournamentSlug ?? null;
+
+        if ($tournamentSlug !== null) {
+            $message->action(__('tournaments::messages.emails.view_tournament'), route('tournaments.show', $tournamentSlug));
         }
 
         return $message;

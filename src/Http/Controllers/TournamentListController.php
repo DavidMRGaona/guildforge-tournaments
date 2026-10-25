@@ -19,16 +19,16 @@ final class TournamentListController extends Controller
 {
     use BuildsPaginatedResponse;
 
-    private const PER_PAGE = 12;
+    private const int PER_PAGE = 12;
 
-    private const VALID_FILTERS = ['all', 'active', 'upcoming', 'past'];
+    private const array VALID_FILTERS = ['all', 'active', 'upcoming', 'past'];
 
     /**
      * Filter mappings for grouped status filters.
      *
      * @var array<string, array<string>>
      */
-    private const FILTER_MAPPINGS = [
+    private const array FILTER_MAPPINGS = [
         'active' => [TournamentStatus::InProgress->value],
         'upcoming' => [
             TournamentStatus::RegistrationOpen->value,

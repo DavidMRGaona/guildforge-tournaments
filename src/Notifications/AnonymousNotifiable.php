@@ -9,13 +9,13 @@ use Illuminate\Notifications\Notifiable;
 /**
  * Simple notifiable for sending emails to non-user recipients.
  */
-final class AnonymousNotifiable
+final readonly class AnonymousNotifiable
 {
     use Notifiable;
 
     public function __construct(
-        private readonly string $email,
-        private readonly ?string $name = null,
+        private string $email,
+        private ?string $name = null,
     ) {}
 
     public function routeNotificationForMail(): string

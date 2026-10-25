@@ -19,7 +19,7 @@ final readonly class SendGuestConfirmationRequest
     public function handle(GuestConfirmationRequested $event): void
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return;
         }
 

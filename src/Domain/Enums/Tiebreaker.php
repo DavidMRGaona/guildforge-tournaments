@@ -88,7 +88,7 @@ enum Tiebreaker: string
     public static function fromArray(array $values): array
     {
         return array_map(
-            static fn (string $value): self => self::from($value),
+            self::from(...),
             $values
         );
     }

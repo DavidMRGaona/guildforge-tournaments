@@ -105,8 +105,7 @@ final readonly class ProfileTournamentsDataProvider
 
             $participations[] = $this->buildParticipationDTO(
                 $participant,
-                $tournament,
-                $userId
+                $tournament
             );
         }
 
@@ -132,13 +131,13 @@ final readonly class ProfileTournamentsDataProvider
             $aDate = $a->startsAt;
             $bDate = $b->startsAt;
 
-            if ($aDate === null && $bDate === null) {
+            if (!$aDate instanceof \DateTimeImmutable && !$bDate instanceof \DateTimeImmutable) {
                 return 0;
             }
-            if ($aDate === null) {
+            if (!$aDate instanceof \DateTimeImmutable) {
                 return 1;
             }
-            if ($bDate === null) {
+            if (!$bDate instanceof \DateTimeImmutable) {
                 return -1;
             }
 
@@ -159,8 +158,7 @@ final readonly class ProfileTournamentsDataProvider
      */
     private function buildParticipationDTO(
         ParticipantModel $participant,
-        \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel $tournament,
-        string $userId
+        \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel $tournament
     ): ProfileTournamentParticipationDTO {
         // Get event data for start date and name
         $event = EventModel::query()

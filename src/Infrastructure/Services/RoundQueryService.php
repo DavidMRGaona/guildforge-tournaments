@@ -48,7 +48,7 @@ final readonly class RoundQueryService implements RoundQueryServiceInterface
     {
         $round = $this->roundRepository->findCurrentRound($tournamentId);
 
-        if ($round === null) {
+        if (!$round instanceof \Modules\Tournaments\Domain\Entities\Round) {
             return null;
         }
 

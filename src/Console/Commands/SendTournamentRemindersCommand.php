@@ -57,7 +57,7 @@ final class SendTournamentRemindersCommand extends Command
             $tournament = $tournamentRepository->find(TournamentId::fromString($model->id));
             $startsAt = $model->event?->start_date;
 
-            if ($tournament === null || $startsAt === null) {
+            if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || $startsAt === null) {
                 continue;
             }
 
@@ -72,10 +72,10 @@ final class SendTournamentRemindersCommand extends Command
 
             foreach ($pending as $participantId) {
                 $participant = $participantRepository->find(ParticipantId::fromString((string) $participantId));
-                $recipient = $participant !== null ? $this->recipient($participant) : null;
+                $recipient = $participant instanceof \Modules\Tournaments\Domain\Entities\Participant ? $this->recipient($participant) : null;
 
                 // An unconfirmed guest is skipped and stays pending: confirming later still gets the reminder
-                if ($participant === null || $recipient === null) {
+                if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant || !$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
                     continue;
                 }
 

@@ -28,9 +28,9 @@ final readonly class SendParticipantDisqualifiedEmail
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
-        $recipient = $participant !== null ? $this->recipient($participant) : null;
+        $recipient = $participant instanceof \Modules\Tournaments\Domain\Entities\Participant ? $this->recipient($participant) : null;
 
-        if ($tournament === null || $participant === null || $recipient === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || !$participant instanceof \Modules\Tournaments\Domain\Entities\Participant || !$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
             return;
         }
 

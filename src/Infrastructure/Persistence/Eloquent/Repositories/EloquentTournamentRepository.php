@@ -84,7 +84,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
     {
         $tournament = $this->find($id);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             throw TournamentNotFoundException::withId($id->value);
         }
 
@@ -166,7 +166,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
         $statDefinitions = null;
         if ($model->stat_definitions !== null) {
             $statDefinitions = array_map(
-                static fn (array $data): StatDefinition => StatDefinition::fromArray($data),
+                StatDefinition::fromArray(...),
                 $model->stat_definitions
             );
         }
@@ -174,7 +174,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
         $scoringRules = null;
         if ($model->scoring_rules !== null) {
             $scoringRules = array_map(
-                static fn (array $data): ScoringRule => ScoringRule::fromArray($data),
+                ScoringRule::fromArray(...),
                 $model->scoring_rules
             );
         }
@@ -182,7 +182,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
         $tiebreakerConfig = null;
         if ($model->tiebreaker_config !== null) {
             $tiebreakerConfig = array_map(
-                static fn (array $data): TiebreakerDefinition => TiebreakerDefinition::fromArray($data),
+                TiebreakerDefinition::fromArray(...),
                 $model->tiebreaker_config
             );
         }

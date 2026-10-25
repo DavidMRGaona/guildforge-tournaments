@@ -42,7 +42,7 @@ final readonly class EloquentRoundRepository implements RoundRepositoryInterface
     {
         $round = $this->find($id);
 
-        if ($round === null) {
+        if (!$round instanceof \Modules\Tournaments\Domain\Entities\Round) {
             throw RoundNotFoundException::withId($id->value);
         }
 

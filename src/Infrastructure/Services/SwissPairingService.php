@@ -63,11 +63,10 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         $matches = $this->pairParticipants(
             $sortedParticipants,
             $config->avoidRematches ? $previousMatchups : [],
-            $roundNumber,
         );
 
         // Add bye match at the end if exists
-        if ($byeMatch !== null) {
+        if ($byeMatch instanceof \Modules\Tournaments\Domain\Entities\TournamentMatch) {
             $matches[] = $byeMatch;
         }
 
@@ -239,7 +238,6 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
             player1Id: $participant->id()->value,
             player2Id: null,
             result: MatchResult::Bye,
-            tableNumber: null,
         );
     }
 
@@ -250,7 +248,7 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
      * @param  array<array{player1Id: string, player2Id: ?string}>  $previousMatchups
      * @return array<TournamentMatch>
      */
-    private function pairParticipants(array $participants, array $previousMatchups, int $roundNumber): array
+    private function pairParticipants(array $participants, array $previousMatchups): array
     {
         // Convert previousMatchups to a more efficient lookup structure
         $matchupMap = $this->buildMatchupMap($previousMatchups);
@@ -387,12 +385,8 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
                 continue; // Skip bye matches
             }
 
-            if (! isset($map[$p1])) {
-                $map[$p1] = [];
-            }
-            if (! isset($map[$p2])) {
-                $map[$p2] = [];
-            }
+            $map[$p1] ??= [];
+            $map[$p2] ??= [];
 
             $map[$p1][$p2] = true;
             $map[$p2][$p1] = true;

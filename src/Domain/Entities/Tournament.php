@@ -38,22 +38,22 @@ final class Tournament
         private string $name,
         private string $slug,
         private TournamentStatus $status,
-        private array $scoreWeights,
-        private array $tiebreakers,
-        private ResultReporting $resultReporting,
+        private readonly array $scoreWeights,
+        private readonly array $tiebreakers,
+        private readonly ResultReporting $resultReporting,
         private ?string $description = null,
-        private ?string $imagePublicId = null,
-        private ?int $maxRounds = null,
+        private readonly ?string $imagePublicId = null,
+        private readonly ?int $maxRounds = null,
         private int $currentRound = 0,
-        private ?int $maxParticipants = null,
-        private int $minParticipants = 2,
-        private ?DateTimeImmutable $registrationOpensAt = null,
-        private ?DateTimeImmutable $registrationClosesAt = null,
-        private bool $requiresCheckIn = false,
-        private ?int $checkInStartsBefore = null,
-        private bool $allowGuests = false,
-        private bool $requiresManualConfirmation = false,
-        private array $allowedRoles = [],
+        private readonly ?int $maxParticipants = null,
+        private readonly int $minParticipants = 2,
+        private readonly ?DateTimeImmutable $registrationOpensAt = null,
+        private readonly ?DateTimeImmutable $registrationClosesAt = null,
+        private readonly bool $requiresCheckIn = false,
+        private readonly ?int $checkInStartsBefore = null,
+        private readonly bool $allowGuests = false,
+        private readonly bool $requiresManualConfirmation = false,
+        private readonly array $allowedRoles = [],
         private ?DateTimeImmutable $startedAt = null,
         private ?DateTimeImmutable $completedAt = null,
         private readonly ?DateTimeImmutable $createdAt = null,
@@ -283,7 +283,7 @@ final class Tournament
      */
     public function hasEventStarted(DateTimeImmutable $now): bool
     {
-        return $this->eventStartsAt === null || $now >= $this->eventStartsAt;
+        return !$this->eventStartsAt instanceof \DateTimeImmutable || $now >= $this->eventStartsAt;
     }
 
     /**
@@ -296,11 +296,11 @@ final class Tournament
             return false;
         }
 
-        if ($this->registrationOpensAt !== null && $now < $this->registrationOpensAt) {
+        if ($this->registrationOpensAt instanceof \DateTimeImmutable && $now < $this->registrationOpensAt) {
             return false;
         }
 
-        if ($this->registrationClosesAt !== null && $now >= $this->registrationClosesAt) {
+        if ($this->registrationClosesAt instanceof \DateTimeImmutable && $now >= $this->registrationClosesAt) {
             return false;
         }
 

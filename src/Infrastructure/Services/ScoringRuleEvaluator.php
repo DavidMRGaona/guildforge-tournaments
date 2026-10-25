@@ -60,13 +60,7 @@ final class ScoringRuleEvaluator implements ScoringRuleEvaluatorInterface
      */
     private function hasResultRule(array $rules, string $resultValue): bool
     {
-        foreach ($rules as $rule) {
-            if ($rule->condition->type === ConditionType::Result && $rule->condition->resultValue === $resultValue) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($rules, fn($rule) => $rule->condition->type === ConditionType::Result && $rule->condition->resultValue === $resultValue);
     }
 
     /**

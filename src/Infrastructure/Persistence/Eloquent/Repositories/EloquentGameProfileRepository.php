@@ -31,7 +31,7 @@ final readonly class EloquentGameProfileRepository implements GameProfileReposit
     {
         $profile = $this->find($id);
 
-        if ($profile === null) {
+        if (!$profile instanceof \Modules\Tournaments\Domain\Entities\GameProfile) {
             throw GameProfileNotFoundException::withId($id->value);
         }
 
@@ -104,19 +104,19 @@ final readonly class EloquentGameProfileRepository implements GameProfileReposit
     {
         $statDefinitionsData = $model->stat_definitions ?? [];
         $statDefinitions = array_map(
-            static fn (array $data): StatDefinition => StatDefinition::fromArray($data),
+            StatDefinition::fromArray(...),
             $statDefinitionsData
         );
 
         $scoringRulesData = $model->scoring_rules ?? [];
         $scoringRules = array_map(
-            static fn (array $data): ScoringRule => ScoringRule::fromArray($data),
+            ScoringRule::fromArray(...),
             $scoringRulesData
         );
 
         $tiebreakerConfigData = $model->tiebreaker_config ?? [];
         $tiebreakerConfig = array_map(
-            static fn (array $data): TiebreakerDefinition => TiebreakerDefinition::fromArray($data),
+            TiebreakerDefinition::fromArray(...),
             $tiebreakerConfigData
         );
 

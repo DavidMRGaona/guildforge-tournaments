@@ -119,7 +119,7 @@ final class RoundsRelationManager extends RelationManager
                             $round = $rounds->generateNextRound($tournament->id);
                         } catch (DomainException $exception) {
                             Notification::make()
-                                ->title(self::generationErrorMessage($exception))
+                                ->title($this->generationErrorMessage($exception))
                                 ->danger()
                                 ->send();
 
@@ -189,8 +189,8 @@ final class RoundsRelationManager extends RelationManager
 
                             $player1Stats = $matchData['player_1_stats'] ?? null;
                             $player2Stats = $matchData['player_2_stats'] ?? null;
-                            $player1Score = self::score($matchData['player_1_score'] ?? null);
-                            $player2Score = self::score($matchData['player_2_score'] ?? null);
+                            $player1Score = $this->score($matchData['player_1_score'] ?? null);
+                            $player2Score = $this->score($matchData['player_2_score'] ?? null);
 
                             // Only record what changed
                             if ($match->result->value === $matchData['result']
@@ -242,7 +242,7 @@ final class RoundsRelationManager extends RelationManager
                         try {
                             $rounds->startRound($record->id);
                         } catch (InvalidStateTransitionException) {
-                            self::invalidTransitionNotice();
+                            $this->invalidTransitionNotice();
 
                             return;
                         }
@@ -271,7 +271,7 @@ final class RoundsRelationManager extends RelationManager
 
                             return;
                         } catch (InvalidStateTransitionException) {
-                            self::invalidTransitionNotice();
+                            $this->invalidTransitionNotice();
 
                             return;
                         }
@@ -290,7 +290,7 @@ final class RoundsRelationManager extends RelationManager
      *
      * @return array<string, string>
      */
-    private static function playerMatchResultOptions(): array
+    private function playerMatchResultOptions(): array
     {
         $options = [MatchResult::NotPlayed->value => MatchResult::NotPlayed->label()];
         foreach (MatchResult::options() as $value => $label) {
@@ -302,7 +302,7 @@ final class RoundsRelationManager extends RelationManager
         return $options;
     }
 
-    private static function score(mixed $value): ?int
+    private function score(mixed $value): ?int
     {
         return is_numeric($value) ? (int) $value : null;
     }
@@ -310,7 +310,7 @@ final class RoundsRelationManager extends RelationManager
     /**
      * The round changed meanwhile (another click or another admin): nothing was saved.
      */
-    private static function invalidTransitionNotice(): void
+    private function invalidTransitionNotice(): void
     {
         Notification::make()
             ->title(__('tournaments::messages.errors.invalid_state_transition'))
@@ -318,7 +318,7 @@ final class RoundsRelationManager extends RelationManager
             ->send();
     }
 
-    private static function generationErrorMessage(DomainException $exception): string
+    private function generationErrorMessage(DomainException $exception): string
     {
         return match (true) {
             $exception instanceof RoundAlreadyGeneratedException => __('tournaments::messages.errors.round_already_generated'),
@@ -358,7 +358,7 @@ final class RoundsRelationManager extends RelationManager
                 ->label(__('tournaments::messages.fields.status'))
                 ->options(fn (Get $get): array => $get('is_bye')
                     ? [MatchResult::Bye->value => MatchResult::Bye->label()]
-                    : self::playerMatchResultOptions())
+                    : $this->playerMatchResultOptions())
                 ->required()
                 ->native(false)
                 ->live(),
