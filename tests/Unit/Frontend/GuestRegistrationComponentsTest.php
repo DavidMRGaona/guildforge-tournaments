@@ -66,13 +66,16 @@ final class GuestRegistrationComponentsTest extends TestCase
         $this->assertLessThan($cookie, $consent);
     }
 
-    public function test_the_build_shares_the_core_contracts_instead_of_bundling_them(): void
+    public function test_the_build_shares_the_core_public_api_instead_of_bundling_it(): void
     {
-        // A bundled copy of the contract would never hear from the consent provider
+        // The core's build keeps its public API out of the bundle: a bundled copy of the
+        // consent contract would never hear from the provider, and a bundled useNotifications
+        // would write toasts nobody renders
         $config = file_get_contents(__DIR__.'/../../../vite.config.ts');
         $this->assertNotFalse($config);
 
-        $this->assertStringContainsString("id.startsWith('@/contracts/')", $config);
+        $this->assertStringContainsString("from '../../vite.module.config'", $config);
+        $this->assertStringContainsString("defineModuleConfig({ name: 'tournaments', root: __dirname })", $config);
     }
 
     public function test_the_page_types_carry_the_confirmation_terms(): void
