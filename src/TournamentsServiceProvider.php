@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Tournaments;
 
 use Filament\Schemas\Components\Section;
+use App\Application\Cookies\DTOs\DeclaredCookieDTO;
+use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -25,8 +27,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
-use Modules\CookieConsent\Application\DTOs\DeclaredCookieDTO;
-use Modules\CookieConsent\Application\Services\CookieDeclarationRegistryInterface;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
@@ -136,15 +136,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The browser remembers guest registrations in a `preferences` cookie. The module does not
-     * require cookie-consent: the declaration is only made when its registry exists.
+     * The browser remembers guest registrations in a `preferences` cookie, declared in the core's
+     * registry: a cookie consent module, when installed, lists it in its banner.
      */
     private function declareGuestCookie(): void
     {
-        if (! interface_exists(CookieDeclarationRegistryInterface::class)) {
-            return;
-        }
-
         $this->callAfterResolving(
             CookieDeclarationRegistryInterface::class,
             function (CookieDeclarationRegistryInterface $registry): void {

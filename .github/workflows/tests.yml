@@ -69,15 +69,6 @@ jobs:
           path: src/modules/tournaments
           persist-credentials: false
 
-      # Optional integration: the cookie declaration (provider and its test) uses
-      # cookie-consent's classes when that module is installed, so analyse against them
-      - name: Checkout cookie-consent module
-        uses: actions/checkout@v7
-        with:
-          repository: DavidMRGaona/guildforge-cookie-consent
-          path: src/modules/cookie-consent
-          persist-credentials: false
-
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse -c modules/tournaments/phpstan.neon --no-progress --memory-limit=2G
 
