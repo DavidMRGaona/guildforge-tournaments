@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class CheckInLocaleKeysTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     /**
      * @return array<string, array{string}>
@@ -34,9 +34,9 @@ final class CheckInLocaleKeysTest extends TestCase
 
         foreach ($matches as [, $group, $key]) {
             // A group is a block indented under `tournaments`, its keys one level deeper
-            $found = preg_match('/^ {8}' . $group . ': \{\n(.*?)^ {8}\},$/ms', $source, $block);
+            $found = preg_match('/^ {8}'.$group.': \{\n(.*?)^ {8}\},$/ms', $source, $block);
             $this->assertSame(1, $found, "{$locale} lacks the {$group} block");
-            $this->assertMatchesRegularExpression('/^ {12}' . $key . ':/m', $block[1], "{$locale} lacks {$group}.{$key}");
+            $this->assertMatchesRegularExpression('/^ {12}'.$key.':/m', $block[1], "{$locale} lacks {$group}.{$key}");
         }
     }
 
@@ -46,15 +46,15 @@ final class CheckInLocaleKeysTest extends TestCase
 
         $this->assertStringNotContainsString("t('tournaments.check_in.window_closed')", $page);
         $this->assertStringContainsString("t('tournaments.check_in.connection_error')", $page);
-        $this->assertStringContainsString(
-            "connection_error: 'No se ha podido completar el check-in. Comprueba tu conexión e inténtalo de nuevo.'",
+        $this->assertMatchesRegularExpression(
+            "/connection_error:\\s+'No se ha podido completar el check-in\\. Comprueba tu conexión e inténtalo de nuevo\\.'/u",
             $this->source('locales/es.ts'),
         );
     }
 
     private function source(string $file): string
     {
-        $contents = file_get_contents(self::JS . $file);
+        $contents = file_get_contents(self::JS.$file);
         $this->assertNotFalse($contents, "{$file} is readable");
 
         return $contents;

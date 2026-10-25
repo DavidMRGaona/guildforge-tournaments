@@ -15,7 +15,7 @@ interface ScoringRuleEvaluatorInterface
      * @param  array<ScoringRule>  $scoringRules  Scoring rules to evaluate
      * @param  array<string, mixed>  $player1Stats  Stats for player 1
      * @param  array<string, mixed>  $player2Stats  Stats for player 2
-     * @return array{player1: float, player2: float}  Points awarded to each player
+     * @return array{player1: float, player2: float} Points awarded to each player
      */
     public function evaluate(
         MatchResult $result,

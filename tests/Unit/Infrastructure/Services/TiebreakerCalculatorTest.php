@@ -7,7 +7,6 @@ namespace Modules\Tournaments\Tests\Unit\Infrastructure\Services;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
-use Modules\Tournaments\Domain\Enums\SortDirection;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
@@ -22,7 +21,7 @@ final class TiebreakerCalculatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->calculator = new TiebreakerCalculator();
+        $this->calculator = new TiebreakerCalculator;
     }
 
     public function test_it_implements_tiebreaker_calculator_interface(): void
@@ -614,7 +613,7 @@ final class TiebreakerCalculatorTest extends TestCase
         int $byes = 0
     ): Standing {
         return new Standing(
-            id: 'standing-' . $participantId,
+            id: 'standing-'.$participantId,
             tournamentId: 'tournament-1',
             participantId: $participantId,
             rank: 1,

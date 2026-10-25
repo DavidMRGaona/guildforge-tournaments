@@ -84,7 +84,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedById: 'user',
             changedByName: 'User',
             reason: null,
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
 
         $this->assertTrue($dto->isInitialReport());
@@ -104,7 +104,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedById: 'admin',
             changedByName: 'Admin',
             reason: 'Correction',
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
 
         $this->assertFalse($dto->isInitialReport());
@@ -124,7 +124,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedById: 'admin',
             changedByName: 'Admin',
             reason: null,
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
 
         $this->assertTrue($dto->resultChanged());
@@ -144,7 +144,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedById: 'admin',
             changedByName: 'Admin',
             reason: 'Score update only',
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
 
         $this->assertFalse($dto->resultChanged());

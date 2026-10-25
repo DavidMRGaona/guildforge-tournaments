@@ -24,8 +24,7 @@ final readonly class ParticipantResponseDTO
         public DateTimeImmutable $registeredAt,
         public ?DateTimeImmutable $checkedInAt,
         public bool $claimedGuestRegistration = false,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(
         Participant $participant,
@@ -44,7 +43,7 @@ final readonly class ParticipantResponseDTO
             status: $participant->status(),
             seed: $participant->seed(),
             hasReceivedBye: $participant->hasReceivedBye(),
-            registeredAt: $participant->registeredAt() ?? new DateTimeImmutable(),
+            registeredAt: $participant->registeredAt() ?? new DateTimeImmutable,
             checkedInAt: $participant->checkedInAt(),
             claimedGuestRegistration: $claimedGuestRegistration,
         );
@@ -62,7 +61,7 @@ final readonly class ParticipantResponseDTO
 
     public function isCheckedIn(): bool
     {
-        return $this->checkedInAt instanceof \DateTimeImmutable;
+        return $this->checkedInAt instanceof DateTimeImmutable;
     }
 
     /**

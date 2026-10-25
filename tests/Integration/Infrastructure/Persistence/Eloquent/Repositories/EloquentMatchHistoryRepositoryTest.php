@@ -11,7 +11,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
-use Modules\Tournaments\Domain\ValueObjects\MatchId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchHistoryModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -34,7 +33,7 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentMatchHistoryRepository();
+        $this->repository = new EloquentMatchHistoryRepository;
 
         $event = EventModel::factory()->create();
         $tournament = TournamentModel::create([

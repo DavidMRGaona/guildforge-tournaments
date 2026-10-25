@@ -36,7 +36,6 @@ use Tests\TestCase;
 final class ParticipantRegistrationRulesTest extends TestCase
 {
     use PinsTheClock;
-
     use RefreshDatabase;
 
     private ParticipantManagementService $service;

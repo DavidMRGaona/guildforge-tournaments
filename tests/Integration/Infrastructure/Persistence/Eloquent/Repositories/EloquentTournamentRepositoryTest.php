@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Persistence\Eloqu
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -26,7 +27,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentTournamentRepository();
+        $this->repository = new EloquentTournamentRepository;
     }
 
     public function test_it_implements_tournament_repository_interface(): void
@@ -398,13 +399,13 @@ final class EloquentTournamentRepositoryTest extends TestCase
             $this->createTournamentFor(EventModel::factory()->create()->id, 'bulk-tournament-'.$i);
         }
 
-        \Illuminate\Support\Facades\DB::enableQueryLog();
+        DB::enableQueryLog();
         $this->repository->all();
-        $allQueries = count(\Illuminate\Support\Facades\DB::getQueryLog());
-        \Illuminate\Support\Facades\DB::flushQueryLog();
+        $allQueries = count(DB::getQueryLog());
+        DB::flushQueryLog();
         $this->repository->findByStatus(TournamentStatus::RegistrationOpen);
-        $statusQueries = count(\Illuminate\Support\Facades\DB::getQueryLog());
-        \Illuminate\Support\Facades\DB::disableQueryLog();
+        $statusQueries = count(DB::getQueryLog());
+        DB::disableQueryLog();
 
         $this->assertSame(2, $allQueries);
         $this->assertSame(2, $statusQueries);

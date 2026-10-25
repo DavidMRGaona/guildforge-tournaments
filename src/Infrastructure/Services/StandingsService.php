@@ -34,8 +34,7 @@ final readonly class StandingsService implements StandingsServiceInterface
         private MatchRepositoryInterface $matches,
         private StandingRepositoryInterface $standings,
         private StandingCalculatorServiceInterface $calculator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<Standing>

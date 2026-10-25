@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,9 +28,9 @@ use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
  * @property array<int, TiebreakerDefinitionData> $tiebreaker_config
  * @property array<string, mixed> $pairing_config
  * @property bool $is_system
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, TournamentModel> $tournaments
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, TournamentModel> $tournaments
  */
 final class GameProfileModel extends Model
 {

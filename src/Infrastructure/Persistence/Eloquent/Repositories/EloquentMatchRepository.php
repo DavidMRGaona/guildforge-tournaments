@@ -62,7 +62,7 @@ final readonly class EloquentMatchRepository implements MatchRepositoryInterface
     {
         $match = $this->find($id);
 
-        if (!$match instanceof \Modules\Tournaments\Domain\Entities\TournamentMatch) {
+        if (! $match instanceof TournamentMatch) {
             throw MatchNotFoundException::withId($id->value);
         }
 

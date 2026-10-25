@@ -36,7 +36,7 @@ final class TournamentCheckInController extends Controller
     {
         $tournament = $this->findTournament($slug);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             abort(404);
         }
 
@@ -75,7 +75,7 @@ final class TournamentCheckInController extends Controller
     {
         $tournament = $this->findTournament($slug);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             abort(404);
         }
 
@@ -173,7 +173,7 @@ final class TournamentCheckInController extends Controller
     {
         if (Str::isUuid($identifier)) {
             $tournament = $this->tournamentQuery->find($identifier);
-            if ($tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+            if ($tournament instanceof TournamentResponseDTO) {
                 return $tournament;
             }
         }

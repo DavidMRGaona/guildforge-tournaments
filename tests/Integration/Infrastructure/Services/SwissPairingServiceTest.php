@@ -20,7 +20,7 @@ final class SwissPairingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SwissPairingService();
+        $this->service = new SwissPairingService;
     }
 
     public function test_it_implements_swiss_pairing_service_interface(): void
@@ -502,7 +502,7 @@ final class SwissPairingServiceTest extends TestCase
                 id: ParticipantId::generate(),
                 tournamentId: $tournamentId,
                 status: ParticipantStatus::CheckedIn,
-                userId: 'user-' . ($i + 1),
+                userId: 'user-'.($i + 1),
             );
         }
 
@@ -523,7 +523,7 @@ final class SwissPairingServiceTest extends TestCase
                 id: ParticipantId::generate(),
                 tournamentId: $tournamentId,
                 status: ParticipantStatus::CheckedIn,
-                userId: 'user-' . ($i + 1),
+                userId: 'user-'.($i + 1),
                 hasReceivedBye: in_array($i, $byeReceivedIndexes, true),
             );
             $participants[] = $participant;
@@ -539,7 +539,7 @@ final class SwissPairingServiceTest extends TestCase
         float $points
     ): Standing {
         return new Standing(
-            id: 'standing-' . $participantId,
+            id: 'standing-'.$participantId,
             tournamentId: $tournamentId,
             participantId: $participantId,
             rank: $rank,

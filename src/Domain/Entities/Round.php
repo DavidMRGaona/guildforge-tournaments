@@ -20,8 +20,7 @@ final class Round
         private ?DateTimeImmutable $completedAt = null,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
-    ) {
-    }
+    ) {}
 
     public function id(): RoundId
     {

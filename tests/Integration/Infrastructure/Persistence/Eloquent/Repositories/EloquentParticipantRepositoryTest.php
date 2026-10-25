@@ -15,7 +15,6 @@ use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
-use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
@@ -32,7 +31,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentParticipantRepository();
+        $this->repository = new EloquentParticipantRepository;
 
         $event = EventModel::factory()->create();
         $this->tournament = TournamentModel::create([
@@ -60,7 +59,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
             status: ParticipantStatus::Registered,
             userId: $user->id,
             seed: 1,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
         );
 
         $this->repository->save($participant);
@@ -85,7 +84,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
             userId: null,
             guestName: 'Guest Player',
             guestEmail: 'guest@example.com',
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
         );
 
         $this->repository->save($participant);
@@ -441,7 +440,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
             status: $status,
             guestName: 'Ana',
             guestEmail: $email,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
         );
     }
 

@@ -31,7 +31,7 @@ final readonly class EloquentGameProfileRepository implements GameProfileReposit
     {
         $profile = $this->find($id);
 
-        if (!$profile instanceof \Modules\Tournaments\Domain\Entities\GameProfile) {
+        if (! $profile instanceof GameProfile) {
             throw GameProfileNotFoundException::withId($id->value);
         }
 

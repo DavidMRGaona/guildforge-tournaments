@@ -13,8 +13,7 @@ final readonly class RoundStarted
         public string $tournamentId,
         public int $roundNumber,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $roundId,
@@ -25,7 +24,7 @@ final readonly class RoundStarted
             roundId: $roundId,
             tournamentId: $tournamentId,
             roundNumber: $roundNumber,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

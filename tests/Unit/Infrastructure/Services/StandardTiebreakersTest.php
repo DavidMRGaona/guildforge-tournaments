@@ -34,7 +34,7 @@ final class StandardTiebreakersTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->calculator = new TiebreakerCalculator();
+        $this->calculator = new TiebreakerCalculator;
         $this->matches = [
             $this->match('round-1', 'A', 'B', MatchResult::PlayerOneWin, 2, 1),
             $this->match('round-1', 'C', 'D', MatchResult::Draw, 1, 1),

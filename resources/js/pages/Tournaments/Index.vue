@@ -2,7 +2,10 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { PaginatedResponse } from '@/types';
-import type { TournamentListItem, TournamentStatusFilter as TournamentStatusFilterType } from '../../types/tournaments';
+import type {
+    TournamentListItem,
+    TournamentStatusFilter as TournamentStatusFilterType,
+} from '../../types/tournaments';
 import TournamentList from '../../components/TournamentList.vue';
 import TournamentStatusFilter from '../../components/TournamentStatusFilter.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';

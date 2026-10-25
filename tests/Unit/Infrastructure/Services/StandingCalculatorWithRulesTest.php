@@ -26,7 +26,7 @@ final class StandingCalculatorWithRulesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new StandingCalculatorService();
+        $this->service = new StandingCalculatorService;
     }
 
     public function test_points_come_from_the_scoring_rules_including_the_bye_rule(): void

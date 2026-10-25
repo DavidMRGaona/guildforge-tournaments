@@ -42,7 +42,7 @@ final class RegistrationLockTest extends ModuleTestCase
     {
         $level = DB::transactionLevel();
 
-        $result = (new DatabaseRegistrationLock())->forTournament($this->tournament->id, fn (): int => DB::transactionLevel());
+        $result = (new DatabaseRegistrationLock)->forTournament($this->tournament->id, fn (): int => DB::transactionLevel());
 
         $this->assertSame($level + 1, $result);
     }
@@ -60,7 +60,7 @@ final class RegistrationLockTest extends ModuleTestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
         $level = DB::transactionLevel();
 
         $this->assertSame($level + 1, $lock->forParticipant($id, fn (): int => DB::transactionLevel()));
@@ -69,7 +69,7 @@ final class RegistrationLockTest extends ModuleTestCase
 
     public function test_without_a_participant_the_callback_still_runs_in_a_transaction(): void
     {
-        $lock = new DatabaseRegistrationLock();
+        $lock = new DatabaseRegistrationLock;
         $level = DB::transactionLevel();
 
         $this->assertSame($level + 1, $lock->forParticipant((string) Str::uuid(), fn (): int => DB::transactionLevel()));

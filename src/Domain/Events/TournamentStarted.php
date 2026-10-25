@@ -13,8 +13,7 @@ final readonly class TournamentStarted
         public int $participantCount,
         public int $plannedRounds,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $tournamentId,
@@ -25,7 +24,7 @@ final readonly class TournamentStarted
             tournamentId: $tournamentId,
             participantCount: $participantCount,
             plannedRounds: $plannedRounds,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

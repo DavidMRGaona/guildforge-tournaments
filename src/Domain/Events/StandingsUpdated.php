@@ -16,8 +16,7 @@ final readonly class StandingsUpdated
         public int $afterRound,
         public array $topParticipantIds,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string>  $topParticipantIds
@@ -31,7 +30,7 @@ final readonly class StandingsUpdated
             tournamentId: $tournamentId,
             afterRound: $afterRound,
             topParticipantIds: $topParticipantIds,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

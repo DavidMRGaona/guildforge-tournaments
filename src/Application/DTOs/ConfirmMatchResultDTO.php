@@ -9,8 +9,7 @@ final readonly class ConfirmMatchResultDTO
     public function __construct(
         public string $matchId,
         public string $confirmedById,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data

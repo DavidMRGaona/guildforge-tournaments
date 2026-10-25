@@ -28,8 +28,7 @@ final readonly class MatchResponseDTO
         public ?string $confirmedByName,
         public ?DateTimeImmutable $confirmedAt,
         public bool $isDisputed,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(
         TournamentMatch $match,
@@ -66,12 +65,12 @@ final readonly class MatchResponseDTO
 
     public function isReported(): bool
     {
-        return $this->reportedAt instanceof \DateTimeImmutable;
+        return $this->reportedAt instanceof DateTimeImmutable;
     }
 
     public function isConfirmed(): bool
     {
-        return $this->confirmedAt instanceof \DateTimeImmutable;
+        return $this->confirmedAt instanceof DateTimeImmutable;
     }
 
     public function needsConfirmation(): bool

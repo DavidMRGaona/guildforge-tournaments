@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
+use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
-use App\Filament\Pages\ModuleSettingsPage;
 use App\Infrastructure\Persistence\Eloquent\Models\SettingModel;
-use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Field;
+use Filament\Schemas\Components\Component;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\GuestAccountPolicy;
 use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
-use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
-use Modules\Tournaments\TournamentsServiceProvider;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
+use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
+use Modules\Tournaments\TournamentsServiceProvider;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -153,7 +153,7 @@ final class SettingsDefaultsTest extends ModuleTestCase
             'duplicate_signal.window_hours' => 48,
         ])->assertHasNoFormErrors();
 
-        $settings = new GuestRegistrationSettings();
+        $settings = new GuestRegistrationSettings;
         $this->assertSame(GuestConfirmationMode::Wait, $settings->confirmationMode());
         $this->assertSame(6, $settings->holdHours());
         $this->assertSame(0, $settings->maxUnconfirmedHeld());

@@ -42,16 +42,32 @@ const { formatPoints, formatPercentage } = useTournaments();
                 <div v-else class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-default">
                         <thead>
-                            <tr class="text-left text-xs font-medium uppercase tracking-wider text-base-muted">
+                            <tr
+                                class="text-left text-xs font-medium uppercase tracking-wider text-base-muted"
+                            >
                                 <th class="px-3 py-3">#</th>
                                 <th class="px-3 py-3">{{ t('tournaments.public.player') }}</th>
-                                <th class="px-3 py-3 text-right">{{ t('tournaments.public.points') }}</th>
-                                <th class="px-3 py-3 text-center">{{ t('tournaments.public.matches') }}</th>
-                                <th class="hidden px-3 py-3 text-center md:table-cell">{{ t('tournaments.public.wins') }}</th>
-                                <th class="hidden px-3 py-3 text-center md:table-cell">{{ t('tournaments.public.draws') }}</th>
-                                <th class="hidden px-3 py-3 text-center md:table-cell">{{ t('tournaments.public.losses') }}</th>
-                                <th class="hidden px-3 py-3 text-right lg:table-cell">{{ t('tournaments.public.buchholz') }}</th>
-                                <th class="hidden px-3 py-3 text-right lg:table-cell">{{ t('tournaments.public.owp') }}</th>
+                                <th class="px-3 py-3 text-right">
+                                    {{ t('tournaments.public.points') }}
+                                </th>
+                                <th class="px-3 py-3 text-center">
+                                    {{ t('tournaments.public.matches') }}
+                                </th>
+                                <th class="hidden px-3 py-3 text-center md:table-cell">
+                                    {{ t('tournaments.public.wins') }}
+                                </th>
+                                <th class="hidden px-3 py-3 text-center md:table-cell">
+                                    {{ t('tournaments.public.draws') }}
+                                </th>
+                                <th class="hidden px-3 py-3 text-center md:table-cell">
+                                    {{ t('tournaments.public.losses') }}
+                                </th>
+                                <th class="hidden px-3 py-3 text-right lg:table-cell">
+                                    {{ t('tournaments.public.buchholz') }}
+                                </th>
+                                <th class="hidden px-3 py-3 text-right lg:table-cell">
+                                    {{ t('tournaments.public.owp') }}
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-default">
@@ -97,10 +113,14 @@ const { formatPoints, formatPercentage } = useTournaments();
                                 <td class="hidden px-3 py-3 text-center text-error md:table-cell">
                                     {{ standing.losses }}
                                 </td>
-                                <td class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell">
+                                <td
+                                    class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell"
+                                >
                                     {{ formatPoints(standing.buchholz) }}
                                 </td>
-                                <td class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell">
+                                <td
+                                    class="hidden px-3 py-3 text-right text-sm text-base-muted lg:table-cell"
+                                >
                                     {{ formatPercentage(standing.opponent_win_percentage) }}
                                 </td>
                             </tr>
@@ -113,7 +133,9 @@ const { formatPoints, formatPercentage } = useTournaments();
                     <h3 class="mb-2 text-sm font-semibold text-base-secondary">
                         {{ t('tournaments.public.tiebreakers_legend') }}
                     </h3>
-                    <dl class="grid grid-cols-1 gap-2 text-sm text-base-secondary sm:grid-cols-2 lg:grid-cols-3">
+                    <dl
+                        class="grid grid-cols-1 gap-2 text-sm text-base-secondary sm:grid-cols-2 lg:grid-cols-3"
+                    >
                         <div>
                             <dt class="font-medium">{{ t('tournaments.public.buchholz') }}</dt>
                             <dd>{{ t('tournaments.public.buchholz_description') }}</dd>

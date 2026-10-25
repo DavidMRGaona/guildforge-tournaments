@@ -15,8 +15,7 @@ final readonly class ParticipantWithdrawn
         public ?string $participantEmail,
         public ?string $participantName,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $participantId,
@@ -31,7 +30,7 @@ final readonly class ParticipantWithdrawn
             userId: $userId,
             participantEmail: $participantEmail,
             participantName: $participantName,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

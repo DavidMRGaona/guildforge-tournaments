@@ -18,8 +18,7 @@ final readonly class TiebreakerContext
         public array $matchPoints = [],
         public array $roundNumbers = [],
         public string $randomSeed = '',
-    ) {
-    }
+    ) {}
 
     public function pointsFor(string $matchId, string $participantId): ?float
     {

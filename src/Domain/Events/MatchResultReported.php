@@ -21,8 +21,7 @@ final readonly class MatchResultReported
         public string $reportedById,
         public bool $requiresConfirmation,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $matchId,
@@ -47,7 +46,7 @@ final readonly class MatchResultReported
             player2Score: $player2Score,
             reportedById: $reportedById,
             requiresConfirmation: $requiresConfirmation,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

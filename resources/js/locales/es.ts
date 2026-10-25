@@ -161,16 +161,20 @@ export default {
             withdrawn_successfully: 'Has cancelado tu inscripción correctamente',
             registration_error: 'Error al inscribirse',
             session_expired: 'Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.',
-            guest_confirmation_hold: 'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {date}, la plaza se liberará.',
-            guest_confirmation_wait: 'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
-            already_registered_here: 'Ya hay una inscripción desde este navegador para este torneo.',
+            guest_confirmation_hold:
+                'Te enviaremos un email para confirmar la inscripción. Si no la confirmas antes del {date}, la plaza se liberará.',
+            guest_confirmation_wait:
+                'Te enviaremos un email para confirmar la inscripción. Tu plaza no está garantizada hasta que la confirmes.',
+            already_registered_here:
+                'Ya hay una inscripción desde este navegador para este torneo.',
             sign_in: 'Inicia sesión',
         },
 
         // Guest cancellation page
         cancellation: {
             title: 'Cancelar inscripción',
-            confirm_message: '¿Estás seguro de que quieres cancelar tu inscripción en el torneo {tournament}?',
+            confirm_message:
+                '¿Estás seguro de que quieres cancelar tu inscripción en el torneo {tournament}?',
             already_cancelled: 'Tu inscripción ya ha sido cancelada',
             tournament_started: 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
             tournament_cancelled: 'El torneo se ha cancelado',
@@ -191,7 +195,8 @@ export default {
             wait_notice: 'Tu plaza no está garantizada hasta que la confirmes.',
             confirm_button: 'Confirmar inscripción',
             already_confirmed: 'Tu inscripción ya estaba confirmada.',
-            invalid: 'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
+            invalid:
+                'Este enlace ya no es válido. Si las inscripciones siguen abiertas, puedes volver a apuntarte.',
             view_tournament: 'Ver torneo',
             view_tournaments: 'Ver torneos',
         },
@@ -209,7 +214,8 @@ export default {
             window_opens_at: 'El check-in abre el {date} a las {time}',
             window_closed_started: 'El check-in ha cerrado',
             gdpr_consent: 'Acepto el tratamiento de mis datos según la',
-            connection_error: 'No se ha podido completar el check-in. Comprueba tu conexión e inténtalo de nuevo.',
+            connection_error:
+                'No se ha podido completar el check-in. Comprueba tu conexión e inténtalo de nuevo.',
         },
     },
 };

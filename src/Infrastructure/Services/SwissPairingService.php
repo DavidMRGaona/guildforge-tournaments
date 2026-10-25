@@ -39,7 +39,7 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
             return [];
         }
 
-        $config ??= new PairingConfig();
+        $config ??= new PairingConfig;
 
         $sortedParticipants = $this->orderParticipants($participants, $standings, $roundNumber, $config);
 
@@ -66,7 +66,7 @@ final readonly class SwissPairingService implements SwissPairingServiceInterface
         );
 
         // Add bye match at the end if exists
-        if ($byeMatch instanceof \Modules\Tournaments\Domain\Entities\TournamentMatch) {
+        if ($byeMatch instanceof TournamentMatch) {
             $matches[] = $byeMatch;
         }
 

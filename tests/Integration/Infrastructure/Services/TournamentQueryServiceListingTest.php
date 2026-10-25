@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -212,7 +213,7 @@ final class TournamentQueryServiceListingTest extends ModuleTestCase
         $data = [
             'event_id' => $event->id,
             'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name) . '-' . \Illuminate\Support\Str::uuid()->toString(),
+            'slug' => Str::slug($name).'-'.Str::uuid()->toString(),
             'status' => $status,
             'result_reporting' => 'admin_only',
         ];

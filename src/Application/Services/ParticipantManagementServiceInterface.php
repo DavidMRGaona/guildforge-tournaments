@@ -154,8 +154,8 @@ interface ParticipantManagementServiceInterface
      *
      * @throws ParticipantNotFoundException When no active participant has that email
      * @throws CheckInNotAllowedException When self check-in is disabled for the tournament, the
-     *                                     guest registration found has not confirmed its email, or
-     *                                     the organisation has not confirmed the registration yet
+     *                                    guest registration found has not confirmed its email, or
+     *                                    the organisation has not confirmed the registration yet
      * @throws CheckInWindowClosedException When check-in window is not active
      * @throws AlreadyCheckedInException When participant has already checked in
      */

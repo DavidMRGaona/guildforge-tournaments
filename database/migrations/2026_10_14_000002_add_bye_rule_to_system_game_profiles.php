@@ -9,13 +9,14 @@ use Modules\Tournaments\Database\Seeders\GameProfilesSeeder;
  * The system profiles gain a "Bye" rule worth a win. Only existing system profiles are
  * updated: admin-made profiles and their descriptions are left as they are.
  */
-return new class () extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // database/ is outside the module's autoloaded src/
         require_once dirname(__DIR__).'/seeders/GameProfilesSeeder.php';
 
-        (new GameProfilesSeeder())->refreshSystemProfiles();
+        (new GameProfilesSeeder)->refreshSystemProfiles();
     }
 
     public function down(): void

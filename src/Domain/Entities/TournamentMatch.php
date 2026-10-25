@@ -32,8 +32,7 @@ final class TournamentMatch
         private bool $isDisputed = false,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
-    ) {
-    }
+    ) {}
 
     public function id(): MatchId
     {
@@ -174,7 +173,7 @@ final class TournamentMatch
     ): void {
         $this->result = $result;
         $this->reportedById = $reportedById;
-        $this->reportedAt = new DateTimeImmutable();
+        $this->reportedAt = new DateTimeImmutable;
         $this->player1Score = $player1Score;
         $this->player2Score = $player2Score;
         $this->player1Stats = $player1Stats;
@@ -187,7 +186,7 @@ final class TournamentMatch
     public function confirmResult(string $confirmedById): void
     {
         $this->confirmedById = $confirmedById;
-        $this->confirmedAt = new DateTimeImmutable();
+        $this->confirmedAt = new DateTimeImmutable;
         $this->isDisputed = false;
     }
 

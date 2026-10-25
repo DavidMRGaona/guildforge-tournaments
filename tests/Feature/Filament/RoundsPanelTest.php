@@ -40,9 +40,8 @@ require_once dirname(__DIR__, 2).'/Support/StaleRoundRepository.php';
  */
 final class RoundsPanelTest extends ModuleTestCase
 {
-    use PinsTheClock;
-
     use InteractsWithModulePanel;
+    use PinsTheClock;
 
     protected ?string $moduleName = 'tournaments';
 
@@ -99,7 +98,7 @@ final class RoundsPanelTest extends ModuleTestCase
         $tournament = $this->tournament();
         $this->participants($tournament, 4);
         $this->roundsManager($tournament)->callTableAction('generateRound');
-        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository()));
+        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository));
 
         $this->roundsManager($tournament)
             ->callTableAction('generateRound')

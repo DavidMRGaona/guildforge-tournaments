@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 
@@ -22,21 +25,21 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
  * @property ParticipantStatus $status
  * @property int|null $seed
  * @property bool $has_received_bye
- * @property \Carbon\Carbon|null $registered_at
- * @property \Carbon\Carbon|null $checked_in_at
- * @property \Carbon\Carbon|null $email_confirmed_at
- * @property \Carbon\Carbon|null $confirmation_expires_at
+ * @property Carbon|null $registered_at
+ * @property Carbon|null $checked_in_at
+ * @property Carbon|null $email_confirmed_at
+ * @property Carbon|null $confirmation_expires_at
  * @property string|null $confirmation_token
- * @property \Carbon\Carbon|null $confirmation_sent_at
+ * @property Carbon|null $confirmation_sent_at
  * @property GuestConfirmationMode|null $confirmation_mode
  * @property string|null $fingerprint
- * @property \Carbon\Carbon|null $reminder_sent_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $reminder_sent_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read TournamentModel $tournament
  * @property-read UserModel|null $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, MatchModel> $matchesAsPlayer1
- * @property-read \Illuminate\Database\Eloquent\Collection<int, MatchModel> $matchesAsPlayer2
+ * @property-read Collection<int, MatchModel> $matchesAsPlayer1
+ * @property-read Collection<int, MatchModel> $matchesAsPlayer2
  * @property-read StandingModel|null $standing
  * @property-read string $participant_name
  */
@@ -123,9 +126,9 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne<StandingModel, $this>
+     * @return HasOne<StandingModel, $this>
      */
-    public function standing(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function standing(): HasOne
     {
         return $this->hasOne(StandingModel::class, 'participant_id');
     }

@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
 use DomainException;
-use Filament\Schemas\Schema;
-use Filament\Actions\CreateAction;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -297,7 +297,7 @@ final class ParticipantsRelationManager extends RelationManager
 
                         return $record->guest_name ?? __('tournaments::messages.participants.unknown');
                     })
-                    ->searchable(query: fn(Builder $query, string $search): Builder => $query->where(function (Builder $q) use ($search): void {
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->where(function (Builder $q) use ($search): void {
                         $q->whereHas('user', fn (Builder $uq): Builder => $uq->where('name', 'like', "%{$search}%"))
                             ->orWhere('guest_name', 'like', "%{$search}%");
                     }))

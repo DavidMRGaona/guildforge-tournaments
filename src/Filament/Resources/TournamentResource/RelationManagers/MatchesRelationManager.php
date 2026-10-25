@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
 use Filament\Actions\Action;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -47,7 +47,7 @@ final class MatchesRelationManager extends RelationManager
 
                 TextColumn::make('player1.participant_name')
                     ->label(__('tournaments::messages.fields.player_1'))
-                    ->getStateUsing(fn(MatchModel $record): string => $record->player1->participant_name),
+                    ->getStateUsing(fn (MatchModel $record): string => $record->player1->participant_name),
 
                 TextColumn::make('player2.participant_name')
                     ->label(__('tournaments::messages.fields.player_2'))

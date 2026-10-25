@@ -14,8 +14,7 @@ final readonly class ReportMatchResultDTO
         public string $reportedById,
         public ?int $player1Score = null,
         public ?int $player2Score = null,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data

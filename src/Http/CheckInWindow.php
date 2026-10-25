@@ -41,7 +41,7 @@ final readonly class CheckInWindow
             ];
         }
 
-        if (!$eventStartDate instanceof \DateTimeImmutable) {
+        if (! $eventStartDate instanceof DateTimeImmutable) {
             return [
                 'status' => 'not_available',
                 'opens_at' => null,

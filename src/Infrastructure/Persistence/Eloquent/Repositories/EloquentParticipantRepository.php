@@ -77,7 +77,7 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
     {
         $participant = $this->find($id);
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             throw ParticipantNotFoundException::withId($id->value);
         }
 

@@ -28,7 +28,7 @@ final class EloquentRoundRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentRoundRepository();
+        $this->repository = new EloquentRoundRepository;
 
         $event = EventModel::factory()->create();
         $this->tournament = TournamentModel::create([
@@ -80,7 +80,7 @@ final class EloquentRoundRepositoryTest extends TestCase
             tournamentId: $this->tournament->id,
             roundNumber: 1,
             status: RoundStatus::InProgress,
-            startedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
         );
 
         $this->repository->save($round);

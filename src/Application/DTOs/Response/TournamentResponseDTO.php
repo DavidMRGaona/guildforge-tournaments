@@ -54,8 +54,7 @@ final readonly class TournamentResponseDTO
         // What the status badge shows: the raw status, or `registration_upcoming` before the opening date
         public ?string $displayStatus = null,
         public ?DateTimeImmutable $eventStartsAt = null,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(Tournament $tournament, int $participantCount, DateTimeImmutable $now): self
     {
@@ -84,8 +83,8 @@ final readonly class TournamentResponseDTO
             registrationClosesAt: $tournament->registrationClosesAt(),
             startedAt: $tournament->startedAt(),
             completedAt: $tournament->completedAt(),
-            createdAt: $tournament->createdAt() ?? new DateTimeImmutable(),
-            updatedAt: $tournament->updatedAt() ?? new DateTimeImmutable(),
+            createdAt: $tournament->createdAt() ?? new DateTimeImmutable,
+            updatedAt: $tournament->updatedAt() ?? new DateTimeImmutable,
             showParticipants: $tournament->showParticipants(),
             notificationEmail: $tournament->notificationEmail(),
             selfCheckInAllowed: $tournament->selfCheckInAllowed(),
@@ -108,7 +107,7 @@ final readonly class TournamentResponseDTO
 
         $opensAt = $tournament->registrationOpensAt();
 
-        return $opensAt instanceof \DateTimeImmutable && $now < $opensAt
+        return $opensAt instanceof DateTimeImmutable && $now < $opensAt
             ? self::DISPLAY_REGISTRATION_UPCOMING
             : TournamentStatus::RegistrationClosed->value;
     }

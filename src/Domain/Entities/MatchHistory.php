@@ -22,8 +22,7 @@ final readonly class MatchHistory
         private string $changedById,
         private ?string $reason,
         private DateTimeImmutable $changedAt,
-    ) {
-    }
+    ) {}
 
     public static function fromResultChange(
         string $matchId,
@@ -47,7 +46,7 @@ final readonly class MatchHistory
             newPlayer2Score: $newPlayer2Score,
             changedById: $changedById,
             reason: $reason,
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
     }
 

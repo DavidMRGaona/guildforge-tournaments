@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class WithdrawAvailabilityComponentsTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     /**
      * @return array<string, array{string}>
@@ -69,7 +69,7 @@ final class WithdrawAvailabilityComponentsTest extends TestCase
     }
 
     /**
-     * @param array<string, string> $literals
+     * @param  array<string, string>  $literals
      */
     #[DataProvider('locales')]
     public function test_every_cancellation_text_of_the_page_exists_in_the_locale(string $locale, array $literals): void
@@ -81,16 +81,17 @@ final class WithdrawAvailabilityComponentsTest extends TestCase
         $this->assertSame(1, $matched, "{$locale} has a tournaments.cancellation block");
 
         foreach (array_unique($used[1]) as $key) {
-            $this->assertMatchesRegularExpression('/^\s+' . $key . ': /m', $block[1], "tournaments.cancellation.{$key} in {$locale}");
+            // Prettier may move a long text to the line after its key
+            $this->assertMatchesRegularExpression('/^\s+'.$key.':\s/m', $block[1], "tournaments.cancellation.{$key} in {$locale}");
         }
         foreach ($literals as $key => $text) {
-            $this->assertStringContainsString("            {$key}: '{$text}',", $block[1], "{$key} text in {$locale}");
+            $this->assertMatchesRegularExpression('/^\s+'.$key.":\\s+'".preg_quote($text, '/')."',$/mu", $block[1], "{$key} text in {$locale}");
         }
     }
 
     private function source(string $file): string
     {
-        $source = file_get_contents(self::JS . $file);
+        $source = file_get_contents(self::JS.$file);
         $this->assertIsString($source);
 
         return $source;

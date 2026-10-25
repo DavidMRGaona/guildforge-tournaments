@@ -11,17 +11,13 @@ export type TournamentStatus =
 // What the status badge shows: the raw status, or `registration_upcoming` before the opening date
 export type TournamentDisplayStatus = TournamentStatus | 'registration_upcoming';
 
-export type ParticipantStatus = 'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified' | 'expired';
+export type ParticipantStatus =
+    'registered' | 'confirmed' | 'checked_in' | 'withdrawn' | 'disqualified' | 'expired';
 
 export type RoundStatus = 'pending' | 'in_progress' | 'finished';
 
 export type MatchResult =
-    | 'player_one_win'
-    | 'player_two_win'
-    | 'draw'
-    | 'double_loss'
-    | 'bye'
-    | 'not_played';
+    'player_one_win' | 'player_two_win' | 'draw' | 'double_loss' | 'bye' | 'not_played';
 
 export type ResultReporting = 'admin_only' | 'players_with_confirmation' | 'players_trusted';
 

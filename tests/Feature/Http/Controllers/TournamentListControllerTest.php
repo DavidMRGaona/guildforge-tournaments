@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -12,6 +13,7 @@ use Tests\Support\Modules\ModuleTestCase;
 final class TournamentListControllerTest extends ModuleTestCase
 {
     protected ?string $moduleName = 'tournaments';
+
     protected bool $autoEnableModule = true;
 
     public function test_index_displays_published_tournaments(): void
@@ -256,7 +258,7 @@ final class TournamentListControllerTest extends ModuleTestCase
         $data = [
             'event_id' => $event->id,
             'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name) . '-' . \Illuminate\Support\Str::uuid()->toString(),
+            'slug' => Str::slug($name).'-'.Str::uuid()->toString(),
             'status' => $status,
             'result_reporting' => 'admin_only',
             'notification_email' => 'test@example.com',

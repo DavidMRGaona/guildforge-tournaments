@@ -29,7 +29,7 @@ final class ParticipantDisqualifiedNotification extends Notification implements 
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('tournaments::messages.emails.participant_disqualified.subject', [
                 'tournament' => $this->tournamentName,
             ]))

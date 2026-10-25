@@ -17,8 +17,7 @@ final readonly class ParticipantRegistered
         public ?string $cancellationToken,
         public DateTimeImmutable $occurredAt,
         public bool $notifyOrganizer = true,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $participantId,
@@ -36,7 +35,7 @@ final readonly class ParticipantRegistered
             guestEmail: $guestEmail,
             isGuest: $isGuest,
             cancellationToken: $cancellationToken,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
             notifyOrganizer: $notifyOrganizer,
         );
     }

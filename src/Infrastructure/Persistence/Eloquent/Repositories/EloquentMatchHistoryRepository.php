@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories;
 
-use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchHistoryModel;

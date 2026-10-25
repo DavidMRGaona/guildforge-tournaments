@@ -6,10 +6,6 @@ namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationMana
 
 use DomainException;
 use Filament\Actions\Action;
-use Filament\Support\Enums\Width;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -17,6 +13,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -332,7 +332,7 @@ final class RoundsRelationManager extends RelationManager
     /**
      * Get the match form schema with dynamic stat fields.
      *
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     private function getMatchFormSchema(TournamentModel $tournament): array
     {

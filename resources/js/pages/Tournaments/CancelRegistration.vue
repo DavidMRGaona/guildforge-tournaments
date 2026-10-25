@@ -76,7 +76,9 @@ function handleCancel(): void {
         <div class="rounded-xl bg-surface p-8 shadow-lg">
             <!-- Header -->
             <div class="mb-6 text-center">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning-light">
+                <div
+                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning-light"
+                >
                     <TriangleAlert class="h-8 w-8 text-warning" aria-hidden="true" />
                 </div>
                 <h1 class="text-2xl font-bold text-base-primary">
@@ -103,10 +105,7 @@ function handleCancel(): void {
                             {{ tournament.name }}
                         </dd>
                     </div>
-                    <div
-                        v-if="formattedDate"
-                        class="flex justify-between"
-                    >
+                    <div v-if="formattedDate" class="flex justify-between">
                         <dt class="text-sm text-base-muted">
                             {{ t('tournaments.cancellation.date') }}
                         </dt>
@@ -120,7 +119,11 @@ function handleCancel(): void {
             <!-- Can cancel -->
             <template v-if="canCancel">
                 <p class="mb-6 text-center text-base-secondary">
-                    {{ t('tournaments.cancellation.confirm_message', { tournament: tournament.name }) }}
+                    {{
+                        t('tournaments.cancellation.confirm_message', {
+                            tournament: tournament.name,
+                        })
+                    }}
                 </p>
 
                 <div class="flex gap-4">

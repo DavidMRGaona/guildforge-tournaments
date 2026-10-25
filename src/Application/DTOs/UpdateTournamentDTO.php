@@ -34,8 +34,7 @@ final readonly class UpdateTournamentDTO
         public ?DateTimeImmutable $registrationClosesAt = null,
         public ?string $notificationEmail = null,
         public ?bool $selfCheckInAllowed = null,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -136,7 +135,7 @@ final readonly class UpdateTournamentDTO
         if ($this->allowedRoles !== null) {
             $result['allowed_roles'] = $this->allowedRoles;
         }
-        if ($this->resultReporting instanceof \Modules\Tournaments\Domain\Enums\ResultReporting) {
+        if ($this->resultReporting instanceof ResultReporting) {
             $result['result_reporting'] = $this->resultReporting->value;
         }
         if ($this->requiresCheckIn !== null) {
@@ -145,10 +144,10 @@ final readonly class UpdateTournamentDTO
         if ($this->checkInStartsBefore !== null) {
             $result['check_in_starts_before'] = $this->checkInStartsBefore;
         }
-        if ($this->registrationOpensAt instanceof \DateTimeImmutable) {
+        if ($this->registrationOpensAt instanceof DateTimeImmutable) {
             $result['registration_opens_at'] = $this->registrationOpensAt->format('c');
         }
-        if ($this->registrationClosesAt instanceof \DateTimeImmutable) {
+        if ($this->registrationClosesAt instanceof DateTimeImmutable) {
             $result['registration_closes_at'] = $this->registrationClosesAt->format('c');
         }
         if ($this->notificationEmail !== null) {

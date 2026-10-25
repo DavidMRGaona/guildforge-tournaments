@@ -30,7 +30,7 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Sh
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('tournaments::messages.emails.withdrawal_confirmed.subject', [
                 'tournament' => $this->tournamentName,
             ]))
@@ -40,10 +40,10 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Sh
             ->line(__('tournaments::messages.emails.withdrawal_confirmed.intro'))
             ->line(__('tournaments::messages.emails.withdrawal_confirmed.details'));
 
-        $message->line('**' . __('tournaments::messages.emails.withdrawal_confirmed.tournament_name') . ':** ' . $this->tournamentName);
+        $message->line('**'.__('tournaments::messages.emails.withdrawal_confirmed.tournament_name').':** '.$this->tournamentName);
 
         if ($this->eventDate !== null) {
-            $message->line('**' . __('tournaments::messages.emails.withdrawal_confirmed.event_date') . ':** ' . $this->eventDate);
+            $message->line('**'.__('tournaments::messages.emails.withdrawal_confirmed.event_date').':** '.$this->eventDate);
         }
 
         // ?? like isset(): a notification queued before this property existed comes back without

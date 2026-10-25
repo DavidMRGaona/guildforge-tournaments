@@ -19,11 +19,17 @@ const LOAD_MORE_COUNT = 5;
 const showPastSection = ref(false);
 const visiblePastCount = ref(INITIAL_PAST_COUNT);
 
-const upcomingTournaments = computed<UserTournament[]>(() => props.profileTournaments?.upcoming ?? []);
-const inProgressTournaments = computed<UserTournament[]>(() => props.profileTournaments?.inProgress ?? []);
+const upcomingTournaments = computed<UserTournament[]>(
+    () => props.profileTournaments?.upcoming ?? []
+);
+const inProgressTournaments = computed<UserTournament[]>(
+    () => props.profileTournaments?.inProgress ?? []
+);
 const pastTournaments = computed<UserTournament[]>(() => props.profileTournaments?.past ?? []);
 
-const visiblePastTournaments = computed(() => pastTournaments.value.slice(0, visiblePastCount.value));
+const visiblePastTournaments = computed(() =>
+    pastTournaments.value.slice(0, visiblePastCount.value)
+);
 const hasMorePast = computed(() => visiblePastCount.value < pastTournaments.value.length);
 const remainingPastCount = computed(() => pastTournaments.value.length - visiblePastCount.value);
 
@@ -40,7 +46,10 @@ function togglePastSection(): void {
 }
 
 function loadMore(): void {
-    visiblePastCount.value = Math.min(visiblePastCount.value + LOAD_MORE_COUNT, pastTournaments.value.length);
+    visiblePastCount.value = Math.min(
+        visiblePastCount.value + LOAD_MORE_COUNT,
+        pastTournaments.value.length
+    );
 }
 </script>
 
@@ -122,7 +131,10 @@ function loadMore(): void {
                         {{ t('tournaments.my_tournaments.history') }}
                     </span>
                     <ChevronDown
-                        :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
+                        :class="[
+                            'h-5 w-5 text-base-muted transition-transform',
+                            showPastSection ? 'rotate-180' : '',
+                        ]"
                         aria-hidden="true"
                     />
                 </button>
@@ -142,7 +154,9 @@ function loadMore(): void {
                         @click="loadMore"
                     >
                         <Plus class="h-4 w-4" aria-hidden="true" />
-                        {{ t('tournaments.my_tournaments.load_more', { count: remainingPastCount }) }}
+                        {{
+                            t('tournaments.my_tournaments.load_more', { count: remainingPastCount })
+                        }}
                     </button>
                 </div>
             </section>
@@ -169,4 +183,3 @@ function loadMore(): void {
         </div>
     </div>
 </template>
-

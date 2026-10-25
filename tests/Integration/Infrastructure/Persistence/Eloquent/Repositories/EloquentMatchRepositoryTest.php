@@ -13,8 +13,6 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\MatchNotFoundException;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
-use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
-use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
@@ -43,7 +41,7 @@ final class EloquentMatchRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentMatchRepository();
+        $this->repository = new EloquentMatchRepository;
 
         $event = EventModel::factory()->create();
         $this->tournament = TournamentModel::create([
@@ -155,7 +153,7 @@ final class EloquentMatchRepositoryTest extends TestCase
             player1Score: 3,
             player2Score: 1,
             reportedById: 'some-user-id',
-            reportedAt: new DateTimeImmutable(),
+            reportedAt: new DateTimeImmutable,
         );
 
         $this->repository->save($match);

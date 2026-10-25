@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class StatusColorsTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     /**
      * @return array<string, array{string}>
@@ -36,7 +36,7 @@ final class StatusColorsTest extends TestCase
         $this->assertStringContainsString('statusBadgeClasses(', $source);
         $this->assertStringNotContainsString('colorMap', $source);
         $this->assertStringNotContainsString("green: 'bg-", $source);
-        $this->assertStringNotContainsString("amber:", $source);
+        $this->assertStringNotContainsString('amber:', $source);
     }
 
     public function test_the_event_section_chip_uses_the_shared_map_for_the_display_status(): void
@@ -53,7 +53,7 @@ final class StatusColorsTest extends TestCase
 
     private function source(string $file): string
     {
-        $source = file_get_contents(self::JS . $file);
+        $source = file_get_contents(self::JS.$file);
         $this->assertIsString($source);
 
         return $source;

@@ -45,8 +45,8 @@ final class RoundResponseDTOTest extends TestCase
             status: RoundStatus::Finished,
             matchCount: 4,
             completedMatchCount: 4,
-            startedAt: new DateTimeImmutable(),
-            completedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
+            completedAt: new DateTimeImmutable,
         );
 
         $this->assertTrue($dto->isCompleted());
@@ -72,7 +72,7 @@ final class RoundResponseDTOTest extends TestCase
             status: RoundStatus::InProgress,
             matchCount: 4,
             completedMatchCount: 2,
-            startedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
             completedAt: null,
         );
 
@@ -89,7 +89,7 @@ final class RoundResponseDTOTest extends TestCase
             status: RoundStatus::InProgress,
             matchCount: 8,
             completedMatchCount: 5,
-            startedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
             completedAt: null,
         );
 
@@ -105,7 +105,7 @@ final class RoundResponseDTOTest extends TestCase
             status: RoundStatus::InProgress,
             matchCount: 8,
             completedMatchCount: 6,
-            startedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
             completedAt: null,
         );
 
@@ -137,8 +137,8 @@ final class RoundResponseDTOTest extends TestCase
             status: RoundStatus::Finished,
             matchCount: 10,
             completedMatchCount: 10,
-            startedAt: new DateTimeImmutable(),
-            completedAt: new DateTimeImmutable(),
+            startedAt: new DateTimeImmutable,
+            completedAt: new DateTimeImmutable,
         );
 
         $this->assertEquals(100.0, $dto->completionPercentage());

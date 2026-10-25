@@ -7,6 +7,8 @@ namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,16 +50,16 @@ use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
  * @property string $notification_email
  * @property bool $self_check_in_allowed
  * @property string|null $random_seed
- * @property \Carbon\Carbon|null $registration_opens_at
- * @property \Carbon\Carbon|null $registration_closes_at
- * @property \Carbon\Carbon|null $started_at
- * @property \Carbon\Carbon|null $completed_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $registration_opens_at
+ * @property Carbon|null $registration_closes_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read EventModel|null $event
- * @property-read \Illuminate\Database\Eloquent\Collection<int, ParticipantModel> $participants
- * @property-read \Illuminate\Database\Eloquent\Collection<int, RoundModel> $rounds
- * @property-read \Illuminate\Database\Eloquent\Collection<int, StandingModel> $standings
+ * @property-read Collection<int, ParticipantModel> $participants
+ * @property-read Collection<int, RoundModel> $rounds
+ * @property-read Collection<int, StandingModel> $standings
  * @property-read GameProfileModel|null $gameProfile
  */
 final class TournamentModel extends Model

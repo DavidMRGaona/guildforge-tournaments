@@ -30,8 +30,7 @@ final class GameProfile
         private readonly bool $isSystem = false,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
-    ) {
-    }
+    ) {}
 
     public function id(): GameProfileId
     {
@@ -178,7 +177,7 @@ final class GameProfile
      */
     public function hasStatDefinition(string $key): bool
     {
-        return $this->getStatDefinition($key) instanceof \Modules\Tournaments\Domain\ValueObjects\StatDefinition;
+        return $this->getStatDefinition($key) instanceof StatDefinition;
     }
 
     /**

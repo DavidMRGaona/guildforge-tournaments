@@ -17,7 +17,7 @@ const expandedRounds = ref<Set<string>>(new Set());
 
 // Auto-expand the current round (in_progress)
 const currentRound = computed(() => {
-    return props.rounds.find(r => r.round.status === 'in_progress');
+    return props.rounds.find((r) => r.round.status === 'in_progress');
 });
 
 if (currentRound.value) {
@@ -92,11 +92,19 @@ const sortedRounds = computed(() => {
                         >
                             <div class="flex items-center gap-3">
                                 <span class="text-lg font-semibold text-base-primary">
-                                    {{ t('tournaments.public.round_number', { number: roundData.round.round_number }) }}
+                                    {{
+                                        t('tournaments.public.round_number', {
+                                            number: roundData.round.round_number,
+                                        })
+                                    }}
                                 </span>
                                 <span
                                     class="rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="statusBadgeClasses(getRoundStatusColor(roundData.round.status))"
+                                    :class="
+                                        statusBadgeClasses(
+                                            getRoundStatusColor(roundData.round.status)
+                                        )
+                                    "
                                 >
                                     {{ roundData.round.status_label }}
                                 </span>
@@ -104,7 +112,8 @@ const sortedRounds = computed(() => {
 
                             <div class="flex items-center gap-4">
                                 <span class="text-sm text-base-muted">
-                                    {{ roundData.round.completed_match_count }} / {{ roundData.round.match_count }}
+                                    {{ roundData.round.completed_match_count }} /
+                                    {{ roundData.round.match_count }}
                                     {{ t('tournaments.public.matches_label') }}
                                 </span>
                                 <ChevronDown
@@ -121,7 +130,10 @@ const sortedRounds = computed(() => {
                             :id="panelId(roundData.round.id)"
                             class="border-t border-default"
                         >
-                            <div v-if="roundData.matches.length === 0" class="p-4 text-center text-base-muted">
+                            <div
+                                v-if="roundData.matches.length === 0"
+                                class="p-4 text-center text-base-muted"
+                            >
                                 {{ t('tournaments.public.no_matches') }}
                             </div>
 
@@ -147,7 +159,8 @@ const sortedRounds = computed(() => {
                                                 <span
                                                     class="font-medium text-base-primary"
                                                     :class="{
-                                                        'text-success': match.result === 'player_one_win',
+                                                        'text-success':
+                                                            match.result === 'player_one_win',
                                                     }"
                                                 >
                                                     {{ match.player_1_name }}
@@ -160,11 +173,15 @@ const sortedRounds = computed(() => {
                                                 </span>
                                             </div>
 
-                                            <div v-if="match.player_2_name" class="mt-1 flex items-center gap-2">
+                                            <div
+                                                v-if="match.player_2_name"
+                                                class="mt-1 flex items-center gap-2"
+                                            >
                                                 <span
                                                     class="font-medium text-base-primary"
                                                     :class="{
-                                                        'text-success': match.result === 'player_two_win',
+                                                        'text-success':
+                                                            match.result === 'player_two_win',
                                                     }"
                                                 >
                                                     {{ match.player_2_name }}
@@ -187,7 +204,11 @@ const sortedRounds = computed(() => {
                                     <div class="ml-4 flex-shrink-0">
                                         <span
                                             class="rounded-full px-2.5 py-1 text-xs font-medium"
-                                            :class="statusBadgeClasses(getMatchResultColor(match.result))"
+                                            :class="
+                                                statusBadgeClasses(
+                                                    getMatchResultColor(match.result)
+                                                )
+                                            "
                                         >
                                             {{ match.result_label }}
                                         </span>

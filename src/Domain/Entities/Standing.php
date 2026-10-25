@@ -31,8 +31,7 @@ final class Standing
         private array $calculatedTiebreakers = [],
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
-    ) {
-    }
+    ) {}
 
     public function id(): string
     {

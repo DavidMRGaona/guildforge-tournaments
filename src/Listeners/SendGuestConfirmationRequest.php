@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
@@ -19,7 +20,7 @@ final readonly class SendGuestConfirmationRequest
     public function handle(GuestConfirmationRequested $event): void
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             return;
         }
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
@@ -22,8 +23,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         private MatchRepositoryInterface $matches,
         private RoundRepositoryInterface $rounds,
         private StandingsServiceInterface $standings,
-    ) {
-    }
+    ) {}
 
     public function recordResult(RecordMatchResultDTO $dto): void
     {
@@ -73,7 +73,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             // The next round was paired from this result: it may change, not disappear
             if ($match->isCompleted()
                 && $round->isFinished()
-                && $this->rounds->findByTournamentAndNumber($round->tournamentId(), $round->roundNumber() + 1) instanceof \Modules\Tournaments\Domain\Entities\Round) {
+                && $this->rounds->findByTournamentAndNumber($round->tournamentId(), $round->roundNumber() + 1) instanceof Round) {
                 throw MatchResultLockedException::laterRoundExists($dto->matchId);
             }
 

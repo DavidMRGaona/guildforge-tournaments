@@ -10,7 +10,6 @@ use Modules\Tournaments\Domain\Enums\ByeAssignment;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\PairingMethod;
 use Modules\Tournaments\Domain\Enums\PairingSortCriteria;
-use Modules\Tournaments\Domain\Enums\SortDirection;
 use Modules\Tournaments\Domain\Enums\StatType;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
@@ -107,7 +106,7 @@ final class GameProfileTest extends TestCase
             statDefinitions: $this->getDefaultStatDefinitions(),
             scoringRules: $this->getDefaultScoringRules(),
             tiebreakerConfig: $this->getDefaultTiebreakerConfig(),
-            pairingConfig: new PairingConfig(),
+            pairingConfig: new PairingConfig,
             isSystem: $isSystem,
         );
     }
@@ -118,7 +117,7 @@ final class GameProfileTest extends TestCase
         $statDefinitions = $this->getDefaultStatDefinitions();
         $scoringRules = $this->getDefaultScoringRules();
         $tiebreakerConfig = $this->getDefaultTiebreakerConfig();
-        $pairingConfig = new PairingConfig();
+        $pairingConfig = new PairingConfig;
 
         $profile = new GameProfile(
             id: $id,
@@ -228,7 +227,7 @@ final class GameProfileTest extends TestCase
 
     public function test_created_at_and_updated_at_can_be_set(): void
     {
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
 
         $profile = new GameProfile(
             id: GameProfileId::generate(),
@@ -238,7 +237,7 @@ final class GameProfileTest extends TestCase
             statDefinitions: [],
             scoringRules: [],
             tiebreakerConfig: [],
-            pairingConfig: new PairingConfig(),
+            pairingConfig: new PairingConfig,
             isSystem: false,
             createdAt: $now,
             updatedAt: $now,
@@ -456,7 +455,7 @@ final class GameProfileTest extends TestCase
             statDefinitions: [],
             scoringRules: [],
             tiebreakerConfig: [],
-            pairingConfig: new PairingConfig(),
+            pairingConfig: new PairingConfig,
         );
 
         $this->assertNull($profile->description());
@@ -472,7 +471,7 @@ final class GameProfileTest extends TestCase
             statDefinitions: [],
             scoringRules: [],
             tiebreakerConfig: [],
-            pairingConfig: new PairingConfig(),
+            pairingConfig: new PairingConfig,
         );
 
         $this->assertEmpty($profile->statDefinitions());

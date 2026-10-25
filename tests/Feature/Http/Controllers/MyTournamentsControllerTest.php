@@ -17,6 +17,7 @@ use Tests\Support\Modules\ModuleTestCase;
 final class MyTournamentsControllerTest extends ModuleTestCase
 {
     protected ?string $moduleName = 'tournaments';
+
     protected bool $autoEnableModule = true;
 
     public function test_guest_cannot_access_my_tournaments(): void
@@ -141,7 +142,7 @@ final class MyTournamentsControllerTest extends ModuleTestCase
         $tournament = TournamentModel::create([
             'event_id' => $event->id,
             'name' => 'Test Tournament',
-            'slug' => 'test-tournament-' . Str::uuid()->toString(),
+            'slug' => 'test-tournament-'.Str::uuid()->toString(),
             'status' => TournamentStatus::RegistrationOpen,
             'result_reporting' => 'admin_only',
             'notification_email' => 'test@example.com',
@@ -206,8 +207,8 @@ final class MyTournamentsControllerTest extends ModuleTestCase
 
         $data = [
             'event_id' => $event->id,
-            'name' => 'Test Tournament ' . Str::random(8),
-            'slug' => 'test-tournament-' . Str::uuid()->toString(),
+            'name' => 'Test Tournament '.Str::random(8),
+            'slug' => 'test-tournament-'.Str::uuid()->toString(),
             'status' => $status,
             'result_reporting' => 'admin_only',
             'notification_email' => 'test@example.com',

@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\RelationManagers;
 
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Components\Text;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
 use Filament\Forms\Components\DateTimePicker;
@@ -17,21 +13,26 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
-use Modules\Tournaments\Filament\RegistrationClosingDateRule;
-use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
+use Modules\Tournaments\Filament\RegistrationClosingDateRule;
+use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 /**
- * @property \Filament\Schemas\Schema $configForm
+ * @property Schema $configForm
  */
 final class TournamentConfigRelationManager extends RelationManager
 {
@@ -133,7 +134,7 @@ final class TournamentConfigRelationManager extends RelationManager
     }
 
     /**
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     protected function getFormSchema(): array
     {
@@ -447,7 +448,7 @@ final class TournamentConfigRelationManager extends RelationManager
             $type = is_array($definition) && is_string($definition['type'] ?? null) ? TiebreakerType::tryFrom($definition['type']) : null;
             $tiebreaker = $type !== null ? Tiebreaker::fromType($type) : null;
             // Anything the tab cannot show (direction, floor, stat, own key) would be lost on save
-            if (!$tiebreaker instanceof \Modules\Tournaments\Domain\Enums\Tiebreaker
+            if (! $tiebreaker instanceof Tiebreaker
                 || ($definition['direction'] ?? 'desc') !== 'desc'
                 || ($definition['min_value'] ?? null) !== null
                 || ($definition['stat'] ?? null) !== null

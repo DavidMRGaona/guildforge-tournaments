@@ -234,8 +234,8 @@ final class TournamentResponseDTOTest extends TestCase
             registrationClosesAt: null,
             startedAt: null,
             completedAt: null,
-            createdAt: new DateTimeImmutable(),
-            updatedAt: new DateTimeImmutable(),
+            createdAt: new DateTimeImmutable,
+            updatedAt: new DateTimeImmutable,
         );
     }
 
@@ -266,8 +266,8 @@ final class TournamentResponseDTOTest extends TestCase
             registrationClosesAt: null,
             startedAt: null,
             completedAt: null,
-            createdAt: new DateTimeImmutable(),
-            updatedAt: new DateTimeImmutable(),
+            createdAt: new DateTimeImmutable,
+            updatedAt: new DateTimeImmutable,
         );
     }
 

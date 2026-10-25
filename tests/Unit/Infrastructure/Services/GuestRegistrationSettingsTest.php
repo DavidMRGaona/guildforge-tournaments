@@ -17,7 +17,7 @@ final class GuestRegistrationSettingsTest extends ModuleTestCase
     {
         config()->set('modules.settings.tournaments', []);
 
-        $settings = new GuestRegistrationSettings();
+        $settings = new GuestRegistrationSettings;
 
         $this->assertSame(GuestConfirmationMode::Hold, $settings->confirmationMode());
         $this->assertSame(2, $settings->holdHours());
@@ -38,7 +38,7 @@ final class GuestRegistrationSettingsTest extends ModuleTestCase
             'duplicate_signal' => ['window_hours' => 48],
         ]);
 
-        $settings = new GuestRegistrationSettings();
+        $settings = new GuestRegistrationSettings;
 
         $this->assertSame(GuestConfirmationMode::Wait, $settings->confirmationMode());
         $this->assertSame(6, $settings->holdHours());
@@ -53,7 +53,7 @@ final class GuestRegistrationSettingsTest extends ModuleTestCase
     {
         config()->set('modules.settings.tournaments', ['guest_confirmation' => ['mode' => 'wait']]);
 
-        $settings = new GuestRegistrationSettings();
+        $settings = new GuestRegistrationSettings;
 
         $this->assertSame(GuestConfirmationMode::Wait, $settings->confirmationMode());
         $this->assertSame(2, $settings->holdHours());
@@ -68,7 +68,7 @@ final class GuestRegistrationSettingsTest extends ModuleTestCase
             'duplicate_signal' => ['window_hours' => 0],
         ]);
 
-        $settings = new GuestRegistrationSettings();
+        $settings = new GuestRegistrationSettings;
 
         $this->assertSame(GuestConfirmationMode::Hold, $settings->confirmationMode());
         $this->assertSame(2, $settings->holdHours());

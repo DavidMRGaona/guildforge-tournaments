@@ -34,8 +34,7 @@ final readonly class CreateTournamentDTO
         public ?DateTimeImmutable $registrationClosesAt = null,
         public string $notificationEmail = '',
         public bool $selfCheckInAllowed = false,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data

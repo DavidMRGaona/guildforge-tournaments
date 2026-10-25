@@ -43,7 +43,7 @@ final class GuestConfirmationTerms
         $deadline = DateTimeImmutable::createFromInterface($now->addHours($settings->holdHours()));
 
         foreach ([$tournament->registrationClosesAt(), $tournament->eventStartsAt()] as $close) {
-            if ($close instanceof \DateTimeImmutable && $close < $deadline) {
+            if ($close instanceof DateTimeImmutable && $close < $deadline) {
                 $deadline = $close;
             }
         }

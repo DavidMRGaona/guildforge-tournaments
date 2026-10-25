@@ -45,7 +45,9 @@ const isSuccess = computed((): boolean =>
         : props.confirmation.state === 'already_confirmed'
 );
 
-const showForm = computed((): boolean => props.confirmation.state === 'pending' && props.result === null);
+const showForm = computed(
+    (): boolean => props.confirmation.state === 'pending' && props.result === null
+);
 
 const formattedDeadline = computed((): string | null => {
     if (!props.confirmation.expires_at) {
@@ -106,10 +108,7 @@ function handleConfirm(): void {
                 class="mb-6 rounded-lg bg-surface-secondary p-4"
             >
                 <dl class="space-y-2">
-                    <div
-                        v-if="confirmation.guest_name"
-                        class="flex justify-between gap-4"
-                    >
+                    <div v-if="confirmation.guest_name" class="flex justify-between gap-4">
                         <dt class="text-sm text-base-muted">
                             {{ t('tournaments.confirmation.participant') }}
                         </dt>
@@ -138,12 +137,7 @@ function handleConfirm(): void {
                     {{ seatNotice }}
                 </p>
 
-                <BaseButton
-                    type="submit"
-                    variant="primary"
-                    class="w-full"
-                    :loading="isSubmitting"
-                >
+                <BaseButton type="submit" variant="primary" class="w-full" :loading="isSubmitting">
                     {{ t('tournaments.confirmation.confirm_button') }}
                 </BaseButton>
             </form>
@@ -154,10 +148,7 @@ function handleConfirm(): void {
                     class="mb-6 rounded-lg p-4 text-center"
                     :class="isSuccess ? 'bg-success-light' : 'bg-warning-light'"
                 >
-                    <p
-                        class="text-sm"
-                        :class="isSuccess ? 'text-success' : 'text-warning-dark'"
-                    >
+                    <p class="text-sm" :class="isSuccess ? 'text-success' : 'text-warning-dark'">
                         {{ stateMessage }}
                     </p>
                 </div>
