@@ -103,6 +103,7 @@ export default {
             event_tournament: 'Torneo del evento',
             view_tournament: 'Ver torneo',
             participants: 'participantes',
+            participants_heading: 'Participantes',
             current_round: 'Ronda actual',
             round_label: 'Ronda {current}/{max}',
             spots_available: 'Plazas disponibles',

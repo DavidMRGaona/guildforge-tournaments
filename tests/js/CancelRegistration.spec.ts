@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { router } from '@inertiajs/vue3';
 import CancelRegistration from '../../resources/js/pages/Tournaments/CancelRegistration.vue';
+import { linkWithText, nestedInteractiveLinks } from './support/interactive';
 
 type BlockedReason = 'already_cancelled' | 'tournament_started' | 'tournament_cancelled' | null;
 
@@ -45,5 +46,19 @@ describe('CancelRegistration', () => {
 
     it('does not claim the registration was cancelled when the tournament started', () => {
         expect(mountPage(false, 'tournament_started').text()).not.toContain('Tu inscripción ya ha sido cancelada');
+    });
+
+    it('goes back to the tournaments with a single link, not a button inside a link', () => {
+        const wrapper = mountPage(true);
+
+        expect(linkWithText(wrapper, 'Volver')?.attributes('href')).toBe('/torneos');
+        expect(nestedInteractiveLinks(wrapper)).toEqual([]);
+    });
+
+    it('links to the tournaments with a single link when it cannot cancel', () => {
+        const wrapper = mountPage(false, 'tournament_started');
+
+        expect(linkWithText(wrapper, 'Ver torneos')?.attributes('href')).toBe('/torneos');
+        expect(nestedInteractiveLinks(wrapper)).toEqual([]);
     });
 });

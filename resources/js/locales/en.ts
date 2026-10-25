@@ -72,6 +72,7 @@ export default {
             event_tournament: 'Event tournament',
             view_tournament: 'View tournament',
             participants: 'participants',
+            participants_heading: 'Participants',
             current_round: 'Current round',
             round_label: 'Round {current}/{max}',
             spots_available: 'Spots available',

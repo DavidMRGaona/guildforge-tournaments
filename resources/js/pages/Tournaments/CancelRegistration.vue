@@ -124,16 +124,12 @@ function handleCancel(): void {
                 </p>
 
                 <div class="flex gap-4">
+                    <!-- Styled as the core's secondary BaseButton, without a button inside the link -->
                     <Link
                         href="/torneos"
-                        class="flex-1"
+                        class="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-muted px-4 py-2 text-base font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-base-muted focus:ring-offset-2 focus:ring-offset-surface"
                     >
-                        <BaseButton
-                            variant="secondary"
-                            class="w-full"
-                        >
-                            {{ $t('common.back') }}
-                        </BaseButton>
+                        {{ $t('common.back') }}
                     </Link>
                     <BaseButton
                         variant="danger"
@@ -154,13 +150,12 @@ function handleCancel(): void {
                     </p>
                 </div>
 
-                <Link href="/torneos">
-                    <BaseButton
-                        variant="primary"
-                        class="w-full"
-                    >
-                        {{ t('tournaments.cancellation.view_tournaments') }}
-                    </BaseButton>
+                <!-- Styled as the core's primary BaseButton, without a button inside the link -->
+                <Link
+                    href="/torneos"
+                    class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-base font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                >
+                    {{ t('tournaments.cancellation.view_tournaments') }}
                 </Link>
             </template>
         </div>
