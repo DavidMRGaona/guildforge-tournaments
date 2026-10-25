@@ -47,7 +47,8 @@ function handleNext(): void {
         </div>
     </div>
 
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <!-- A plain container: the site layout already renders the page's <main> -->
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <TournamentStatusFilter :current-filter="props.currentFilter" class="mb-6" />
 
         <TournamentList :tournaments="props.tournaments.data" />
@@ -88,5 +89,5 @@ function handleNext(): void {
                 </BaseButton>
             </div>
         </div>
-    </main>
+    </div>
 </template>
