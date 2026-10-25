@@ -25,7 +25,7 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
-        if ($tournament === null || ! $tournament->allowGuests()) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || ! $tournament->allowGuests()) {
             return null;
         }
 

@@ -70,7 +70,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
             $rounds = $this->rounds->findByTournament($tournamentId);
             $lastRound = $this->lastRound($rounds);
 
-            if ($lastRound !== null
+            if ($lastRound instanceof \Modules\Tournaments\Domain\Entities\Round
                 && (! $lastRound->isFinished() || $this->matches->countUnreportedByRound($lastRound->id()->value) > 0)) {
                 throw PreviousRoundNotCompletedException::roundNotFinished($tournamentId, $lastRound->roundNumber());
             }
@@ -152,7 +152,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     {
         $round = $this->rounds->find(RoundId::fromString($roundId));
 
-        return $round !== null ? $this->toResponse($round) : null;
+        return $round instanceof \Modules\Tournaments\Domain\Entities\Round ? $this->toResponse($round) : null;
     }
 
     /**
@@ -161,7 +161,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     public function findByTournament(string $tournamentId): array
     {
         return array_map(
-            fn (Round $round): RoundResponseDTO => $this->toResponse($round),
+            $this->toResponse(...),
             $this->rounds->findByTournament($tournamentId),
         );
     }
@@ -170,7 +170,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     {
         $round = $this->rounds->findCurrentRound($tournamentId);
 
-        return $round !== null ? $this->toResponse($round) : null;
+        return $round instanceof \Modules\Tournaments\Domain\Entities\Round ? $this->toResponse($round) : null;
     }
 
     /**
@@ -178,7 +178,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
      */
     private function pairingConfig(Tournament $tournament): PairingConfig
     {
-        if ($tournament->pairingConfig() !== null) {
+        if ($tournament->pairingConfig() instanceof \Modules\Tournaments\Domain\ValueObjects\PairingConfig) {
             return $tournament->pairingConfig();
         }
 

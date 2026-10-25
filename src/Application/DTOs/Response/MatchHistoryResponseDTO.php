@@ -48,7 +48,7 @@ final readonly class MatchHistoryResponseDTO
 
     public function isInitialReport(): bool
     {
-        return $this->previousResult === null;
+        return !$this->previousResult instanceof \Modules\Tournaments\Domain\Enums\MatchResult;
     }
 
     public function resultChanged(): bool

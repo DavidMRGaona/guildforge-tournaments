@@ -56,8 +56,10 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
             ]));
         }
 
-        // isset(): a notification queued before this property existed comes back without it
-        $tournamentUrl = isset($this->tournamentSlug) ? route('tournaments.show', $this->tournamentSlug) : null;
+        // ?? like isset(): a notification queued before this property existed comes back without
+        // it, and reading an uninitialized property directly throws
+        $tournamentSlug = $this->tournamentSlug ?? null;
+        $tournamentUrl = $tournamentSlug !== null ? route('tournaments.show', $tournamentSlug) : null;
 
         // Guests get the cancellation button; accounts manage it from the tournament page
         if ($this->cancellationToken !== null) {

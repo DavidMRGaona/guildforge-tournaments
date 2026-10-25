@@ -297,12 +297,10 @@ final class ParticipantsRelationManager extends RelationManager
 
                         return $record->guest_name ?? __('tournaments::messages.participants.unknown');
                     })
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->where(function (Builder $q) use ($search): void {
-                            $q->whereHas('user', fn (Builder $uq): Builder => $uq->where('name', 'like', "%{$search}%"))
-                                ->orWhere('guest_name', 'like', "%{$search}%");
-                        });
-                    })
+                    ->searchable(query: fn(Builder $query, string $search): Builder => $query->where(function (Builder $q) use ($search): void {
+                        $q->whereHas('user', fn (Builder $uq): Builder => $uq->where('name', 'like', "%{$search}%"))
+                            ->orWhere('guest_name', 'like', "%{$search}%");
+                    }))
                     ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('guest_name', $direction === 'desc' ? 'desc' : 'asc')),
                 TextColumn::make('user.email')
                     ->label(__('tournaments::messages.participants.email'))

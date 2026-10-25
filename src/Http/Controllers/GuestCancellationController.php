@@ -33,14 +33,14 @@ final class GuestCancellationController extends Controller
     {
         $participant = $this->participantService->findByToken($token);
 
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO) {
             return redirect()->route('tournaments.index')
                 ->with('error', __('tournaments::messages.errors.invalid_token'));
         }
 
         $tournament = $this->tournamentQuery->find($participant->tournamentId);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return redirect()->route('tournaments.index')
                 ->with('error', __('tournaments::messages.errors.tournament_not_found'));
         }

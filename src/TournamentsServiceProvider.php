@@ -266,9 +266,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
     private function registerModelExtensions(): void
     {
-        EventModel::resolveRelationUsing('tournament', function (EventModel $eventModel) {
-            return $eventModel->hasOne(TournamentModel::class, 'event_id', 'id');
-        });
+        EventModel::resolveRelationUsing('tournament', fn(EventModel $eventModel) => $eventModel->hasOne(TournamentModel::class, 'event_id', 'id'));
     }
 
     private function registerRepositories(): void
@@ -470,10 +468,10 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     private function shareInertiaData(): void
     {
         Inertia::share([
-            'tournament' => fn () => $this->getTournamentForCurrentRoute(),
-            'userRegistration' => fn () => $this->getUserRegistrationForCurrentRoute(),
-            'canRegister' => fn () => $this->getCanRegisterForCurrentRoute(),
-            'guestConfirmation' => fn () => $this->getGuestConfirmationForCurrentRoute(),
+            'tournament' => $this->getTournamentForCurrentRoute(...),
+            'userRegistration' => $this->getUserRegistrationForCurrentRoute(...),
+            'canRegister' => $this->getCanRegisterForCurrentRoute(...),
+            'guestConfirmation' => $this->getGuestConfirmationForCurrentRoute(...),
         ]);
     }
 
@@ -490,7 +488,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return null;
         }
 
@@ -571,7 +569,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return null;
         }
 
@@ -592,7 +590,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return false;
         }
 

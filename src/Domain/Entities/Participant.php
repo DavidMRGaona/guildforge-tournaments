@@ -168,7 +168,7 @@ final class Participant
      */
     public function isAwaitingEmailConfirmation(): bool
     {
-        return $this->isGuest() && $this->isActive() && $this->emailConfirmedAt === null;
+        return $this->isGuest() && $this->isActive() && !$this->emailConfirmedAt instanceof \DateTimeImmutable;
     }
 
     /**
@@ -180,7 +180,7 @@ final class Participant
             return false;
         }
 
-        return ! ($this->isAwaitingEmailConfirmation() && $this->confirmationMode === GuestConfirmationMode::Wait);
+        return !$this->isAwaitingEmailConfirmation() || $this->confirmationMode !== GuestConfirmationMode::Wait;
     }
 
     /**
@@ -211,7 +211,7 @@ final class Participant
      */
     public function markEmailConfirmed(DateTimeImmutable $at): bool
     {
-        if ($this->emailConfirmedAt !== null) {
+        if ($this->emailConfirmedAt instanceof \DateTimeImmutable) {
             return false;
         }
 

@@ -40,7 +40,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             abort(404);
         }
 
@@ -77,7 +77,7 @@ final class TournamentController extends Controller
             $userRegistration = $registration?->toArray();
 
             // The rule of the check-in itself: self check-in open now and the registration may check in
-            $canCheckIn = $registration !== null
+            $canCheckIn = $registration instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO
                 && $this->checkInWindow->calculate($tournament, $tournament->eventStartsAt)['status'] === 'open'
                 && $this->participantManagement->canCheckIn($registration->status, $tournament->requiresManualConfirmation);
 
@@ -112,7 +112,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             abort(404);
         }
 
@@ -133,7 +133,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             abort(404);
         }
 
@@ -172,7 +172,7 @@ final class TournamentController extends Controller
             title: $tournament->name,
             description: $tournament->description ?? $event?->description,
             imagePublicId: $tournament->imagePublicId ?? $event?->imagePublicId,
-            schedule: $event !== null
+            schedule: $event instanceof \App\Application\DTOs\Response\EventResponseDTO
                 ? new SeoScheduleDTO($event->startDate, $event->endDate, $event->location)
                 : null,
         ))->toArray();
@@ -197,7 +197,7 @@ final class TournamentController extends Controller
     {
         if (Str::isUuid($identifier)) {
             $tournament = $this->tournamentQuery->find($identifier);
-            if ($tournament !== null) {
+            if ($tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
                 return $tournament;
             }
         }

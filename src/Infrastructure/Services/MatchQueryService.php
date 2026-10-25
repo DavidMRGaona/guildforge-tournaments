@@ -67,7 +67,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 ParticipantId::fromString($participantId)
             );
 
-            if ($participant === null) {
+            if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
                 $namesCache[$participantId] = __('tournaments::messages.participants.unknown');
 
                 continue;

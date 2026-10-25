@@ -27,7 +27,7 @@ final readonly class SendTournamentCancelledEmails
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return;
         }
 
@@ -36,7 +36,7 @@ final readonly class SendTournamentCancelledEmails
         foreach ($this->participantRepository->findByTournament($event->tournamentId) as $participant) {
             $recipient = $participant->isActive() ? $this->recipient($participant) : null;
 
-            if ($recipient === null) {
+            if (!$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
                 continue;
             }
 

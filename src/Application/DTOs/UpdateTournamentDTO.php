@@ -136,7 +136,7 @@ final readonly class UpdateTournamentDTO
         if ($this->allowedRoles !== null) {
             $result['allowed_roles'] = $this->allowedRoles;
         }
-        if ($this->resultReporting !== null) {
+        if ($this->resultReporting instanceof \Modules\Tournaments\Domain\Enums\ResultReporting) {
             $result['result_reporting'] = $this->resultReporting->value;
         }
         if ($this->requiresCheckIn !== null) {
@@ -145,10 +145,10 @@ final readonly class UpdateTournamentDTO
         if ($this->checkInStartsBefore !== null) {
             $result['check_in_starts_before'] = $this->checkInStartsBefore;
         }
-        if ($this->registrationOpensAt !== null) {
+        if ($this->registrationOpensAt instanceof \DateTimeImmutable) {
             $result['registration_opens_at'] = $this->registrationOpensAt->format('c');
         }
-        if ($this->registrationClosesAt !== null) {
+        if ($this->registrationClosesAt instanceof \DateTimeImmutable) {
             $result['registration_closes_at'] = $this->registrationClosesAt->format('c');
         }
         if ($this->notificationEmail !== null) {

@@ -51,7 +51,7 @@ final class TournamentRegistrationController extends Controller
     {
         $tournament = $this->tournamentQuery->find($tournamentId);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return response()->json([
                 'message' => __('tournaments::messages.errors.tournament_not_found'),
             ], 404);
@@ -136,7 +136,7 @@ final class TournamentRegistrationController extends Controller
     {
         $tournament = $this->tournamentQuery->find($tournamentId);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
             return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_found'), 404);
         }
 
@@ -154,7 +154,6 @@ final class TournamentRegistrationController extends Controller
         try {
             $result = $this->participantService->registerGuest(new RegisterParticipantDTO(
                 tournamentId: $tournamentId,
-                userId: null,
                 guestName: $request->validated('guest_name'),
                 guestEmail: $request->validated('guest_email'),
                 fingerprint: RegistrationFingerprint::forRequest($request),
@@ -170,7 +169,7 @@ final class TournamentRegistrationController extends Controller
                 );
             }
 
-            $message = $result->seatHeld && $result->expiresAt !== null
+            $message = $result->seatHeld && $result->expiresAt instanceof \DateTimeImmutable
                 ? __('tournaments::messages.messages.guest_confirmation_sent_hold', [
                     'date' => $result->expiresAt->format('d/m/Y H:i'),
                 ])
@@ -223,7 +222,7 @@ final class TournamentRegistrationController extends Controller
             $tournamentId
         );
 
-        if ($registration === null) {
+        if (!$registration instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO) {
             return $this->errorResponse($request, __('tournaments::messages.errors.not_registered'), 404);
         }
 

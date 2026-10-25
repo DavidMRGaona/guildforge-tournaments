@@ -28,12 +28,12 @@ final readonly class SendParticipantRegisteredEmails
     public function handle(ParticipantRegistered $event): void
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return;
         }
 
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
-        if ($participant === null) {
+        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
             return;
         }
 

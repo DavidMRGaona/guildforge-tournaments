@@ -25,7 +25,7 @@ final class EditGameProfile extends EditRecord
     {
         // For system profiles, only allow description to be updated
         if ($this->record instanceof GameProfileModel && $this->record->is_system) {
-            $data = [
+            return [
                 'description' => $data['description'] ?? $this->record->description,
             ];
         }

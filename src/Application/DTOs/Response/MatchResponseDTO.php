@@ -66,12 +66,12 @@ final readonly class MatchResponseDTO
 
     public function isReported(): bool
     {
-        return $this->reportedAt !== null;
+        return $this->reportedAt instanceof \DateTimeImmutable;
     }
 
     public function isConfirmed(): bool
     {
-        return $this->confirmedAt !== null;
+        return $this->confirmedAt instanceof \DateTimeImmutable;
     }
 
     public function needsConfirmation(): bool

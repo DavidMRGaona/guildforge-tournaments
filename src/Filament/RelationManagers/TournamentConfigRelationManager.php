@@ -447,7 +447,7 @@ final class TournamentConfigRelationManager extends RelationManager
             $type = is_array($definition) && is_string($definition['type'] ?? null) ? TiebreakerType::tryFrom($definition['type']) : null;
             $tiebreaker = $type !== null ? Tiebreaker::fromType($type) : null;
             // Anything the tab cannot show (direction, floor, stat, own key) would be lost on save
-            if ($tiebreaker === null
+            if (!$tiebreaker instanceof \Modules\Tournaments\Domain\Enums\Tiebreaker
                 || ($definition['direction'] ?? 'desc') !== 'desc'
                 || ($definition['min_value'] ?? null) !== null
                 || ($definition['stat'] ?? null) !== null

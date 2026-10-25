@@ -62,7 +62,7 @@ final readonly class ParticipantResponseDTO
 
     public function isCheckedIn(): bool
     {
-        return $this->checkedInAt !== null;
+        return $this->checkedInAt instanceof \DateTimeImmutable;
     }
 
     /**

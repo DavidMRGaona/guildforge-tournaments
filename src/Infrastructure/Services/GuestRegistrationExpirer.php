@@ -96,7 +96,7 @@ final readonly class GuestRegistrationExpirer
         $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
 
         // Confirmed, endorsed by the organisation or ended meanwhile: not ours any more
-        if ($participant === null
+        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant
             || ! $participant->isAwaitingEmailConfirmation()
             || $participant->status() !== ParticipantStatus::Registered) {
             return $none;
@@ -104,13 +104,13 @@ final readonly class GuestRegistrationExpirer
 
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return $none;
         }
 
         $held = $participant->confirmationMode() === GuestConfirmationMode::Hold;
         $expiresAt = $participant->confirmationExpiresAt();
-        $overdue = $held && $expiresAt !== null && $expiresAt <= $now;
+        $overdue = $held && $expiresAt instanceof \DateTimeImmutable && $expiresAt <= $now;
 
         if (! $overdue && $tournament->isRegistrationOpen($now->toDateTimeImmutable())) {
             return $none;
@@ -148,7 +148,7 @@ final readonly class GuestRegistrationExpirer
         foreach ($this->participantRepository->findTournamentIdsWithFingerprints() as $tournamentId) {
             $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
-            if ($tournament === null) {
+            if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
                 continue;
             }
 

@@ -47,9 +47,7 @@ final class MatchesRelationManager extends RelationManager
 
                 TextColumn::make('player1.participant_name')
                     ->label(__('tournaments::messages.fields.player_1'))
-                    ->getStateUsing(function (MatchModel $record): string {
-                        return $record->player1->participant_name;
-                    }),
+                    ->getStateUsing(fn(MatchModel $record): string => $record->player1->participant_name),
 
                 TextColumn::make('player2.participant_name')
                     ->label(__('tournaments::messages.fields.player_2'))

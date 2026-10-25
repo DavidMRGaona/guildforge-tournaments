@@ -27,7 +27,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
         array $tiebreakerConfig,
         ?TiebreakerContext $context = null,
     ): array {
-        if (empty($tiebreakerConfig)) {
+        if ($tiebreakerConfig === []) {
             return [];
         }
 
@@ -535,7 +535,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             }
         }
 
-        if (empty($opponentPoints)) {
+        if ($opponentPoints === []) {
             return 0.0;
         }
 
@@ -650,7 +650,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             }
         }
 
-        if (empty($values)) {
+        if ($values === []) {
             return 0.0;
         }
 

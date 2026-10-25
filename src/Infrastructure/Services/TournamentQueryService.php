@@ -39,7 +39,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             \Modules\Tournaments\Domain\ValueObjects\TournamentId::fromString($tournamentId)
         );
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return null;
         }
 
@@ -52,7 +52,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
     {
         $tournament = $this->tournamentRepository->findBySlug($slug);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return null;
         }
 
@@ -65,7 +65,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
     {
         $tournament = $this->tournamentRepository->findByEventId($eventId);
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return null;
         }
 
@@ -104,7 +104,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         // Guests who have not confirmed their email are not shown publicly
         $participants = array_values(array_filter(
             $this->participantRepository->findByTournament($tournamentId),
-            static fn ($participant): bool => ! ($participant->isGuest() && $participant->emailConfirmedAt() === null),
+            static fn ($participant): bool => !$participant->isGuest() || $participant->emailConfirmedAt() !== null,
         ));
 
         if ($participants === []) {
@@ -135,7 +135,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             \Modules\Tournaments\Domain\ValueObjects\TournamentId::fromString($tournamentId)
         );
 
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return false;
         }
 
@@ -155,7 +155,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         }
 
         $existingParticipant = $this->participantRepository->findByUserAndTournament($userId, $tournamentId);
-        if ($existingParticipant !== null) {
+        if ($existingParticipant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
             $activeStatuses = [
                 ParticipantStatus::Registered,
                 ParticipantStatus::Confirmed,
@@ -184,21 +184,21 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         }
 
         $match = $this->matchRepository->find(MatchId::fromString($matchId));
-        if ($match === null) {
+        if (!$match instanceof \Modules\Tournaments\Domain\Entities\TournamentMatch) {
             return false;
         }
 
         $round = $this->roundRepository->find(
             \Modules\Tournaments\Domain\ValueObjects\RoundId::fromString($match->roundId())
         );
-        if ($round === null) {
+        if (!$round instanceof \Modules\Tournaments\Domain\Entities\Round) {
             return false;
         }
 
         $tournament = $this->tournamentRepository->find(
             \Modules\Tournaments\Domain\ValueObjects\TournamentId::fromString($round->tournamentId())
         );
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return false;
         }
 
@@ -217,8 +217,8 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             )
             : null;
 
-        $isPlayer1 = $player1Participant !== null && $player1Participant->userId() === $userId;
-        $isPlayer2 = $player2Participant !== null && $player2Participant->userId() === $userId;
+        $isPlayer1 = $player1Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player1Participant->userId() === $userId;
+        $isPlayer2 = $player2Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player2Participant->userId() === $userId;
 
         return $isPlayer1 || $isPlayer2;
     }
@@ -226,29 +226,29 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
     public function canUserConfirmResult(string $matchId, string $userId): bool
     {
         $match = $this->matchRepository->find(MatchId::fromString($matchId));
-        if ($match === null) {
+        if (!$match instanceof \Modules\Tournaments\Domain\Entities\TournamentMatch) {
             return false;
         }
 
-        if ($match->reportedAt() === null) {
+        if (!$match->reportedAt() instanceof \DateTimeImmutable) {
             return false;
         }
 
-        if ($match->confirmedAt() !== null) {
+        if ($match->confirmedAt() instanceof \DateTimeImmutable) {
             return false;
         }
 
         $round = $this->roundRepository->find(
             \Modules\Tournaments\Domain\ValueObjects\RoundId::fromString($match->roundId())
         );
-        if ($round === null) {
+        if (!$round instanceof \Modules\Tournaments\Domain\Entities\Round) {
             return false;
         }
 
         $tournament = $this->tournamentRepository->find(
             \Modules\Tournaments\Domain\ValueObjects\TournamentId::fromString($round->tournamentId())
         );
-        if ($tournament === null) {
+        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
             return false;
         }
 
@@ -266,9 +266,9 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             : null;
 
         $reporterParticipantId = null;
-        if ($player1Participant !== null && $player1Participant->userId() === $match->reportedById()) {
+        if ($player1Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player1Participant->userId() === $match->reportedById()) {
             $reporterParticipantId = $player1Participant->id()->value;
-        } elseif ($player2Participant !== null && $player2Participant->userId() === $match->reportedById()) {
+        } elseif ($player2Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player2Participant->userId() === $match->reportedById()) {
             $reporterParticipantId = $player2Participant->id()->value;
         }
 
@@ -276,8 +276,8 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             return false;
         }
 
-        $isPlayer1 = $player1Participant !== null && $player1Participant->userId() === $userId;
-        $isPlayer2 = $player2Participant !== null && $player2Participant->userId() === $userId;
+        $isPlayer1 = $player1Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player1Participant->userId() === $userId;
+        $isPlayer2 = $player2Participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $player2Participant->userId() === $userId;
 
         if (! $isPlayer1 && ! $isPlayer2) {
             return false;
