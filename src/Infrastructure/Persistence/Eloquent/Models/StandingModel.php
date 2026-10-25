@@ -82,7 +82,7 @@ final class StandingModel extends Model
     }
 
     /**
-     * @return BelongsTo<TournamentModel, self>
+     * @return BelongsTo<TournamentModel, $this>
      */
     public function tournament(): BelongsTo
     {
@@ -90,7 +90,7 @@ final class StandingModel extends Model
     }
 
     /**
-     * @return BelongsTo<ParticipantModel, self>
+     * @return BelongsTo<ParticipantModel, $this>
      */
     public function participant(): BelongsTo
     {

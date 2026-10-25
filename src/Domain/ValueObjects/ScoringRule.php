@@ -6,6 +6,9 @@ namespace Modules\Tournaments\Domain\ValueObjects;
 
 use InvalidArgumentException;
 
+/**
+ * @phpstan-type ScoringRuleData array{name: string, condition: array{type: string, result_value: string|null, stat: string|null, operator: string|null, value: int|float|null}, points: int|float, priority?: int}
+ */
 final readonly class ScoringRule
 {
     public function __construct(
@@ -18,7 +21,7 @@ final readonly class ScoringRule
     }
 
     /**
-     * @param  array{name: string, condition: array{type: string, result_value: string|null, stat: string|null, operator: string|null, value: int|float|null}, points: int|float, priority?: int}  $data
+     * @param  ScoringRuleData  $data
      */
     public static function fromArray(array $data): self
     {

@@ -45,7 +45,7 @@ final readonly class SendParticipantWithdrawnEmail
         $eventDate = $this->getEventDate($event->tournamentId);
 
         // Send confirmation to participant if we have their email
-        if ($participantEmail !== '' && $participantEmail !== null) {
+        if ($participantEmail !== '') {
             $participantNotifiable = new AnonymousNotifiable($participantEmail, $participantName);
             $participantNotifiable->notify(new ParticipantWithdrawnToParticipant(
                 participantName: $participantName,
@@ -64,7 +64,7 @@ final readonly class SendParticipantWithdrawnEmail
             $organizerNotifiable->notify(new ParticipantWithdrawnToOrganizer(
                 tournamentName: $tournament->name(),
                 participantName: $participantName,
-                participantEmail: $participantEmail ?? '',
+                participantEmail: $participantEmail,
                 remainingParticipants: $remainingCount,
             ));
         }
@@ -94,7 +94,7 @@ final readonly class SendParticipantWithdrawnEmail
         if ($event->userId !== null) {
             $user = UserModel::find($event->userId);
 
-            return $user?->email ?? '';
+            return $user->email ?? '';
         }
 
         return '';
@@ -114,7 +114,7 @@ final readonly class SendParticipantWithdrawnEmail
             ->where('id', $tournamentModel->event_id)
             ->first(['start_date']);
 
-        if ($event === null || $event->start_date === null) {
+        if ($event === null) {
             return null;
         }
 

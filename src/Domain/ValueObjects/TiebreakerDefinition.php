@@ -8,6 +8,9 @@ use InvalidArgumentException;
 use Modules\Tournaments\Domain\Enums\SortDirection;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 
+/**
+ * @phpstan-type TiebreakerDefinitionData array{key: string, name: string, type: string, stat?: string|null, direction?: string, min_value?: float|null}
+ */
 final readonly class TiebreakerDefinition
 {
     public function __construct(
@@ -22,7 +25,7 @@ final readonly class TiebreakerDefinition
     }
 
     /**
-     * @param  array{key: string, name: string, type: string, stat?: string|null, direction?: string, min_value?: float|null}  $data
+     * @param  TiebreakerDefinitionData  $data
      */
     public static function fromArray(array $data): self
     {

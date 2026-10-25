@@ -58,7 +58,7 @@ final class TournamentResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string
     {
         return __('tournaments::messages.navigation.group');
     }

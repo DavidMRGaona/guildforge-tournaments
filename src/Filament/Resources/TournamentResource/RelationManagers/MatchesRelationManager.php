@@ -48,7 +48,7 @@ final class MatchesRelationManager extends RelationManager
                 TextColumn::make('player1.participant_name')
                     ->label(__('tournaments::messages.fields.player_1'))
                     ->getStateUsing(function (MatchModel $record): string {
-                        return $record->player1?->participant_name ?? __('tournaments::messages.participants.unknown');
+                        return $record->player1->participant_name;
                     }),
 
                 TextColumn::make('player2.participant_name')
@@ -58,7 +58,7 @@ final class MatchesRelationManager extends RelationManager
                             return __('tournaments::messages.fields.bye_opponent');
                         }
 
-                        return $record->player2?->participant_name ?? __('tournaments::messages.participants.unknown');
+                        return $record->player2->participant_name ?? __('tournaments::messages.participants.unknown');
                     }),
 
                 TextColumn::make('result')
@@ -121,7 +121,7 @@ final class MatchesRelationManager extends RelationManager
                             }
 
                             $fields[] = Section::make('player_1_section')
-                                ->heading($record->player1?->participant_name ?? __('tournaments::messages.fields.player_1'))
+                                ->heading($record->player1->participant_name)
                                 ->schema($player1Fields)
                                 ->columns(2);
 
@@ -134,7 +134,7 @@ final class MatchesRelationManager extends RelationManager
                                 }
 
                                 $fields[] = Section::make('player_2_section')
-                                    ->heading($record->player2?->participant_name ?? __('tournaments::messages.fields.player_2'))
+                                    ->heading($record->player2->participant_name ?? __('tournaments::messages.fields.player_2'))
                                     ->schema($player2Fields)
                                     ->columns(2);
                             }
@@ -204,6 +204,8 @@ final class MatchesRelationManager extends RelationManager
 
     /**
      * Create a dynamic stat field based on stat definition.
+     *
+     * @param  array{key: string, name: string, type?: string, min_value?: int|float|null, max_value?: int|float|null, required?: bool}  $stat
      */
     private function createStatField(array $stat, string $prefix): Component
     {

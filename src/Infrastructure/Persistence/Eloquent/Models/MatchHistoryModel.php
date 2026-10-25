@@ -68,7 +68,7 @@ final class MatchHistoryModel extends Model
     }
 
     /**
-     * @return BelongsTo<MatchModel, self>
+     * @return BelongsTo<MatchModel, $this>
      */
     public function match(): BelongsTo
     {
@@ -76,7 +76,7 @@ final class MatchHistoryModel extends Model
     }
 
     /**
-     * @return BelongsTo<UserModel, self>
+     * @return BelongsTo<UserModel, $this>
      */
     public function changedBy(): BelongsTo
     {

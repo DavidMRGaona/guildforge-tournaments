@@ -80,7 +80,7 @@ final class MatchModel extends Model
     }
 
     /**
-     * @return BelongsTo<RoundModel, self>
+     * @return BelongsTo<RoundModel, $this>
      */
     public function round(): BelongsTo
     {
@@ -88,7 +88,7 @@ final class MatchModel extends Model
     }
 
     /**
-     * @return BelongsTo<ParticipantModel, self>
+     * @return BelongsTo<ParticipantModel, $this>
      */
     public function player1(): BelongsTo
     {
@@ -96,7 +96,7 @@ final class MatchModel extends Model
     }
 
     /**
-     * @return BelongsTo<ParticipantModel, self>
+     * @return BelongsTo<ParticipantModel, $this>
      */
     public function player2(): BelongsTo
     {
@@ -104,7 +104,7 @@ final class MatchModel extends Model
     }
 
     /**
-     * @return HasMany<MatchHistoryModel, self>
+     * @return HasMany<MatchHistoryModel, $this>
      */
     public function history(): HasMany
     {

@@ -8,7 +8,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Contracts\Support\Htmlable;
+use LogicException;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
@@ -18,15 +18,14 @@ final class EditTournament extends EditRecord
 {
     protected static string $resource = TournamentResource::class;
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string
     {
         return __('tournaments::messages.resource.actions.edit');
     }
 
     protected function getHeaderActions(): array
     {
-        /** @var TournamentModel $record */
-        $record = $this->record;
+        $record = $this->tournament();
 
         return [
             Action::make('openRegistration')
@@ -36,7 +35,7 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::Draft)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->record->update([
+                    $this->tournament()->update([
                         'status' => TournamentStatus::RegistrationOpen->value,
                     ]);
                     $this->refreshFormData(['status']);
@@ -56,7 +55,7 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::RegistrationOpen)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->record->update([
+                    $this->tournament()->update([
                         'status' => TournamentStatus::RegistrationClosed->value,
                     ]);
                     $this->refreshFormData(['status']);
@@ -77,8 +76,7 @@ final class EditTournament extends EditRecord
                 ], true))
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    /** @var TournamentModel $record */
-                    $record = $this->record;
+                    $record = $this->tournament();
 
                     // Check minimum participants
                     $participantCount = $record->participants()->count();
@@ -91,7 +89,7 @@ final class EditTournament extends EditRecord
                         return;
                     }
 
-                    $this->record->update([
+                    $record->update([
                         'status' => TournamentStatus::InProgress->value,
                         'started_at' => now(),
                     ]);
@@ -110,7 +108,7 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::InProgress)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->record->update([
+                    $this->tournament()->update([
                         'status' => TournamentStatus::Finished->value,
                         'completed_at' => now(),
                     ]);
@@ -134,15 +132,16 @@ final class EditTournament extends EditRecord
                 ->modalHeading(__('tournaments::messages.actions.cancel_tournament'))
                 ->modalDescription(__('tournaments::messages.modal.cancel_description'))
                 ->action(function (): void {
-                    $previousStatus = $this->record->status;
+                    $tournament = $this->tournament();
+                    $previousStatus = $tournament->status;
 
-                    $this->record->update([
+                    $tournament->update([
                         'status' => TournamentStatus::Cancelled->value,
                     ]);
                     $this->refreshFormData(['status']);
 
                     // Participants are told by email
-                    event(TournamentCancelled::create($this->record->id, $previousStatus));
+                    event(TournamentCancelled::create($tournament->id, $previousStatus));
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.tournament_cancelled'))
@@ -160,8 +159,7 @@ final class EditTournament extends EditRecord
      */
     private function warnWhenTheWebStaysClosed(): void
     {
-        /** @var TournamentModel $record */
-        $record = $this->record->refresh();
+        $record = $this->tournament()->refresh();
         $now = now();
         $eventStartsAt = $record->event?->start_date;
 
@@ -174,7 +172,7 @@ final class EditTournament extends EditRecord
             default => null,
         };
 
-        if ($reason === null) {
+        if (! is_string($reason)) {
             return;
         }
 
@@ -183,5 +181,16 @@ final class EditTournament extends EditRecord
             ->body($reason)
             ->warning()
             ->send();
+    }
+
+    private function tournament(): TournamentModel
+    {
+        $record = $this->getRecord();
+
+        if (! $record instanceof TournamentModel) {
+            throw new LogicException('The edited record is not a tournament.');
+        }
+
+        return $record;
     }
 }
