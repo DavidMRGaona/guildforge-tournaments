@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
@@ -171,13 +173,19 @@ final class TournamentQueryServiceListingTest extends ModuleTestCase
     public function test_get_published_paginated_includes_participant_count(): void
     {
         $tournament = $this->createTournamentWithStatus('registration_open', 'Test Tournament');
+        foreach (['registered', 'confirmed', 'withdrawn'] as $status) {
+            ParticipantModel::create([
+                'tournament_id' => $tournament->id,
+                'user_id' => UserModel::factory()->create()->id,
+                'status' => $status,
+            ]);
+        }
 
-        // Add some participants (we'd need to create them properly)
-        // For now, just verify the count field exists
         $result = $this->service->getPublishedPaginated(1, 12);
 
+        // Only the active participants are counted
         $this->assertCount(1, $result);
-        $this->assertIsInt($result[0]->participantCount);
+        $this->assertSame(2, $result[0]->participantCount);
     }
 
     public function test_a_listed_tournament_is_not_open_for_registration_once_its_event_has_started(): void

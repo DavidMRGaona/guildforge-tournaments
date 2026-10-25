@@ -9,6 +9,7 @@ use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Filament\Notifications\Notification;
+use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -77,7 +78,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_system_game_profiles_cannot_be_selected_for_bulk_actions(): void
     {
-        $table = Livewire::test(ListGameProfiles::class)->instance()->getTable();
+        $table = $this->gameProfilesTable();
 
         $this->assertFalse($table->isRecordSelectable($this->systemProfile()));
     }
@@ -99,7 +100,7 @@ final class TournamentsPanelTest extends ModuleTestCase
     public function test_bulk_delete_asks_the_policy_for_each_profile(): void
     {
         // Filament already drops unselectable records; the policy is the second guard
-        $action = Livewire::test(ListGameProfiles::class)->instance()->getTable()->getBulkAction('delete');
+        $action = $this->gameProfilesTable()->getBulkAction('delete');
 
         $this->assertNotNull($action);
         $this->assertTrue($action->shouldAuthorizeIndividualRecords());
@@ -212,7 +213,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
         $tournament = TournamentModel::query()->where('name', 'Torneo de prueba')->firstOrFail();
         $this->assertSame($profile->id, $tournament->game_profile_id);
-        $this->assertSame('result', $tournament->scoring_rules[0]['condition']['type'] ?? null);
+        $this->assertSame('result', data_get($tournament->scoring_rules, '0.condition.type'));
     }
 
     public function test_tournament_relation_managers_render(): void
@@ -440,6 +441,14 @@ final class TournamentsPanelTest extends ModuleTestCase
     private function systemProfile(): GameProfileModel
     {
         return GameProfileModel::query()->where('is_system', true)->firstOrFail();
+    }
+
+    private function gameProfilesTable(): Table
+    {
+        $page = Livewire::test(ListGameProfiles::class)->instance();
+        $this->assertInstanceOf(ListGameProfiles::class, $page);
+
+        return $page->getTable();
     }
 
     /**

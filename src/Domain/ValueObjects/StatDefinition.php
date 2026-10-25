@@ -7,6 +7,9 @@ namespace Modules\Tournaments\Domain\ValueObjects;
 use InvalidArgumentException;
 use Modules\Tournaments\Domain\Enums\StatType;
 
+/**
+ * @phpstan-type StatDefinitionData array{key: string, name: string, type: string, min_value?: int|null, max_value?: int|null, per_player?: bool, required?: bool, description?: string|null}
+ */
 final readonly class StatDefinition
 {
     public function __construct(
@@ -23,7 +26,7 @@ final readonly class StatDefinition
     }
 
     /**
-     * @param  array{key: string, name: string, type: string, min_value?: int|null, max_value?: int|null, per_player?: bool, required?: bool, description?: string|null}  $data
+     * @param  StatDefinitionData  $data
      */
     public static function fromArray(array $data): self
     {

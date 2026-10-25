@@ -283,7 +283,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
             return false;
         }
 
-        $userParticipantId = $isPlayer1 ? $player1Participant->id()->value : $player2Participant?->id()->value;
+        $userParticipantId = $isPlayer1 ? $player1Participant->id()->value : $player2Participant->id()->value;
 
         return $userParticipantId !== $reporterParticipantId;
     }
@@ -384,6 +384,9 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         return $query;
     }
 
+    /**
+     * @return literal-string
+     */
     private function getStatusPriorityOrderSql(): string
     {
         // Priority: in_progress (1) → registration_open/closed (2) → finished (3)

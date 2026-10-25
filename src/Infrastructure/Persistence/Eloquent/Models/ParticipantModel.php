@@ -30,6 +30,7 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
  * @property \Carbon\Carbon|null $confirmation_sent_at
  * @property GuestConfirmationMode|null $confirmation_mode
  * @property string|null $fingerprint
+ * @property \Carbon\Carbon|null $reminder_sent_at
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
  * @property-read TournamentModel $tournament
@@ -90,7 +91,7 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return BelongsTo<TournamentModel, self>
+     * @return BelongsTo<TournamentModel, $this>
      */
     public function tournament(): BelongsTo
     {
@@ -98,7 +99,7 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return BelongsTo<UserModel, self>
+     * @return BelongsTo<UserModel, $this>
      */
     public function user(): BelongsTo
     {
@@ -106,7 +107,7 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return HasMany<MatchModel, self>
+     * @return HasMany<MatchModel, $this>
      */
     public function matchesAsPlayer1(): HasMany
     {
@@ -114,7 +115,7 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return HasMany<MatchModel, self>
+     * @return HasMany<MatchModel, $this>
      */
     public function matchesAsPlayer2(): HasMany
     {
@@ -122,7 +123,7 @@ final class ParticipantModel extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne<StandingModel, self>
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne<StandingModel, $this>
      */
     public function standing(): \Illuminate\Database\Eloquent\Relations\HasOne
     {

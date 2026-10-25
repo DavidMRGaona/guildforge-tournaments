@@ -149,8 +149,8 @@ final class RoundsRelationManager extends RelationManager
                             $matchesData[] = [
                                 'match_id' => $match->id,
                                 'table_number' => $match->table_number,
-                                'player1_name' => $match->player1?->participant_name ?? __('tournaments::messages.participants.unknown'),
-                                'player2_name' => $match->player_2_id === null ? __('tournaments::messages.fields.bye_opponent') : ($match->player2?->participant_name ?? __('tournaments::messages.participants.unknown')),
+                                'player1_name' => $match->player1->participant_name,
+                                'player2_name' => $match->player_2_id === null ? __('tournaments::messages.fields.bye_opponent') : ($match->player2->participant_name ?? __('tournaments::messages.participants.unknown')),
                                 'result' => $match->result->value,
                                 'player_1_score' => $match->player_1_score,
                                 'player_2_score' => $match->player_2_score,
@@ -408,6 +408,8 @@ final class RoundsRelationManager extends RelationManager
 
     /**
      * Create a dynamic stat field based on stat definition.
+     *
+     * @param  array{key: string, name: string, type?: string, min_value?: int|float|null, max_value?: int|float|null, required?: bool}  $stat
      */
     private function createStatField(array $stat, string $prefix): Component
     {

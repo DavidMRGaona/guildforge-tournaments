@@ -68,6 +68,7 @@ final class ProfileTournamentsCheckInTest extends ModuleTestCase
     private function card(UserModel $user): array
     {
         $data = app(ProfileTournamentsDataProvider::class)->getDataForUser((string) $user->id);
+        $this->assertNotNull($data);
         $cards = [...$data['upcoming'], ...$data['inProgress'], ...$data['past']];
         $this->assertCount(1, $cards);
 

@@ -377,8 +377,10 @@ final class EventTournamentTabTest extends ModuleTestCase
     /**
      * @return Testable<TournamentConfigRelationManager>
      */
-    private function tab(EventModel $event): Testable
+    private function tab(?EventModel $event): Testable
     {
+        $this->assertNotNull($event);
+
         return Livewire::test(TournamentConfigRelationManager::class, ['ownerRecord' => $event, 'pageClass' => EditEvent::class]);
     }
 

@@ -69,6 +69,9 @@ final class ParticipantRegistrationRulesTest extends TestCase
         ]);
     }
 
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
     private function participant(TournamentModel $tournament, array $attributes = []): ParticipantModel
     {
         return ParticipantModel::create([

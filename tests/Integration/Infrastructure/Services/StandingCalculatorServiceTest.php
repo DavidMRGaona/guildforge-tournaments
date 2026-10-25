@@ -235,7 +235,6 @@ final class StandingCalculatorServiceTest extends TestCase
         // P2 has 6 pts, P3 has 3 pts, P4 has 0 pts
         // Buchholz = 6 + 3 + 0 = 9
         // MedianBuchholz (remove best/worst) = 3
-        $this->assertIsFloat($p1Standing->medianBuchholz());
         $this->assertEquals(3.0, $p1Standing->medianBuchholz());
     }
 
@@ -358,11 +357,20 @@ final class StandingCalculatorServiceTest extends TestCase
             [Tiebreaker::Buchholz, Tiebreaker::Progressive, Tiebreaker::OpponentWinPercentage]
         );
 
-        // All standings should have all tiebreaker values calculated
-        foreach ($standings as $standing) {
-            $this->assertIsFloat($standing->buchholz());
-            $this->assertIsFloat($standing->progressive());
-            $this->assertIsFloat($standing->opponentWinPercentage());
+        // All standings should have all tiebreaker values calculated:
+        // [buchholz, progressive, opponent win percentage] of each participant
+        $expected = [
+            [0.0, 3.0, 0.0], // P1 beat P2 (0 pts, no wins)
+            [3.0, 0.0, 1.0], // P2 lost to P1 (3 pts, all wins)
+            [0.0, 3.0, 0.0], // P3 beat P4
+            [3.0, 0.0, 1.0], // P4 lost to P3
+        ];
+        foreach ($participants as $index => $participant) {
+            $standing = $this->findStandingForParticipant($standings, $participant->id()->value);
+            $this->assertEquals(
+                $expected[$index],
+                [$standing->buchholz(), $standing->progressive(), $standing->opponentWinPercentage()],
+            );
         }
     }
 

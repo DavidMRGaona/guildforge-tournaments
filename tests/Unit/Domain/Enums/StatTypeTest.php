@@ -64,7 +64,6 @@ final class StatTypeTest extends TestCase
     {
         $options = StatType::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(3, $options);
         $this->assertArrayHasKey('integer', $options);
         $this->assertArrayHasKey('float', $options);

@@ -39,7 +39,6 @@ final class PairingMethodTest extends TestCase
     {
         $values = PairingMethod::values();
 
-        $this->assertIsArray($values);
         $this->assertCount(2, $values);
         $this->assertContains('swiss', $values);
         $this->assertContains('random', $values);
@@ -49,7 +48,6 @@ final class PairingMethodTest extends TestCase
     {
         $options = PairingMethod::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(2, $options);
         $this->assertArrayHasKey('swiss', $options);
         $this->assertArrayHasKey('random', $options);

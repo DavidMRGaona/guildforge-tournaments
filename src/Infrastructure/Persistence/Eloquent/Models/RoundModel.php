@@ -55,7 +55,7 @@ final class RoundModel extends Model
     }
 
     /**
-     * @return BelongsTo<TournamentModel, self>
+     * @return BelongsTo<TournamentModel, $this>
      */
     public function tournament(): BelongsTo
     {
@@ -63,7 +63,7 @@ final class RoundModel extends Model
     }
 
     /**
-     * @return HasMany<MatchModel, self>
+     * @return HasMany<MatchModel, $this>
      */
     public function matches(): HasMany
     {

@@ -423,6 +423,7 @@ src/modules/tournaments/
 │   └── js/                     # Tests de los componentes Vue (Vitest)
 ├── module.json
 ├── package.json
+├── phpstan.neon
 ├── phpunit.xml
 ├── vite.config.ts
 └── vitest.config.ts
@@ -447,6 +448,16 @@ npm test
 ```
 
 `tests/js/setup.ts` carga los textos del core y del módulo en castellano y sustituye Inertia (router y enlaces) y el layout del sitio. En cada pull request los ejecuta el job *Vue tests* de `tests.yml`.
+
+## Análisis estático
+
+PHPStan (Larastan, nivel 8) analiza `src/` y `tests/` con la configuración del core. `phpstan.neon` la incluye y añade las rutas del módulo, sus migraciones (para conocer las columnas de los modelos), los seeders y `tests/Support`. Desde `src/` del core:
+
+```bash
+vendor/bin/phpstan analyse -c modules/tournaments/phpstan.neon --memory-limit=2G
+```
+
+Sin baseline ni errores ignorados: en cada pull request lo ejecuta el job *PHPStan* de `tests.yml`.
 
 ## Publicar una versión
 

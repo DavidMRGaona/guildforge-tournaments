@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -51,8 +52,10 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
      */
     private function expiryEmails(): array
     {
+        $transport = Mail::mailer('array')->getSymfonyTransport();
+        $this->assertInstanceOf(ArrayTransport::class, $transport);
         /** @var list<SentMessage> $messages */
-        $messages = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
+        $messages = $transport->messages()->all();
         $emails = [];
 
         foreach ($messages as $message) {

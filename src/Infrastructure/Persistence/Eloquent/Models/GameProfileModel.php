@@ -8,15 +8,22 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 
 /**
+ * @phpstan-import-type StatDefinitionData from StatDefinition
+ * @phpstan-import-type ScoringRuleData from ScoringRule
+ * @phpstan-import-type TiebreakerDefinitionData from TiebreakerDefinition
+ *
  * @property string $id
  * @property string $name
  * @property string $slug
  * @property string|null $description
- * @property array<string, mixed> $stat_definitions
- * @property array<string, mixed> $scoring_rules
- * @property array<string, mixed> $tiebreaker_config
+ * @property array<int, StatDefinitionData> $stat_definitions
+ * @property array<int, ScoringRuleData> $scoring_rules
+ * @property array<int, TiebreakerDefinitionData> $tiebreaker_config
  * @property array<string, mixed> $pairing_config
  * @property bool $is_system
  * @property \Carbon\Carbon|null $created_at
@@ -71,7 +78,7 @@ final class GameProfileModel extends Model
     }
 
     /**
-     * @return HasMany<TournamentModel, self>
+     * @return HasMany<TournamentModel, $this>
      */
     public function tournaments(): HasMany
     {

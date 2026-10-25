@@ -53,7 +53,6 @@ final class SortDirectionTest extends TestCase
     {
         $options = SortDirection::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(2, $options);
         $this->assertArrayHasKey('asc', $options);
         $this->assertArrayHasKey('desc', $options);

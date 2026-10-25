@@ -37,7 +37,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 $match,
                 $participantNames[$match->player1Id()] ?? __('tournaments::messages.participants.unknown'),
                 $match->player2Id() !== null
-                    ? ($participantNames[$match->player2Id()] ?? __('tournaments::messages.participants.unknown'))
+                    ? ($participantNames[$match->player2Id()] ?? (string) __('tournaments::messages.participants.unknown'))
                     : null,
             ),
             $matches

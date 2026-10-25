@@ -142,21 +142,32 @@ final class DevelopmentSeederTest extends ModuleTestCase
      */
     private function recordsFromMatches(string $slug): array
     {
-        $records = [];
+        $wins = $draws = $losses = [];
         foreach ($this->tournament($slug)->participants()->pluck('id') as $participantId) {
-            $records[$participantId] = ['wins' => 0, 'draws' => 0, 'losses' => 0];
+            $wins[(string) $participantId] = $draws[(string) $participantId] = $losses[(string) $participantId] = 0;
         }
 
+        $decisive = [MatchResult::PlayerOneWin, MatchResult::PlayerTwoWin, MatchResult::Draw];
         foreach ($this->matchesOf($slug) as $match) {
+            if (! in_array($match->result, $decisive, true)) {
+                continue;
+            }
+
             $one = $match->player_1_id;
             $two = $match->player_2_id;
+            // A played match always has a second player; only byes leave it empty
+            $this->assertNotNull($two);
 
             match ($match->result) {
-                MatchResult::PlayerOneWin => [$records[$one]['wins']++, $records[$two]['losses']++],
-                MatchResult::PlayerTwoWin => [$records[$two]['wins']++, $records[$one]['losses']++],
-                MatchResult::Draw => [$records[$one]['draws']++, $records[$two]['draws']++],
-                default => null,
+                MatchResult::PlayerOneWin => [$wins[$one]++, $losses[$two]++],
+                MatchResult::PlayerTwoWin => [$wins[$two]++, $losses[$one]++],
+                MatchResult::Draw => [$draws[$one]++, $draws[$two]++],
             };
+        }
+
+        $records = [];
+        foreach ($wins as $participantId => $won) {
+            $records[$participantId] = ['wins' => $won, 'draws' => $draws[$participantId], 'losses' => $losses[$participantId]];
         }
 
         return $records;

@@ -44,7 +44,7 @@ final class GameProfileResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string
     {
         return __('tournaments::messages.navigation.group');
     }

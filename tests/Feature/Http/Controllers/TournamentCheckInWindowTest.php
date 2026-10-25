@@ -78,8 +78,10 @@ final class TournamentCheckInWindowTest extends ModuleTestCase
                 'email' => 'Confirma tu inscripción desde el enlace del email antes de hacer el check-in.',
             ]);
 
-        $this->assertSame(ParticipantStatus::Registered, $participant->fresh()?->status);
-        $this->assertNull($participant->fresh()?->checked_in_at);
+        $fresh = $participant->fresh();
+        $this->assertNotNull($fresh);
+        $this->assertSame(ParticipantStatus::Registered, $fresh->status);
+        $this->assertNull($fresh->checked_in_at);
     }
 
     public function test_check_in_by_email_ignores_case(): void

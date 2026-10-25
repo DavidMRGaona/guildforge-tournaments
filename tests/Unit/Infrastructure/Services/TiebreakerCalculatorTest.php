@@ -528,7 +528,6 @@ final class TiebreakerCalculatorTest extends TestCase
 
         $result = $this->calculator->calculate($participantId, $matches, $standings, $tiebreakerConfig);
 
-        $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
 
@@ -654,6 +653,10 @@ final class TiebreakerCalculatorTest extends TestCase
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $player1Stats
+     * @param  array<string, mixed>  $player2Stats
+     */
     private function createMatchWithStats(
         string $roundId,
         string $player1Id,

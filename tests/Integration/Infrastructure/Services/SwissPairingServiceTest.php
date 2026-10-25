@@ -96,14 +96,18 @@ final class SwissPairingServiceTest extends TestCase
         // Leaders should be paired together (P1 vs P2)
         // Losers should be paired together (P3 vs P4)
         $leaderPairing = $this->findPairingWith($pairings, $participants[0]->id()->value);
-        $this->assertTrue(
-            $leaderPairing['p2'] === $participants[1]->id()->value,
+        $this->assertNotNull($leaderPairing);
+        $this->assertSame(
+            $participants[1]->id()->value,
+            $leaderPairing['p2'],
             'Leaders should be paired together'
         );
 
         $loserPairing = $this->findPairingWith($pairings, $participants[2]->id()->value);
-        $this->assertTrue(
-            $loserPairing['p2'] === $participants[3]->id()->value,
+        $this->assertNotNull($loserPairing);
+        $this->assertSame(
+            $participants[3]->id()->value,
+            $loserPairing['p2'],
             'Losers should be paired together'
         );
     }
@@ -357,7 +361,6 @@ final class SwissPairingServiceTest extends TestCase
 
         $this->assertCount(1, $matches);
         $this->assertFalse($matches[0]->isBye());
-        $this->assertNotNull($matches[0]->player1Id());
         $this->assertNotNull($matches[0]->player2Id());
     }
 

@@ -199,7 +199,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
 
     public function test_it_finds_by_tournament_and_status(): void
     {
-        $users = UserModel::factory()->count(4)->create();
+        $users = UserModel::factory()->count(4)->create()->all();
 
         ParticipantModel::create([
             'tournament_id' => $this->tournament->id,
@@ -298,7 +298,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
 
     public function test_it_counts_active_by_tournament(): void
     {
-        $users = UserModel::factory()->count(5)->create();
+        $users = UserModel::factory()->count(5)->create()->all();
 
         ParticipantModel::create([
             'tournament_id' => $this->tournament->id,
@@ -333,7 +333,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
 
     public function test_it_finds_playable_by_tournament(): void
     {
-        $users = UserModel::factory()->count(5)->create();
+        $users = UserModel::factory()->count(5)->create()->all();
 
         ParticipantModel::create([
             'tournament_id' => $this->tournament->id,
@@ -703,7 +703,8 @@ final class EloquentParticipantRepositoryTest extends TestCase
         $b->recordFingerprint('fp');
         $this->repository->save($b);
 
-        $this->assertSame([], $this->repository->findPossibleDuplicateIds($this->tournament->id, 24));
+        $beforeUsers = $this->repository->findPossibleDuplicateIds($this->tournament->id, 24);
+        $this->assertSame([], $beforeUsers);
 
         $userA = UserModel::factory()->create();
         $userB = UserModel::factory()->create();

@@ -303,7 +303,7 @@ final class ParticipantsRelationManager extends RelationManager
                                 ->orWhere('guest_name', 'like', "%{$search}%");
                         });
                     })
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('guest_name', $direction)),
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('guest_name', $direction === 'desc' ? 'desc' : 'asc')),
                 TextColumn::make('user.email')
                     ->label(__('tournaments::messages.participants.email'))
                     ->getStateUsing(function (ParticipantModel $record): ?string {

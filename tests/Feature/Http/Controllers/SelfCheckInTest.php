@@ -109,8 +109,10 @@ final class SelfCheckInTest extends ModuleTestCase
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
 
-        $this->assertSame(ParticipantStatus::CheckedIn, $participant->fresh()?->status);
-        $this->assertNotNull($participant->fresh()?->checked_in_at);
+        $fresh = $participant->fresh();
+        $this->assertNotNull($fresh);
+        $this->assertSame(ParticipantStatus::CheckedIn, $fresh->status);
+        $this->assertNotNull($fresh->checked_in_at);
     }
 
     public function test_a_registered_user_checks_in_when_the_tournament_needs_no_manual_confirmation(): void
@@ -164,8 +166,10 @@ final class SelfCheckInTest extends ModuleTestCase
             ->assertRedirect(route('tournaments.check-in.show', $tournament->slug))
             ->assertSessionHasErrors(['check_in' => 'Ya has hecho check-in']);
 
-        $this->assertSame(ParticipantStatus::CheckedIn, $participant->fresh()?->status);
-        $this->assertEquals($checkedInAt, $participant->fresh()?->checked_in_at);
+        $fresh = $participant->fresh();
+        $this->assertNotNull($fresh);
+        $this->assertSame(ParticipantStatus::CheckedIn, $fresh->status);
+        $this->assertEquals($checkedInAt, $fresh->checked_in_at);
     }
 
     public function test_a_signed_in_user_submitting_twice_is_told_the_check_in_is_already_done(): void

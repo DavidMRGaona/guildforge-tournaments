@@ -278,10 +278,10 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
         $duplicates = [];
 
         foreach ($models->groupBy('fingerprint') as $group) {
-            $rows = $group->values();
+            $rows = $group->values()->all();
 
             foreach ($rows as $i => $a) {
-                for ($j = $i + 1; $j < $rows->count(); $j++) {
+                for ($j = $i + 1; $j < count($rows); $j++) {
                     $b = $rows[$j];
 
                     if ($a->user_id !== null && $b->user_id !== null) {

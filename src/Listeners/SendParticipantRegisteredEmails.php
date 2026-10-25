@@ -119,7 +119,7 @@ final readonly class SendParticipantRegisteredEmails
             ->where('id', $tournamentModel->event_id)
             ->first(['start_date']);
 
-        if ($event === null || $event->start_date === null) {
+        if ($event === null) {
             return null;
         }
 

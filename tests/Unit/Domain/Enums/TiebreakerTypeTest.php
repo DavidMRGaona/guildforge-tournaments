@@ -122,7 +122,6 @@ final class TiebreakerTypeTest extends TestCase
     {
         $values = TiebreakerType::values();
 
-        $this->assertIsArray($values);
         $this->assertCount(16, $values);
 
         // Classic Swiss
@@ -152,13 +151,11 @@ final class TiebreakerTypeTest extends TestCase
     {
         $options = TiebreakerType::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(16, $options);
 
         // Check structure (value => label)
         foreach ($options as $value => $label) {
-            $this->assertIsString($value);
-            $this->assertIsString($label);
+            $this->assertSame(TiebreakerType::from($value)->label(), $label);
         }
 
         // Check specific option exists
@@ -169,50 +166,32 @@ final class TiebreakerTypeTest extends TestCase
 
     public function test_label_returns_translated_string_for_buchholz(): void
     {
-        $label = TiebreakerType::Buchholz->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.buchholz'), TiebreakerType::Buchholz->label());
     }
 
     public function test_label_returns_translated_string_for_median_buchholz(): void
     {
-        $label = TiebreakerType::MedianBuchholz->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.median_buchholz'), TiebreakerType::MedianBuchholz->label());
     }
 
     public function test_label_returns_translated_string_for_progressive(): void
     {
-        $label = TiebreakerType::Progressive->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.progressive'), TiebreakerType::Progressive->label());
     }
 
     public function test_label_returns_translated_string_for_opponent_win_percentage(): void
     {
-        $label = TiebreakerType::OpponentWinPercentage->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.owp'), TiebreakerType::OpponentWinPercentage->label());
     }
 
     public function test_label_returns_translated_string_for_stat_sum(): void
     {
-        $label = TiebreakerType::StatSum->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.stat_sum'), TiebreakerType::StatSum->label());
     }
 
     public function test_label_returns_translated_string_for_random(): void
     {
-        $label = TiebreakerType::Random->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.tiebreaker_type.random'), TiebreakerType::Random->label());
     }
 
     public function test_requires_stat_returns_true_for_stat_sum(): void

@@ -99,7 +99,7 @@ final readonly class ProfileTournamentsDataProvider
         foreach ($participants as $participant) {
             $tournament = $participant->tournament;
 
-            if ($tournament === null || in_array($tournament->status, $excludedStatuses, true)) {
+            if (in_array($tournament->status, $excludedStatuses, true)) {
                 continue;
             }
 
@@ -296,7 +296,7 @@ final readonly class ProfileTournamentsDataProvider
                 ->first();
 
             if ($opponent !== null) {
-                $opponentName = $opponent->user?->name ?? $opponent->guest_name;
+                $opponentName = $opponent->user->name ?? $opponent->guest_name;
             }
         }
 

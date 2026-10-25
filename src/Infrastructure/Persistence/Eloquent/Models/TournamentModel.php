@@ -13,8 +13,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
+use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 
 /**
+ * @phpstan-import-type StatDefinitionData from StatDefinition
+ * @phpstan-import-type ScoringRuleData from ScoringRule
+ * @phpstan-import-type TiebreakerDefinitionData from TiebreakerDefinition
+ *
  * @property string $id
  * @property string $event_id
  * @property string $name
@@ -33,9 +40,9 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
  * @property int|null $check_in_starts_before
  * @property ResultReporting $result_reporting
  * @property string|null $game_profile_id
- * @property array<string, mixed>|null $stat_definitions
- * @property array<string, mixed>|null $scoring_rules
- * @property array<string, mixed>|null $tiebreaker_config
+ * @property array<int, StatDefinitionData>|null $stat_definitions
+ * @property array<int, ScoringRuleData>|null $scoring_rules
+ * @property array<int, TiebreakerDefinitionData>|null $tiebreaker_config
  * @property array<string, mixed>|null $pairing_config
  * @property bool $show_participants
  * @property string $notification_email
@@ -142,7 +149,7 @@ final class TournamentModel extends Model
     }
 
     /**
-     * @return BelongsTo<EventModel, self>
+     * @return BelongsTo<EventModel, $this>
      */
     public function event(): BelongsTo
     {
@@ -150,7 +157,7 @@ final class TournamentModel extends Model
     }
 
     /**
-     * @return HasMany<ParticipantModel, self>
+     * @return HasMany<ParticipantModel, $this>
      */
     public function participants(): HasMany
     {
@@ -158,7 +165,7 @@ final class TournamentModel extends Model
     }
 
     /**
-     * @return HasMany<RoundModel, self>
+     * @return HasMany<RoundModel, $this>
      */
     public function rounds(): HasMany
     {
@@ -166,7 +173,7 @@ final class TournamentModel extends Model
     }
 
     /**
-     * @return HasMany<StandingModel, self>
+     * @return HasMany<StandingModel, $this>
      */
     public function standings(): HasMany
     {
@@ -174,7 +181,7 @@ final class TournamentModel extends Model
     }
 
     /**
-     * @return BelongsTo<GameProfileModel, self>
+     * @return BelongsTo<GameProfileModel, $this>
      */
     public function gameProfile(): BelongsTo
     {

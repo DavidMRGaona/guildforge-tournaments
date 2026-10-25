@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Carbon\CarbonImmutable;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -140,8 +141,10 @@ final class GuestConfirmationTest extends ModuleTestCase
 
         $this->service()->confirmGuestEmail((string) $row->confirmation_token);
 
+        $transport = Mail::mailer('array')->getSymfonyTransport();
+        $this->assertInstanceOf(ArrayTransport::class, $transport);
         /** @var list<SentMessage> $messages */
-        $messages = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
+        $messages = $transport->messages()->all();
         $recipients = [];
         $guestBody = null;
         foreach ($messages as $message) {
@@ -237,13 +240,13 @@ final class GuestConfirmationTest extends ModuleTestCase
         $row = $this->pendingGuest($tournament);
         $this->travelTo($this->now->addHours(2)->addMinute());
         Notification::shouldReceive('send')->andThrow(new RuntimeException('queue down'));
-        Log::spy();
+        $log = Log::spy();
 
         $result = $this->service()->confirmGuestEmail((string) $row->confirmation_token);
 
         $this->assertSame(GuestConfirmationOutcome::Invalid, $result->outcome);
         $this->assertSame(ParticipantStatus::Expired, $row->refresh()->status);
-        Log::shouldHaveReceived('warning')->once()->withArgs(
+        $log->shouldHaveReceived('warning')->once()->withArgs(
             static fn (string $message, array $context): bool => $context['participant_id'] === $row->id,
         );
     }
