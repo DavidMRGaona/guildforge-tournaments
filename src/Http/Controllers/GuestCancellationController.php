@@ -11,6 +11,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -33,14 +35,14 @@ final class GuestCancellationController extends Controller
     {
         $participant = $this->participantService->findByToken($token);
 
-        if (!$participant instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO) {
+        if (! $participant instanceof ParticipantResponseDTO) {
             return redirect()->route('tournaments.index')
                 ->with('error', __('tournaments::messages.errors.invalid_token'));
         }
 
         $tournament = $this->tournamentQuery->find($participant->tournamentId);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return redirect()->route('tournaments.index')
                 ->with('error', __('tournaments::messages.errors.tournament_not_found'));
         }

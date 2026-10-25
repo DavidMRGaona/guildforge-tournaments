@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,18 +22,18 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
  * @property int|null $player_1_score
  * @property int|null $player_2_score
  * @property string|null $reported_by_id
- * @property \Carbon\Carbon|null $reported_at
+ * @property Carbon|null $reported_at
  * @property string|null $confirmed_by_id
- * @property \Carbon\Carbon|null $confirmed_at
+ * @property Carbon|null $confirmed_at
  * @property bool $is_disputed
  * @property array<string, mixed>|null $player_1_stats
  * @property array<string, mixed>|null $player_2_stats
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read RoundModel $round
  * @property-read ParticipantModel $player1
  * @property-read ParticipantModel|null $player2
- * @property-read \Illuminate\Database\Eloquent\Collection<int, MatchHistoryModel> $history
+ * @property-read Collection<int, MatchHistoryModel> $history
  */
 final class MatchModel extends Model
 {

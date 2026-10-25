@@ -84,7 +84,7 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
     {
         $tournament = $this->find($id);
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($id->value);
         }
 

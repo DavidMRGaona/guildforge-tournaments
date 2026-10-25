@@ -64,7 +64,11 @@ const dateLabel = computed(() => {
 });
 
 const roundInfo = computed(() => {
-    if (props.tournament.isInProgress && props.tournament.currentRound && props.tournament.maxRounds) {
+    if (
+        props.tournament.isInProgress &&
+        props.tournament.currentRound &&
+        props.tournament.maxRounds
+    ) {
         return t('tournaments.listing.roundProgress', {
             current: props.tournament.currentRound,
             max: props.tournament.maxRounds,
@@ -117,7 +121,10 @@ function getExcerpt(text: string | null, maxLength: number): string {
                     </span>
 
                     <span
-                        v-if="props.tournament.maxParticipants || props.tournament.participantCount > 0"
+                        v-if="
+                            props.tournament.maxParticipants ||
+                            props.tournament.participantCount > 0
+                        "
                         class="flex items-center text-sm text-base-muted"
                     >
                         <Users class="mr-1 h-4 w-4" aria-hidden="true" />
@@ -126,25 +133,17 @@ function getExcerpt(text: string | null, maxLength: number): string {
                 </div>
 
                 <!-- Tournament name -->
-                <h3
-                    class="mb-2 line-clamp-2 text-lg font-semibold text-base-primary"
-                >
+                <h3 class="mb-2 line-clamp-2 text-lg font-semibold text-base-primary">
                     {{ props.tournament.name }}
                 </h3>
 
                 <!-- Round progress (if in progress) -->
-                <p
-                    v-if="roundInfo"
-                    class="mb-2 text-sm font-medium text-primary"
-                >
+                <p v-if="roundInfo" class="mb-2 text-sm font-medium text-primary">
                     {{ roundInfo }}
                 </p>
 
                 <!-- Date info -->
-                <p
-                    v-if="formattedDate"
-                    class="mb-2 flex items-center text-sm text-base-muted"
-                >
+                <p v-if="formattedDate" class="mb-2 flex items-center text-sm text-base-muted">
                     <Calendar class="mr-1.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
                     <span class="sr-only">{{ dateLabel }}:</span>
                     {{ formattedDate }}

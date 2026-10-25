@@ -45,8 +45,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         private StandingsServiceInterface $standings,
         private GameProfileRepositoryInterface $gameProfiles,
         private Clock $clock,
-    ) {
-    }
+    ) {}
 
     public function generateNextRound(string $tournamentId): RoundResponseDTO
     {
@@ -70,7 +69,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
             $rounds = $this->rounds->findByTournament($tournamentId);
             $lastRound = $this->lastRound($rounds);
 
-            if ($lastRound instanceof \Modules\Tournaments\Domain\Entities\Round
+            if ($lastRound instanceof Round
                 && (! $lastRound->isFinished() || $this->matches->countUnreportedByRound($lastRound->id()->value) > 0)) {
                 throw PreviousRoundNotCompletedException::roundNotFinished($tournamentId, $lastRound->roundNumber());
             }
@@ -152,7 +151,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     {
         $round = $this->rounds->find(RoundId::fromString($roundId));
 
-        return $round instanceof \Modules\Tournaments\Domain\Entities\Round ? $this->toResponse($round) : null;
+        return $round instanceof Round ? $this->toResponse($round) : null;
     }
 
     /**
@@ -170,7 +169,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
     {
         $round = $this->rounds->findCurrentRound($tournamentId);
 
-        return $round instanceof \Modules\Tournaments\Domain\Entities\Round ? $this->toResponse($round) : null;
+        return $round instanceof Round ? $this->toResponse($round) : null;
     }
 
     /**
@@ -178,14 +177,14 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
      */
     private function pairingConfig(Tournament $tournament): PairingConfig
     {
-        if ($tournament->pairingConfig() instanceof \Modules\Tournaments\Domain\ValueObjects\PairingConfig) {
+        if ($tournament->pairingConfig() instanceof PairingConfig) {
             return $tournament->pairingConfig();
         }
 
         $profileId = $tournament->gameProfileId();
         $profile = $profileId !== null ? $this->gameProfiles->find(GameProfileId::fromString($profileId)) : null;
 
-        return $profile?->pairingConfig() ?? new PairingConfig();
+        return $profile?->pairingConfig() ?? new PairingConfig;
     }
 
     /**

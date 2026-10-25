@@ -19,8 +19,7 @@ final readonly class RoundResponseDTO
         public int $completedMatchCount,
         public ?DateTimeImmutable $startedAt,
         public ?DateTimeImmutable $completedAt,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(
         Round $round,

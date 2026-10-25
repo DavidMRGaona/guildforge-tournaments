@@ -17,6 +17,7 @@ use Tests\Support\Modules\ModuleTestCase;
 final class RoundsPageResultsTest extends ModuleTestCase
 {
     protected ?string $moduleName = 'tournaments';
+
     protected bool $autoEnableModule = true;
 
     public function test_the_rounds_page_sends_the_enum_values_the_frontend_maps(): void

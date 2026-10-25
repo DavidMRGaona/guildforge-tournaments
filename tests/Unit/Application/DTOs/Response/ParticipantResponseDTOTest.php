@@ -84,7 +84,7 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::Registered,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
             checkedInAt: null,
         );
 
@@ -104,7 +104,7 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::Registered,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
             checkedInAt: null,
         );
 
@@ -124,7 +124,7 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::Registered,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
             checkedInAt: null,
         );
 
@@ -144,7 +144,7 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::Registered,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
             checkedInAt: null,
         );
 
@@ -164,8 +164,8 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::CheckedIn,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
-            checkedInAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
+            checkedInAt: new DateTimeImmutable,
         );
 
         $this->assertTrue($dto->isCheckedIn());
@@ -184,7 +184,7 @@ final class ParticipantResponseDTOTest extends TestCase
             status: ParticipantStatus::Registered,
             seed: null,
             hasReceivedBye: false,
-            registeredAt: new DateTimeImmutable(),
+            registeredAt: new DateTimeImmutable,
             checkedInAt: null,
         );
 

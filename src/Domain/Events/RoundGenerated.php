@@ -15,8 +15,7 @@ final readonly class RoundGenerated
         public int $matchCount,
         public bool $hasBye,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $roundId,
@@ -31,7 +30,7 @@ final readonly class RoundGenerated
             roundNumber: $roundNumber,
             matchCount: $matchCount,
             hasBye: $hasBye,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

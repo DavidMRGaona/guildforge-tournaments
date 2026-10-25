@@ -6,6 +6,8 @@ namespace Modules\Tournaments\Console\Commands;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
@@ -17,6 +19,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\TournamentReminderNotification;
 
 /**
@@ -57,7 +60,7 @@ final class SendTournamentRemindersCommand extends Command
             $tournament = $tournamentRepository->find(TournamentId::fromString($model->id));
             $startsAt = $model->event?->start_date;
 
-            if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || $startsAt === null) {
+            if (! $tournament instanceof Tournament || $startsAt === null) {
                 continue;
             }
 
@@ -72,10 +75,10 @@ final class SendTournamentRemindersCommand extends Command
 
             foreach ($pending as $participantId) {
                 $participant = $participantRepository->find(ParticipantId::fromString((string) $participantId));
-                $recipient = $participant instanceof \Modules\Tournaments\Domain\Entities\Participant ? $this->recipient($participant) : null;
+                $recipient = $participant instanceof Participant ? $this->recipient($participant) : null;
 
                 // An unconfirmed guest is skipped and stays pending: confirming later still gets the reminder
-                if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant || !$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
+                if (! $participant instanceof Participant || ! $recipient instanceof AnonymousNotifiable) {
                     continue;
                 }
 

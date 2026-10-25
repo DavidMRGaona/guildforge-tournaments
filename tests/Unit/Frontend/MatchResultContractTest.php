@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class MatchResultContractTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     public function test_ts_unions_list_exactly_the_enum_values(): void
     {
@@ -120,14 +120,15 @@ final class MatchResultContractTest extends TestCase
         $this->assertStringContainsString("match.result === 'player_two_win'", $rounds);
         $this->assertStringNotContainsString('player1_win', $rounds);
         $this->assertStringNotContainsString('player2_win', $rounds);
-        $this->assertStringContainsString('statusBadgeClasses(getMatchResultColor(match.result))', $rounds);
-        $this->assertStringContainsString('statusBadgeClasses(getRoundStatusColor(roundData.round.status))', $rounds);
+        $compact = (string) preg_replace('/\s+/', '', $rounds);
+        $this->assertStringContainsString('statusBadgeClasses(getMatchResultColor(match.result))', $compact);
+        $this->assertStringContainsString('statusBadgeClasses(getRoundStatusColor(roundData.round.status))', $compact);
         $this->assertStringNotContainsString("purple: 'bg-info-light", $rounds);
     }
 
     private function assertMapEntry(string $source, string $map, string $key, string $color): void
     {
-        $matched = preg_match('/const ' . $map . ': Record<[^>]+> = \{(.*?)\n\};/s', $source, $block);
+        $matched = preg_match('/const '.$map.': Record<[^>]+> = \{(.*?)\n\};/s', $source, $block);
         $this->assertSame(1, $matched, "{$map} is declared");
         $this->assertStringContainsString("{$key}: '{$color}'", $block[1], "{$map}.{$key}");
     }
@@ -137,7 +138,7 @@ final class MatchResultContractTest extends TestCase
      */
     private function unionValues(string $source, string $type): array
     {
-        $matched = preg_match('/export type ' . $type . ' =(.*?);/s', $source, $block);
+        $matched = preg_match('/export type '.$type.' =(.*?);/s', $source, $block);
         $this->assertSame(1, $matched, "{$type} is declared");
         preg_match_all("/'([a-z_0-9]+)'/", $block[1], $values);
 
@@ -146,7 +147,7 @@ final class MatchResultContractTest extends TestCase
 
     private function source(string $file): string
     {
-        $source = file_get_contents(self::JS . $file);
+        $source = file_get_contents(self::JS.$file);
         $this->assertIsString($source);
 
         return $source;

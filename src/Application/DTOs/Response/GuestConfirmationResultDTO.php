@@ -13,6 +13,5 @@ final readonly class GuestConfirmationResultDTO
         public GuestConfirmationOutcome $outcome,
         public ?string $tournamentId,
         public ?string $tournamentSlug,
-    ) {
-    }
+    ) {}
 }

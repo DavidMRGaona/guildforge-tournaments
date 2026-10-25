@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Infrastructure\Services;
 
 use Modules\Tournaments\Application\DTOs\Response\RoundResponseDTO;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
+use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
@@ -15,8 +16,7 @@ final readonly class RoundQueryService implements RoundQueryServiceInterface
     public function __construct(
         private RoundRepositoryInterface $roundRepository,
         private MatchRepositoryInterface $matchRepository,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<RoundResponseDTO>
@@ -48,7 +48,7 @@ final readonly class RoundQueryService implements RoundQueryServiceInterface
     {
         $round = $this->roundRepository->findCurrentRound($tournamentId);
 
-        if (!$round instanceof \Modules\Tournaments\Domain\Entities\Round) {
+        if (! $round instanceof Round) {
             return null;
         }
 

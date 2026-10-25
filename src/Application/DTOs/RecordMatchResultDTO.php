@@ -24,6 +24,5 @@ final readonly class RecordMatchResultDTO
         public ?array $player2Stats = null,
         public ?int $player1Score = null,
         public ?int $player2Score = null,
-    ) {
-    }
+    ) {}
 }

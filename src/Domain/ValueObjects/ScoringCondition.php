@@ -76,7 +76,7 @@ final readonly class ScoringCondition
 
         if (! in_array($this->resultValue, self::VALID_RESULT_VALUES, true)) {
             throw new InvalidArgumentException(
-                'Invalid result value. Must be one of: ' . implode(', ', self::VALID_RESULT_VALUES)
+                'Invalid result value. Must be one of: '.implode(', ', self::VALID_RESULT_VALUES)
             );
         }
     }

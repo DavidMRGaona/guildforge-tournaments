@@ -7,6 +7,8 @@ namespace Modules\Tournaments\Infrastructure\Services;
 use Modules\Tournaments\Application\DTOs\Response\MatchResponseDTO;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
@@ -45,7 +47,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
     }
 
     /**
-     * @param  array<\Modules\Tournaments\Domain\Entities\TournamentMatch>  $matches
+     * @param  array<TournamentMatch>  $matches
      * @return array<string, string>
      */
     private function buildParticipantNamesCache(array $matches): array
@@ -67,7 +69,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 ParticipantId::fromString($participantId)
             );
 
-            if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+            if (! $participant instanceof Participant) {
                 $namesCache[$participantId] = __('tournaments::messages.participants.unknown');
 
                 continue;

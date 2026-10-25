@@ -7,6 +7,8 @@ namespace Modules\Tournaments\Listeners;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
@@ -28,12 +30,12 @@ final readonly class SendParticipantRegisteredEmails
     public function handle(ParticipantRegistered $event): void
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             return;
         }
 
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return;
         }
 

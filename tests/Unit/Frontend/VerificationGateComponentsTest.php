@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class VerificationGateComponentsTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     /**
      * Per file: the handlers that act as the signed-in user, the gate actions whose reason is
@@ -66,8 +66,8 @@ final class VerificationGateComponentsTest extends TestCase
         $source = $this->source($file);
 
         foreach (self::GATED[$file]['handlers'] as $handler) {
-            $pattern = '/const ' . $handler . ' = (?:async )?\(\): (?:Promise<void>|void) => \{\s*'
-                . 'if \(gate\.blocked\.value\) \{\s*return;\s*\}/';
+            $pattern = '/const '.$handler.' = (?:async )?\(\): (?:Promise<void>|void) => \{\s*'
+                .'if \(gate\.blocked\.value\) \{\s*return;\s*\}/';
 
             $this->assertMatchesRegularExpression($pattern, $source, "{$handler}() returns first while blocked");
         }
@@ -103,9 +103,9 @@ final class VerificationGateComponentsTest extends TestCase
                 continue;
             }
 
-            $pattern = '/const ' . $handler . ' = async \(\): Promise<void> => \{'
-                . '(?:(?!\nconst ).)*?if \(gate\.isVerificationRequired\(response\)\) \{\s*'
-                . $flag . '\.value = false;\s*gate\.goToNotice\(\);/s';
+            $pattern = '/const '.$handler.' = async \(\): Promise<void> => \{'
+                .'(?:(?!\nconst ).)*?if \(gate\.isVerificationRequired\(response\)\) \{\s*'
+                .$flag.'\.value = false;\s*gate\.goToNotice\(\);/s';
 
             $this->assertMatchesRegularExpression($pattern, $source, "{$handler}() closes {$flag} first");
         }
@@ -148,7 +148,7 @@ final class VerificationGateComponentsTest extends TestCase
 
     private function source(string $file): string
     {
-        $source = file_get_contents(self::JS . $file);
+        $source = file_get_contents(self::JS.$file);
         $this->assertIsString($source);
 
         return $source;

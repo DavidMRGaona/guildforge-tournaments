@@ -23,10 +23,9 @@ use Ramsey\Uuid\Uuid;
 final readonly class StandingCalculatorService implements StandingCalculatorServiceInterface
 {
     public function __construct(
-        private ScoringRuleEvaluatorInterface $scoringRuleEvaluator = new ScoringRuleEvaluator(),
-        private TiebreakerCalculatorInterface $tiebreakerCalculator = new TiebreakerCalculator(),
-    ) {
-    }
+        private ScoringRuleEvaluatorInterface $scoringRuleEvaluator = new ScoringRuleEvaluator,
+        private TiebreakerCalculatorInterface $tiebreakerCalculator = new TiebreakerCalculator,
+    ) {}
 
     /**
      * @param  array<Participant>  $participants

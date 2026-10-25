@@ -46,7 +46,7 @@ final class GuestConfirmationRequestNotification extends Notification implements
                 'tournament' => $this->tournamentName,
             ]));
 
-        if ($this->seatHeld && $this->expiresAt instanceof \DateTimeImmutable) {
+        if ($this->seatHeld && $this->expiresAt instanceof DateTimeImmutable) {
             $message->line(__('tournaments::messages.emails.guest_confirmation.hold_deadline', [
                 'date' => $this->expiresAt->format('d/m/Y H:i'),
             ]));

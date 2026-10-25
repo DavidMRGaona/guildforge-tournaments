@@ -9,13 +9,14 @@ use Modules\Tournaments\Database\Seeders\GameProfilesSeeder;
  * Seeders run once per installation: run the game profiles seeder again so the system
  * profiles it created before get the rules in the shape the tournament form reads.
  */
-return new class () extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // database/ is outside the module's autoloaded src/
         require_once dirname(__DIR__).'/seeders/GameProfilesSeeder.php';
 
-        (new GameProfilesSeeder())->run();
+        (new GameProfilesSeeder)->run();
     }
 
     public function down(): void

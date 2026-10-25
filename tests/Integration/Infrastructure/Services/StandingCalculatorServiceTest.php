@@ -27,7 +27,7 @@ final class StandingCalculatorServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new StandingCalculatorService();
+        $this->service = new StandingCalculatorService;
 
         $this->defaultScoreWeights = [
             new ScoreWeight(name: 'Victoria', key: 'win', points: 3.0),
@@ -578,7 +578,7 @@ final class StandingCalculatorServiceTest extends TestCase
                 id: ParticipantId::generate(),
                 tournamentId: $tournamentId,
                 status: ParticipantStatus::CheckedIn,
-                userId: 'user-' . ($i + 1),
+                userId: 'user-'.($i + 1),
             );
         }
 

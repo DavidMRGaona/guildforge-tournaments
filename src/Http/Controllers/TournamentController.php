@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Http\Controllers;
 
+use App\Application\DTOs\Response\EventResponseDTO;
 use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
@@ -13,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
@@ -40,7 +42,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             abort(404);
         }
 
@@ -77,7 +79,7 @@ final class TournamentController extends Controller
             $userRegistration = $registration?->toArray();
 
             // The rule of the check-in itself: self check-in open now and the registration may check in
-            $canCheckIn = $registration instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO
+            $canCheckIn = $registration instanceof ParticipantResponseDTO
                 && $this->checkInWindow->calculate($tournament, $tournament->eventStartsAt)['status'] === 'open'
                 && $this->participantManagement->canCheckIn($registration->status, $tournament->requiresManualConfirmation);
 
@@ -112,7 +114,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             abort(404);
         }
 
@@ -133,7 +135,7 @@ final class TournamentController extends Controller
     {
         $tournament = $this->findTournament($identifier);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             abort(404);
         }
 
@@ -172,7 +174,7 @@ final class TournamentController extends Controller
             title: $tournament->name,
             description: $tournament->description ?? $event?->description,
             imagePublicId: $tournament->imagePublicId ?? $event?->imagePublicId,
-            schedule: $event instanceof \App\Application\DTOs\Response\EventResponseDTO
+            schedule: $event instanceof EventResponseDTO
                 ? new SeoScheduleDTO($event->startDate, $event->endDate, $event->location)
                 : null,
         ))->toArray();
@@ -197,7 +199,7 @@ final class TournamentController extends Controller
     {
         if (Str::isUuid($identifier)) {
             $tournament = $this->tournamentQuery->find($identifier);
-            if ($tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+            if ($tournament instanceof TournamentResponseDTO) {
                 return $tournament;
             }
         }

@@ -131,7 +131,10 @@ function loadMore(): void {
                         {{ t('tournaments.my_tournaments.history') }}
                     </span>
                     <ChevronDown
-                        :class="['h-5 w-5 text-base-muted transition-transform', showPastSection ? 'rotate-180' : '']"
+                        :class="[
+                            'h-5 w-5 text-base-muted transition-transform',
+                            showPastSection ? 'rotate-180' : '',
+                        ]"
                         aria-hidden="true"
                     />
                 </button>
@@ -151,7 +154,9 @@ function loadMore(): void {
                         @click="loadMore"
                     >
                         <Plus class="h-4 w-4" aria-hidden="true" />
-                        {{ t('tournaments.my_tournaments.load_more', { count: remainingPastCount }) }}
+                        {{
+                            t('tournaments.my_tournaments.load_more', { count: remainingPastCount })
+                        }}
                     </button>
                 </div>
             </section>

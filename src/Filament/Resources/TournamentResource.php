@@ -4,32 +4,27 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Group;
-use Filament\Schemas\Components\Flex;
-use Filament\Schemas\Components\Text;
-use Filament\Support\Icons\Heroicon;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Closure;
-use Modules\Tournaments\Filament\RegistrationClosingDateRule;
-use Modules\Tournaments\Filament\TournamentFormDefaults;
-use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
-use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
-use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use Closure;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -44,9 +39,13 @@ use Modules\Tournaments\Domain\Enums\SortDirection;
 use Modules\Tournaments\Domain\Enums\StatType;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
-use Modules\Tournaments\Filament\Resources\TournamentResource\Pages;
+use Modules\Tournaments\Filament\RegistrationClosingDateRule;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
+use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -54,7 +53,7 @@ final class TournamentResource extends BaseResource
 {
     protected static ?string $model = TournamentModel::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-trophy';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-trophy';
 
     protected static ?int $navigationSort = 1;
 

@@ -32,7 +32,7 @@ trait MailsParticipants
 
         $email = $participant->guestEmail();
 
-        if ($email === null || $email === '' || !$participant->emailConfirmedAt() instanceof \DateTimeImmutable) {
+        if ($email === null || $email === '' || ! $participant->emailConfirmedAt() instanceof \DateTimeImmutable) {
             return null;
         }
 

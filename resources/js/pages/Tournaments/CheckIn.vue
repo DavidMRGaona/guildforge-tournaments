@@ -3,7 +3,11 @@ import { Ban, ChevronLeft, CircleCheck, Clock, X } from '@lucide/vue';
 import { computed, ref, reactive, useId } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import type { TournamentCheckInProps, CheckInJsonResponse, CheckInField } from '../../types/tournaments';
+import type {
+    TournamentCheckInProps,
+    CheckInJsonResponse,
+    CheckInField,
+} from '../../types/tournaments';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
@@ -70,7 +74,9 @@ const formatDateTime = (dateString: string | null): string => {
 };
 
 // The endpoint answers every outcome with JSON; anything else (e.g. an error page) has no message
-const readBody = async (response: Awaited<ReturnType<typeof fetch>>): Promise<CheckInJsonResponse> => {
+const readBody = async (
+    response: Awaited<ReturnType<typeof fetch>>
+): Promise<CheckInJsonResponse> => {
     try {
         return (await response.json()) as CheckInJsonResponse;
     } catch {
@@ -90,7 +96,7 @@ const handleAuthenticatedCheckIn = async (): Promise<void> => {
         const response = await fetch(`/torneos/${props.tournament.slug}/check-in`, {
             method: 'POST',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...csrfHeaders(),
             },
@@ -132,7 +138,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
         const response = await fetch(`/torneos/${props.tournament.slug}/check-in`, {
             method: 'POST',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...csrfHeaders(),
             },
@@ -199,10 +205,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 </div>
 
                 <!-- Not Available State -->
-                <div
-                    v-if="isNotAvailable"
-                    class="rounded-lg bg-page p-6 text-center"
-                >
+                <div v-if="isNotAvailable" class="rounded-lg bg-page p-6 text-center">
                     <Ban class="mx-auto h-12 w-12 text-base-muted" aria-hidden="true" />
                     <p class="mt-4 text-base-muted">
                         {{ t('tournaments.check_in.not_allowed') }}
@@ -210,24 +213,22 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 </div>
 
                 <!-- Window Not Yet Open -->
-                <div
-                    v-else-if="isWindowNotYet"
-                    class="rounded-lg bg-primary-light p-6 text-center"
-                >
+                <div v-else-if="isWindowNotYet" class="rounded-lg bg-primary-light p-6 text-center">
                     <Clock class="mx-auto h-12 w-12 text-primary" aria-hidden="true" />
                     <p class="mt-4 font-medium text-base-primary">
-                        {{ t('tournaments.check_in.window_opens_at', {
-                            date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
-                            time: formatDateTime(checkInWindow.opens_at)?.split(',')[1]?.trim() || ''
-                        }) }}
+                        {{
+                            t('tournaments.check_in.window_opens_at', {
+                                date: formatDateTime(checkInWindow.opens_at)?.split(',')[0] || '',
+                                time:
+                                    formatDateTime(checkInWindow.opens_at)?.split(',')[1]?.trim() ||
+                                    '',
+                            })
+                        }}
                     </p>
                 </div>
 
                 <!-- Window Closed -->
-                <div
-                    v-else-if="isWindowClosed"
-                    class="rounded-lg bg-error-light p-6 text-center"
-                >
+                <div v-else-if="isWindowClosed" class="rounded-lg bg-error-light p-6 text-center">
                     <X class="mx-auto h-12 w-12 text-error" aria-hidden="true" />
                     <p class="mt-4 font-medium text-base-primary">
                         {{ t('tournaments.check_in.window_closed_started') }}
@@ -237,10 +238,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 <!-- Window Open -->
                 <div v-else-if="isWindowOpen">
                     <!-- Already Checked In -->
-                    <div
-                        v-if="isAlreadyCheckedIn"
-                        class="rounded-lg bg-success/10 p-6 text-center"
-                    >
+                    <div v-if="isAlreadyCheckedIn" class="rounded-lg bg-success/10 p-6 text-center">
                         <CircleCheck class="mx-auto h-12 w-12 text-success" aria-hidden="true" />
                         <p class="mt-4 font-medium text-success">
                             {{ t('tournaments.check_in.success') }}
@@ -346,13 +344,14 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                         required
                                         :disabled="isProcessing"
                                         :aria-invalid="!!formErrors.gdpr_consent"
-                                        :aria-describedby="formErrors.gdpr_consent ? 'checkin-gdpr-error' : undefined"
+                                        :aria-describedby="
+                                            formErrors.gdpr_consent
+                                                ? 'checkin-gdpr-error'
+                                                : undefined
+                                        "
                                         class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed bg-surface"
                                     />
-                                    <label
-                                        for="checkin-gdpr"
-                                        class="text-sm text-base-muted"
-                                    >
+                                    <label for="checkin-gdpr" class="text-sm text-base-muted">
                                         {{ t('tournaments.check_in.gdpr_consent') }}
                                         <a
                                             :href="routes.legal.privacy"

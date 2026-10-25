@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class NavigationLinksComponentsTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     public function test_the_profile_tab_links_the_personal_list_even_without_tournaments(): void
     {
@@ -32,7 +32,7 @@ final class NavigationLinksComponentsTest extends TestCase
         $page = $this->source('pages/Tournaments/Show.vue');
 
         $this->assertMatchesRegularExpression('/v-if="canCheckIn"/', $page);
-        $this->assertStringContainsString("/torneos/\${props.tournament.slug}/check-in", $page);
+        $this->assertStringContainsString('/torneos/${props.tournament.slug}/check-in', $page);
         $this->assertStringContainsString("t('tournaments.public.check_in_now')", $page);
         $this->assertMatchesRegularExpression('/canRegister: boolean;\s*canCheckIn: boolean;/', $this->source('types/tournaments.ts'));
     }
@@ -48,7 +48,7 @@ final class NavigationLinksComponentsTest extends TestCase
 
     private function source(string $file): string
     {
-        $source = file_get_contents(self::JS . $file);
+        $source = file_get_contents(self::JS.$file);
         $this->assertIsString($source);
 
         return $source;

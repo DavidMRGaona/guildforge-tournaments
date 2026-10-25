@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { Calendar, ChartColumn, ChevronRight, CircleCheck, Lightbulb, Star, Trophy } from '@lucide/vue';
+import {
+    Calendar,
+    ChartColumn,
+    ChevronRight,
+    CircleCheck,
+    Lightbulb,
+    Star,
+    Trophy,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -20,7 +28,9 @@ const tournamentImageUrl = computed(() => buildCardImageUrl(props.tournament.ima
 
 const statusColorClasses = computed(() => statusBadgeClasses(props.tournament.statusColor));
 
-const participantStatusColorClasses = computed(() => statusBadgeClasses(props.tournament.participantStatusColor));
+const participantStatusColorClasses = computed(() =>
+    statusBadgeClasses(props.tournament.participantStatusColor)
+);
 
 const formattedDate = computed(() => {
     if (!props.tournament.startsAt) return null;
@@ -95,10 +105,7 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                         >
                             {{ tournament.name }}
                         </Link>
-                        <p
-                            v-if="tournament.eventName"
-                            class="text-sm text-base-muted"
-                        >
+                        <p v-if="tournament.eventName" class="text-sm text-base-muted">
                             {{ tournament.eventName }}
                         </p>
                     </div>
@@ -148,7 +155,10 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                     <!-- Points -->
                     <div class="flex items-center gap-1.5 text-base-secondary">
                         <Star class="h-4 w-4 text-primary" aria-hidden="true" />
-                        <span>{{ tournament.points }} {{ t('tournaments.my_tournaments.points') }}</span>
+                        <span
+                            >{{ tournament.points }}
+                            {{ t('tournaments.my_tournaments.points') }}</span
+                        >
                     </div>
                 </div>
 
@@ -160,15 +170,27 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                     <div class="flex items-center gap-2 text-sm">
                         <Lightbulb class="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         <div class="flex flex-wrap items-center gap-x-2 text-base-secondary">
-                            <span class="font-medium">{{ t('tournaments.my_tournaments.next_match') }}:</span>
-                            <span>{{ t('tournaments.my_tournaments.round') }} {{ tournament.nextMatch.roundNumber }}</span>
+                            <span class="font-medium"
+                                >{{ t('tournaments.my_tournaments.next_match') }}:</span
+                            >
+                            <span
+                                >{{ t('tournaments.my_tournaments.round') }}
+                                {{ tournament.nextMatch.roundNumber }}</span
+                            >
                             <span v-if="tournament.nextMatch.isBye" class="text-primary">
                                 ({{ t('tournaments.my_tournaments.bye') }})
                             </span>
                             <template v-else-if="tournament.nextMatch.opponentName">
-                                <span>{{ t('tournaments.my_tournaments.vs') }} {{ tournament.nextMatch.opponentName }}</span>
-                                <span v-if="tournament.nextMatch.tableNumber" class="text-base-muted">
-                                    &middot; {{ t('tournaments.my_tournaments.table') }} {{ tournament.nextMatch.tableNumber }}
+                                <span
+                                    >{{ t('tournaments.my_tournaments.vs') }}
+                                    {{ tournament.nextMatch.opponentName }}</span
+                                >
+                                <span
+                                    v-if="tournament.nextMatch.tableNumber"
+                                    class="text-base-muted"
+                                >
+                                    &middot; {{ t('tournaments.my_tournaments.table') }}
+                                    {{ tournament.nextMatch.tableNumber }}
                                 </span>
                             </template>
                         </div>
@@ -186,7 +208,8 @@ const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
                         <CircleCheck class="h-4 w-4" aria-hidden="true" />
                         {{ t('tournaments.my_tournaments.check_in_now') }}
                         <span v-if="checkInDeadlineFormatted" class="text-white/90">
-                            ({{ t('tournaments.my_tournaments.until') }} {{ checkInDeadlineFormatted }})
+                            ({{ t('tournaments.my_tournaments.until') }}
+                            {{ checkInDeadlineFormatted }})
                         </span>
                     </Link>
 

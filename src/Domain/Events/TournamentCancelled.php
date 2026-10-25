@@ -13,8 +13,7 @@ final readonly class TournamentCancelled
         public string $tournamentId,
         public TournamentStatus $previousStatus,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $tournamentId,
@@ -23,7 +22,7 @@ final readonly class TournamentCancelled
         return new self(
             tournamentId: $tournamentId,
             previousStatus: $previousStatus,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

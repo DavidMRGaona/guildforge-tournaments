@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\TournamentCancelledNotification;
 
 /**
@@ -27,7 +29,7 @@ final readonly class SendTournamentCancelledEmails
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             return;
         }
 
@@ -36,7 +38,7 @@ final readonly class SendTournamentCancelledEmails
         foreach ($this->participantRepository->findByTournament($event->tournamentId) as $participant) {
             $recipient = $participant->isActive() ? $this->recipient($participant) : null;
 
-            if (!$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
+            if (! $recipient instanceof AnonymousNotifiable) {
                 continue;
             }
 

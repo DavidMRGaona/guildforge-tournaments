@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Infrastructure\Services;
 use Carbon\CarbonImmutable;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\Services\Clock;
@@ -25,7 +26,7 @@ final readonly class GuestConfirmationQuery implements GuestConfirmationQueryInt
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || ! $tournament->allowGuests()) {
+        if (! $tournament instanceof Tournament || ! $tournament->allowGuests()) {
             return null;
         }
 

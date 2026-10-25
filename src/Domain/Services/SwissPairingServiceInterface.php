@@ -24,7 +24,7 @@ interface SwissPairingServiceInterface
      * @param  array<array{player1Id: string, player2Id: ?string}>  $previousMatchups  Previous match pairs to avoid
      * @param  int  $roundNumber  The round number being generated
      * @param  PairingConfig|null  $config  Method, ordering, rematches and bye rules (defaults when null)
-     * @return array<TournamentMatch>  Generated matches for the round
+     * @return array<TournamentMatch> Generated matches for the round
      */
     public function generatePairings(
         array $participants,

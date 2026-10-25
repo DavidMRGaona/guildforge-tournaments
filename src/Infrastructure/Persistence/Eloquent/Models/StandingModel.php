@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,8 +26,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $opponent_win_percentage
  * @property array<string, mixed>|null $accumulated_stats
  * @property array<string, mixed>|null $calculated_tiebreakers
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read TournamentModel $tournament
  * @property-read ParticipantModel $participant
  */

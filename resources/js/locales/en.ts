@@ -130,9 +130,12 @@ export default {
             withdrawn_successfully: 'You have cancelled your registration successfully',
             registration_error: 'Registration error',
             session_expired: 'Your session has expired. Reload the page and try again.',
-            guest_confirmation_hold: 'We will email you to confirm the registration. If you do not confirm it before {date}, the seat will be released.',
-            guest_confirmation_wait: 'We will email you to confirm the registration. Your seat is not guaranteed until you confirm it.',
-            already_registered_here: 'There is already a registration from this browser for this tournament.',
+            guest_confirmation_hold:
+                'We will email you to confirm the registration. If you do not confirm it before {date}, the seat will be released.',
+            guest_confirmation_wait:
+                'We will email you to confirm the registration. Your seat is not guaranteed until you confirm it.',
+            already_registered_here:
+                'There is already a registration from this browser for this tournament.',
             sign_in: 'Sign in',
         },
 
@@ -141,7 +144,8 @@ export default {
             title: 'Cancel registration',
             confirm_message: 'Are you sure you want to cancel your registration for {tournament}?',
             already_cancelled: 'Your registration has already been cancelled',
-            tournament_started: 'The tournament has already started: you can no longer cancel your registration',
+            tournament_started:
+                'The tournament has already started: you can no longer cancel your registration',
             tournament_cancelled: 'The tournament has been cancelled',
             confirm_button: 'Yes, cancel registration',
             participant: 'Participant',
@@ -160,7 +164,8 @@ export default {
             wait_notice: 'Your place is not guaranteed until you confirm it.',
             confirm_button: 'Confirm registration',
             already_confirmed: 'Your registration was already confirmed.',
-            invalid: 'This link is no longer valid. If registration is still open, you can sign up again.',
+            invalid:
+                'This link is no longer valid. If registration is still open, you can sign up again.',
             view_tournament: 'View tournament',
             view_tournaments: 'View tournaments',
         },
@@ -178,7 +183,8 @@ export default {
             window_opens_at: 'Check-in opens on {date} at {time}',
             window_closed_started: 'Check-in has closed',
             gdpr_consent: 'I accept the processing of my data according to the',
-            connection_error: 'The check-in could not be completed. Check your connection and try again.',
+            connection_error:
+                'The check-in could not be completed. Check your connection and try again.',
         },
     },
 };

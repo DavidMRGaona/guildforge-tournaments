@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantDisqualifiedNotification;
 
 /**
@@ -28,9 +31,9 @@ final readonly class SendParticipantDisqualifiedEmail
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
-        $recipient = $participant instanceof \Modules\Tournaments\Domain\Entities\Participant ? $this->recipient($participant) : null;
+        $recipient = $participant instanceof Participant ? $this->recipient($participant) : null;
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament || !$participant instanceof \Modules\Tournaments\Domain\Entities\Participant || !$recipient instanceof \Modules\Tournaments\Notifications\AnonymousNotifiable) {
+        if (! $tournament instanceof Tournament || ! $participant instanceof Participant || ! $recipient instanceof AnonymousNotifiable) {
             return;
         }
 

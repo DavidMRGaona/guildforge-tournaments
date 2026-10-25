@@ -32,8 +32,7 @@ final class Participant
         private ?DateTimeImmutable $confirmationSentAt = null,
         private ?GuestConfirmationMode $confirmationMode = null,
         private ?string $fingerprint = null,
-    ) {
-    }
+    ) {}
 
     public function id(): ParticipantId
     {
@@ -168,7 +167,7 @@ final class Participant
      */
     public function isAwaitingEmailConfirmation(): bool
     {
-        return $this->isGuest() && $this->isActive() && !$this->emailConfirmedAt instanceof \DateTimeImmutable;
+        return $this->isGuest() && $this->isActive() && ! $this->emailConfirmedAt instanceof DateTimeImmutable;
     }
 
     /**
@@ -180,7 +179,7 @@ final class Participant
             return false;
         }
 
-        return !$this->isAwaitingEmailConfirmation() || $this->confirmationMode !== GuestConfirmationMode::Wait;
+        return ! $this->isAwaitingEmailConfirmation() || $this->confirmationMode !== GuestConfirmationMode::Wait;
     }
 
     /**
@@ -211,7 +210,7 @@ final class Participant
      */
     public function markEmailConfirmed(DateTimeImmutable $at): bool
     {
-        if ($this->emailConfirmedAt instanceof \DateTimeImmutable) {
+        if ($this->emailConfirmedAt instanceof DateTimeImmutable) {
             return false;
         }
 
@@ -325,7 +324,7 @@ final class Participant
     public function checkIn(): void
     {
         $this->transitionTo(ParticipantStatus::CheckedIn);
-        $this->checkedInAt = new DateTimeImmutable();
+        $this->checkedInAt = new DateTimeImmutable;
     }
 
     /**

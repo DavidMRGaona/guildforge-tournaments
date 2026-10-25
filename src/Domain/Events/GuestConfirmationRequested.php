@@ -19,6 +19,5 @@ final readonly class GuestConfirmationRequested
         public string $confirmationToken,
         public ?DateTimeImmutable $expiresAt,
         public bool $seatHeld,
-    ) {
-    }
+    ) {}
 }

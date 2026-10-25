@@ -13,8 +13,7 @@ final readonly class RegisterParticipantDTO
         public ?string $guestEmail = null,
         public ?int $seed = null,
         public ?string $fingerprint = null,
-    ) {
-    }
+    ) {}
 
     public function isGuest(): bool
     {

@@ -31,7 +31,7 @@ final class TiebreakerCalculator implements TiebreakerCalculatorInterface
             return [];
         }
 
-        $context ??= new TiebreakerContext();
+        $context ??= new TiebreakerContext;
 
         $result = [];
 

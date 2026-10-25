@@ -23,8 +23,7 @@ final readonly class StandingsResponseDTO
         public float $medianBuchholz,
         public float $progressive,
         public float $opponentWinPercentage,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(
         Standing $standing,

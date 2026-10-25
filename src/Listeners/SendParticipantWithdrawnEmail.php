@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
+use Modules\Tournaments\Domain\Entities\Participant;
+use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
-use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToParticipant;
@@ -28,12 +30,12 @@ final readonly class SendParticipantWithdrawnEmail
     public function handle(ParticipantWithdrawn $event): void
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($event->tournamentId));
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             return;
         }
 
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return;
         }
 
@@ -72,7 +74,7 @@ final readonly class SendParticipantWithdrawnEmail
 
     private function getParticipantName(
         ParticipantWithdrawn $event,
-        \Modules\Tournaments\Domain\Entities\Participant $participant
+        Participant $participant
     ): string {
         if ($event->userId !== null) {
             $userInfo = $this->userDataProvider->getUserInfo($event->userId);
@@ -85,7 +87,7 @@ final readonly class SendParticipantWithdrawnEmail
 
     private function getParticipantEmail(
         ParticipantWithdrawn $event,
-        \Modules\Tournaments\Domain\Entities\Participant $participant
+        Participant $participant
     ): string {
         if ($participant->guestEmail() !== null) {
             return $participant->guestEmail();

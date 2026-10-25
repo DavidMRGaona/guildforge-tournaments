@@ -14,8 +14,7 @@ final readonly class ParticipantDisqualified
         public ?string $userId,
         public ?string $reason,
         public DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $participantId,
@@ -28,7 +27,7 @@ final readonly class ParticipantDisqualified
             tournamentId: $tournamentId,
             userId: $userId,
             reason: $reason,
-            occurredAt: new DateTimeImmutable(),
+            occurredAt: new DateTimeImmutable,
         );
     }
 }

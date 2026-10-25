@@ -19,7 +19,7 @@ final class ScoringRuleEvaluatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->evaluator = new ScoringRuleEvaluator();
+        $this->evaluator = new ScoringRuleEvaluator;
     }
 
     public function test_it_implements_scoring_rule_evaluator_interface(): void

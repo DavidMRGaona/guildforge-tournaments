@@ -28,7 +28,7 @@ final class MatchHistoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: $changedById,
             reason: 'Score correction after review',
-            changedAt: new DateTimeImmutable(),
+            changedAt: new DateTimeImmutable,
         );
 
         $this->assertEquals($matchId, $history->matchId());

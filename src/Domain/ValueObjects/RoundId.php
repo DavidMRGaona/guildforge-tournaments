@@ -6,6 +6,4 @@ namespace Modules\Tournaments\Domain\ValueObjects;
 
 use App\Domain\ValueObjects\EntityId;
 
-final readonly class RoundId extends EntityId
-{
-}
+final readonly class RoundId extends EntityId {}

@@ -14,8 +14,7 @@ final readonly class GuestRegistrationResultDTO
         public GuestRegistrationOutcome $outcome,
         public bool $seatHeld,
         public ?DateTimeImmutable $expiresAt,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{participant_id: string, tournament_id: string, outcome: string, seat_held: bool, expires_at: string|null}

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments;
 
-use Filament\Schemas\Components\Section;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
@@ -20,6 +19,8 @@ use App\Modules\ModuleServiceProvider;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
@@ -80,7 +81,6 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
-use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
@@ -94,6 +94,7 @@ use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\SystemClock;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
+use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
@@ -266,7 +267,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
     private function registerModelExtensions(): void
     {
-        EventModel::resolveRelationUsing('tournament', fn(EventModel $eventModel) => $eventModel->hasOne(TournamentModel::class, 'event_id', 'id'));
+        EventModel::resolveRelationUsing('tournament', fn (EventModel $eventModel) => $eventModel->hasOne(TournamentModel::class, 'event_id', 'id'));
     }
 
     private function registerRepositories(): void
@@ -488,7 +489,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return null;
         }
 
@@ -569,7 +570,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return null;
         }
 
@@ -590,7 +591,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         }
 
         $tournament = $this->findTournamentByEventId($eventId);
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return false;
         }
 
@@ -778,7 +779,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * @return array<\Filament\Schemas\Components\Component>
+     * @return array<Component>
      */
     public function getSettingsSchema(): array
     {

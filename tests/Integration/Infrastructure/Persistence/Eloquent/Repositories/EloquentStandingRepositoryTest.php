@@ -33,7 +33,7 @@ final class EloquentStandingRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentStandingRepository();
+        $this->repository = new EloquentStandingRepository;
 
         $event = EventModel::factory()->create();
         $this->tournament = TournamentModel::create([

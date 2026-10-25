@@ -16,7 +16,7 @@ use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final readonly class ProfileTournamentsDataProvider
 {
@@ -131,13 +131,13 @@ final readonly class ProfileTournamentsDataProvider
             $aDate = $a->startsAt;
             $bDate = $b->startsAt;
 
-            if (!$aDate instanceof \DateTimeImmutable && !$bDate instanceof \DateTimeImmutable) {
+            if (! $aDate instanceof \DateTimeImmutable && ! $bDate instanceof \DateTimeImmutable) {
                 return 0;
             }
-            if (!$aDate instanceof \DateTimeImmutable) {
+            if (! $aDate instanceof \DateTimeImmutable) {
                 return 1;
             }
-            if (!$bDate instanceof \DateTimeImmutable) {
+            if (! $bDate instanceof \DateTimeImmutable) {
                 return -1;
             }
 
@@ -158,7 +158,7 @@ final readonly class ProfileTournamentsDataProvider
      */
     private function buildParticipationDTO(
         ParticipantModel $participant,
-        \Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel $tournament
+        TournamentModel $tournament
     ): ProfileTournamentParticipationDTO {
         // Get event data for start date and name
         $event = EventModel::query()

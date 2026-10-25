@@ -23,8 +23,7 @@ final readonly class MatchHistoryResponseDTO
         public string $changedByName,
         public ?string $reason,
         public DateTimeImmutable $changedAt,
-    ) {
-    }
+    ) {}
 
     public static function fromEntity(
         MatchHistory $history,
@@ -48,7 +47,7 @@ final readonly class MatchHistoryResponseDTO
 
     public function isInitialReport(): bool
     {
-        return !$this->previousResult instanceof \Modules\Tournaments\Domain\Enums\MatchResult;
+        return ! $this->previousResult instanceof MatchResult;
     }
 
     public function resultChanged(): bool

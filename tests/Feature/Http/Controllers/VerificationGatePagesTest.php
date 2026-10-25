@@ -323,8 +323,8 @@ final class VerificationGatePagesTest extends ModuleTestCase
 
         return TournamentModel::create([
             'event_id' => $event->id,
-            'name' => 'Torneo ' . Str::random(8),
-            'slug' => 'torneo-' . Str::lower(Str::random(10)),
+            'name' => 'Torneo '.Str::random(8),
+            'slug' => 'torneo-'.Str::lower(Str::random(10)),
             'status' => TournamentStatus::RegistrationOpen,
             'allow_guests' => true,
             'result_reporting' => 'admin_only',
@@ -339,8 +339,8 @@ final class VerificationGatePagesTest extends ModuleTestCase
 
         return TournamentModel::create([
             'event_id' => $event->id,
-            'name' => 'Torneo ' . Str::random(8),
-            'slug' => 'torneo-' . Str::lower(Str::random(10)),
+            'name' => 'Torneo '.Str::random(8),
+            'slug' => 'torneo-'.Str::lower(Str::random(10)),
             'status' => TournamentStatus::RegistrationClosed,
             'allow_guests' => true,
             'requires_check_in' => true,

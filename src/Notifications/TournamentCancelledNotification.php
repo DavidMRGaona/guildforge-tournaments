@@ -29,7 +29,7 @@ final class TournamentCancelledNotification extends Notification implements Shou
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
+        $message = (new MailMessage)
             ->subject(__('tournaments::messages.emails.tournament_cancelled.subject', [
                 'tournament' => $this->tournamentName,
             ]))

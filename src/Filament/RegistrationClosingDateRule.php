@@ -26,7 +26,7 @@ final class RegistrationClosingDateRule
     public static function notAfter(?CarbonInterface $eventStartsAt): Closure
     {
         return static function (string $attribute, mixed $value, Closure $fail) use ($eventStartsAt): void {
-            if (!$eventStartsAt instanceof \Carbon\CarbonInterface) {
+            if (! $eventStartsAt instanceof CarbonInterface) {
                 return;
             }
 
@@ -41,7 +41,7 @@ final class RegistrationClosingDateRule
                 return;
             }
 
-            if ($closesAt instanceof \Illuminate\Support\Carbon && $closesAt->greaterThan($eventStartsAt)) {
+            if ($closesAt instanceof Carbon && $closesAt->greaterThan($eventStartsAt)) {
                 $fail(__('tournaments::messages.validation.registration_closes_after_start', [
                     'date' => $eventStartsAt->format('d/m/Y H:i'),
                 ]));

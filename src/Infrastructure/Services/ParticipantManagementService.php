@@ -25,8 +25,8 @@ use Modules\Tournaments\Domain\Enums\GuestAccountPolicy;
 use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
-use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
+use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Exceptions\AlreadyCheckedInException;
@@ -154,13 +154,13 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->findByConfirmationToken($token);
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return null;
         }
 
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             return null;
         }
 
@@ -168,7 +168,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $state = match (true) {
             ! $participant->isActive() => 'invalid',
-            $participant->emailConfirmedAt() instanceof \DateTimeImmutable => 'already_confirmed',
+            $participant->emailConfirmedAt() instanceof DateTimeImmutable => 'already_confirmed',
             $this->isOverdue($participant, $this->now()) => 'invalid',
             default => 'pending',
         };
@@ -202,7 +202,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             function () use ($dto, $status, $userId, $guestName, $guestEmail, $now): ParticipantResponseDTO {
                 $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
 
-                if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+                if (! $tournament instanceof Tournament) {
                     throw TournamentNotFoundException::withId($dto->tournamentId);
                 }
 
@@ -210,7 +210,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                     $existing = $this->participantRepository->findByUserAndTournament($userId, $dto->tournamentId);
 
                     // One row per user and tournament, whatever its status
-                    if ($existing instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+                    if ($existing instanceof Participant) {
                         $this->rejectDisqualified($existing);
 
                         throw AlreadyRegisteredException::userAlreadyRegistered($dto->tournamentId, $userId);
@@ -218,7 +218,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
                 } elseif ($guestEmail !== null) {
                     $existing = $this->participantRepository->findByGuestEmailAndTournament($guestEmail, $dto->tournamentId);
 
-                    if ($existing instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+                    if ($existing instanceof Participant) {
                         $this->rejectDisqualified($existing);
 
                         if ($existing->isActive()) {
@@ -287,7 +287,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             throw ParticipantNotFoundException::withId($participantId);
         }
 
@@ -295,7 +295,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($participant->tournamentId());
         }
 
@@ -324,7 +324,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->findByCancellationToken($token);
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return null;
         }
 
@@ -335,7 +335,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->findByCancellationToken($token);
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             throw ParticipantNotFoundException::byToken();
         }
 
@@ -343,7 +343,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($participant->tournamentId());
         }
 
@@ -402,7 +402,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $results = [];
 
         foreach ($participantIds as $participantId) {
-            if (!$this->participantRepository->find(ParticipantId::fromString($participantId)) instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+            if (! $this->participantRepository->find(ParticipantId::fromString($participantId)) instanceof Participant) {
                 continue;
             }
 
@@ -416,7 +416,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return null;
         }
 
@@ -427,7 +427,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $participant = $this->participantRepository->findByUserAndTournament($userId, $tournamentId);
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if (! $participant instanceof Participant) {
             return null;
         }
 
@@ -457,7 +457,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             function () use ($tournamentId, $userId): ?Participant {
                 $participant = $this->participantRepository->findByUserAndTournament($userId, $tournamentId);
 
-                return $participant instanceof \Modules\Tournaments\Domain\Entities\Participant && $participant->isActive() ? $participant : null;
+                return $participant instanceof Participant && $participant->isActive() ? $participant : null;
             },
             static fn (): ParticipantNotFoundException => ParticipantNotFoundException::forUserInTournament($userId, $tournamentId),
         );
@@ -474,7 +474,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($tournamentId);
         }
 
@@ -530,7 +530,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $eventStartDate = $tournament->eventStartsAt();
 
-        if (!$eventStartDate instanceof \DateTimeImmutable) {
+        if (! $eventStartDate instanceof DateTimeImmutable) {
             throw CheckInWindowClosedException::alreadyClosed($tournament->id()->value);
         }
 
@@ -562,9 +562,9 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             $tournament->status() === TournamentStatus::Finished => TournamentNotOpenException::finished($tournamentId),
             $tournament->status() === TournamentStatus::Cancelled => TournamentNotOpenException::cancelled($tournamentId),
             $tournament->status() !== TournamentStatus::RegistrationOpen => TournamentNotOpenException::alreadyClosed($tournamentId),
-            !$tournament->eventStartsAt() instanceof \DateTimeImmutable => TournamentNotOpenException::alreadyClosed($tournamentId),
+            ! $tournament->eventStartsAt() instanceof DateTimeImmutable => TournamentNotOpenException::alreadyClosed($tournamentId),
             $tournament->hasEventStarted($now) => TournamentNotOpenException::eventStarted($tournamentId),
-            $opensAt instanceof \DateTimeImmutable && $now < $opensAt => TournamentNotOpenException::notYetOpen($tournamentId),
+            $opensAt instanceof DateTimeImmutable && $now < $opensAt => TournamentNotOpenException::notYetOpen($tournamentId),
             default => TournamentNotOpenException::alreadyClosed($tournamentId),
         };
     }
@@ -585,7 +585,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             $tournament->status() === TournamentStatus::InProgress => CannotWithdrawException::tournamentInProgress($participantId),
             $tournament->status() === TournamentStatus::Finished => CannotWithdrawException::tournamentFinished($participantId),
             $tournament->status() === TournamentStatus::Cancelled => CannotWithdrawException::tournamentCancelled($participantId),
-            !$tournament->eventStartsAt() instanceof \DateTimeImmutable => CannotWithdrawException::eventStartUnknown($participantId),
+            ! $tournament->eventStartsAt() instanceof DateTimeImmutable => CannotWithdrawException::eventStartUnknown($participantId),
             default => CannotWithdrawException::tournamentStarted($participantId),
         };
     }
@@ -645,7 +645,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $outcome = $this->lock->forParticipant($participantId, function () use ($participantId, $takesSeat, $act, $announce, $now): array {
             $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
 
-            if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+            if (! $participant instanceof Participant) {
                 throw ParticipantNotFoundException::withId($participantId);
             }
 
@@ -654,7 +654,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             if ($endorsed && $takesSeat && ! $participant->holdsSeat()) {
                 $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
 
-                if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+                if (! $tournament instanceof Tournament) {
                     throw TournamentNotFoundException::withId($participant->tournamentId());
                 }
 
@@ -724,7 +724,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($dto->tournamentId);
         }
 
@@ -733,7 +733,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         $existingParticipant = $this->participantRepository->findByUserAndTournament($userId, $dto->tournamentId);
-        if ($existingParticipant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($existingParticipant instanceof Participant) {
             $this->rejectDisqualified($existingParticipant);
 
             if ($this->isActiveParticipant($existingParticipant)) {
@@ -747,13 +747,13 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         $guestRegistration = $this->activeGuestRegistrationOfAccount($userId, $dto->tournamentId, $now);
-        if ($guestRegistration instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($guestRegistration instanceof Participant) {
             return $this->takeOverGuestRegistration($tournament, $guestRegistration, $existingParticipant, $userId, $dto, $now);
         }
 
         $this->ensureCapacity($tournament);
 
-        if ($existingParticipant instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($existingParticipant instanceof Participant) {
             // Withdrawn earlier: the same row comes back
             $participant = $existingParticipant;
             $participant->reactivate();
@@ -792,7 +792,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $guestRegistration = $this->participantRepository->findByGuestEmailAndTournament(mb_strtolower(trim($email)), $tournamentId);
 
-        if (!$guestRegistration instanceof \Modules\Tournaments\Domain\Entities\Participant || ! $guestRegistration->isActive()) {
+        if (! $guestRegistration instanceof Participant || ! $guestRegistration->isActive()) {
             return null;
         }
 
@@ -832,7 +832,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $organizerNeverTold = $guestRegistration->isAwaitingEmailConfirmation();
 
-        if ($ownRegistration instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($ownRegistration instanceof Participant) {
             // One row per user and tournament: the user's ended row takes the guest's place
             $participant = $ownRegistration;
             $participant->takeOverGuestRegistration($guestRegistration, $now->toDateTimeImmutable());
@@ -913,7 +913,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     {
         $tournament = $this->tournamentRepository->find(TournamentId::fromString($dto->tournamentId));
 
-        if (!$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $tournament instanceof Tournament) {
             throw TournamentNotFoundException::withId($dto->tournamentId);
         }
 
@@ -929,7 +929,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         $existing = $this->participantRepository->findByGuestEmailAndTournament($email, $dto->tournamentId);
 
-        if ($existing instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($existing instanceof Participant) {
             $this->rejectDisqualified($existing);
             $this->expireIfOverdue($existing, $now);
 
@@ -951,7 +951,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             $now,
         );
 
-        if ($existing instanceof \Modules\Tournaments\Domain\Entities\Participant) {
+        if ($existing instanceof Participant) {
             // A withdrawn or expired registration of the email comes back with the new submission's name
             $participant = $existing;
             $participant->reactivate();
@@ -1022,7 +1022,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         return $participant->isAwaitingEmailConfirmation()
             && $participant->status() === ParticipantStatus::Registered
-            && $expiresAt instanceof \DateTimeImmutable
+            && $expiresAt instanceof DateTimeImmutable
             && $expiresAt <= $now;
     }
 
@@ -1038,11 +1038,11 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     private function confirmUnderLock(string $token, CarbonImmutable $now): array
     {
         $participant = $this->participantRepository->findByConfirmationToken($token);
-        $tournament = $participant instanceof \Modules\Tournaments\Domain\Entities\Participant
+        $tournament = $participant instanceof Participant
             ? $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()))
             : null;
 
-        if (!$participant instanceof \Modules\Tournaments\Domain\Entities\Participant || !$tournament instanceof \Modules\Tournaments\Domain\Entities\Tournament) {
+        if (! $participant instanceof Participant || ! $tournament instanceof Tournament) {
             return [new GuestConfirmationResultDTO(GuestConfirmationOutcome::Invalid, null, null), null, null];
         }
 
@@ -1124,7 +1124,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         $registration = $this->participantRepository->findByUserAndTournament($account['id'], $tournamentId);
-        if ($registration instanceof \Modules\Tournaments\Domain\Entities\Participant && $registration->isActive()) {
+        if ($registration instanceof Participant && $registration->isActive()) {
             throw AlreadyRegisteredException::userAlreadyRegistered($tournamentId, $account['id']);
         }
     }
@@ -1140,7 +1140,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         $sentAt = $participant->confirmationSentAt();
         $token = $participant->confirmationToken();
         $resend = $token !== null
-            && (!$sentAt instanceof \DateTimeImmutable || $sentAt <= $now->subMinutes(self::RESEND_MARGIN_MINUTES));
+            && (! $sentAt instanceof DateTimeImmutable || $sentAt <= $now->subMinutes(self::RESEND_MARGIN_MINUTES));
 
         $result = new GuestRegistrationResultDTO(
             participantId: $participant->id()->value,

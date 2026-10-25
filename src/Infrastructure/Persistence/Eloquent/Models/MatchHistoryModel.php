@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,9 +22,9 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
  * @property int|null $new_player_2_score
  * @property string $changed_by_id
  * @property string|null $reason
- * @property \Carbon\Carbon $changed_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon $changed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read MatchModel $match
  * @property-read UserModel $changedBy
  */

@@ -34,8 +34,8 @@ const gate = useVerificationGate();
 const gateReasonId = useId();
 
 const activeStatuses = ['registered', 'confirmed', 'checked_in'];
-const isRegistered = computed(() =>
-    props.userRegistration !== null && activeStatuses.includes(props.userRegistration.status)
+const isRegistered = computed(
+    () => props.userRegistration !== null && activeStatuses.includes(props.userRegistration.status)
 );
 
 const spotsRemaining = computed(() => {
@@ -60,17 +60,18 @@ const canWithdraw = computed(() => {
     return isRegistered.value && props.tournament.can_withdraw;
 });
 
-const showRegisterButton = computed(() =>
-    props.tournament !== null
-    && !isRegistered.value
-    && props.canRegister
-    && props.tournament.is_registration_open
-    && !isFull.value
+const showRegisterButton = computed(
+    () =>
+        props.tournament !== null &&
+        !isRegistered.value &&
+        props.canRegister &&
+        props.tournament.is_registration_open &&
+        !isFull.value
 );
 
 // The register or withdraw button is on screen, so its disabled reason must be too
-const showGateReason = computed(() =>
-    gate.blocked.value && (showRegisterButton.value || canWithdraw.value)
+const showGateReason = computed(
+    () => gate.blocked.value && (showRegisterButton.value || canWithdraw.value)
 );
 
 // Guest notice: the terms come from the server, the browser only remembers earlier attempts
@@ -95,7 +96,9 @@ const guestConfirmationNotice = computed((): string | null => {
         return null;
     }
     if (terms.mode === 'hold' && terms.expires_at !== null) {
-        return t('tournaments.public.guest_confirmation_hold', { date: formatDeadline(terms.expires_at) });
+        return t('tournaments.public.guest_confirmation_hold', {
+            date: formatDeadline(terms.expires_at),
+        });
     }
     return t('tournaments.public.guest_confirmation_wait');
 });
@@ -155,7 +158,7 @@ const handleRegister = async (): Promise<void> => {
         const response = await fetch(registrationUrl(props.tournament.id), {
             method: 'POST',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...csrfHeaders(),
             },
@@ -212,7 +215,7 @@ const submitGuestRegistration = async (): Promise<void> => {
         const response = await fetch(registrationUrl(props.tournament.id), {
             method: 'POST',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...csrfHeaders(),
             },
@@ -301,7 +304,7 @@ const confirmWithdraw = async (): Promise<void> => {
         const response = await fetch(registrationUrl(props.tournament.id), {
             method: 'DELETE',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...csrfHeaders(),
             },
@@ -373,7 +376,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                     <span v-if="tournament.current_round > 0" class="flex items-center gap-1">
                         <RefreshCw class="h-4 w-4" aria-hidden="true" />
-                        {{ t('tournaments.public.round_label', { current: tournament.current_round, max: tournament.max_rounds || '?' }) }}
+                        {{
+                            t('tournaments.public.round_label', {
+                                current: tournament.current_round,
+                                max: tournament.max_rounds || '?',
+                            })
+                        }}
                     </span>
                 </div>
 
@@ -386,14 +394,15 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 </div>
 
                 <!-- Spots Available Info -->
-                <div v-else-if="tournament.is_registration_open && spotsRemaining !== null" class="mb-3">
-                    <span
-                        class="text-sm"
-                        :class="isFull ? 'text-error' : 'text-primary'"
-                    >
-                        {{ isFull
-                            ? t('tournaments.public.tournament_full')
-                            : t('tournaments.public.spots_remaining', { count: spotsRemaining })
+                <div
+                    v-else-if="tournament.is_registration_open && spotsRemaining !== null"
+                    class="mb-3"
+                >
+                    <span class="text-sm" :class="isFull ? 'text-error' : 'text-primary'">
+                        {{
+                            isFull
+                                ? t('tournaments.public.tournament_full')
+                                : t('tournaments.public.spots_remaining', { count: spotsRemaining })
                         }}
                     </span>
                 </div>
@@ -471,15 +480,10 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 @keydown="handleKeydown"
             >
                 <!-- Modal backdrop (click to close) -->
-                <div
-                    class="absolute inset-0"
-                    @click="closeGuestModal"
-                />
+                <div class="absolute inset-0" @click="closeGuestModal" />
 
                 <!-- Modal content -->
-                <div
-                    class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl"
-                >
+                <div class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl">
                     <!-- Close button -->
                     <button
                         type="button"
@@ -491,10 +495,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </button>
 
                     <!-- Modal header -->
-                    <h2
-                        id="guest-modal-title"
-                        class="mb-4 text-lg font-semibold text-base-primary"
-                    >
+                    <h2 id="guest-modal-title" class="mb-4 text-lg font-semibold text-base-primary">
                         {{ t('tournaments.public.guest_registration') }}
                     </h2>
 
@@ -517,7 +518,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 required
                                 :disabled="guestFormProcessing"
                                 :aria-invalid="!!guestFormErrors.guest_name"
-                                :aria-describedby="guestFormErrors.guest_name ? 'guest-name-error' : undefined"
+                                :aria-describedby="
+                                    guestFormErrors.guest_name ? 'guest-name-error' : undefined
+                                "
                                 class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-base-secondary/10 disabled:cursor-not-allowed transition-colors"
                                 :class="{
                                     'border-error focus:ring-error focus:border-error':
@@ -550,7 +553,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 required
                                 :disabled="guestFormProcessing"
                                 :aria-invalid="!!guestFormErrors.guest_email"
-                                :aria-describedby="guestFormErrors.guest_email ? 'guest-email-error' : undefined"
+                                :aria-describedby="
+                                    guestFormErrors.guest_email ? 'guest-email-error' : undefined
+                                "
                                 class="w-full px-4 py-2 border border-default rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-base-secondary/10 disabled:cursor-not-allowed transition-colors"
                                 :class="{
                                     'border-error focus:ring-error focus:border-error':
@@ -577,13 +582,14 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     required
                                     :disabled="guestFormProcessing"
                                     :aria-invalid="!!guestFormErrors.gdpr_consent"
-                                    :aria-describedby="guestFormErrors.gdpr_consent ? 'event-guest-gdpr-error' : undefined"
+                                    :aria-describedby="
+                                        guestFormErrors.gdpr_consent
+                                            ? 'event-guest-gdpr-error'
+                                            : undefined
+                                    "
                                     class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed"
                                 />
-                                <label
-                                    for="event-guest-gdpr"
-                                    class="text-sm text-base-muted"
-                                >
+                                <label for="event-guest-gdpr" class="text-sm text-base-muted">
                                     {{ t('tournaments.public.gdpr_consent') }}
                                     <a
                                         :href="routes.legal.privacy"
@@ -618,7 +624,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         </p>
                         <p v-if="guestLoginUrl" class="text-sm text-error" role="alert">
                             {{ guestFormMessage }}
-                            <a :href="guestLoginUrl" class="font-medium underline">{{ t('tournaments.public.sign_in') }}</a>
+                            <a :href="guestLoginUrl" class="font-medium underline">{{
+                                t('tournaments.public.sign_in')
+                            }}</a>
                         </p>
 
                         <!-- Actions -->
@@ -665,17 +673,14 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                 @keydown="handleWithdrawKeydown"
             >
                 <!-- Modal backdrop (click to close) -->
-                <div
-                    class="absolute inset-0"
-                    @click="closeWithdrawModal"
-                />
+                <div class="absolute inset-0" @click="closeWithdrawModal" />
 
                 <!-- Modal content -->
-                <div
-                    class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl"
-                >
+                <div class="relative w-full max-w-md rounded-lg bg-surface p-6 shadow-xl">
                     <!-- Warning icon -->
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-light">
+                    <div
+                        class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-light"
+                    >
                         <TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
                     </div>
 

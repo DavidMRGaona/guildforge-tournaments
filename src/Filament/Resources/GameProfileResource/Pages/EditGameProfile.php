@@ -17,7 +17,7 @@ final class EditGameProfile extends EditRecord
     {
         return [
             DeleteAction::make()
-                ->visible(fn (GameProfileModel $record): bool => !$record->is_system),
+                ->visible(fn (GameProfileModel $record): bool => ! $record->is_system),
         ];
     }
 

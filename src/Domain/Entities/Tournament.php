@@ -14,9 +14,9 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\ValueObjects\PairingConfig;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
-use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
 use Modules\Tournaments\Domain\ValueObjects\ScoringCondition;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
+use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 
@@ -68,8 +68,7 @@ final class Tournament
         private readonly bool $selfCheckInAllowed = false,
         // Start of the linked core event: read from the event, never persisted with the tournament
         private readonly ?DateTimeImmutable $eventStartsAt = null,
-    ) {
-    }
+    ) {}
 
     public function id(): TournamentId
     {
@@ -245,7 +244,7 @@ final class Tournament
     public function start(): void
     {
         $this->transitionTo(TournamentStatus::InProgress);
-        $this->startedAt = new DateTimeImmutable();
+        $this->startedAt = new DateTimeImmutable;
     }
 
     /**
@@ -256,7 +255,7 @@ final class Tournament
     public function finish(): void
     {
         $this->transitionTo(TournamentStatus::Finished);
-        $this->completedAt = new DateTimeImmutable();
+        $this->completedAt = new DateTimeImmutable;
     }
 
     /**
@@ -283,7 +282,7 @@ final class Tournament
      */
     public function hasEventStarted(DateTimeImmutable $now): bool
     {
-        return !$this->eventStartsAt instanceof \DateTimeImmutable || $now >= $this->eventStartsAt;
+        return ! $this->eventStartsAt instanceof DateTimeImmutable || $now >= $this->eventStartsAt;
     }
 
     /**
@@ -296,11 +295,11 @@ final class Tournament
             return false;
         }
 
-        if ($this->registrationOpensAt instanceof \DateTimeImmutable && $now < $this->registrationOpensAt) {
+        if ($this->registrationOpensAt instanceof DateTimeImmutable && $now < $this->registrationOpensAt) {
             return false;
         }
 
-        if ($this->registrationClosesAt instanceof \DateTimeImmutable && $now >= $this->registrationClosesAt) {
+        if ($this->registrationClosesAt instanceof DateTimeImmutable && $now >= $this->registrationClosesAt) {
             return false;
         }
 
@@ -506,7 +505,7 @@ final class Tournament
      */
     public function getEffectivePairingConfig(): PairingConfig
     {
-        return $this->pairingConfig ?? new PairingConfig();
+        return $this->pairingConfig ?? new PairingConfig;
     }
 
     /**

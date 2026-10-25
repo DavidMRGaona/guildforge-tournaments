@@ -34,7 +34,7 @@ final class PairingConfigTest extends TestCase
 
     public function test_it_creates_with_all_defaults(): void
     {
-        $config = new PairingConfig();
+        $config = new PairingConfig;
 
         $this->assertEquals(PairingMethod::Swiss, $config->method);
         $this->assertEquals(PairingSortCriteria::Points, $config->sortBy);

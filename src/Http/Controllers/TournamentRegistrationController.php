@@ -9,6 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Modules\Tournaments\Application\DTOs\RegisterParticipantDTO;
 use Modules\Tournaments\Application\DTOs\Response\GuestRegistrationOutcome;
+use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
@@ -51,7 +53,7 @@ final class TournamentRegistrationController extends Controller
     {
         $tournament = $this->tournamentQuery->find($tournamentId);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return response()->json([
                 'message' => __('tournaments::messages.errors.tournament_not_found'),
             ], 404);
@@ -136,7 +138,7 @@ final class TournamentRegistrationController extends Controller
     {
         $tournament = $this->tournamentQuery->find($tournamentId);
 
-        if (!$tournament instanceof \Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return $this->errorResponse($request, __('tournaments::messages.errors.tournament_not_found'), 404);
         }
 
@@ -222,7 +224,7 @@ final class TournamentRegistrationController extends Controller
             $tournamentId
         );
 
-        if (!$registration instanceof \Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO) {
+        if (! $registration instanceof ParticipantResponseDTO) {
             return $this->errorResponse($request, __('tournaments::messages.errors.not_registered'), 404);
         }
 

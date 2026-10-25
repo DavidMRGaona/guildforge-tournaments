@@ -11,26 +11,28 @@ use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
-use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Tests\Support\StaleRoundRepository;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -67,7 +69,7 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->participants($tournament, 4);
         $this->rounds()->generateNextRound($tournament->id);
         // The second click read the rounds before the first one saved its round
-        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository()));
+        $this->app->instance(RoundRepositoryInterface::class, new StaleRoundRepository(new EloquentRoundRepository));
 
         $this->expectException(RoundAlreadyGeneratedException::class);
 
@@ -313,7 +315,7 @@ final class RoundManagementServiceTest extends ModuleTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('scoresAgainstTheResult')]
+    #[DataProvider('scoresAgainstTheResult')]
     public function test_scores_that_contradict_the_result_are_rejected(MatchResult $result, int $player1Score, int $player2Score): void
     {
         $tournament = $this->tournament();
@@ -554,7 +556,7 @@ final class RoundManagementServiceTest extends ModuleTestCase
     }
 
     /**
-     * @param  array<\Modules\Tournaments\Domain\Entities\Standing>  $standings
+     * @param  array<Standing>  $standings
      * @return list<string>
      */
     private function ranks(array $standings): array

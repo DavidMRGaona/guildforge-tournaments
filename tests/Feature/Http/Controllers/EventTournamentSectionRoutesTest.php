@@ -30,7 +30,7 @@ final class EventTournamentSectionRoutesTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    private const string COMPONENT = __DIR__ . '/../../../../resources/js/components/EventTournamentSection.vue';
+    private const string COMPONENT = __DIR__.'/../../../../resources/js/components/EventTournamentSection.vue';
 
     protected function setUp(): void
     {
@@ -177,8 +177,8 @@ final class EventTournamentSectionRoutesTest extends ModuleTestCase
 
         return TournamentModel::create([
             'event_id' => $event->id,
-            'name' => 'Torneo ' . Str::random(8),
-            'slug' => 'torneo-' . Str::lower(Str::random(10)),
+            'name' => 'Torneo '.Str::random(8),
+            'slug' => 'torneo-'.Str::lower(Str::random(10)),
             'status' => TournamentStatus::RegistrationOpen,
             'allow_guests' => true,
             'result_reporting' => 'admin_only',
