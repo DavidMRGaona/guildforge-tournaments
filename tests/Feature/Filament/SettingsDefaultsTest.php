@@ -112,7 +112,9 @@ final class SettingsDefaultsTest extends ModuleTestCase
                     $names[] = $component->getName();
                 }
                 if ($component instanceof Component) {
-                    $collect($component->getDefaultChildComponents());
+                    $children = $component->getDefaultChildComponents();
+                    $this->assertIsArray($children);
+                    $collect($children);
                 }
             }
         };

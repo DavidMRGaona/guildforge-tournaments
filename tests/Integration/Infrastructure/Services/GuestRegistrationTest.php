@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -528,8 +529,10 @@ final class GuestRegistrationTest extends ModuleTestCase
 
         $this->registerGuest($tournament, ' John@Example.com ');
 
+        $transport = Mail::mailer('array')->getSymfonyTransport();
+        $this->assertInstanceOf(ArrayTransport::class, $transport);
         /** @var list<SentMessage> $messages */
-        $messages = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
+        $messages = $transport->messages()->all();
         $this->assertCount(1, $messages);
         $email = $messages[0]->getOriginalMessage();
         $this->assertInstanceOf(Email::class, $email);

@@ -54,7 +54,7 @@ final class ConditionTypeTest extends TestCase
     {
         $options = ConditionType::options();
 
-        $this->assertIsArray($options);
+        $this->assertCount(4, $options);
         $this->assertArrayHasKey('result', $options);
         $this->assertArrayHasKey('stat_comparison', $options);
         $this->assertArrayHasKey('stat_threshold', $options);
@@ -63,33 +63,21 @@ final class ConditionTypeTest extends TestCase
 
     public function test_label_returns_translated_string_for_result(): void
     {
-        $label = ConditionType::Result->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.condition_type.result'), ConditionType::Result->label());
     }
 
     public function test_label_returns_translated_string_for_stat_comparison(): void
     {
-        $label = ConditionType::StatComparison->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.condition_type.stat_comparison'), ConditionType::StatComparison->label());
     }
 
     public function test_label_returns_translated_string_for_stat_threshold(): void
     {
-        $label = ConditionType::StatThreshold->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.condition_type.stat_threshold'), ConditionType::StatThreshold->label());
     }
 
     public function test_label_returns_translated_string_for_margin_difference(): void
     {
-        $label = ConditionType::MarginDifference->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.condition_type.margin_diff'), ConditionType::MarginDifference->label());
     }
 }

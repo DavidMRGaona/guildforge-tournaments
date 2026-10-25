@@ -105,7 +105,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
         ]);
 
         // Verify slug was updated (starts with 'updated-name')
-        $updatedModel = TournamentModel::find($id);
+        $updatedModel = TournamentModel::query()->findOrFail($id);
         $this->assertStringStartsWith('updated-name', $updatedModel->slug);
 
         $this->assertDatabaseMissing('tournaments_tournaments', [
@@ -207,7 +207,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
 
     public function test_it_finds_by_status(): void
     {
-        $events = EventModel::factory()->count(5)->create();
+        $events = EventModel::factory()->count(5)->create()->all();
 
         TournamentModel::create([
             'event_id' => $events[0]->id,
@@ -374,7 +374,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
 
         $this->assertNotNull($tournament);
         $this->assertSame('2026-10-25T10:00:00+01:00', $tournament->eventStartsAt()?->format('c'));
-        $this->assertSame($event->refresh()->start_date->getTimestamp(), $tournament->eventStartsAt()?->getTimestamp());
+        $this->assertSame($event->refresh()->start_date->getTimestamp(), $tournament->eventStartsAt()->getTimestamp());
     }
 
     public function test_every_finder_reads_the_event_start(): void

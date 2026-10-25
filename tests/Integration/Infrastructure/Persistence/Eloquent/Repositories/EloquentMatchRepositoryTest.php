@@ -60,7 +60,7 @@ final class EloquentMatchRepositoryTest extends TestCase
             'status' => 'in_progress',
         ]);
 
-        $users = UserModel::factory()->count(4)->create();
+        $users = UserModel::factory()->count(4)->create()->all();
         $this->participant1 = ParticipantModel::create([
             'tournament_id' => $this->tournament->id,
             'user_id' => $users[0]->id,

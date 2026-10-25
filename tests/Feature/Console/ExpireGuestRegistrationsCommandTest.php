@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Tests\Feature\Console;
 use Illuminate\Console\Scheduling\Event as ScheduledEvent;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Testing\PendingCommand;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -27,7 +28,10 @@ final class ExpireGuestRegistrationsCommandTest extends ModuleTestCase
 
     public function test_the_command_reports_what_it_did(): void
     {
-        $this->artisan('tournaments:expire-guest-registrations')
+        $command = $this->artisan('tournaments:expire-guest-registrations');
+        $this->assertInstanceOf(PendingCommand::class, $command);
+
+        $command
             ->expectsOutput('Inscripciones caducadas: 0. Huellas borradas: 0.')
             ->assertExitCode(0);
     }
@@ -38,7 +42,9 @@ final class ExpireGuestRegistrationsCommandTest extends ModuleTestCase
             ->filter(fn (ScheduledEvent $event): bool => str_contains((string) $event->command, 'tournaments:expire-guest-registrations'));
 
         $this->assertCount(1, $events);
-        $this->assertSame('*/5 * * * *', $events->first()->expression);
-        $this->assertSame(10, $events->first()->expiresAt);
+        $event = $events->first();
+        $this->assertInstanceOf(ScheduledEvent::class, $event);
+        $this->assertSame('*/5 * * * *', $event->expression);
+        $this->assertSame(10, $event->expiresAt);
     }
 }

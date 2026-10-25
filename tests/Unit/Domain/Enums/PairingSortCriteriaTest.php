@@ -48,7 +48,6 @@ final class PairingSortCriteriaTest extends TestCase
     {
         $options = PairingSortCriteria::options();
 
-        $this->assertIsArray($options);
         $this->assertArrayHasKey('points', $options);
         $this->assertArrayHasKey('stat', $options);
         $this->assertArrayHasKey('random', $options);
@@ -57,25 +56,16 @@ final class PairingSortCriteriaTest extends TestCase
 
     public function test_label_returns_translated_string_for_points(): void
     {
-        $label = PairingSortCriteria::Points->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.pairing_sort_criteria.points'), PairingSortCriteria::Points->label());
     }
 
     public function test_label_returns_translated_string_for_stat(): void
     {
-        $label = PairingSortCriteria::Stat->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.pairing_sort_criteria.stat'), PairingSortCriteria::Stat->label());
     }
 
     public function test_label_returns_translated_string_for_random(): void
     {
-        $label = PairingSortCriteria::Random->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.pairing_sort_criteria.random'), PairingSortCriteria::Random->label());
     }
 }

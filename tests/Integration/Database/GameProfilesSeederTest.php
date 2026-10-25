@@ -75,8 +75,8 @@ final class GameProfilesSeederTest extends ModuleTestCase
         $profile->refresh();
         $this->assertSame($profile->id, GameProfileModel::query()->where('slug', 'warhammer-40k')->value('id'));
         $this->assertSame('Edited by an admin', $profile->description);
-        $this->assertSame('result', $profile->scoring_rules[0]['condition']['type'] ?? null);
-        $this->assertSame('buchholz', $profile->tiebreaker_config[0]['key'] ?? null);
+        $this->assertSame('result', data_get($profile->scoring_rules, '0.condition.type'));
+        $this->assertSame('buchholz', data_get($profile->tiebreaker_config, '0.key'));
     }
 
     public function test_the_legacy_game_profile_seeder_is_gone(): void
@@ -92,8 +92,10 @@ final class GameProfilesSeederTest extends ModuleTestCase
         foreach (GameProfileModel::query()->where('is_system', true)->get() as $profile) {
             $points = [];
             foreach ($profile->scoring_rules as $rule) {
-                if (($rule['condition']['type'] ?? null) === 'result') {
-                    $points[$rule['condition']['result_value']] = (float) $rule['points'];
+                if ($rule['condition']['type'] === 'result') {
+                    $result = $rule['condition']['result_value'];
+                    $this->assertNotNull($result, $profile->slug);
+                    $points[$result] = (float) $rule['points'];
                 }
             }
 

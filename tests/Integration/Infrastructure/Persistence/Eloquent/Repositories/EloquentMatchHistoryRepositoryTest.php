@@ -51,7 +51,7 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
             'status' => 'in_progress',
         ]);
 
-        $users = UserModel::factory()->count(2)->create();
+        $users = UserModel::factory()->count(2)->create()->all();
         $participant1 = ParticipantModel::create([
             'tournament_id' => $tournament->id,
             'user_id' => $users[0]->id,
@@ -188,8 +188,7 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
     {
         $history = $this->repository->findByMatch($this->match->id);
 
-        $this->assertIsArray($history);
-        $this->assertEmpty($history);
+        $this->assertSame([], $history);
     }
 
     public function test_it_orders_history_by_changed_at(): void

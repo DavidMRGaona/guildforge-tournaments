@@ -30,7 +30,6 @@ final class ByeAssignmentTest extends TestCase
     {
         $values = ByeAssignment::values();
 
-        $this->assertIsArray($values);
         $this->assertCount(3, $values);
         $this->assertContains('lowest_ranked', $values);
         $this->assertContains('random', $values);
@@ -41,7 +40,6 @@ final class ByeAssignmentTest extends TestCase
     {
         $options = ByeAssignment::options();
 
-        $this->assertIsArray($options);
         $this->assertCount(3, $options);
         $this->assertArrayHasKey('lowest_ranked', $options);
         $this->assertArrayHasKey('random', $options);
@@ -50,25 +48,16 @@ final class ByeAssignmentTest extends TestCase
 
     public function test_label_returns_translated_string_for_lowest_ranked(): void
     {
-        $label = ByeAssignment::LowestRanked->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.bye_assignment.lowest_ranked'), ByeAssignment::LowestRanked->label());
     }
 
     public function test_label_returns_translated_string_for_random(): void
     {
-        $label = ByeAssignment::Random->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.bye_assignment.random'), ByeAssignment::Random->label());
     }
 
     public function test_label_returns_translated_string_for_highest_ranked(): void
     {
-        $label = ByeAssignment::HighestRanked->label();
-
-        $this->assertIsString($label);
-        $this->assertNotEmpty($label);
+        $this->assertSame(__('tournaments::messages.bye_assignment.highest_ranked'), ByeAssignment::HighestRanked->label());
     }
 }

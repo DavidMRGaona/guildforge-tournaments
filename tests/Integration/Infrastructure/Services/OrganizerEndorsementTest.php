@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -131,8 +132,10 @@ final class OrganizerEndorsementTest extends ModuleTestCase
 
         $this->service()->confirm($row->id);
 
+        $transport = Mail::mailer('array')->getSymfonyTransport();
+        $this->assertInstanceOf(ArrayTransport::class, $transport);
         /** @var list<SentMessage> $messages */
-        $messages = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
+        $messages = $transport->messages()->all();
         $recipients = [];
         foreach ($messages as $message) {
             $email = $message->getOriginalMessage();

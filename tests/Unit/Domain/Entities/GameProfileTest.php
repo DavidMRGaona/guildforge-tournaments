@@ -176,27 +176,24 @@ final class GameProfileTest extends TestCase
     {
         $profile = $this->createGameProfile();
 
-        $this->assertIsArray($profile->statDefinitions());
         $this->assertCount(2, $profile->statDefinitions());
-        $this->assertContainsOnlyInstancesOf(StatDefinition::class, $profile->statDefinitions());
+        $this->assertEquals($this->getDefaultStatDefinitions(), $profile->statDefinitions());
     }
 
     public function test_scoring_rules_getter_returns_correct_value(): void
     {
         $profile = $this->createGameProfile();
 
-        $this->assertIsArray($profile->scoringRules());
         $this->assertCount(2, $profile->scoringRules());
-        $this->assertContainsOnlyInstancesOf(ScoringRule::class, $profile->scoringRules());
+        $this->assertEquals($this->getDefaultScoringRules(), $profile->scoringRules());
     }
 
     public function test_tiebreaker_config_getter_returns_correct_value(): void
     {
         $profile = $this->createGameProfile();
 
-        $this->assertIsArray($profile->tiebreakerConfig());
         $this->assertCount(2, $profile->tiebreakerConfig());
-        $this->assertContainsOnlyInstancesOf(TiebreakerDefinition::class, $profile->tiebreakerConfig());
+        $this->assertEquals($this->getDefaultTiebreakerConfig(), $profile->tiebreakerConfig());
     }
 
     public function test_pairing_config_getter_returns_correct_value(): void
@@ -478,11 +475,8 @@ final class GameProfileTest extends TestCase
             pairingConfig: new PairingConfig(),
         );
 
-        $this->assertIsArray($profile->statDefinitions());
         $this->assertEmpty($profile->statDefinitions());
-        $this->assertIsArray($profile->scoringRules());
         $this->assertEmpty($profile->scoringRules());
-        $this->assertIsArray($profile->tiebreakerConfig());
         $this->assertEmpty($profile->tiebreakerConfig());
     }
 }

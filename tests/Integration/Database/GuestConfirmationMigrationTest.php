@@ -22,6 +22,9 @@ final class GuestConfirmationMigrationTest extends ModuleTestCase
     {
         $migration = require dirname(__DIR__, 3).'/database/migrations/2026_10_19_000001_add_guest_confirmation_to_tournaments_participants.php';
         $this->assertInstanceOf(Migration::class, $migration);
+        if (! method_exists($migration, 'up') || ! method_exists($migration, 'down')) {
+            $this->fail('The migration must be reversible.');
+        }
 
         $tournamentId = $this->createTournament();
         $migration->down();

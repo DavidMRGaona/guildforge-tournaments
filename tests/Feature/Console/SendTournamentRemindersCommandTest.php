@@ -13,6 +13,7 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Testing\PendingCommand;
 use Modules\Tournaments\Console\Commands\SendTournamentRemindersCommand;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -49,7 +50,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $tournament = $this->tournament($this->now->addHours(10));
         $row = $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
 
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         $this->assertSame([], $this->mails());
         $this->assertNull($row->fresh()?->reminder_sent_at);
@@ -65,8 +66,8 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $this->participant($tournament, ['guest_name' => 'Sin confirmar', 'guest_email' => 'pendiente@example.com', 'email_confirmed_at' => null]);
         $this->participant($tournament, ['guest_name' => 'Retirada', 'guest_email' => 'retirada@example.com', 'email_confirmed_at' => $this->now, 'status' => ParticipantStatus::Withdrawn->value]);
 
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+        $this->sendReminders();
+        $this->sendReminders();
 
         $mails = $this->mails();
         $this->assertSame(['cuenta@example.com', 'invitada@example.com'], array_column($mails, 'to'));
@@ -84,7 +85,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
             $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
         }
 
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         $this->assertSame([], $this->mails());
     }
@@ -98,7 +99,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         EventModel::query()->whereKey($hidden->event_id)->update(['is_published' => false]);
         $this->participant($hidden, ['user_id' => UserModel::factory()->create()->id]);
 
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         $this->assertSame([], $this->mails());
     }
@@ -109,7 +110,7 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $tournament = $this->tournament($this->now->addHours(30));
         $this->participant($tournament, ['user_id' => UserModel::factory()->create()->id]);
 
-        $this->artisan('tournaments:send-reminders')->assertSuccessful();
+        $this->sendReminders();
 
         $this->assertCount(1, $this->mails());
     }
@@ -124,6 +125,13 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $this->assertCount(1, $events);
         $this->assertSame('0 * * * *', $events[0]->expression);
         $this->assertTrue($events[0]->withoutOverlapping);
+    }
+
+    private function sendReminders(): void
+    {
+        $command = $this->artisan('tournaments:send-reminders');
+        $this->assertInstanceOf(PendingCommand::class, $command);
+        $command->assertSuccessful();
     }
 
     private function enable(int $hours = 24): void
