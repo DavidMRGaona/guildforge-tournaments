@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -20,6 +21,8 @@ use Tests\Support\Modules\ModuleTestCase;
  */
 final class RegistrationDisplayStatusTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;

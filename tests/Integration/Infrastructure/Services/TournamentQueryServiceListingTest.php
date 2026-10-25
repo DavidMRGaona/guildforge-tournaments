@@ -9,10 +9,13 @@ use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class TournamentQueryServiceListingTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;

@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -15,6 +16,8 @@ use Tests\Support\Modules\ModuleTestCase;
  */
 final class PublicCheckInRateLimitTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;

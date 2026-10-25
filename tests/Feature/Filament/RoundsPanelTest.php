@@ -28,6 +28,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use Modules\Tournaments\Tests\Support\StaleRoundRepository;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -39,6 +40,8 @@ require_once dirname(__DIR__, 2).'/Support/StaleRoundRepository.php';
  */
 final class RoundsPanelTest extends ModuleTestCase
 {
+    use PinsTheClock;
+
     use InteractsWithModulePanel;
 
     protected ?string $moduleName = 'tournaments';
