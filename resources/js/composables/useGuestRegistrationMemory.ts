@@ -1,12 +1,13 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { ref } from 'vue';
+import { hasCookieConsent } from '@/contracts/cookieConsent';
 
 const COOKIE_NAME = 'tn_guest_registrations';
-const COOKIE_CONSENT_CHANGED = 'guildforge:cookie-consent-changed';
 const MAX_AGE_SECONDS = 90 * 24 * 60 * 60;
 
 type Remembered = Record<string, number>;
 
-const hasPreferencesConsent = (): boolean => globalThis.GuildForgeCookieConsent?.hasConsent('preferences') === true;
+// Reactive: answers follow the banner registering later and the visitor changing their mind
+const hasPreferencesConsent = (): boolean => hasCookieConsent('preferences');
 
 // Tournament ids only (no emails or names), each with the moment the entry stops mattering
 const readCookie = (): Remembered => {
@@ -40,29 +41,20 @@ const readCookie = (): Remembered => {
 /**
  * Remembers, in this browser, the tournaments the visitor registered for as a guest, so the form
  * can warn before a second attempt. Reads and writes only with consent to the `preferences`
- * cookies; without the cookie-consent banner on the page nothing is stored.
+ * cookies; without a cookie consent module on the page nothing is stored.
  */
 export function useGuestRegistrationMemory(): {
     wasRegisteredHere: (tournamentId: string) => boolean;
     remember: (tournamentId: string, until: string | null) => void;
 } {
-    // The banner publishes its API after setup() and consent can change without a reload
-    const version = ref(0);
-    const refresh = (): void => {
-        version.value += 1;
-    };
-
-    onMounted(() => {
-        refresh();
-        window.addEventListener(COOKIE_CONSENT_CHANGED, refresh);
-    });
-    onBeforeUnmount(() => {
-        window.removeEventListener(COOKIE_CONSENT_CHANGED, refresh);
-    });
+    // Vue cannot watch document.cookie: bumped after this browser writes it
+    const writes = ref(0);
 
     const wasRegisteredHere = (tournamentId: string): boolean => {
-        // Reading the counter makes the answer follow mount and consent changes
-        if (version.value === 0 || !hasPreferencesConsent()) {
+        // Reading the counter makes the answer follow this browser's own writes
+        void writes.value;
+
+        if (!hasPreferencesConsent()) {
             return false;
         }
 
@@ -89,7 +81,7 @@ export function useGuestRegistrationMemory(): {
         remembered[tournamentId] = expiry;
 
         document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(remembered))}; Max-Age=${MAX_AGE_SECONDS}; Path=/; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
-        refresh();
+        writes.value += 1;
     };
 
     return { wasRegisteredHere, remember };

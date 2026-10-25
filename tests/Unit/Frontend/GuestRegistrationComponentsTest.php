@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class GuestRegistrationComponentsTest extends TestCase
 {
-    private const string JS = __DIR__ . '/../../../resources/js/';
+    private const string JS = __DIR__.'/../../../resources/js/';
 
     /**
      * @return array<string, array{string}>
@@ -55,22 +55,24 @@ final class GuestRegistrationComponentsTest extends TestCase
         $source = $this->source('composables/useGuestRegistrationMemory.ts');
 
         $this->assertStringContainsString('tn_guest_registrations', $source);
-        $this->assertStringContainsString("hasConsent('preferences')", $source);
-        $this->assertStringContainsString('guildforge:cookie-consent-changed', $source);
+        $this->assertStringContainsString("from '@/contracts/cookieConsent'", $source);
+        $this->assertStringContainsString("hasCookieConsent('preferences')", $source);
+        $this->assertStringNotContainsString('GuildForgeCookieConsent', $source);
 
-        $consent = strpos($source, "hasConsent('preferences')");
+        $consent = strpos($source, "hasCookieConsent('preferences')");
         $cookie = strpos($source, 'document.cookie');
         $this->assertNotFalse($consent);
         $this->assertNotFalse($cookie);
         $this->assertLessThan($cookie, $consent);
     }
 
-    public function test_the_browser_global_is_typed_by_the_module(): void
+    public function test_the_build_shares_the_core_contracts_instead_of_bundling_them(): void
     {
-        $source = $this->source('types/global.d.ts');
+        // A bundled copy of the contract would never hear from the consent provider
+        $config = file_get_contents(__DIR__.'/../../../vite.config.ts');
+        $this->assertNotFalse($config);
 
-        $this->assertStringContainsString('interface GuildForgeCookieConsentApi', $source);
-        $this->assertStringContainsString('hasConsent(categorySlug: string): boolean', $source);
+        $this->assertStringContainsString("id.startsWith('@/contracts/')", $config);
     }
 
     public function test_the_page_types_carry_the_confirmation_terms(): void
@@ -96,7 +98,7 @@ final class GuestRegistrationComponentsTest extends TestCase
         $source = $this->source($locale);
 
         foreach (['guest_confirmation_hold', 'guest_confirmation_wait', 'already_registered_here', 'sign_in'] as $key) {
-            $this->assertMatchesRegularExpression('/\b' . $key . ':/', $source, "{$locale} lacks {$key}");
+            $this->assertMatchesRegularExpression('/\b'.$key.':/', $source, "{$locale} lacks {$key}");
         }
     }
 
@@ -111,7 +113,7 @@ final class GuestRegistrationComponentsTest extends TestCase
 
     private function source(string $file): string
     {
-        $contents = file_get_contents(self::JS . $file);
+        $contents = file_get_contents(self::JS.$file);
         $this->assertNotFalse($contents, "{$file} is readable");
 
         return $contents;
