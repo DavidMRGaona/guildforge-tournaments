@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
@@ -96,88 +95,86 @@ function handleConfirm(): void {
 </script>
 
 <template>
-    <DefaultLayout>
-        <div class="mx-auto max-w-2xl px-4 py-12">
-            <div class="rounded-xl bg-surface p-8 shadow-lg">
-                <h1 class="mb-6 text-center text-2xl font-bold text-base-primary">
-                    {{ t('tournaments.confirmation.title') }}
-                </h1>
+    <div class="mx-auto max-w-2xl px-4 py-12">
+        <div class="rounded-xl bg-surface p-8 shadow-lg">
+            <h1 class="mb-6 text-center text-2xl font-bold text-base-primary">
+                {{ t('tournaments.confirmation.title') }}
+            </h1>
 
-                <div
-                    v-if="confirmation.tournament_name"
-                    class="mb-6 rounded-lg bg-surface-secondary p-4"
+            <div
+                v-if="confirmation.tournament_name"
+                class="mb-6 rounded-lg bg-surface-secondary p-4"
+            >
+                <dl class="space-y-2">
+                    <div
+                        v-if="confirmation.guest_name"
+                        class="flex justify-between gap-4"
+                    >
+                        <dt class="text-sm text-base-muted">
+                            {{ t('tournaments.confirmation.participant') }}
+                        </dt>
+                        <dd class="text-right text-sm font-medium text-base-primary">
+                            {{ confirmation.guest_name }}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-sm text-base-muted">
+                            {{ t('tournaments.confirmation.tournament') }}
+                        </dt>
+                        <dd class="text-right text-sm font-medium text-base-primary">
+                            {{ confirmation.tournament_name }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
+            <form
+                v-if="showForm"
+                method="post"
+                :action="confirmUrl"
+                @submit.prevent="handleConfirm"
+            >
+                <p class="mb-6 text-center text-base-secondary">
+                    {{ seatNotice }}
+                </p>
+
+                <BaseButton
+                    type="submit"
+                    variant="primary"
+                    class="w-full"
+                    :loading="isSubmitting"
                 >
-                    <dl class="space-y-2">
-                        <div
-                            v-if="confirmation.guest_name"
-                            class="flex justify-between gap-4"
-                        >
-                            <dt class="text-sm text-base-muted">
-                                {{ t('tournaments.confirmation.participant') }}
-                            </dt>
-                            <dd class="text-right text-sm font-medium text-base-primary">
-                                {{ confirmation.guest_name }}
-                            </dd>
-                        </div>
-                        <div class="flex justify-between gap-4">
-                            <dt class="text-sm text-base-muted">
-                                {{ t('tournaments.confirmation.tournament') }}
-                            </dt>
-                            <dd class="text-right text-sm font-medium text-base-primary">
-                                {{ confirmation.tournament_name }}
-                            </dd>
-                        </div>
-                    </dl>
+                    {{ t('tournaments.confirmation.confirm_button') }}
+                </BaseButton>
+            </form>
+
+            <template v-else>
+                <div
+                    :role="isSuccess ? 'status' : 'alert'"
+                    class="mb-6 rounded-lg p-4 text-center"
+                    :class="isSuccess ? 'bg-success-light' : 'bg-warning-light'"
+                >
+                    <p
+                        class="text-sm"
+                        :class="isSuccess ? 'text-success' : 'text-warning-dark'"
+                    >
+                        {{ stateMessage }}
+                    </p>
                 </div>
 
-                <form
-                    v-if="showForm"
-                    method="post"
-                    :action="confirmUrl"
-                    @submit.prevent="handleConfirm"
-                >
-                    <p class="mb-6 text-center text-base-secondary">
-                        {{ seatNotice }}
-                    </p>
-
+                <Link :href="backHref">
                     <BaseButton
-                        type="submit"
                         variant="primary"
                         class="w-full"
-                        :loading="isSubmitting"
                     >
-                        {{ t('tournaments.confirmation.confirm_button') }}
+                        {{
+                            confirmation.tournament_slug
+                                ? t('tournaments.confirmation.view_tournament')
+                                : t('tournaments.confirmation.view_tournaments')
+                        }}
                     </BaseButton>
-                </form>
-
-                <template v-else>
-                    <div
-                        :role="isSuccess ? 'status' : 'alert'"
-                        class="mb-6 rounded-lg p-4 text-center"
-                        :class="isSuccess ? 'bg-success-light' : 'bg-warning-light'"
-                    >
-                        <p
-                            class="text-sm"
-                            :class="isSuccess ? 'text-success' : 'text-warning-dark'"
-                        >
-                            {{ stateMessage }}
-                        </p>
-                    </div>
-
-                    <Link :href="backHref">
-                        <BaseButton
-                            variant="primary"
-                            class="w-full"
-                        >
-                            {{
-                                confirmation.tournament_slug
-                                    ? t('tournaments.confirmation.view_tournament')
-                                    : t('tournaments.confirmation.view_tournaments')
-                            }}
-                        </BaseButton>
-                    </Link>
-                </template>
-            </div>
+                </Link>
+            </template>
         </div>
-    </DefaultLayout>
+    </div>
 </template>
