@@ -44,7 +44,12 @@ Con el repositorio clonado en `src/modules/tournaments`:
 ```bash
 php artisan module:discover
 php artisan module:enable tournaments
-php artisan module:build tournaments   # compila los componentes Vue (--force para recompilar)
+```
+
+Los componentes Vue se compilan con las herramientas del core, desde `src/`:
+
+```bash
+docker exec guildforge_node npm run build:module -- tournaments
 ```
 
 En las releases los assets los compila el CI y van dentro del ZIP.
@@ -422,7 +427,6 @@ src/modules/tournaments/
 │   ├── Feature/
 │   └── js/                     # Tests de los componentes Vue (Vitest)
 ├── module.json
-├── package.json
 ├── phpunit.xml
 ├── vite.config.ts
 └── vitest.config.ts
@@ -439,11 +443,10 @@ vendor/bin/phpunit -c modules/tournaments/phpunit.xml --testsuite=Unit
 
 `php artisan test` no ejecuta los tests de los módulos.
 
-Los componentes Vue tienen sus propios tests en `tests/js` (Vitest, Vue Test Utils y happy-dom). Se ejecutan con el módulo dentro del core, porque los componentes importan sus fuentes con `@/`, y con las dependencias de npm del core y del módulo instaladas:
+Los componentes Vue tienen sus propios tests en `tests/js` (Vitest, Vue Test Utils y happy-dom). Se ejecutan con el módulo dentro del core y con las herramientas del core (`vitest.config.ts` usa `defineModuleTestConfig`), porque los componentes importan sus fuentes con `@/`:
 
 ```bash
-cd modules/tournaments
-npm test
+docker exec guildforge_node sh -c 'cd modules/tournaments && ../../node_modules/.bin/vitest run'
 ```
 
 `tests/js/setup.ts` carga los textos del core y del módulo en castellano y sustituye Inertia (router y enlaces) y el layout del sitio. En cada pull request los ejecuta el job *Quality*.
