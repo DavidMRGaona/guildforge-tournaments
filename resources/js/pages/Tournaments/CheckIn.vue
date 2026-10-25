@@ -8,6 +8,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
+import { useRoutes } from '@/composables/useRoutes';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
@@ -16,6 +17,7 @@ type FormErrors = Partial<Record<CheckInField, string | undefined>>;
 const props = defineProps<TournamentCheckInProps>();
 
 const { t, locale } = useI18n();
+const routes = useRoutes();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
 // A signed-in user checks in as themselves, which is closed to accounts that must verify their email
@@ -353,7 +355,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                     >
                                         {{ t('tournaments.check_in.gdpr_consent') }}
                                         <a
-                                            href="/politica-de-privacidad"
+                                            :href="routes.legal.privacy"
                                             target="_blank"
                                             class="text-primary underline hover:no-underline"
                                         >

@@ -11,6 +11,7 @@ import { statusBadgeClasses } from '../../utils/statusColors';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
+import { useRoutes } from '@/composables/useRoutes';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 
@@ -19,6 +20,7 @@ type FormErrors = Partial<Record<GuestRegistrationField, string | undefined>>;
 const props = defineProps<TournamentShowProps>();
 
 const { t, locale } = useI18n();
+const routes = useRoutes();
 const { formatStatus, formatPoints, formatRecord, spotsRemaining, isTournamentFull, hasStarted, shouldShowParticipants } = useTournaments();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
@@ -751,7 +753,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 >
                                     {{ t('tournaments.public.gdpr_consent') }}
                                     <a
-                                        href="/politica-de-privacidad"
+                                        :href="routes.legal.privacy"
                                         target="_blank"
                                         class="text-primary underline hover:no-underline"
                                     >

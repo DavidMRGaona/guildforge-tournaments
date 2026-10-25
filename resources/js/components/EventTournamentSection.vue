@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
+import { useRoutes } from '@/composables/useRoutes';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useTournaments } from '../composables/useTournaments';
@@ -24,6 +25,7 @@ type FormErrors = Partial<Record<GuestRegistrationField, string | undefined>>;
 const props = defineProps<EventTournamentSectionProps>();
 
 const { t, locale } = useI18n();
+const routes = useRoutes();
 const { getStatusColor } = useTournaments();
 const { isAuthenticated } = useAuth();
 const { error: notifyError, success: notifySuccess } = useNotifications();
@@ -584,7 +586,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                 >
                                     {{ t('tournaments.public.gdpr_consent') }}
                                     <a
-                                        href="/politica-de-privacidad"
+                                        :href="routes.legal.privacy"
                                         target="_blank"
                                         class="text-primary underline hover:no-underline"
                                     >
