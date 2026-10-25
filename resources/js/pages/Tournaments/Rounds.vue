@@ -36,6 +36,9 @@ const isExpanded = (roundId: string): boolean => {
     return expandedRounds.value.has(roundId);
 };
 
+// The id of a round's match panel, which its header button controls
+const panelId = (roundId: string): string => `round-${roundId}-matches`;
+
 const sortedRounds = computed(() => {
     return [...props.rounds].sort((a, b) => b.round.round_number - a.round.round_number);
 });
@@ -83,6 +86,8 @@ const sortedRounds = computed(() => {
                             :class="{
                                 'bg-info-light': roundData.round.status === 'in_progress',
                             }"
+                            :aria-expanded="isExpanded(roundData.round.id)"
+                            :aria-controls="panelId(roundData.round.id)"
                             @click="toggleRound(roundData.round.id)"
                         >
                             <div class="flex items-center gap-3">
@@ -113,6 +118,7 @@ const sortedRounds = computed(() => {
                         <!-- Round Matches (collapsible) -->
                         <div
                             v-show="isExpanded(roundData.round.id)"
+                            :id="panelId(roundData.round.id)"
                             class="border-t border-default"
                         >
                             <div v-if="roundData.matches.length === 0" class="p-4 text-center text-base-muted">

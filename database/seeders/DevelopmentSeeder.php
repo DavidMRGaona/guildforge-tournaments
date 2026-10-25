@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
@@ -18,8 +19,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\TournamentsServiceProvider;
 
 /**
  * Seeds development/test data for tournaments module.
@@ -63,7 +64,25 @@ final class DevelopmentSeeder extends Seeder
         $this->seedParticipants();
         $this->seedRounds();
         $this->seedMatches();
-        $this->seedStandings();
+
+        // The standings are the module's own, computed from the results above (as the panel
+        // does after each result), never written by hand
+        $standings = $this->standingsService();
+        $standings->recalculate($this->tournaments['liga-w40k']->id);
+        $standings->recalculate($this->tournaments['campeonato-clausurado']->id);
+    }
+
+    /**
+     * The module's standings service. When the module is being enabled its seeders run before
+     * its provider is registered: its bindings are all this needs (nothing from boot()).
+     */
+    private function standingsService(): StandingsServiceInterface
+    {
+        if (! app()->bound(StandingsServiceInterface::class)) {
+            (new TournamentsServiceProvider(app()))->register();
+        }
+
+        return app(StandingsServiceInterface::class);
     }
 
     private function seedTournaments(): void
@@ -285,25 +304,25 @@ final class DevelopmentSeeder extends Seeder
     {
         $participants = $this->participants['liga-w40k'];
         $rounds = $this->rounds['liga-w40k'];
-        $user = $this->users->first();
 
-        // Round 1: P1 vs P8, P2 vs P7, P3 vs P6, P4 vs P5 (bye for none with 8 players)
+        // Swiss pairing: players on the same points meet, nobody meets the same opponent twice
+        // Round 1 (by seed): P1 vs P8, P2 vs P7, P3 vs P6, P4 vs P5
         $this->createMatch($rounds[0], $participants[0], $participants[7], MatchResult::PlayerOneWin, 1, 85, 60);
         $this->createMatch($rounds[0], $participants[1], $participants[6], MatchResult::PlayerOneWin, 2, 78, 45);
         $this->createMatch($rounds[0], $participants[2], $participants[5], MatchResult::PlayerTwoWin, 3, 55, 72);
         $this->createMatch($rounds[0], $participants[3], $participants[4], MatchResult::Draw, 4, 65, 65);
 
-        // Round 2: Winners vs winners, losers vs losers (Swiss pairing)
+        // Round 2, after P1/P2/P6 3 pts, P4/P5 1 pt, P3/P7/P8 0 pts
         $this->createMatch($rounds[1], $participants[0], $participants[1], MatchResult::PlayerTwoWin, 1, 62, 80);
-        $this->createMatch($rounds[1], $participants[5], $participants[2], MatchResult::PlayerOneWin, 2, 75, 50);
-        $this->createMatch($rounds[1], $participants[3], $participants[7], MatchResult::PlayerOneWin, 3, 70, 55);
-        $this->createMatch($rounds[1], $participants[4], $participants[6], MatchResult::Draw, 4, 60, 60);
+        $this->createMatch($rounds[1], $participants[5], $participants[3], MatchResult::PlayerOneWin, 2, 75, 50);
+        $this->createMatch($rounds[1], $participants[4], $participants[2], MatchResult::Draw, 3, 60, 60);
+        $this->createMatch($rounds[1], $participants[6], $participants[7], MatchResult::PlayerOneWin, 4, 70, 55);
 
-        // Round 3: In progress - not played yet
+        // Round 3 (in progress, not played yet), after P2/P6 6 pts, P1/P7 3 pts, P5 2 pts, P3/P4 1 pt, P8 0 pts
         $this->createMatch($rounds[2], $participants[1], $participants[5], MatchResult::NotPlayed, 1);
-        $this->createMatch($rounds[2], $participants[0], $participants[3], MatchResult::NotPlayed, 2);
-        $this->createMatch($rounds[2], $participants[2], $participants[4], MatchResult::NotPlayed, 3);
-        $this->createMatch($rounds[2], $participants[6], $participants[7], MatchResult::NotPlayed, 4);
+        $this->createMatch($rounds[2], $participants[0], $participants[6], MatchResult::NotPlayed, 2);
+        $this->createMatch($rounds[2], $participants[4], $participants[7], MatchResult::NotPlayed, 3);
+        $this->createMatch($rounds[2], $participants[2], $participants[3], MatchResult::NotPlayed, 4);
     }
 
     private function seedCampeonatoMatches(): void
@@ -311,20 +330,21 @@ final class DevelopmentSeeder extends Seeder
         $participants = $this->participants['campeonato-clausurado'];
         $rounds = $this->rounds['campeonato-clausurado'];
 
-        // Round 1: 6 players = 3 matches (one bye if odd, but we have 6)
+        // Swiss pairing with 6 players (no byes); nobody meets the same opponent twice
+        // Round 1 (by seed): P1 vs P6, P2 vs P5, P3 vs P4
         $this->createMatch($rounds[0], $participants[0], $participants[5], MatchResult::PlayerOneWin, 1);
         $this->createMatch($rounds[0], $participants[1], $participants[4], MatchResult::PlayerOneWin, 2);
         $this->createMatch($rounds[0], $participants[2], $participants[3], MatchResult::PlayerTwoWin, 3);
 
-        // Round 2
+        // Round 2, after P1/P2/P4 3 pts, P3/P5/P6 0 pts
         $this->createMatch($rounds[1], $participants[0], $participants[1], MatchResult::Draw, 1);
         $this->createMatch($rounds[1], $participants[3], $participants[5], MatchResult::PlayerOneWin, 2);
         $this->createMatch($rounds[1], $participants[2], $participants[4], MatchResult::PlayerTwoWin, 3);
 
-        // Round 3 (final)
+        // Round 3 (final), after P4 6 pts, P1/P2 4 pts, P5 3 pts, P3/P6 0 pts
         $this->createMatch($rounds[2], $participants[0], $participants[3], MatchResult::PlayerOneWin, 1);
-        $this->createMatch($rounds[2], $participants[1], $participants[4], MatchResult::PlayerOneWin, 2);
-        $this->createMatch($rounds[2], $participants[2], $participants[5], MatchResult::PlayerOneWin, 3);
+        $this->createMatch($rounds[2], $participants[1], $participants[2], MatchResult::PlayerTwoWin, 2);
+        $this->createMatch($rounds[2], $participants[4], $participants[5], MatchResult::PlayerOneWin, 3);
     }
 
     private function createMatch(
@@ -356,113 +376,6 @@ final class DevelopmentSeeder extends Seeder
                 'confirmed_by_id' => $isPlayed ? $user?->id : null,
                 'confirmed_at' => $isPlayed ? now()->subHours(rand(0, 2)) : null,
                 'is_disputed' => false,
-            ],
-        );
-    }
-
-    private function seedStandings(): void
-    {
-        $this->seedLigaW40kStandings();
-        $this->seedCampeonatoStandings();
-    }
-
-    private function seedLigaW40kStandings(): void
-    {
-        $tournament = $this->tournaments['liga-w40k'];
-        $participants = $this->participants['liga-w40k'];
-
-        // Standings after round 2 (before round 3 results)
-        // Based on matches: P1(1W1L=3pts), P2(2W=6pts), P3(1L=0pts), P4(1D1W=4pts), P5(1D1D=2pts), P6(1W1L=3pts), P7(2L=0pts), P8(1L1L=0pts)
-        // Note: owp is stored as decimal (0.50 = 50%)
-        $standingsData = [
-            ['p' => 1, 'rank' => 2, 'w' => 1, 'd' => 0, 'l' => 1, 'pts' => 3.0, 'buch' => 6.0, 'owp' => 0.50],
-            ['p' => 2, 'rank' => 1, 'w' => 2, 'd' => 0, 'l' => 0, 'pts' => 6.0, 'buch' => 3.0, 'owp' => 0.25],
-            ['p' => 3, 'rank' => 7, 'w' => 0, 'd' => 0, 'l' => 2, 'pts' => 0.0, 'buch' => 6.0, 'owp' => 0.75],
-            ['p' => 4, 'rank' => 3, 'w' => 1, 'd' => 1, 'l' => 0, 'pts' => 4.0, 'buch' => 1.0, 'owp' => 0.25],
-            ['p' => 5, 'rank' => 5, 'w' => 0, 'd' => 2, 'l' => 0, 'pts' => 2.0, 'buch' => 4.0, 'owp' => 0.50],
-            ['p' => 6, 'rank' => 4, 'w' => 1, 'd' => 0, 'l' => 1, 'pts' => 3.0, 'buch' => 3.0, 'owp' => 0.375],
-            ['p' => 7, 'rank' => 6, 'w' => 0, 'd' => 1, 'l' => 1, 'pts' => 1.0, 'buch' => 7.0, 'owp' => 0.875],
-            ['p' => 8, 'rank' => 8, 'w' => 0, 'd' => 0, 'l' => 2, 'pts' => 0.0, 'buch' => 7.0, 'owp' => 0.875],
-        ];
-
-        foreach ($standingsData as $data) {
-            $this->createStanding(
-                $tournament,
-                $participants[$data['p'] - 1],
-                $data['rank'],
-                $data['w'],
-                $data['d'],
-                $data['l'],
-                $data['pts'],
-                $data['buch'],
-                $data['owp'],
-            );
-        }
-    }
-
-    private function seedCampeonatoStandings(): void
-    {
-        $tournament = $this->tournaments['campeonato-clausurado'];
-        $participants = $this->participants['campeonato-clausurado'];
-
-        // Final standings after 3 rounds
-        // P1: 2W1D=7pts, P2: 1W1D1L=4pts, P3: 1W2L=3pts, P4: 2W1L=6pts, P5: 1W2L=3pts, P6: 3L=0pts
-        // Note: owp is stored as decimal (0.556 = 55.6%)
-        $standingsData = [
-            ['p' => 1, 'rank' => 1, 'w' => 2, 'd' => 1, 'l' => 0, 'pts' => 7.0, 'buch' => 10.0, 'owp' => 0.556],
-            ['p' => 2, 'rank' => 3, 'w' => 1, 'd' => 1, 'l' => 1, 'pts' => 4.0, 'buch' => 11.0, 'owp' => 0.611],
-            ['p' => 3, 'rank' => 4, 'w' => 1, 'd' => 0, 'l' => 2, 'pts' => 3.0, 'buch' => 7.0, 'owp' => 0.389],
-            ['p' => 4, 'rank' => 2, 'w' => 2, 'd' => 0, 'l' => 1, 'pts' => 6.0, 'buch' => 10.0, 'owp' => 0.556],
-            ['p' => 5, 'rank' => 5, 'w' => 1, 'd' => 0, 'l' => 2, 'pts' => 3.0, 'buch' => 8.0, 'owp' => 0.444],
-            ['p' => 6, 'rank' => 6, 'w' => 0, 'd' => 0, 'l' => 3, 'pts' => 0.0, 'buch' => 13.0, 'owp' => 0.722],
-        ];
-
-        foreach ($standingsData as $data) {
-            $this->createStanding(
-                $tournament,
-                $participants[$data['p'] - 1],
-                $data['rank'],
-                $data['w'],
-                $data['d'],
-                $data['l'],
-                $data['pts'],
-                $data['buch'],
-                $data['owp'],
-            );
-        }
-    }
-
-    private function createStanding(
-        TournamentModel $tournament,
-        ParticipantModel $participant,
-        int $rank,
-        int $wins,
-        int $draws,
-        int $losses,
-        float $points,
-        float $buchholz,
-        float $owp,
-    ): StandingModel {
-        $matchesPlayed = $wins + $draws + $losses;
-
-        return StandingModel::firstOrCreate(
-            [
-                'tournament_id' => $tournament->id,
-                'participant_id' => $participant->id,
-            ],
-            [
-                'id' => Str::uuid()->toString(),
-                'rank' => $rank,
-                'matches_played' => $matchesPlayed,
-                'wins' => $wins,
-                'draws' => $draws,
-                'losses' => $losses,
-                'byes' => 0,
-                'points' => $points,
-                'buchholz' => $buchholz,
-                'median_buchholz' => $buchholz * 0.8,
-                'progressive' => $points * $matchesPlayed / 3,
-                'opponent_win_percentage' => $owp,
             ],
         );
     }

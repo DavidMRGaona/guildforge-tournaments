@@ -58,7 +58,8 @@ function loadMore(): void {
         </div>
     </div>
 
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <!-- A plain container: the site layout already renders the page's <main> -->
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Empty state -->
         <EmptyState
             v-if="isEmpty"
@@ -155,5 +156,5 @@ function loadMore(): void {
                 </div>
             </section>
         </template>
-    </main>
+    </div>
 </template>

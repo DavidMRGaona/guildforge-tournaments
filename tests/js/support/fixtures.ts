@@ -1,4 +1,4 @@
-import type { Participant, Tournament } from '../../../resources/js/types/tournaments';
+import type { Match, Participant, Round, RoundWithMatches, Tournament } from '../../../resources/js/types/tournaments';
 
 /** A tournament open for registration; override what the test is about. */
 export function tournament(overrides: Partial<Tournament> = {}): Tournament {
@@ -62,4 +62,49 @@ export function registration(overrides: Partial<Participant> = {}): Participant 
         is_checked_in: false,
         ...overrides,
     };
+}
+
+/** A finished round with one played match; override what the test is about. */
+export function roundWithMatches(overrides: Partial<Round> = {}): RoundWithMatches {
+    const round: Round = {
+        id: 'round-1',
+        tournament_id: 'tournament-1',
+        round_number: 1,
+        status: 'finished',
+        status_label: 'Finalizada',
+        match_count: 1,
+        completed_match_count: 1,
+        pending_match_count: 0,
+        completion_percentage: 100,
+        is_completed: true,
+        started_at: '2026-10-10T10:00:00Z',
+        completed_at: '2026-10-10T12:00:00Z',
+        ...overrides,
+    };
+    const match: Match = {
+        id: `${round.id}-match-1`,
+        round_id: round.id,
+        player_1_id: 'participant-1',
+        player_1_name: 'John Doe',
+        player_2_id: 'participant-2',
+        player_2_name: 'Jane Doe',
+        table_number: 1,
+        result: 'player_one_win',
+        result_label: 'Victoria jugador 1',
+        player_1_score: 20,
+        player_2_score: 10,
+        reported_by_id: null,
+        reported_by_name: null,
+        reported_at: null,
+        confirmed_by_id: null,
+        confirmed_by_name: null,
+        confirmed_at: null,
+        is_disputed: false,
+        is_bye: false,
+        is_reported: true,
+        is_confirmed: true,
+        needs_confirmation: false,
+    };
+
+    return { round, matches: [match] };
 }

@@ -162,17 +162,16 @@ function handleConfirm(): void {
                     </p>
                 </div>
 
-                <Link :href="backHref">
-                    <BaseButton
-                        variant="primary"
-                        class="w-full"
-                    >
-                        {{
-                            confirmation.tournament_slug
-                                ? t('tournaments.confirmation.view_tournament')
-                                : t('tournaments.confirmation.view_tournaments')
-                        }}
-                    </BaseButton>
+                <!-- Styled as the core's primary BaseButton, without a button inside the link -->
+                <Link
+                    :href="backHref"
+                    class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-base font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                >
+                    {{
+                        confirmation.tournament_slug
+                            ? t('tournaments.confirmation.view_tournament')
+                            : t('tournaments.confirmation.view_tournaments')
+                    }}
                 </Link>
             </template>
         </div>

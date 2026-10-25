@@ -331,7 +331,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
         <!-- Back link -->
         <div class="mb-6">
             <Link
-                href="/eventos"
+                href="/torneos"
                 class="inline-flex items-center text-sm text-[color:var(--color-text-secondary)] hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
             >
                 <ChevronLeft class="mr-1 h-4 w-4" aria-hidden="true" />
@@ -373,7 +373,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
                         <div>
                             <h3 class="text-sm font-medium text-base-muted">
-                                {{ t('tournaments.public.participants') }}
+                                {{ t('tournaments.public.participants_heading') }}
                             </h3>
                             <p class="mt-1 text-2xl font-semibold text-base-primary">
                                 {{ tournament.participant_count }}
@@ -604,15 +604,19 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     v-if="tournamentHasStarted"
                     class="flex flex-wrap gap-4 border-t border-default pt-6"
                 >
-                    <Link :href="`/torneos/${tournament.slug}/clasificacion`">
-                        <BaseButton variant="secondary">
-                            {{ t('tournaments.public.standings') }}
-                        </BaseButton>
+                    <!-- Links styled as the core's secondary BaseButton: a button inside a link
+                         would be two interactive elements for one action -->
+                    <Link
+                        :href="`/torneos/${tournament.slug}/clasificacion`"
+                        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-muted px-4 py-2 text-base font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-base-muted focus:ring-offset-2 focus:ring-offset-surface"
+                    >
+                        {{ t('tournaments.public.standings') }}
                     </Link>
-                    <Link :href="`/torneos/${tournament.slug}/rondas`">
-                        <BaseButton variant="secondary">
-                            {{ t('tournaments.public.rounds') }}
-                        </BaseButton>
+                    <Link
+                        :href="`/torneos/${tournament.slug}/rondas`"
+                        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-muted px-4 py-2 text-base font-medium text-base-primary transition-colors hover:bg-base-secondary/20 focus:outline-none focus:ring-2 focus:ring-base-muted focus:ring-offset-2 focus:ring-offset-surface"
+                    >
+                        {{ t('tournaments.public.rounds') }}
                     </Link>
                 </div>
             </div>

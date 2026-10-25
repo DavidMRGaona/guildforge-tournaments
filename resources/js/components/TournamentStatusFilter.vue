@@ -64,6 +64,7 @@ function isActive(filter: TournamentStatusFilter): boolean {
                     ? 'bg-primary-light text-primary font-semibold'
                     : 'bg-base-secondary/10 text-base-secondary hover:bg-base-secondary/20',
             ]"
+            :aria-pressed="isActive(option.value)"
             @click="selectFilter(option.value)"
         >
             {{ option.label }}
