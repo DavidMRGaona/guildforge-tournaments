@@ -15,6 +15,7 @@ use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\TestCase;
 
 final class EloquentRoundRepositoryTest extends TestCase
@@ -40,9 +41,12 @@ final class EloquentRoundRepositoryTest extends TestCase
         ]);
     }
 
-    public function test_it_implements_round_repository_interface(): void
+    public function test_container_resolves_round_repository_interface_to_eloquent_repository(): void
     {
-        $this->assertInstanceOf(RoundRepositoryInterface::class, $this->repository);
+        // The module may not auto-boot in the test environment
+        $this->app->register(TournamentsServiceProvider::class);
+
+        $this->assertInstanceOf(EloquentRoundRepository::class, app(RoundRepositoryInterface::class));
     }
 
     public function test_it_saves_new_round(): void

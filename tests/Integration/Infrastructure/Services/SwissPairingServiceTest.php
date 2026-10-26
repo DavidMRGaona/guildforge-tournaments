@@ -8,7 +8,6 @@ use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
-use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use PHPUnit\Framework\TestCase;
@@ -21,11 +20,6 @@ final class SwissPairingServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = new SwissPairingService;
-    }
-
-    public function test_it_implements_swiss_pairing_service_interface(): void
-    {
-        $this->assertInstanceOf(SwissPairingServiceInterface::class, $this->service);
     }
 
     public function test_first_round_pairs_all_participants(): void

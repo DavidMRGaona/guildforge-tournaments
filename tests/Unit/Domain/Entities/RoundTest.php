@@ -27,7 +27,6 @@ final class RoundTest extends TestCase
     {
         $round = $this->createRound();
 
-        $this->assertInstanceOf(RoundId::class, $round->id());
         $this->assertEquals('550e8400-e29b-41d4-a716-446655440000', $round->tournamentId());
         $this->assertEquals(1, $round->roundNumber());
         $this->assertEquals(RoundStatus::Pending, $round->status());

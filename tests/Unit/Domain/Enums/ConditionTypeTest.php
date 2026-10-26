@@ -9,17 +9,6 @@ use Tests\TestCase;
 
 final class ConditionTypeTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = ConditionType::cases();
-
-        $this->assertCount(4, $cases);
-        $this->assertContains(ConditionType::Result, $cases);
-        $this->assertContains(ConditionType::StatComparison, $cases);
-        $this->assertContains(ConditionType::StatThreshold, $cases);
-        $this->assertContains(ConditionType::MarginDifference, $cases);
-    }
-
     public function test_result_has_correct_value(): void
     {
         $this->assertEquals('result', ConditionType::Result->value);

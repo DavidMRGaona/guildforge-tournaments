@@ -13,6 +13,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
@@ -62,9 +63,12 @@ final class EloquentStandingRepositoryTest extends TestCase
         ]);
     }
 
-    public function test_it_implements_standing_repository_interface(): void
+    public function test_container_resolves_standing_repository_interface_to_eloquent_repository(): void
     {
-        $this->assertInstanceOf(StandingRepositoryInterface::class, $this->repository);
+        // The module may not auto-boot in the test environment
+        $this->app->register(TournamentsServiceProvider::class);
+
+        $this->assertInstanceOf(EloquentStandingRepository::class, app(StandingRepositoryInterface::class));
     }
 
     public function test_it_saves_new_standing(): void

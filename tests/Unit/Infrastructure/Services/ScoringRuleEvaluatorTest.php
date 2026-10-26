@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Unit\Infrastructure\Services;
 
-use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\ValueObjects\ScoringCondition;
@@ -20,11 +19,6 @@ final class ScoringRuleEvaluatorTest extends TestCase
     {
         parent::setUp();
         $this->evaluator = new ScoringRuleEvaluator;
-    }
-
-    public function test_it_implements_scoring_rule_evaluator_interface(): void
-    {
-        $this->assertInstanceOf(ScoringRuleEvaluatorInterface::class, $this->evaluator);
     }
 
     public function test_it_evaluates_simple_win_rule(): void

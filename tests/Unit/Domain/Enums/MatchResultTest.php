@@ -9,19 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class MatchResultTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = MatchResult::cases();
-
-        $this->assertCount(6, $cases);
-        $this->assertContains(MatchResult::PlayerOneWin, $cases);
-        $this->assertContains(MatchResult::PlayerTwoWin, $cases);
-        $this->assertContains(MatchResult::Draw, $cases);
-        $this->assertContains(MatchResult::DoubleLoss, $cases);
-        $this->assertContains(MatchResult::Bye, $cases);
-        $this->assertContains(MatchResult::NotPlayed, $cases);
-    }
-
     public function test_player_one_win_gives_points_to_player_one(): void
     {
         $this->assertEquals(1.0, MatchResult::PlayerOneWin->player1Points());

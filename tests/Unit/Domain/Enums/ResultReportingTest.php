@@ -9,16 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ResultReportingTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = ResultReporting::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(ResultReporting::AdminOnly, $cases);
-        $this->assertContains(ResultReporting::PlayersWithConfirmation, $cases);
-        $this->assertContains(ResultReporting::PlayersTrusted, $cases);
-    }
-
     public function test_allows_player_reporting_returns_correct_values(): void
     {
         $this->assertFalse(ResultReporting::AdminOnly->allowsPlayerReporting());

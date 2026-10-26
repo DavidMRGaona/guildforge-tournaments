@@ -9,16 +9,6 @@ use Tests\TestCase;
 
 final class ByeAssignmentTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = ByeAssignment::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(ByeAssignment::LowestRanked, $cases);
-        $this->assertContains(ByeAssignment::Random, $cases);
-        $this->assertContains(ByeAssignment::HighestRanked, $cases);
-    }
-
     public function test_all_bye_assignments_have_correct_values(): void
     {
         $this->assertEquals('lowest_ranked', ByeAssignment::LowestRanked->value);

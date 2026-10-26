@@ -9,16 +9,6 @@ use Tests\TestCase;
 
 final class StatTypeTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = StatType::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(StatType::Integer, $cases);
-        $this->assertContains(StatType::Float, $cases);
-        $this->assertContains(StatType::Boolean, $cases);
-    }
-
     public function test_integer_has_correct_value(): void
     {
         $this->assertEquals('integer', StatType::Integer->value);

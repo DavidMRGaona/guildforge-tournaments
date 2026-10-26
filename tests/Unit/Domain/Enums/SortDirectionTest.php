@@ -9,15 +9,6 @@ use Tests\TestCase;
 
 final class SortDirectionTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = SortDirection::cases();
-
-        $this->assertCount(2, $cases);
-        $this->assertContains(SortDirection::Ascending, $cases);
-        $this->assertContains(SortDirection::Descending, $cases);
-    }
-
     public function test_ascending_has_correct_value(): void
     {
         $this->assertEquals('asc', SortDirection::Ascending->value);

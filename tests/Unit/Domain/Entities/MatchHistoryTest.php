@@ -16,6 +16,7 @@ final class MatchHistoryTest extends TestCase
     {
         $matchId = Uuid::uuid4()->toString();
         $changedById = Uuid::uuid4()->toString();
+        $changedAt = new DateTimeImmutable('2026-11-20 10:00:00');
 
         $history = new MatchHistory(
             id: Uuid::uuid4()->toString(),
@@ -28,7 +29,7 @@ final class MatchHistoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: $changedById,
             reason: 'Score correction after review',
-            changedAt: new DateTimeImmutable,
+            changedAt: $changedAt,
         );
 
         $this->assertEquals($matchId, $history->matchId());
@@ -40,7 +41,7 @@ final class MatchHistoryTest extends TestCase
         $this->assertEquals(1, $history->newPlayer2Score());
         $this->assertEquals($changedById, $history->changedById());
         $this->assertEquals('Score correction after review', $history->reason());
-        $this->assertInstanceOf(DateTimeImmutable::class, $history->changedAt());
+        $this->assertEquals($changedAt, $history->changedAt());
     }
 
     public function test_it_creates_from_result_change(): void
