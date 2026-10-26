@@ -13,6 +13,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -139,6 +140,28 @@ final class ParticipantsRelationManager extends RelationManager
 
             throw $exception;
         }
+    }
+
+    /**
+     * The optional text an action mails to the participant: approval notes or a disqualification reason.
+     */
+    private function messageField(string $name, string $label, string $help): Textarea
+    {
+        return Textarea::make($name)
+            ->label($label)
+            ->helperText($help)
+            ->rows(3)
+            ->maxLength(1000);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function message(array $data, string $name): ?string
+    {
+        $text = $data[$name] ?? null;
+
+        return is_string($text) ? $text : null;
     }
 
     /**
@@ -388,9 +411,12 @@ final class ParticipantsRelationManager extends RelationManager
                     })
                     ->requiresConfirmation()
                     ->modalHeading(__('tournaments::messages.participants.confirm_participant'))
-                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                    ->schema([
+                        $this->messageField('notes', __('tournaments::messages.participants.approval_notes'), __('tournaments::messages.participants.approval_notes_help')),
+                    ])
+                    ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
                         $record,
-                        fn (string $id) => $this->participants()->confirm($id),
+                        fn (string $id) => $this->participants()->confirm($id, $this->message($data, 'notes')),
                         __('tournaments::messages.notifications.participant_confirmed'),
                     )),
                 Action::make('confirm_email')
@@ -448,9 +474,12 @@ final class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
                     ->requiresConfirmation()
                     ->modalDescription(__('tournaments::messages.modal.disqualify_description'))
-                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                    ->schema([
+                        $this->messageField('reason', __('tournaments::messages.participants.disqualification_reason'), __('tournaments::messages.participants.disqualification_reason_help')),
+                    ])
+                    ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
                         $record,
-                        fn (string $id) => $this->participants()->disqualify($id),
+                        fn (string $id) => $this->participants()->disqualify($id, $this->message($data, 'reason')),
                         __('tournaments::messages.notifications.disqualified'),
                     )),
                 DeleteAction::make()
@@ -470,12 +499,17 @@ final class ParticipantsRelationManager extends RelationManager
                             return $tournament->requires_manual_confirmation;
                         })
                         ->requiresConfirmation()
+                        ->schema([
+                            $this->messageField('notes', __('tournaments::messages.participants.approval_notes'), __('tournaments::messages.participants.bulk_approval_notes_help')),
+                        ])
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (Collection $records): void {
+                        ->action(function (Collection $records, array $data): void {
+                            $notes = $this->message($data, 'notes');
+
                             /** @var Collection<int, ParticipantModel> $records */
                             $this->runOnParticipants(
                                 $records->filter(fn (ParticipantModel $participant): bool => $participant->status === ParticipantStatus::Registered),
-                                fn (string $id) => $this->participants()->confirm($id),
+                                fn (string $id) => $this->participants()->confirm($id, $notes),
                                 __('tournaments::messages.notifications.bulk_confirmed'),
                             );
                         }),
@@ -505,12 +539,17 @@ final class ParticipantsRelationManager extends RelationManager
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
+                        ->schema([
+                            $this->messageField('reason', __('tournaments::messages.participants.disqualification_reason'), __('tournaments::messages.participants.bulk_disqualification_reason_help')),
+                        ])
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (Collection $records): void {
+                        ->action(function (Collection $records, array $data): void {
+                            $reason = $this->message($data, 'reason');
+
                             /** @var Collection<int, ParticipantModel> $records */
                             $this->runOnParticipants(
                                 $records->filter(fn (ParticipantModel $participant): bool => $participant->status->isActive()),
-                                fn (string $id) => $this->participants()->disqualify($id),
+                                fn (string $id) => $this->participants()->disqualify($id, $reason),
                                 __('tournaments::messages.notifications.bulk_disqualified'),
                             );
                         }),

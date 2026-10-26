@@ -15,7 +15,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel; cada resultado recalcula la clasificación.
 - **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
 - **Perfiles de juego**: plantillas con estadísticas, reglas, desempates y emparejamiento; incluye perfiles del sistema.
-- **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción.
+- **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción; al participante, cuando la organización aprueba su inscripción (con notas opcionales) o lo descalifica (con el motivo opcional).
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve una persona (emails, panel, web) se muestra en la zona de visualización del sitio (por defecto Europe/Madrid).
 - **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
 
@@ -245,7 +245,7 @@ Solo se aceptan inscripciones en `registration_open`, dentro de las fechas confi
 | Caducada | `expired` | — (el invitado puede volver a apuntarse) |
 | Descalificado | `disqualified` | — |
 
-Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes (inscritos, confirmados o con check-in hecho) y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque.
+Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes (inscritos, confirmados o con check-in hecho) y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque. Al confirmar se pueden escribir notas para el participante y al descalificar, el motivo (opcionales, hasta 1000 caracteres; en bloque, el mismo texto para todos): van en el correo que recibe.
 
 ### Resultado de partida
 
@@ -292,7 +292,7 @@ Un invitado se inscribe con nombre, email y consentimiento, y su inscripción no
 - **Emails con cuenta.** Con `require_login`, un email que pertenece a una cuenta verificada recibe un 409 con enlace para iniciar sesión; con `allow_guest` se inscribe como invitado. Una cuenta sin verificar no bloquea a nadie. Si un usuario se inscribe con la sesión iniciada y tiene una inscripción de invitado con el mismo email, esa inscripción pasa a su cuenta.
 - **Límites.** Las inscripciones de invitado se limitan por IP (`per_minute` y `per_hour`; los usuarios con sesión no tienen límite). El enlace de confirmación admite 20 intentos por minuto y 100 por hora y IP. Al superar un límite la web responde 429 («Has hecho demasiados intentos…») o vuelve al formulario con el error.
 - **Posible duplicado.** Cada inscripción guarda una huella (HMAC de IP y navegador) mientras el torneo no ha empezado. En la pestaña **Participantes** del panel, la columna **Posible duplicado** marca las inscripciones activas con la misma huella creadas dentro de `duplicate_signal.window_hours` una de otra. Es una pista para la organización, no bloquea nada.
-- **Panel.** **Confirmar** y **Marcar email como confirmado** confirman el email y envían al invitado el email de inscripción habitual; el check-in (también en bloque) y descalificar lo confirman sin enviar nada; retirar no lo confirma. El invitado con el email sin confirmar no puede hacer check-in desde la web.
+- **Panel.** **Confirmar** y **Marcar email como confirmado** confirman el email y envían al invitado el email de inscripción habitual (con **Confirmar**, en lugar del de aprobación y con sus notas: un solo correo); el check-in (también en bloque) y descalificar lo confirman sin enviar nada; retirar no lo confirma. El invitado con el email sin confirmar no puede hacer check-in desde la web.
 - **Aviso en el formulario.** Antes de enviar, el formulario explica qué pasará según los términos del servidor: con `hold`, que la plaza se libera si no confirma antes de la fecha del plazo; con `wait`, que la plaza no está garantizada.
 
 ### Cookie `tn_guest_registrations`
@@ -356,14 +356,15 @@ El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts
 
 | Momento | Destinatarios |
 |---------|---------------|
-| Inscripción (`ParticipantRegistered`) | Participante y email de notificaciones del torneo |
+| Inscripción (`ParticipantRegistered`) | Participante y email de notificaciones del torneo. Con confirmación manual, mientras la inscripción espera la aprobación el correo dice que se ha recibido, no que está confirmada |
 | Cancelación de la inscripción (`ParticipantWithdrawn`) | Participante y email de notificaciones del torneo |
 | Inscripción de invitado pendiente (`GuestConfirmationRequested`) | Invitado, con el enlace de confirmación |
 | Inscripción de invitado caducada | Invitado, con la invitación a volver a apuntarse |
 | Torneo cancelado desde el panel (`TournamentCancelled`) | Cada participante activo |
-| Descalificación desde el panel (`ParticipantDisqualified`) | El participante descalificado |
+| Aprobación desde el panel, **Confirmar** (`ParticipantConfirmed`) | El participante, con las notas de la organización si las hay |
+| Descalificación desde el panel (`ParticipantDisqualified`) | El participante descalificado, con el motivo si lo hay |
 
-Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Los avisos de cancelación y descalificación van al email de la cuenta o al del invitado solo si este lo confirmó (o la organización lo avaló antes, por ejemplo al hacer el check-in); a una dirección sin confirmar no se envía nada. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
+Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Los avisos de aprobación, cancelación y descalificación van al email de la cuenta o al del invitado solo si este lo confirmó (o la organización lo avaló antes, por ejemplo al hacer el check-in); a una dirección sin confirmar no se envía nada. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
 
 ## Permisos
 

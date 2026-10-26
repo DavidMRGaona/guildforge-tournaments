@@ -17,6 +17,7 @@ final readonly class ParticipantRegistered
         public ?string $cancellationToken,
         public DateTimeImmutable $occurredAt,
         public bool $notifyOrganizer = true,
+        public ?string $notes = null,
     ) {}
 
     public static function create(
@@ -27,6 +28,7 @@ final readonly class ParticipantRegistered
         bool $isGuest,
         ?string $cancellationToken = null,
         bool $notifyOrganizer = true,
+        ?string $notes = null,
     ): self {
         return new self(
             participantId: $participantId,
@@ -37,6 +39,7 @@ final readonly class ParticipantRegistered
             cancellationToken: $cancellationToken,
             occurredAt: new DateTimeImmutable,
             notifyOrganizer: $notifyOrganizer,
+            notes: $notes,
         );
     }
 }

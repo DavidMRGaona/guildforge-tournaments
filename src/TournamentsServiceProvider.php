@@ -44,6 +44,7 @@ use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\Tournaments\Console\Commands\SendTournamentRemindersCommand;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
+use Modules\Tournaments\Domain\Events\ParticipantConfirmed;
 use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
@@ -97,6 +98,7 @@ use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
+use Modules\Tournaments\Listeners\SendParticipantConfirmedEmail;
 use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
@@ -193,6 +195,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         Event::listen(GuestConfirmationRequested::class, SendGuestConfirmationRequest::class);
         Event::listen(TournamentCancelled::class, SendTournamentCancelledEmails::class);
         Event::listen(ParticipantDisqualified::class, SendParticipantDisqualifiedEmail::class);
+        Event::listen(ParticipantConfirmed::class, SendParticipantConfirmedEmail::class);
     }
 
     /**
