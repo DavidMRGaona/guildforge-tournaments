@@ -81,7 +81,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
     public function test_it_updates_existing_tournament(): void
     {
         $event = EventModel::factory()->create();
-        $model = TournamentModel::create([
+        TournamentModel::create([
             'id' => $id = TournamentId::generate()->value,
             'event_id' => $event->id,
             'name' => 'Original Name',
@@ -124,7 +124,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
     public function test_it_finds_by_id(): void
     {
         $event = EventModel::factory()->create();
-        $model = TournamentModel::create([
+        TournamentModel::create([
             'id' => $id = TournamentId::generate()->value,
             'event_id' => $event->id,
             'name' => 'Test Tournament',
@@ -252,7 +252,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
     public function test_it_deletes_tournament(): void
     {
         $event = EventModel::factory()->create();
-        $model = TournamentModel::create([
+        TournamentModel::create([
             'id' => $id = TournamentId::generate()->value,
             'event_id' => $event->id,
             'name' => 'Tournament To Delete',
@@ -301,9 +301,6 @@ final class EloquentTournamentRepositoryTest extends TestCase
             scoreWeights: [],
             tiebreakers: [],
             resultReporting: ResultReporting::AdminOnly,
-            description: null,
-            maxRounds: null,
-            maxParticipants: null,
         );
 
         $this->repository->save($tournament);

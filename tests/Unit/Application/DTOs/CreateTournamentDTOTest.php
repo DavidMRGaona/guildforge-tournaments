@@ -150,7 +150,6 @@ final class CreateTournamentDTOTest extends TestCase
             allowedRoles: ['member'],
             resultReporting: ResultReporting::AdminOnly,
             requiresCheckIn: false,
-            checkInStartsBefore: null,
             registrationOpensAt: new \DateTimeImmutable('2024-03-01 00:00:00'),
             registrationClosesAt: new \DateTimeImmutable('2024-03-10 23:59:59'),
         );

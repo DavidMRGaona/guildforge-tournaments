@@ -126,7 +126,6 @@ final class EloquentMatchRepositoryTest extends TestCase
             player1Id: $this->participant1->id,
             player2Id: null,
             result: MatchResult::Bye,
-            tableNumber: null,
         );
 
         $this->repository->save($match);
@@ -141,7 +140,7 @@ final class EloquentMatchRepositoryTest extends TestCase
 
     public function test_it_updates_existing_match(): void
     {
-        $model = MatchModel::create([
+        MatchModel::create([
             'id' => $id = MatchId::generate()->value,
             'round_id' => $this->round->id,
             'player_1_id' => $this->participant1->id,
@@ -201,7 +200,7 @@ final class EloquentMatchRepositoryTest extends TestCase
 
     public function test_it_finds_by_id(): void
     {
-        $model = MatchModel::create([
+        MatchModel::create([
             'id' => $id = MatchId::generate()->value,
             'round_id' => $this->round->id,
             'player_1_id' => $this->participant1->id,

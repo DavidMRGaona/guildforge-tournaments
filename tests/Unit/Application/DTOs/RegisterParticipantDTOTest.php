@@ -27,7 +27,6 @@ final class RegisterParticipantDTOTest extends TestCase
     {
         $dto = new RegisterParticipantDTO(
             tournamentId: 'tournament-789',
-            userId: null,
             guestName: 'Guest Player',
             guestEmail: 'guest@example.com',
         );
@@ -55,7 +54,6 @@ final class RegisterParticipantDTOTest extends TestCase
     {
         $dto = new RegisterParticipantDTO(
             tournamentId: 'tournament-111',
-            userId: null,
             guestName: 'Guest Name',
         );
 
@@ -126,7 +124,6 @@ final class RegisterParticipantDTOTest extends TestCase
     {
         $dto = new RegisterParticipantDTO(
             tournamentId: 'tournament-fff',
-            userId: null,
             guestName: 'Guest User',
             guestEmail: 'guest.user@example.com',
         );

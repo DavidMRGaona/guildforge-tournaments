@@ -303,7 +303,6 @@ final class TiebreakerDefinitionTest extends TestCase
             key: 'buchholz',
             name: 'Buchholz',
             type: TiebreakerType::Buchholz,
-            stat: null,
         );
 
         $this->assertNull($definition->stat);
@@ -315,7 +314,6 @@ final class TiebreakerDefinitionTest extends TestCase
             key: 'omw',
             name: 'Opponent Match Win %',
             type: TiebreakerType::OpponentWinPercentage,
-            stat: null,
         );
 
         $this->assertNull($definition->stat);
@@ -351,7 +349,6 @@ final class TiebreakerDefinitionTest extends TestCase
             key: 'buchholz',
             name: 'Buchholz',
             type: TiebreakerType::Buchholz,
-            minValue: null,
         );
 
         $this->assertNull($definition->minValue);

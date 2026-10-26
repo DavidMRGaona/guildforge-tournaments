@@ -334,10 +334,10 @@ final class TournamentTest extends TestCase
             name: 'Test Tournament',
             slug: 'test-tournament',
             status: TournamentStatus::Draft,
-            maxRounds: 5,
             scoreWeights: $this->getDefaultScoreWeights(),
             tiebreakers: [Tiebreaker::Buchholz],
             resultReporting: ResultReporting::AdminOnly,
+            maxRounds: 5,
         );
 
         $this->assertTrue($tournament->hasMaxRounds());

@@ -195,7 +195,7 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
             && $event->userId === (string) $user->id
             && $event->guestEmail === null
             && $event->isGuest === false
-            && $event->notifyOrganizer === true);
+            && $event->notifyOrganizer);
     }
 
     public function test_a_confirmed_guest_row_claim_sends_nothing(): void

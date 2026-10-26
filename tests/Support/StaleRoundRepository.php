@@ -14,9 +14,9 @@ use Modules\Tournaments\Domain\ValueObjects\RoundId;
  * Loaded with require_once: the module autoloader only maps src/, and a helper kept on a
  * test class is missing whenever a parallel run puts its user in another process.
  */
-final class StaleRoundRepository implements RoundRepositoryInterface
+final readonly class StaleRoundRepository implements RoundRepositoryInterface
 {
-    public function __construct(private readonly RoundRepositoryInterface $inner) {}
+    public function __construct(private RoundRepositoryInterface $inner) {}
 
     public function save(Round $round): void
     {

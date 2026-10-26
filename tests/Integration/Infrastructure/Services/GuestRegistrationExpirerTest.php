@@ -194,9 +194,9 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $failing = $first->id;
         $real = app(RegistrationLockInterface::class);
 
-        $this->app->instance(RegistrationLockInterface::class, new class($real, $failing) implements RegistrationLockInterface
+        $this->app->instance(RegistrationLockInterface::class, new readonly class($real, $failing) implements RegistrationLockInterface
         {
-            public function __construct(private readonly RegistrationLockInterface $real, private readonly string $failing) {}
+            public function __construct(private RegistrationLockInterface $real, private string $failing) {}
 
             public function forTournament(string $tournamentId, Closure $callback): mixed
             {

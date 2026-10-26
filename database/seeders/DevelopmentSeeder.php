@@ -227,7 +227,7 @@ final class DevelopmentSeeder extends Seeder
                 'status' => $status,
                 'seed' => $seed,
                 'has_received_bye' => false,
-                'registered_at' => now()->subDays(rand(1, 10)),
+                'registered_at' => now()->subDays(random_int(1, 10)),
                 'checked_in_at' => $status === ParticipantStatus::CheckedIn ? now() : null,
             ],
         );
@@ -251,7 +251,7 @@ final class DevelopmentSeeder extends Seeder
                 'status' => $status,
                 'seed' => $seed,
                 'has_received_bye' => false,
-                'registered_at' => now()->subDays(rand(1, 10)),
+                'registered_at' => now()->subDays(random_int(1, 10)),
                 'checked_in_at' => $status === ParticipantStatus::CheckedIn ? now() : null,
             ],
         );
@@ -371,9 +371,9 @@ final class DevelopmentSeeder extends Seeder
                 'player_1_score' => $p1Score,
                 'player_2_score' => $p2Score,
                 'reported_by_id' => $isPlayed ? $user->id : null,
-                'reported_at' => $isPlayed ? now()->subHours(rand(1, 3)) : null,
+                'reported_at' => $isPlayed ? now()->subHours(random_int(1, 3)) : null,
                 'confirmed_by_id' => $isPlayed ? $user->id : null,
-                'confirmed_at' => $isPlayed ? now()->subHours(rand(0, 2)) : null,
+                'confirmed_at' => $isPlayed ? now()->subHours(random_int(0, 2)) : null,
                 'is_disputed' => false,
             ],
         );

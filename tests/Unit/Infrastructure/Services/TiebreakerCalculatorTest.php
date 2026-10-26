@@ -664,8 +664,6 @@ final class TiebreakerCalculatorTest extends TestCase
             player1Id: $player1Id,
             player2Id: $player2Id,
             result: $result,
-            player1Score: null,
-            player2Score: null,
             player1Stats: $player1Stats,
             player2Stats: $player2Stats,
         );

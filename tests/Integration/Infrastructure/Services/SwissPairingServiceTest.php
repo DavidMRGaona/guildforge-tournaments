@@ -144,16 +144,11 @@ final class SwissPairingServiceTest extends TestCase
             }
 
             // Check it's not a rematch
-            $isRematch = false;
-            foreach ($previousMatchups as $prev) {
-                if (
-                    ($prev['player1Id'] === $p1 && $prev['player2Id'] === $p2) ||
-                    ($prev['player1Id'] === $p2 && $prev['player2Id'] === $p1)
-                ) {
-                    $isRematch = true;
-                    break;
-                }
-            }
+            $isRematch = array_any(
+                $previousMatchups,
+                fn ($prev) => ($prev['player1Id'] === $p1 && $prev['player2Id'] === $p2)
+                    || ($prev['player1Id'] === $p2 && $prev['player2Id'] === $p1),
+            );
 
             $this->assertFalse($isRematch, "Rematch detected between {$p1} and {$p2}");
         }
@@ -187,13 +182,7 @@ final class SwissPairingServiceTest extends TestCase
         $this->assertCount(3, $matches);
 
         // Find the bye match
-        $byeMatch = null;
-        foreach ($matches as $match) {
-            if ($match->isBye()) {
-                $byeMatch = $match;
-                break;
-            }
-        }
+        $byeMatch = array_find($matches, fn ($match) => $match->isBye());
 
         $this->assertNotNull($byeMatch, 'A bye match should be generated');
         $this->assertEquals(
@@ -230,13 +219,7 @@ final class SwissPairingServiceTest extends TestCase
             roundNumber: 3
         );
 
-        $byeMatch = null;
-        foreach ($matches as $match) {
-            if ($match->isBye()) {
-                $byeMatch = $match;
-                break;
-            }
-        }
+        $byeMatch = array_find($matches, fn ($match) => $match->isBye());
 
         $this->assertNotNull($byeMatch);
         // P4 should get the bye since P5 already had one
