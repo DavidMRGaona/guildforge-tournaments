@@ -283,7 +283,7 @@ final class EloquentStandingRepositoryTest extends TestCase
 
     public function test_it_returns_null_when_participant_not_found(): void
     {
-        $standing = $this->repository->findByParticipant('non-existent-id');
+        $standing = $this->repository->findByParticipant(Uuid::uuid4()->toString());
 
         $this->assertNull($standing);
     }

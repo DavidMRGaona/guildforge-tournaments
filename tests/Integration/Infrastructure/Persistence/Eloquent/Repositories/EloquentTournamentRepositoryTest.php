@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -203,7 +204,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
 
     public function test_it_returns_null_when_event_id_not_found(): void
     {
-        $tournament = $this->repository->findByEventId('non-existent-event-id');
+        $tournament = $this->repository->findByEventId((string) Str::uuid());
 
         $this->assertNull($tournament);
     }
