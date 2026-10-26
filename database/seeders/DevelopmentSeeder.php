@@ -6,7 +6,6 @@ namespace Modules\Tournaments\Database\Seeders;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
@@ -28,11 +27,11 @@ use Modules\Tournaments\TournamentsServiceProvider;
  */
 final class DevelopmentSeeder extends Seeder
 {
-    /** @var Collection<int, EventModel> */
-    private Collection $events;
+    /** @var list<EventModel> */
+    private array $events = [];
 
-    /** @var Collection<int, UserModel> */
-    private Collection $users;
+    /** @var list<UserModel> */
+    private array $users = [];
 
     /** @var array<string, TournamentModel> */
     private array $tournaments = [];
@@ -53,10 +52,10 @@ final class DevelopmentSeeder extends Seeder
         $this->call(GameProfilesSeeder::class);
 
         // Load dependencies
-        $this->events = EventModel::query()->orderBy('start_date')->take(3)->get();
-        $this->users = UserModel::query()->take(6)->get();
+        $this->events = array_values(EventModel::query()->orderBy('start_date')->take(3)->get()->all());
+        $this->users = array_values(UserModel::query()->take(6)->get()->all());
 
-        if ($this->events->count() < 3 || $this->users->count() < 6) {
+        if (count($this->events) < 3 || count($this->users) < 6) {
             return;
         }
 
@@ -357,7 +356,7 @@ final class DevelopmentSeeder extends Seeder
         ?int $p2Score = null,
     ): MatchModel {
         $isPlayed = $result !== MatchResult::NotPlayed;
-        $user = $this->users->first();
+        $user = $this->users[0];
 
         return MatchModel::firstOrCreate(
             [
@@ -371,9 +370,9 @@ final class DevelopmentSeeder extends Seeder
                 'result' => $result,
                 'player_1_score' => $p1Score,
                 'player_2_score' => $p2Score,
-                'reported_by_id' => $isPlayed ? $user?->id : null,
+                'reported_by_id' => $isPlayed ? $user->id : null,
                 'reported_at' => $isPlayed ? now()->subHours(rand(1, 3)) : null,
-                'confirmed_by_id' => $isPlayed ? $user?->id : null,
+                'confirmed_by_id' => $isPlayed ? $user->id : null,
                 'confirmed_at' => $isPlayed ? now()->subHours(rand(0, 2)) : null,
                 'is_disputed' => false,
             ],
