@@ -338,9 +338,9 @@ final class RoundsPanelTest extends ModuleTestCase
         $record = static function (string $call) use (&$calls): void {
             $calls[] = $call;
         };
-        $service = new class($this->app->make(RoundManagementServiceInterface::class), $record) implements RoundManagementServiceInterface
+        $service = new readonly class($this->app->make(RoundManagementServiceInterface::class), $record) implements RoundManagementServiceInterface
         {
-            public function __construct(private readonly RoundManagementServiceInterface $inner, private readonly \Closure $record) {}
+            public function __construct(private RoundManagementServiceInterface $inner, private \Closure $record) {}
 
             public function generateNextRound(string $tournamentId): RoundResponseDTO
             {
@@ -406,9 +406,9 @@ final class RoundsPanelTest extends ModuleTestCase
 
     private function roundServiceRefusingTransitions(): RoundManagementServiceInterface
     {
-        return new class($this->app->make(RoundManagementServiceInterface::class)) implements RoundManagementServiceInterface
+        return new readonly class($this->app->make(RoundManagementServiceInterface::class)) implements RoundManagementServiceInterface
         {
-            public function __construct(private readonly RoundManagementServiceInterface $inner) {}
+            public function __construct(private RoundManagementServiceInterface $inner) {}
 
             public function generateNextRound(string $tournamentId): RoundResponseDTO
             {

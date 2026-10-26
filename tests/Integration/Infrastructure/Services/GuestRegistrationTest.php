@@ -280,7 +280,7 @@ final class GuestRegistrationTest extends ModuleTestCase
         $this->assertSame(2, (new EloquentParticipantRepository)->countActiveByTournament($tournament->id));
         Event::assertDispatched(GuestConfirmationRequested::class, fn (GuestConfirmationRequested $event): bool => $event->participantId === $row->id
             && ! $event->seatHeld
-            && $event->expiresAt === null);
+            && ! $event->expiresAt instanceof DateTimeImmutable);
     }
 
     public function test_wait_mode_setting_never_holds_a_seat(): void

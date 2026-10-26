@@ -72,7 +72,7 @@ final class EloquentRoundRepositoryTest extends TestCase
 
     public function test_it_updates_existing_round(): void
     {
-        $model = RoundModel::create([
+        RoundModel::create([
             'id' => $id = RoundId::generate()->value,
             'tournament_id' => $this->tournament->id,
             'round_number' => 1,
@@ -97,7 +97,7 @@ final class EloquentRoundRepositoryTest extends TestCase
 
     public function test_it_finds_by_id(): void
     {
-        $model = RoundModel::create([
+        RoundModel::create([
             'id' => $id = RoundId::generate()->value,
             'tournament_id' => $this->tournament->id,
             'round_number' => 2,

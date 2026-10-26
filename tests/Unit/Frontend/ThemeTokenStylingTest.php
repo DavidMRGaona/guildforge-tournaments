@@ -14,7 +14,7 @@ use RecursiveIteratorIterator;
  */
 final class ThemeTokenStylingTest extends TestCase
 {
-    private const FORBIDDEN = [
+    private const array FORBIDDEN = [
         'dark: variant' => '/(?<![\w-])(?:[\w-]+:)*dark:[\w\/\[\]\.%-]+/',
         'neutral palette colour' => '/(?<![\w-])(?:[\w-]+:)*(?:bg|text|border|divide|ring|ring-offset|from|to|via)-(?:gray|stone|neutral|slate|zinc)-\d+/',
         'bg-white without opacity' => '/(?<![\w-])(?:[\w-]+:)*bg-white(?![\w\/-])/',

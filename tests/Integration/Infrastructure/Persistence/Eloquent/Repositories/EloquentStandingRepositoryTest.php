@@ -110,7 +110,7 @@ final class EloquentStandingRepositoryTest extends TestCase
 
     public function test_it_updates_existing_standing(): void
     {
-        $model = StandingModel::create([
+        StandingModel::create([
             'id' => $id = Uuid::uuid4()->toString(),
             'tournament_id' => $this->tournament->id,
             'participant_id' => $this->participant1->id,

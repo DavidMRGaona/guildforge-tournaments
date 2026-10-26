@@ -36,7 +36,6 @@ final class ParticipantTest extends TestCase
             id: ParticipantId::generate(),
             tournamentId: '550e8400-e29b-41d4-a716-446655440000',
             status: $status,
-            userId: null,
             guestName: 'John Doe',
             guestEmail: 'john@example.com',
         );

@@ -85,7 +85,6 @@ final class EloquentParticipantRepositoryTest extends TestCase
             id: $id,
             tournamentId: $this->tournament->id,
             status: ParticipantStatus::Registered,
-            userId: null,
             guestName: 'Guest Player',
             guestEmail: 'guest@example.com',
             registeredAt: new DateTimeImmutable,
@@ -106,7 +105,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
     public function test_it_updates_existing_participant(): void
     {
         $user = UserModel::factory()->create();
-        $model = ParticipantModel::create([
+        ParticipantModel::create([
             'id' => $id = ParticipantId::generate()->value,
             'tournament_id' => $this->tournament->id,
             'user_id' => $user->id,
@@ -133,7 +132,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
     public function test_it_finds_by_id(): void
     {
         $user = UserModel::factory()->create();
-        $model = ParticipantModel::create([
+        ParticipantModel::create([
             'id' => $id = ParticipantId::generate()->value,
             'tournament_id' => $this->tournament->id,
             'user_id' => $user->id,
@@ -169,7 +168,7 @@ final class EloquentParticipantRepositoryTest extends TestCase
     {
         $users = UserModel::factory()->count(3)->create();
 
-        foreach ($users as $i => $user) {
+        foreach ($users as $user) {
             ParticipantModel::create([
                 'tournament_id' => $this->tournament->id,
                 'user_id' => $user->id,

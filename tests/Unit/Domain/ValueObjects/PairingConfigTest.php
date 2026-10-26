@@ -18,7 +18,6 @@ final class PairingConfigTest extends TestCase
         $config = new PairingConfig(
             method: PairingMethod::Swiss,
             sortBy: PairingSortCriteria::Points,
-            sortByStat: null,
             avoidRematches: true,
             maxByesPerPlayer: 1,
             byeAssignment: ByeAssignment::LowestRanked,
@@ -113,7 +112,6 @@ final class PairingConfigTest extends TestCase
         $config = new PairingConfig(
             method: PairingMethod::Swiss,
             sortBy: PairingSortCriteria::Points,
-            sortByStat: null,
             avoidRematches: true,
             maxByesPerPlayer: 1,
             byeAssignment: ByeAssignment::LowestRanked,
@@ -159,7 +157,6 @@ final class PairingConfigTest extends TestCase
         $config1 = new PairingConfig(
             method: PairingMethod::Swiss,
             sortBy: PairingSortCriteria::Points,
-            sortByStat: null,
             avoidRematches: true,
             maxByesPerPlayer: 1,
             byeAssignment: ByeAssignment::LowestRanked,
@@ -168,7 +165,6 @@ final class PairingConfigTest extends TestCase
         $config2 = new PairingConfig(
             method: PairingMethod::Swiss,
             sortBy: PairingSortCriteria::Points,
-            sortByStat: null,
             avoidRematches: true,
             maxByesPerPlayer: 1,
             byeAssignment: ByeAssignment::LowestRanked,
@@ -238,7 +234,6 @@ final class PairingConfigTest extends TestCase
 
         new PairingConfig(
             sortBy: PairingSortCriteria::Stat,
-            sortByStat: null,
         );
     }
 
@@ -279,7 +274,6 @@ final class PairingConfigTest extends TestCase
     {
         $config = new PairingConfig(
             sortBy: PairingSortCriteria::Points,
-            sortByStat: null,
         );
 
         $this->assertNull($config->sortByStat);

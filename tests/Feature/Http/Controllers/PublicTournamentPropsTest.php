@@ -22,7 +22,7 @@ final class PublicTournamentPropsTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    private const ORGANISER_EMAIL = 'avisos-organizacion@example.com';
+    private const string ORGANISER_EMAIL = 'avisos-organizacion@example.com';
 
     /**
      * @return array<string, array{string}>

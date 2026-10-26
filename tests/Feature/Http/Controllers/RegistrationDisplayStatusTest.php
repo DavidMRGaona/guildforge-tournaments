@@ -29,12 +29,6 @@ final class RegistrationDisplayStatusTest extends ModuleTestCase
 
     protected bool $autoEnableModule = true;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-    }
-
     public function test_the_event_page_loads_its_tournament_once(): void
     {
         $tournament = $this->tournament('2036-03-14 10:00:00');

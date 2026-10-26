@@ -75,9 +75,9 @@ final class TournamentListControllerTest extends ModuleTestCase
 
     public function test_index_orders_in_progress_first(): void
     {
-        $upcoming = $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
-        $inProgress = $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
-        $finished = $this->createTournamentWithStatus('finished', 'Finished Tournament');
+        $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
+        $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
+        $this->createTournamentWithStatus('finished', 'Finished Tournament');
 
         $response = $this->get('/torneos');
 
@@ -92,8 +92,8 @@ final class TournamentListControllerTest extends ModuleTestCase
 
     public function test_index_orders_upcoming_after_in_progress(): void
     {
-        $upcoming = $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
-        $inProgress = $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
+        $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
+        $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
 
         $response = $this->get('/torneos');
 
@@ -109,9 +109,9 @@ final class TournamentListControllerTest extends ModuleTestCase
 
     public function test_index_orders_finished_last(): void
     {
-        $finished = $this->createTournamentWithStatus('finished', 'Finished Tournament');
-        $upcoming = $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
-        $inProgress = $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
+        $this->createTournamentWithStatus('finished', 'Finished Tournament');
+        $this->createTournamentWithStatus('registration_open', 'Upcoming Tournament');
+        $this->createTournamentWithStatus('in_progress', 'In Progress Tournament');
 
         $response = $this->get('/torneos');
 
