@@ -48,10 +48,10 @@ interface TournamentQueryServiceInterface
     public function canUserRegister(string $tournamentId, ?string $userId, array $userRoles = []): bool;
 
     /**
-     * Check if a user can report a result for a match.
-     * Validates based on tournament's resultReporting setting.
+     * Check if a user can report a result for a match: anyone holding tournaments.report_results,
+     * otherwise the match's players when the tournament's resultReporting setting lets them.
      */
-    public function canUserReportResult(string $matchId, string $userId, bool $isAdmin = false): bool;
+    public function canUserReportResult(string $matchId, string $userId): bool;
 
     /**
      * Check if a user can confirm a result for a match.
