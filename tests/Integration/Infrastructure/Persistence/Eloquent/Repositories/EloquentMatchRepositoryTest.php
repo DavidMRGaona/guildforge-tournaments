@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\MatchNotFoundException;
@@ -152,7 +153,7 @@ final class EloquentMatchRepositoryTest extends TestCase
             result: MatchResult::PlayerOneWin,
             player1Score: 3,
             player2Score: 1,
-            reportedById: 'some-user-id',
+            reportedById: (string) Str::uuid(),
             reportedAt: new DateTimeImmutable,
         );
 
@@ -514,6 +515,8 @@ final class EloquentMatchRepositoryTest extends TestCase
         $id = MatchId::generate();
         $reportedAt = new DateTimeImmutable('2026-02-15 10:00:00');
         $confirmedAt = new DateTimeImmutable('2026-02-15 10:30:00');
+        $reporterId = (string) Str::uuid();
+        $confirmerId = (string) Str::uuid();
 
         $match = new TournamentMatch(
             id: $id,
@@ -521,9 +524,9 @@ final class EloquentMatchRepositoryTest extends TestCase
             player1Id: $this->participant1->id,
             player2Id: $this->participant2->id,
             result: MatchResult::PlayerOneWin,
-            reportedById: 'reporter-id',
+            reportedById: $reporterId,
             reportedAt: $reportedAt,
-            confirmedById: 'confirmer-id',
+            confirmedById: $confirmerId,
             confirmedAt: $confirmedAt,
         );
 
@@ -532,9 +535,9 @@ final class EloquentMatchRepositoryTest extends TestCase
         $retrieved = $this->repository->find($id);
 
         $this->assertNotNull($retrieved);
-        $this->assertEquals('reporter-id', $retrieved->reportedById());
+        $this->assertEquals($reporterId, $retrieved->reportedById());
         $this->assertNotNull($retrieved->reportedAt());
-        $this->assertEquals('confirmer-id', $retrieved->confirmedById());
+        $this->assertEquals($confirmerId, $retrieved->confirmedById());
         $this->assertNotNull($retrieved->confirmedAt());
         $this->assertTrue($retrieved->isConfirmed());
     }
