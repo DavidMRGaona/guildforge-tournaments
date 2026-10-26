@@ -370,16 +370,16 @@ Con la confirmación por email, el email de inscripción (`ParticipantRegistered
 
 | Permiso | Rol propuesto | Uso |
 |---------|-----------------|-----|
-| `tournaments.view_any` | editor | Ver el listado del panel |
-| `tournaments.view` | editor | Ver un torneo |
-| `tournaments.create` | editor | Crear torneos |
-| `tournaments.update` | editor | Editar torneos |
+| `tournaments.view_any` | — | Ver el listado del panel |
+| `tournaments.view` | — | Ver un torneo |
+| `tournaments.create` | — | Crear torneos |
+| `tournaments.update` | — | Editar torneos |
 | `tournaments.delete` | — | Eliminar torneos |
-| `tournaments.manage_config` | editor | Gestionar perfiles de torneo |
-| `tournaments.report_results` | editor | Registrar resultados: **Gestionar partidas** en las rondas y **Reportar resultado** en las partidas |
-| `tournaments.manage_participants` | editor | Gestionar participantes: añadir, confirmar, check-in, retirar, descalificar y eliminar, también en bloque |
+| `tournaments.manage_config` | — | Gestionar perfiles de torneo |
+| `tournaments.report_results` | — | Registrar resultados: **Gestionar partidas** en las rondas y **Reportar resultado** en las partidas |
+| `tournaments.manage_participants` | — | Gestionar participantes: añadir, confirmar, check-in, retirar, descalificar y eliminar, también en bloque |
 
-El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tournaments.view_any`), que es la clave que comprueban las policies: un rol con el permiso concedido en **Roles** accede a lo que el permiso indica. La columna de rol indica el rol al que el módulo propone el permiso; habilitar el módulo no lo asigna. Los administradores tienen acceso completo.
+El core los guarda con el prefijo del módulo (por ejemplo `tournaments:tournaments.view_any`), que es la clave que comprueban las policies: un rol con el permiso concedido en **Roles** accede a lo que el permiso indica. El módulo no propone ningún permiso a `editor`, que es el rol de contenido: se conceden en **Roles** a los roles de función que cree la asociación; habilitar el módulo no asigna ninguno. Los administradores tienen acceso completo.
 
 Las pestañas **Rondas** y **Participantes** están en la edición del torneo, así que piden también `tournaments.update`. Sin `tournaments.report_results` o `tournaments.manage_participants` se ven, pero sin esas acciones; generar, iniciar y completar rondas sigue dependiendo solo de `tournaments.update`. La actualización a la versión 2.4.0 concede los dos permisos a cada rol que ya tenía `tournaments.update`, para que nadie pierda lo que podía hacer.
 

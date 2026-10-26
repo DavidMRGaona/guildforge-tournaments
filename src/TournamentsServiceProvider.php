@@ -727,28 +727,24 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 label: __('tournaments::messages.permissions.view_any'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.view',
                 label: __('tournaments::messages.permissions.view'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.create',
                 label: __('tournaments::messages.permissions.create'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.update',
                 label: __('tournaments::messages.permissions.update'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.delete',
@@ -762,21 +758,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 label: __('tournaments::messages.permissions.manage_config'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.report_results',
                 label: __('tournaments::messages.permissions.report_results'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
             new PermissionDTO(
                 name: 'tournaments.manage_participants',
                 label: __('tournaments::messages.permissions.manage_participants'),
                 group: __('tournaments::messages.navigation'),
                 module: 'tournaments',
-                roles: ['editor'],
             ),
         ];
     }

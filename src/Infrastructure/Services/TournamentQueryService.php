@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\StandingsResponseDTO;
@@ -31,6 +33,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 
 final readonly class TournamentQueryService implements TournamentQueryServiceInterface
 {
+    private const string REPORT_RESULTS_PERMISSION = 'tournaments:tournaments.report_results';
+
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
@@ -39,6 +43,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         private MatchRepositoryInterface $matchRepository,
         private UserDataProviderInterface $userDataProvider,
         private Clock $clock,
+        private AuthorizationServiceInterface $authorization,
     ) {}
 
     public function find(string $tournamentId): ?TournamentResponseDTO
@@ -185,9 +190,11 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         return true;
     }
 
-    public function canUserReportResult(string $matchId, string $userId, bool $isAdmin = false): bool
+    public function canUserReportResult(string $matchId, string $userId): bool
     {
-        if ($isAdmin) {
+        // Whoever records results from the panel may report any match (admins hold it implicitly)
+        $user = UserModel::query()->find($userId);
+        if ($user instanceof UserModel && $this->authorization->can($user, self::REPORT_RESULTS_PERMISSION)) {
             return true;
         }
 
