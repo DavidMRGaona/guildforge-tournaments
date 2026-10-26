@@ -1,3 +1,3 @@
-import { defineModuleConfig } from '../../vite.module.config';
+import { defineModuleConfig } from '../../vite.module.config.ts';
 
-export default defineModuleConfig({ name: 'tournaments', root: __dirname });
+export default defineModuleConfig({ name: 'tournaments', root: import.meta.dirname });
