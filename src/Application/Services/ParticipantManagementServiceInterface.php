@@ -91,13 +91,14 @@ interface ParticipantManagementServiceInterface
     public function confirmEmailByOrganization(string $participantId): ParticipantResponseDTO;
 
     /**
-     * Confirm a participant's registration from the panel. An unconfirmed guest email counts as
-     * confirmed, and the guest gets the usual registration email.
+     * Confirm a participant's registration from the panel and email them the approval, with the
+     * organisation's notes if any. An unconfirmed guest email counts as confirmed, and the guest
+     * gets the usual registration email (with the notes) instead.
      *
      * @throws ParticipantNotFoundException
      * @throws TournamentFullException When a registration waiting without a seat finds none
      */
-    public function confirm(string $participantId): ParticipantResponseDTO;
+    public function confirm(string $participantId, ?string $notes = null): ParticipantResponseDTO;
 
     /**
      * Check in a registered or confirmed participant from the panel. An unconfirmed guest email
@@ -117,8 +118,8 @@ interface ParticipantManagementServiceInterface
     public function withdraw(string $participantId): ParticipantResponseDTO;
 
     /**
-     * Disqualify an active participant from the panel. An unconfirmed guest email counts as
-     * confirmed, without an email.
+     * Disqualify an active participant from the panel and email them, with the reason if any. An
+     * unconfirmed guest email counts as confirmed, without an email.
      *
      * @throws ParticipantNotFoundException
      */

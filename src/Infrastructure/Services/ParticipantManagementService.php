@@ -27,6 +27,7 @@ use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
+use Modules\Tournaments\Domain\Events\ParticipantConfirmed;
 use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
@@ -263,7 +264,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         return $this->actAsOrganization($participantId, takesSeat: true, act: static function (): void {});
     }
 
-    public function confirm(string $participantId): ParticipantResponseDTO
+    public function confirm(string $participantId, ?string $notes = null): ParticipantResponseDTO
     {
         return $this->actAsOrganization(
             $participantId,
@@ -271,6 +272,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             act: static function (Participant $participant): void {
                 $participant->confirm();
             },
+            approval: true,
+            notes: $this->note($notes),
         );
     }
 
@@ -390,7 +393,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
         // Mailed once the change is committed
         if (! $wasAwaitingConfirmation) {
-            event(ParticipantDisqualified::create($response->id, $response->tournamentId, $response->userId, $reason));
+            event(ParticipantDisqualified::create($response->id, $response->tournamentId, $response->userId, $this->note($reason)));
         }
 
         return $response;
@@ -636,16 +639,26 @@ final readonly class ParticipantManagementService implements ParticipantManageme
      * organisation is never told, since it acted itself.
      *
      * @param  Closure(Participant, CarbonImmutable): void  $act
+     * @param  bool  $approval  Whether the action approves the registration: the participant is told,
+     *                          through the registration email when it also vouches for a guest's
+     *                          email (one email, never two)
+     * @param  string|null  $notes  The organisation's notes for that email
      *
      * @throws ParticipantNotFoundException
      * @throws TournamentFullException
      */
-    private function actAsOrganization(string $participantId, bool $takesSeat, Closure $act, bool $announce = true): ParticipantResponseDTO
-    {
+    private function actAsOrganization(
+        string $participantId,
+        bool $takesSeat,
+        Closure $act,
+        bool $announce = true,
+        bool $approval = false,
+        ?string $notes = null,
+    ): ParticipantResponseDTO {
         $now = $this->now();
 
-        /** @var array{ParticipantResponseDTO, ParticipantRegistered|null} $outcome */
-        $outcome = $this->lock->forParticipant($participantId, function () use ($participantId, $takesSeat, $act, $announce, $now): array {
+        /** @var array{ParticipantResponseDTO, ParticipantRegistered|ParticipantConfirmed|null} $outcome */
+        $outcome = $this->lock->forParticipant($participantId, function () use ($participantId, $takesSeat, $act, $announce, $approval, $notes, $now): array {
             $participant = $this->participantRepository->find(ParticipantId::fromString($participantId));
 
             if (! $participant instanceof Participant) {
@@ -673,21 +686,35 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
             return [
                 $this->createResponseDTO($participant),
-                $endorsed && $announce ? $this->guestRegistered($participant, notifyOrganizer: false) : null,
+                match (true) {
+                    $endorsed && $announce => $this->guestRegistered($participant, notifyOrganizer: false, notes: $notes),
+                    $approval => ParticipantConfirmed::create($participant->id()->value, $participant->tournamentId(), $participant->userId(), $notes),
+                    default => null,
+                },
             ];
         });
 
-        [$response, $registered] = $outcome;
+        [$response, $announcement] = $outcome;
 
         // Mailed once the change is committed
-        if ($registered !== null) {
-            event($registered);
+        if ($announcement !== null) {
+            event($announcement);
         }
 
         return $response;
     }
 
-    private function guestRegistered(Participant $participant, bool $notifyOrganizer): ParticipantRegistered
+    /**
+     * A note of the organisation for an email, or null when it says nothing.
+     */
+    private function note(?string $text): ?string
+    {
+        $text = $text !== null ? trim($text) : null;
+
+        return $text !== null && $text !== '' ? $text : null;
+    }
+
+    private function guestRegistered(Participant $participant, bool $notifyOrganizer, ?string $notes = null): ParticipantRegistered
     {
         return ParticipantRegistered::create(
             participantId: $participant->id()->value,
@@ -697,6 +724,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             isGuest: true,
             cancellationToken: $participant->cancellationToken(),
             notifyOrganizer: $notifyOrganizer,
+            notes: $notes,
         );
     }
 

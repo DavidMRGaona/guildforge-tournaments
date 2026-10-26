@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Tournament;
+use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
@@ -61,6 +62,8 @@ final readonly class SendParticipantRegisteredEmails
             checkInStartsBefore: $tournament->checkInStartsBefore(),
             cancellationToken: $event->isGuest ? $event->cancellationToken : null,
             tournamentSlug: $tournament->slug(),
+            notes: $event->notes,
+            awaitingApproval: $tournament->requiresManualConfirmation() && $participant->status() === ParticipantStatus::Registered,
         ));
 
         // Send to organizer, unless the registration is not news to them

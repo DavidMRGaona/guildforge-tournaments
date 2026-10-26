@@ -21,6 +21,8 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
         private readonly ?int $checkInStartsBefore,
         private readonly ?string $cancellationToken = null,
         private readonly ?string $tournamentSlug = null,
+        private readonly ?string $notes = null,
+        private readonly ?bool $awaitingApproval = null,
     ) {}
 
     /**
@@ -33,16 +35,28 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
 
     public function toMail(object $notifiable): MailMessage
     {
+        // ?? like isset(): a notification queued before these properties existed comes back
+        // without them, and reading an uninitialized property directly throws
+        $notes = $this->notes ?? null;
+        $awaitingApproval = $this->awaitingApproval ?? false;
+
+        // Until the organisation approves it, the registration is only received
+        $texts = $awaitingApproval ? 'registration_pending' : 'registration_confirmed';
+
         $message = (new MailMessage)
-            ->subject(__('tournaments::messages.emails.registration_confirmed.subject', [
+            ->subject(__("tournaments::messages.emails.{$texts}.subject", [
                 'tournament' => $this->tournamentName,
             ]))
             ->greeting(__('tournaments::messages.emails.registration_confirmed.greeting', [
                 'name' => $this->participantName,
             ]))
-            ->line(__('tournaments::messages.emails.registration_confirmed.body', [
+            ->line(__("tournaments::messages.emails.{$texts}.body", [
                 'tournament' => $this->tournamentName,
             ]));
+
+        if ($notes !== null && $notes !== '') {
+            $message->line('**'.__('tournaments::messages.emails.organisation_notes').':** '.$notes);
+        }
 
         if ($this->eventDate !== null) {
             $message->line(__('tournaments::messages.emails.registration_confirmed.event_date', [
@@ -50,7 +64,8 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
             ]));
         }
 
-        if ($this->requiresCheckIn) {
+        // The approval email reminds them of the check-in
+        if ($this->requiresCheckIn && ! $awaitingApproval) {
             $message->line(__('tournaments::messages.emails.registration_confirmed.check_in_required', [
                 'minutes' => $this->checkInStartsBefore ?? 30,
             ]));
@@ -79,7 +94,8 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
         // Add GDPR notice
         $message->line(__('tournaments::messages.emails.registration_confirmed.gdpr_notice'));
 
-        return $message
-            ->line(__('tournaments::messages.emails.registration_confirmed.closing'));
+        return $awaitingApproval
+            ? $message
+            : $message->line(__('tournaments::messages.emails.registration_confirmed.closing'));
     }
 }
