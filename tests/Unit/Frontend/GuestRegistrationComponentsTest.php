@@ -74,8 +74,8 @@ final class GuestRegistrationComponentsTest extends TestCase
         $config = file_get_contents(__DIR__.'/../../../vite.config.ts');
         $this->assertNotFalse($config);
 
-        $this->assertStringContainsString("from '../../vite.module.config'", $config);
-        $this->assertStringContainsString("defineModuleConfig({ name: 'tournaments', root: __dirname })", $config);
+        $this->assertStringContainsString("from '../../vite.module.config.ts'", $config);
+        $this->assertStringContainsString("defineModuleConfig({ name: 'tournaments', root: import.meta.dirname })", $config);
     }
 
     public function test_the_page_types_carry_the_confirmation_terms(): void
