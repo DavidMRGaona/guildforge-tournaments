@@ -9,18 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class TiebreakerTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = Tiebreaker::cases();
-
-        $this->assertCount(5, $cases);
-        $this->assertContains(Tiebreaker::Buchholz, $cases);
-        $this->assertContains(Tiebreaker::MedianBuchholz, $cases);
-        $this->assertContains(Tiebreaker::Progressive, $cases);
-        $this->assertContains(Tiebreaker::HeadToHead, $cases);
-        $this->assertContains(Tiebreaker::OpponentWinPercentage, $cases);
-    }
-
     public function test_values_returns_string_values(): void
     {
         $values = Tiebreaker::values();

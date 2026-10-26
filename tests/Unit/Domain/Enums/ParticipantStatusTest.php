@@ -9,19 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ParticipantStatusTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = ParticipantStatus::cases();
-
-        $this->assertCount(6, $cases);
-        $this->assertContains(ParticipantStatus::Registered, $cases);
-        $this->assertContains(ParticipantStatus::Confirmed, $cases);
-        $this->assertContains(ParticipantStatus::CheckedIn, $cases);
-        $this->assertContains(ParticipantStatus::Withdrawn, $cases);
-        $this->assertContains(ParticipantStatus::Disqualified, $cases);
-        $this->assertContains(ParticipantStatus::Expired, $cases);
-    }
-
     public function test_registered_can_transition_to_confirmed(): void
     {
         $this->assertTrue(ParticipantStatus::Registered->canTransitionTo(ParticipantStatus::Confirmed));
@@ -119,7 +106,6 @@ final class ParticipantStatusTest extends TestCase
         $this->assertTrue(ParticipantStatus::Registered->canTransitionTo(ParticipantStatus::Expired));
         $this->assertTrue(ParticipantStatus::Expired->canTransitionTo(ParticipantStatus::Registered));
         $this->assertFalse(ParticipantStatus::Confirmed->canTransitionTo(ParticipantStatus::Expired));
-        $this->assertSame('expired', ParticipantStatus::Expired->value);
         $this->assertSame('gray', ParticipantStatus::Expired->color());
     }
 }

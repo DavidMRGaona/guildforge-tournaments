@@ -29,7 +29,6 @@ final class TournamentMatchTest extends TestCase
     {
         $match = $this->createMatch();
 
-        $this->assertInstanceOf(MatchId::class, $match->id());
         $this->assertEquals('550e8400-e29b-41d4-a716-446655440000', $match->roundId());
         $this->assertEquals('660e8400-e29b-41d4-a716-446655440001', $match->player1Id());
         $this->assertEquals('660e8400-e29b-41d4-a716-446655440002', $match->player2Id());

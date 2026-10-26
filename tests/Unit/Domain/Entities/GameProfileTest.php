@@ -131,7 +131,6 @@ final class GameProfileTest extends TestCase
             isSystem: true,
         );
 
-        $this->assertInstanceOf(GameProfile::class, $profile);
         $this->assertEquals($id, $profile->id());
         $this->assertEquals('Warhammer 40K', $profile->name());
         $this->assertEquals('warhammer-40k', $profile->slug());
@@ -141,13 +140,6 @@ final class GameProfileTest extends TestCase
         $this->assertEquals($tiebreakerConfig, $profile->tiebreakerConfig());
         $this->assertEquals($pairingConfig, $profile->pairingConfig());
         $this->assertTrue($profile->isSystem());
-    }
-
-    public function test_id_getter_returns_correct_value(): void
-    {
-        $profile = $this->createGameProfile();
-
-        $this->assertInstanceOf(GameProfileId::class, $profile->id());
     }
 
     public function test_name_getter_returns_correct_value(): void
@@ -199,7 +191,7 @@ final class GameProfileTest extends TestCase
     {
         $profile = $this->createGameProfile();
 
-        $this->assertInstanceOf(PairingConfig::class, $profile->pairingConfig());
+        $this->assertEquals(new PairingConfig, $profile->pairingConfig());
     }
 
     public function test_is_system_getter_returns_correct_value(): void

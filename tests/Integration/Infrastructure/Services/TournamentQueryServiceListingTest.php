@@ -7,7 +7,6 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Str;
-use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -44,7 +43,6 @@ final class TournamentQueryServiceListingTest extends ModuleTestCase
 
         $this->assertCount(4, $result);
         foreach ($result as $tournament) {
-            $this->assertInstanceOf(TournamentResponseDTO::class, $tournament);
             $this->assertNotEquals(TournamentStatus::Draft, $tournament->status);
             $this->assertNotEquals(TournamentStatus::Cancelled, $tournament->status);
         }

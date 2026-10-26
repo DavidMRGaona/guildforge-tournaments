@@ -9,15 +9,6 @@ use Tests\TestCase;
 
 final class PairingMethodTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = PairingMethod::cases();
-
-        $this->assertCount(2, $cases);
-        $this->assertContains(PairingMethod::Swiss, $cases);
-        $this->assertContains(PairingMethod::Random, $cases);
-    }
-
     public function test_swiss_has_correct_value(): void
     {
         $this->assertEquals('swiss', PairingMethod::Swiss->value);

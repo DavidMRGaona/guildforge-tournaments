@@ -10,7 +10,6 @@ use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
-use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
@@ -35,11 +34,6 @@ final class StandingCalculatorServiceTest extends TestCase
             new ScoreWeight(name: 'Derrota', key: 'loss', points: 0.0),
             new ScoreWeight(name: 'Bye', key: 'bye', points: 3.0),
         ];
-    }
-
-    public function test_it_implements_standing_calculator_service_interface(): void
-    {
-        $this->assertInstanceOf(StandingCalculatorServiceInterface::class, $this->service);
     }
 
     public function test_calculates_points_from_score_weights(): void

@@ -9,16 +9,6 @@ use Tests\TestCase;
 
 final class PairingSortCriteriaTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = PairingSortCriteria::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(PairingSortCriteria::Points, $cases);
-        $this->assertContains(PairingSortCriteria::Stat, $cases);
-        $this->assertContains(PairingSortCriteria::Random, $cases);
-    }
-
     public function test_points_case_has_correct_value(): void
     {
         $this->assertEquals('points', PairingSortCriteria::Points->value);

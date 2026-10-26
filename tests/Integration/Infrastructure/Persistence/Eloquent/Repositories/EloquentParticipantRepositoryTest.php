@@ -18,6 +18,7 @@ use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\TestCase;
 
 final class EloquentParticipantRepositoryTest extends TestCase
@@ -43,9 +44,12 @@ final class EloquentParticipantRepositoryTest extends TestCase
         ]);
     }
 
-    public function test_it_implements_participant_repository_interface(): void
+    public function test_container_resolves_participant_repository_interface_to_eloquent_repository(): void
     {
-        $this->assertInstanceOf(ParticipantRepositoryInterface::class, $this->repository);
+        // The module may not auto-boot in the test environment
+        $this->app->register(TournamentsServiceProvider::class);
+
+        $this->assertInstanceOf(EloquentParticipantRepository::class, app(ParticipantRepositoryInterface::class));
     }
 
     public function test_it_saves_new_participant_with_user(): void

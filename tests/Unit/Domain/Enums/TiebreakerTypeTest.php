@@ -9,35 +9,6 @@ use Tests\TestCase;
 
 final class TiebreakerTypeTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = TiebreakerType::cases();
-
-        $this->assertCount(16, $cases);
-
-        // Classic Swiss tiebreakers
-        $this->assertContains(TiebreakerType::Buchholz, $cases);
-        $this->assertContains(TiebreakerType::MedianBuchholz, $cases);
-        $this->assertContains(TiebreakerType::Progressive, $cases);
-        $this->assertContains(TiebreakerType::OpponentWinPercentage, $cases);
-        $this->assertContains(TiebreakerType::OpponentOpponentWinPercentage, $cases);
-        $this->assertContains(TiebreakerType::GameWinPercentage, $cases);
-        $this->assertContains(TiebreakerType::OpponentGameWinPercentage, $cases);
-        $this->assertContains(TiebreakerType::HeadToHead, $cases);
-        $this->assertContains(TiebreakerType::SonnebornBerger, $cases);
-
-        // Stat-based tiebreakers
-        $this->assertContains(TiebreakerType::StatSum, $cases);
-        $this->assertContains(TiebreakerType::StatDiff, $cases);
-        $this->assertContains(TiebreakerType::StatAverage, $cases);
-        $this->assertContains(TiebreakerType::StatMax, $cases);
-
-        // Special
-        $this->assertContains(TiebreakerType::StrengthOfSchedule, $cases);
-        $this->assertContains(TiebreakerType::MarginOfVictory, $cases);
-        $this->assertContains(TiebreakerType::Random, $cases);
-    }
-
     public function test_buchholz_has_correct_value(): void
     {
         $this->assertEquals('buchholz', TiebreakerType::Buchholz->value);

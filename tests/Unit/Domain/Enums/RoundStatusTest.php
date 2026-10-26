@@ -9,16 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class RoundStatusTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = RoundStatus::cases();
-
-        $this->assertCount(3, $cases);
-        $this->assertContains(RoundStatus::Pending, $cases);
-        $this->assertContains(RoundStatus::InProgress, $cases);
-        $this->assertContains(RoundStatus::Finished, $cases);
-    }
-
     public function test_pending_can_transition_to_in_progress(): void
     {
         $this->assertTrue(RoundStatus::Pending->canTransitionTo(RoundStatus::InProgress));

@@ -6,7 +6,6 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Persistence\Eloqu
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Enums\MatchResult;
@@ -17,6 +16,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchHistoryRepository;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
@@ -72,9 +72,12 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
         $this->user = UserModel::factory()->create();
     }
 
-    public function test_it_implements_match_history_repository_interface(): void
+    public function test_container_resolves_match_history_repository_interface_to_eloquent_repository(): void
     {
-        $this->assertInstanceOf(MatchHistoryRepositoryInterface::class, $this->repository);
+        // The module may not auto-boot in the test environment
+        $this->app->register(TournamentsServiceProvider::class);
+
+        $this->assertInstanceOf(EloquentMatchHistoryRepository::class, app(MatchHistoryRepositoryInterface::class));
     }
 
     public function test_it_saves_match_history_entry(): void
@@ -260,6 +263,6 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
         $this->assertEquals(0, $entry->newPlayer2Score());
         $this->assertEquals($this->user->id, $entry->changedById());
         $this->assertEquals('Test reason', $entry->reason());
-        $this->assertInstanceOf(DateTimeImmutable::class, $entry->changedAt());
+        $this->assertSame($changedAt->getTimestamp(), $entry->changedAt()->getTimestamp());
     }
 }

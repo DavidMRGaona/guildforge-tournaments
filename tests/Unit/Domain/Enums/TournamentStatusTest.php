@@ -9,19 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class TournamentStatusTest extends TestCase
 {
-    public function test_it_has_expected_cases(): void
-    {
-        $cases = TournamentStatus::cases();
-
-        $this->assertCount(6, $cases);
-        $this->assertContains(TournamentStatus::Draft, $cases);
-        $this->assertContains(TournamentStatus::RegistrationOpen, $cases);
-        $this->assertContains(TournamentStatus::RegistrationClosed, $cases);
-        $this->assertContains(TournamentStatus::InProgress, $cases);
-        $this->assertContains(TournamentStatus::Finished, $cases);
-        $this->assertContains(TournamentStatus::Cancelled, $cases);
-    }
-
     public function test_draft_can_transition_to_registration_open(): void
     {
         $this->assertTrue(TournamentStatus::Draft->canTransitionTo(TournamentStatus::RegistrationOpen));

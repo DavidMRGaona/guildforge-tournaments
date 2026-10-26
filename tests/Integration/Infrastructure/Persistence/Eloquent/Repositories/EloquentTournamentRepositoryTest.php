@@ -19,6 +19,7 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\TestCase;
 
 final class EloquentTournamentRepositoryTest extends TestCase
@@ -33,9 +34,12 @@ final class EloquentTournamentRepositoryTest extends TestCase
         $this->repository = new EloquentTournamentRepository;
     }
 
-    public function test_it_implements_tournament_repository_interface(): void
+    public function test_container_resolves_tournament_repository_interface_to_eloquent_repository(): void
     {
-        $this->assertInstanceOf(TournamentRepositoryInterface::class, $this->repository);
+        // The module may not auto-boot in the test environment
+        $this->app->register(TournamentsServiceProvider::class);
+
+        $this->assertInstanceOf(EloquentTournamentRepository::class, app(TournamentRepositoryInterface::class));
     }
 
     public function test_it_saves_new_tournament(): void

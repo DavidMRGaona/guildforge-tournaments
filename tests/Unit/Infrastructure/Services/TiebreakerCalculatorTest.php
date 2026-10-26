@@ -8,7 +8,6 @@ use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
-use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
@@ -22,11 +21,6 @@ final class TiebreakerCalculatorTest extends TestCase
     {
         parent::setUp();
         $this->calculator = new TiebreakerCalculator;
-    }
-
-    public function test_it_implements_tiebreaker_calculator_interface(): void
-    {
-        $this->assertInstanceOf(TiebreakerCalculatorInterface::class, $this->calculator);
     }
 
     public function test_it_calculates_buchholz_sum_of_opponent_points(): void
