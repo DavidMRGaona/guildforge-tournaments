@@ -34,6 +34,12 @@ final class TournamentStatusTest extends TestCase
         $this->assertTrue(TournamentStatus::RegistrationOpen->canTransitionTo(TournamentStatus::Cancelled));
     }
 
+    public function test_registration_open_can_transition_to_in_progress(): void
+    {
+        // Starting also closes the registration: the web only accepts it while open
+        $this->assertTrue(TournamentStatus::RegistrationOpen->canTransitionTo(TournamentStatus::InProgress));
+    }
+
     public function test_registration_closed_can_transition_to_in_progress(): void
     {
         $this->assertTrue(TournamentStatus::RegistrationClosed->canTransitionTo(TournamentStatus::InProgress));

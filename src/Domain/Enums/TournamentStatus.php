@@ -50,7 +50,8 @@ enum TournamentStatus: string
     {
         return match ($this) {
             self::Draft => in_array($newStatus, [self::RegistrationOpen, self::Cancelled], true),
-            self::RegistrationOpen => in_array($newStatus, [self::RegistrationClosed, self::Cancelled], true),
+            // Starting straight from open registration closes it too
+            self::RegistrationOpen => in_array($newStatus, [self::RegistrationClosed, self::InProgress, self::Cancelled], true),
             self::RegistrationClosed => in_array($newStatus, [self::InProgress, self::Cancelled], true),
             self::InProgress => in_array($newStatus, [self::Finished, self::Cancelled], true),
             self::Finished, self::Cancelled => false,
