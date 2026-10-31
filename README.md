@@ -21,7 +21,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 ## Requisitos
 
-- GuildForge core `^3.22` (almacenamiento de fechas en UTC y zona horaria de visualización)
+- GuildForge core `^3.29` (almacenamiento de fechas en UTC, zona horaria de visualización y contrato de encuestas)
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -107,6 +107,7 @@ También se puede crear un torneo simplificado desde el propio evento: el formul
 | Descripción | No | Máximo 1000 caracteres |
 | Imagen | No | Máximo 2 MB |
 | Perfil de torneo | No | Al elegirlo rellena las pestañas Estadísticas, Reglas de puntuación, Configuración de desempates y Configuración de emparejamientos; los perfiles del sistema llevan ⭐ |
+| Organización | No | Quien organiza el torneo: gestiona sus encuestas desde la web (ver [Encuestas](#encuestas)); no se ofrecen las cuentas anonimizadas |
 
 #### Capacidad
 
@@ -301,6 +302,17 @@ Tras una inscripción de invitado correcta, el navegador guarda los identificado
 
 - Categoría `preferences`: solo se escribe y se lee si el visitante la ha aceptado en el banner, preguntando al contrato de consentimiento del core (`hasCookieConsent('preferences')` de `@/contracts/cookieConsent`); sin un módulo de consentimiento en la página no se guarda nada.
 - La cookie se declara en el registro del core: si el módulo `cookie-consent` está instalado, aparece en la categoría de preferencias del banner y de la política de cookies. Los textos están en `lang/es/messages.php` (`cookies.*`).
+
+## Encuestas
+
+Los torneos son sujetos encuestables a través del contrato del core (`SurveySubjectSourceInterface`, tipo `tournament`). El módulo no depende de ningún módulo de encuestas: sin uno instalado, nada cambia.
+
+- **De qué va la encuesta**: nombre, inicio (el del torneo o, si aún no ha empezado, el del evento), fin, organización y, para las estadísticas, el juego (el perfil de torneo) y el formato (el método de emparejamiento). El módulo de encuestas guarda esos datos, así que siguen ahí aunque se borre el torneo.
+- **Quién la recibe**: quien jugó al menos una ronda (un emparejamiento o un bye), aunque después se retirara o fuera descalificado, con cuenta (no las anonimizadas) o como invitado con el correo confirmado.
+- **Quién la gestiona**: las personas del campo **Organización** y quien tenga `tournaments.update`, comprobado en el momento.
+- **Fin**: al pulsar **Finalizar torneo** se avisa al módulo de encuestas después de guardar, con el momento de finalizarlo; un segundo clic no vuelve a avisar.
+- **Cancelación**: al cancelar el torneo, o al borrarlo antes de que termine (también al desactivarlo en la pestaña del evento o al borrar el evento), se avisa también, para que las encuestas preparadas para su final no se queden esperando.
+- **Ficha**: la organización ve **Encuestas del torneo** en cualquier estado del torneo (desde ahí prepara la encuesta antes de que termine); cada participante ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
 
 ## Web pública
 

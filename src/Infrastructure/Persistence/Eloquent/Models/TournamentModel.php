@@ -8,11 +8,13 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\DeletesCloudinaryImages;
 use App\Infrastructure\Persistence\Eloquent\Concerns\HasSlug;
 use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTimezone;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -62,6 +64,7 @@ use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
  * @property-read Collection<int, RoundModel> $rounds
  * @property-read Collection<int, StandingModel> $standings
  * @property-read GameProfileModel|null $gameProfile
+ * @property-read Collection<int, UserModel> $organizers
  */
 final class TournamentModel extends Model
 {
@@ -190,5 +193,15 @@ final class TournamentModel extends Model
     public function gameProfile(): BelongsTo
     {
         return $this->belongsTo(GameProfileModel::class, 'game_profile_id');
+    }
+
+    /**
+     * Who organizes the tournament: they manage its surveys on the public site.
+     *
+     * @return BelongsToMany<UserModel, $this>
+     */
+    public function organizers(): BelongsToMany
+    {
+        return $this->belongsToMany(UserModel::class, 'tournaments_organizers', 'tournament_id', 'user_id');
     }
 }

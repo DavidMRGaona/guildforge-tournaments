@@ -40,6 +40,7 @@ const { error: notifyError, success: notifySuccess } = useNotifications();
 // Registering and withdrawing are closed to accounts that must verify their email
 const gate = useVerificationGate();
 const gateReasonId = useId();
+const surveysHeadingId = useId();
 
 const tournamentHasStarted = computed(() => hasStarted(props.tournament));
 const showParticipantsList = computed(
@@ -545,6 +546,43 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         </Link>
                     </p>
                 </div>
+
+                <!-- Surveys: plain links, their pages belong to another module -->
+                <section
+                    v-if="surveyLinks"
+                    class="mb-6 rounded-lg border border-default p-4"
+                    :aria-labelledby="surveysHeadingId"
+                >
+                    <h2 :id="surveysHeadingId" class="mb-3 font-semibold text-base-primary">
+                        {{ t('tournaments.surveys.heading') }}
+                    </h2>
+                    <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        <a
+                            v-if="surveyLinks.manageUrl"
+                            :href="surveyLinks.manageUrl"
+                            class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-default px-4 py-2 text-sm font-medium text-base-primary transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                        >
+                            {{ t('tournaments.surveys.manage') }}
+                        </a>
+                        <a
+                            v-for="survey in surveyLinks.surveys"
+                            :key="survey.url"
+                            :href="survey.url"
+                            class="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-center text-sm font-medium break-words transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface"
+                            :class="
+                                survey.action === 'respond'
+                                    ? 'bg-primary text-white hover:bg-primary-700'
+                                    : 'border border-default text-base-primary hover:bg-muted'
+                            "
+                        >
+                            {{
+                                survey.action === 'respond'
+                                    ? t('tournaments.surveys.respond', { title: survey.title })
+                                    : t('tournaments.surveys.results', { title: survey.title })
+                            }}
+                        </a>
+                    </div>
+                </section>
 
                 <!-- Current Round -->
                 <div

@@ -29,6 +29,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\Tournaments\Domain\Enums\ByeAssignment;
@@ -130,6 +131,19 @@ final class TournamentResource extends BaseResource
                                     ->native(false)
                                     ->live()
                                     ->afterStateUpdated(fn (?string $state, Set $set) => self::loadGameProfileDefaults($state, $set))
+                                    ->columnSpanFull(),
+
+                                Select::make('organizers')
+                                    ->label(__('tournaments::messages.config.organizers'))
+                                    ->helperText(__('tournaments::messages.config.organizers_help'))
+                                    ->relationship(
+                                        'organizers',
+                                        'name',
+                                        fn (Builder $query): Builder => $query->whereNull('users.anonymized_at')->orderBy('name'),
+                                    )
+                                    ->multiple()
+                                    ->searchable()
+                                    ->native(false)
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),

@@ -281,8 +281,8 @@ final class TournamentConfigRelationManager extends RelationManager
         $eventId = $this->getOwnerRecord()->getKey();
 
         if (! $formData['tournament_enabled']) {
-            // Delete tournament if it exists and is disabled
-            TournamentModel::where('event_id', $eventId)->delete();
+            // Delete tournament if it exists and is disabled, as a model: the surveys hear of it
+            TournamentModel::where('event_id', $eventId)->first()?->delete();
 
             Notification::make()
                 ->title(__('tournaments::messages.config.tournament_disabled'))

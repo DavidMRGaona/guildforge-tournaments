@@ -12,6 +12,7 @@ use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\SiteBrandingServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -39,6 +40,8 @@ use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface;
+use Modules\Tournaments\Application\Services\TournamentOrganizersInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
@@ -70,6 +73,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameProfileRepository;
@@ -94,9 +98,12 @@ use Modules\Tournaments\Infrastructure\Services\StandingsService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\SystemClock;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
+use Modules\Tournaments\Infrastructure\Services\TournamentLifecycleService;
+use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendParticipantConfirmedEmail;
 use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
@@ -129,6 +136,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->registerEventListeners();
+        $this->registerModelObservers();
         $this->registerCommands();
         $this->registerSchedule();
         $this->registerRateLimiters();
@@ -268,6 +276,17 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         });
     }
 
+    private function registerModelObservers(): void
+    {
+        TournamentModel::observe(TournamentObserver::class);
+
+        // The database would drop an event's tournament by cascade, unseen: delete it as a model
+        // first, so it is told to the surveys (and its image removed)
+        EventModel::deleting(static function (EventModel $event): void {
+            TournamentModel::query()->where('event_id', $event->getKey())->first()?->delete();
+        });
+    }
+
     private function registerModelExtensions(): void
     {
         EventModel::resolveRelationUsing('tournament', fn (EventModel $eventModel) => $eventModel->hasOne(TournamentModel::class, 'event_id', 'id'));
@@ -394,6 +413,16 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             GuestConfirmationQueryInterface::class,
             GuestConfirmationQuery::class
+        );
+
+        $this->app->bind(
+            TournamentOrganizersInterface::class,
+            TournamentOrganizers::class
+        );
+
+        $this->app->bind(
+            TournamentLifecycleServiceInterface::class,
+            TournamentLifecycleService::class
         );
     }
 
@@ -652,6 +681,19 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             ->first(['id']);
 
         return $event?->id;
+    }
+
+    /**
+     * Tournaments as survey subjects (core contract): asked only when a surveys module is
+     * installed.
+     *
+     * @return array<class-string<SurveySubjectSourceInterface>>
+     */
+    public function registerSurveySubjectSources(): array
+    {
+        return [
+            TournamentSurveySubjectSource::class,
+        ];
     }
 
     /**

@@ -229,6 +229,22 @@ export interface TournamentShowProps {
     canRegister: boolean;
     canCheckIn: boolean;
     guestConfirmation: GuestConfirmationTerms | null;
+    /** Its surveys for this person, when a surveys module offers any */
+    surveyLinks?: TournamentSurveyLinks | null;
+}
+
+/** A survey of the tournament one person can reach, through the core's survey links contract */
+export interface TournamentSurveyLink {
+    title: string;
+    url: string;
+    action: 'respond' | 'view_results';
+}
+
+/** The tournament's surveys for the person viewing it: null without a surveys module or nothing to link */
+export interface TournamentSurveyLinks {
+    /** The tournament's surveys page, for its organizers */
+    manageUrl: string | null;
+    surveys: TournamentSurveyLink[];
 }
 
 /**

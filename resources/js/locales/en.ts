@@ -3,6 +3,14 @@ export default {
         title: 'Tournaments',
         description: 'Tournament information',
 
+        // Surveys of the tournament (core survey links contract)
+        surveys: {
+            heading: 'Surveys',
+            manage: 'Tournament surveys',
+            respond: 'Answer «{title}»',
+            results: 'Results of «{title}»',
+        },
+
         // Status labels
         status: {
             draft: 'Draft',
