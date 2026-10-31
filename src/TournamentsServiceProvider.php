@@ -73,6 +73,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameProfileRepository;
@@ -135,6 +136,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->registerEventListeners();
+        $this->registerModelObservers();
         $this->registerCommands();
         $this->registerSchedule();
         $this->registerRateLimiters();
@@ -271,6 +273,17 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 Limit::perMinute(10)->by('tn-check-in-min|'.$ip)->response($tooMany),
                 Limit::perHour(60)->by('tn-check-in-hour|'.$ip)->response($tooMany),
             ];
+        });
+    }
+
+    private function registerModelObservers(): void
+    {
+        TournamentModel::observe(TournamentObserver::class);
+
+        // The database would drop an event's tournament by cascade, unseen: delete it as a model
+        // first, so it is told to the surveys (and its image removed)
+        EventModel::deleting(static function (EventModel $event): void {
+            TournamentModel::query()->where('event_id', $event->getKey())->first()?->delete();
         });
     }
 
