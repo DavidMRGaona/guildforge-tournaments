@@ -3,6 +3,14 @@ export default {
         title: 'Torneos',
         description: 'Información del torneo',
 
+        // Surveys of the tournament (core survey links contract)
+        surveys: {
+            heading: 'Encuestas',
+            manage: 'Encuestas del torneo',
+            respond: 'Responder «{title}»',
+            results: 'Resultados de «{title}»',
+        },
+
         // My tournaments page
         my_tournaments: {
             title: 'Mis torneos',

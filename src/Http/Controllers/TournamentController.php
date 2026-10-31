@@ -9,6 +9,8 @@ use App\Application\Seo\DTOs\SeoPageDTO;
 use App\Application\Seo\DTOs\SeoScheduleDTO;
 use App\Application\Seo\Services\SeoMetadataFactoryInterface;
 use App\Application\Services\EventQueryServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectLinksInterface;
+use App\Application\Surveys\DTOs\SurveyLinkDTO;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -23,6 +25,7 @@ use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Http\CheckInWindow;
+use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 
 final class TournamentController extends Controller
 {
@@ -36,6 +39,7 @@ final class TournamentController extends Controller
         private readonly EventQueryServiceInterface $events,
         private readonly GuestConfirmationQueryInterface $guestConfirmation,
         private readonly CheckInWindow $checkInWindow,
+        private readonly SurveySubjectLinksInterface $surveyLinks,
     ) {}
 
     public function show(string $identifier): Response|RedirectResponse
@@ -106,8 +110,33 @@ final class TournamentController extends Controller
             'canRegister' => $canRegister,
             'canCheckIn' => $canCheckIn,
             'guestConfirmation' => $this->guestConfirmation->forTournament($tournament->id),
+            // Its surveys, through the core: a surveys module answers, and without one nothing shows
+            'surveyLinks' => $user !== null ? $this->surveyLinksFor($tournament->id, (string) $user->id) : null,
             'seo' => $this->showSeo($tournament),
         ]);
+    }
+
+    /**
+     * What the person reaches from the page: the tournament's surveys page when they organize it,
+     * and the surveys sent to them.
+     *
+     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>}|null
+     */
+    private function surveyLinksFor(string $tournamentId, string $userId): ?array
+    {
+        $links = $this->surveyLinks->forSubject(TournamentSurveySubjectSource::TYPE, $tournamentId, $userId);
+        if ($links->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'manageUrl' => $links->manageUrl,
+            'surveys' => array_map(static fn (SurveyLinkDTO $link): array => [
+                'title' => $link->title,
+                'url' => $link->url,
+                'action' => $link->action->value,
+            ], $links->surveys),
+        ];
     }
 
     public function standings(string $identifier): Response|RedirectResponse
