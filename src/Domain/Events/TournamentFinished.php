@@ -11,14 +11,15 @@ final readonly class TournamentFinished
     public function __construct(
         public string $tournamentId,
         public int $roundsPlayed,
-        public string $winnerId,
+        // The participant leading the standings; null when no round was played
+        public ?string $winnerId,
         public DateTimeImmutable $occurredAt,
     ) {}
 
     public static function create(
         string $tournamentId,
         int $roundsPlayed,
-        string $winnerId,
+        ?string $winnerId,
     ): self {
         return new self(
             tournamentId: $tournamentId,

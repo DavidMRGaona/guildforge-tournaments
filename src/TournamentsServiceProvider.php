@@ -40,6 +40,7 @@ use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentOrganizersInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
@@ -96,6 +97,7 @@ use Modules\Tournaments\Infrastructure\Services\StandingsService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\SystemClock;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
+use Modules\Tournaments\Infrastructure\Services\TournamentLifecycleService;
 use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
@@ -403,6 +405,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             TournamentOrganizersInterface::class,
             TournamentOrganizers::class
+        );
+
+        $this->app->bind(
+            TournamentLifecycleServiceInterface::class,
+            TournamentLifecycleService::class
         );
     }
 

@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\Pages;
 
 use App\Application\Services\TimezoneServiceInterface;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use LogicException;
+use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
-use Modules\Tournaments\Domain\Events\TournamentCancelled;
+use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -109,11 +111,9 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::InProgress)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->tournament()->update([
-                        'status' => TournamentStatus::Finished->value,
-                        'completed_at' => now(),
-                    ]);
-                    $this->refreshFormData(['status']);
+                    if (! $this->endTournament(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->finish($this->tournament()->id))) {
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.tournament_finished'))
@@ -133,16 +133,10 @@ final class EditTournament extends EditRecord
                 ->modalHeading(__('tournaments::messages.actions.cancel_tournament'))
                 ->modalDescription(__('tournaments::messages.modal.cancel_description'))
                 ->action(function (): void {
-                    $tournament = $this->tournament();
-                    $previousStatus = $tournament->status;
-
-                    $tournament->update([
-                        'status' => TournamentStatus::Cancelled->value,
-                    ]);
-                    $this->refreshFormData(['status']);
-
                     // Participants are told by email
-                    event(TournamentCancelled::create($tournament->id, $previousStatus));
+                    if (! $this->endTournament(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->cancel($this->tournament()->id))) {
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.tournament_cancelled'))
@@ -182,6 +176,31 @@ final class EditTournament extends EditRecord
             ->body($reason)
             ->warning()
             ->send();
+    }
+
+    /**
+     * Finish or cancel through the domain, which also tells the surveys; a tournament that
+     * changed meanwhile (another tab) is reported instead of overwritten.
+     *
+     * @param  Closure(TournamentLifecycleServiceInterface): void  $change
+     */
+    private function endTournament(Closure $change): bool
+    {
+        try {
+            $change(app(TournamentLifecycleServiceInterface::class));
+        } catch (InvalidStateTransitionException) {
+            Notification::make()
+                ->title(__('tournaments::messages.errors.invalid_state_transition'))
+                ->danger()
+                ->send();
+
+            return false;
+        } finally {
+            $this->tournament()->refresh();
+            $this->refreshFormData(['status']);
+        }
+
+        return true;
     }
 
     private function tournament(): TournamentModel
