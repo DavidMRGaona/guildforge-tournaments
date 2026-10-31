@@ -12,6 +12,7 @@ use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Services\SiteBrandingServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -39,6 +40,7 @@ use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
 use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Application\Services\TournamentOrganizersInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
@@ -94,9 +96,11 @@ use Modules\Tournaments\Infrastructure\Services\StandingsService;
 use Modules\Tournaments\Infrastructure\Services\SwissPairingService;
 use Modules\Tournaments\Infrastructure\Services\SystemClock;
 use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
+use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendParticipantConfirmedEmail;
 use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
@@ -395,6 +399,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             GuestConfirmationQueryInterface::class,
             GuestConfirmationQuery::class
         );
+
+        $this->app->bind(
+            TournamentOrganizersInterface::class,
+            TournamentOrganizers::class
+        );
     }
 
     private function registerLivewireComponents(): void
@@ -652,6 +661,19 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             ->first(['id']);
 
         return $event?->id;
+    }
+
+    /**
+     * Tournaments as survey subjects (core contract): asked only when a surveys module is
+     * installed.
+     *
+     * @return array<class-string<SurveySubjectSourceInterface>>
+     */
+    public function registerSurveySubjectSources(): array
+    {
+        return [
+            TournamentSurveySubjectSource::class,
+        ];
     }
 
     /**

@@ -77,6 +77,14 @@ interface ParticipantRepositoryInterface
     public function findPlayableByTournament(string $tournamentId): array;
 
     /**
+     * Participants who played at least one round of the tournament (paired in a match or given
+     * a bye), whatever their status now: someone who withdrew or was disqualified halfway counts.
+     *
+     * @return array<Participant>
+     */
+    public function findWhoPlayed(string $tournamentId): array;
+
+    /**
      * Delete a participant.
      */
     public function delete(ParticipantId $id): void;

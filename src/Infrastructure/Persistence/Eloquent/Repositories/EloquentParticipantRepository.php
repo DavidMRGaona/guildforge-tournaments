@@ -13,7 +13,9 @@ use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\ParticipantNotFoundException;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 
 final readonly class EloquentParticipantRepository implements ParticipantRepositoryInterface
 {
@@ -199,6 +201,21 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
         $models = ParticipantModel::where('tournament_id', $tournamentId)
             ->whereIn('status', $playableStatuses)
+            ->get();
+
+        return $models->map(fn (ParticipantModel $model): Participant => $this->toEntity($model))->all();
+    }
+
+    public function findWhoPlayed(string $tournamentId): array
+    {
+        $matches = MatchModel::query()
+            ->whereIn('round_id', RoundModel::query()->select('id')->where('tournament_id', $tournamentId));
+
+        $models = ParticipantModel::where('tournament_id', $tournamentId)
+            ->where(function (Builder $query) use ($matches): void {
+                $query->whereIn('id', (clone $matches)->select('player_1_id'))
+                    ->orWhereIn('id', (clone $matches)->whereNotNull('player_2_id')->select('player_2_id'));
+            })
             ->get();
 
         return $models->map(fn (ParticipantModel $model): Participant => $this->toEntity($model))->all();

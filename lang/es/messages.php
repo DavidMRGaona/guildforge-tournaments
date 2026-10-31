@@ -299,6 +299,8 @@ return [
 
     // Filament - Tournament configuration relation manager
     'config' => [
+        'organizers' => 'Organización',
+        'organizers_help' => 'Quien organiza el torneo. Gestiona sus encuestas desde la web, igual que quien puede editar torneos en el panel.',
         'title' => 'Configuración del torneo',
         'general' => 'General',
         'tournament_enabled' => 'Habilitar torneo',
@@ -814,6 +816,14 @@ return [
     ],
 
     // Server-rendered page metadata (link previews and search engines)
+    'surveys' => [
+        'source_label' => 'Torneo',
+        'attributes' => [
+            'game_system' => 'Juego',
+            'tournament_format' => 'Formato',
+        ],
+    ],
+
     'seo' => [
         'index_title' => 'Torneos',
         'index_description' => 'Compite en nuestros torneos',
