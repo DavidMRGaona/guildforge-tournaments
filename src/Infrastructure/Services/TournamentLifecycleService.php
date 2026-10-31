@@ -13,6 +13,9 @@ use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Events\TournamentFinished;
+use Modules\Tournaments\Domain\Events\TournamentStarted;
+use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
+use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
@@ -23,8 +26,49 @@ final readonly class TournamentLifecycleService implements TournamentLifecycleSe
     public function __construct(
         private TournamentRepositoryInterface $tournaments,
         private StandingRepositoryInterface $standings,
+        private ParticipantRepositoryInterface $participants,
         private RegistrationLockInterface $lock,
     ) {}
+
+    public function openRegistration(string $tournamentId): void
+    {
+        $this->lock->forTournament($tournamentId, function () use ($tournamentId): void {
+            $tournament = $this->tournaments->findOrFail(new TournamentId($tournamentId));
+            $tournament->openRegistration();
+            $this->tournaments->save($tournament);
+        });
+    }
+
+    public function closeRegistration(string $tournamentId): void
+    {
+        $this->lock->forTournament($tournamentId, function () use ($tournamentId): void {
+            $tournament = $this->tournaments->findOrFail(new TournamentId($tournamentId));
+            $tournament->closeRegistration();
+            $this->tournaments->save($tournament);
+        });
+    }
+
+    public function start(string $tournamentId): void
+    {
+        $this->lock->forTournament($tournamentId, function () use ($tournamentId): void {
+            $tournament = $this->tournaments->findOrFail(new TournamentId($tournamentId));
+            $tournament->start();
+
+            // Withdrawn, disqualified and expired registrations hold no seat
+            $participantCount = $this->participants->countActiveByTournament($tournamentId);
+            if ($participantCount < $tournament->minParticipants()) {
+                throw InsufficientParticipantsException::belowMinimum($tournamentId, $participantCount, $tournament->minParticipants());
+            }
+
+            $this->tournaments->save($tournament);
+
+            $started = TournamentStarted::create($tournamentId, $participantCount, $tournament->maxRounds());
+
+            DB::afterCommit(static function () use ($started): void {
+                event($started);
+            });
+        });
+    }
 
     public function finish(string $tournamentId): void
     {

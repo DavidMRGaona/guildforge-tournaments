@@ -13,6 +13,7 @@ use Filament\Resources\Pages\EditRecord;
 use LogicException;
 use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -38,10 +39,9 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::Draft)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->tournament()->update([
-                        'status' => TournamentStatus::RegistrationOpen->value,
-                    ]);
-                    $this->refreshFormData(['status']);
+                    if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->openRegistration($this->tournament()->id))) {
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.registration_opened'))
@@ -58,10 +58,9 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::RegistrationOpen)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->tournament()->update([
-                        'status' => TournamentStatus::RegistrationClosed->value,
-                    ]);
-                    $this->refreshFormData(['status']);
+                    if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->closeRegistration($this->tournament()->id))) {
+                        return;
+                    }
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.registration_closed'))
@@ -79,24 +78,10 @@ final class EditTournament extends EditRecord
                 ], true))
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $record = $this->tournament();
-
-                    // Check minimum participants
-                    $participantCount = $record->participants()->count();
-                    if ($participantCount < $record->min_participants) {
-                        Notification::make()
-                            ->title(__('tournaments::messages.errors.insufficient_participants'))
-                            ->danger()
-                            ->send();
-
+                    // The service checks the minimum of participants
+                    if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->start($this->tournament()->id))) {
                         return;
                     }
-
-                    $record->update([
-                        'status' => TournamentStatus::InProgress->value,
-                        'started_at' => now(),
-                    ]);
-                    $this->refreshFormData(['status']);
 
                     Notification::make()
                         ->title(__('tournaments::messages.messages.tournament_started'))
@@ -111,7 +96,7 @@ final class EditTournament extends EditRecord
                 ->visible(fn (): bool => $record->status === TournamentStatus::InProgress)
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    if (! $this->endTournament(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->finish($this->tournament()->id))) {
+                    if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->finish($this->tournament()->id))) {
                         return;
                     }
 
@@ -134,7 +119,7 @@ final class EditTournament extends EditRecord
                 ->modalDescription(__('tournaments::messages.modal.cancel_description'))
                 ->action(function (): void {
                     // Participants are told by email
-                    if (! $this->endTournament(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->cancel($this->tournament()->id))) {
+                    if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->cancel($this->tournament()->id))) {
                         return;
                     }
 
@@ -179,18 +164,21 @@ final class EditTournament extends EditRecord
     }
 
     /**
-     * Finish or cancel through the domain, which also tells the surveys; a tournament that
-     * changed meanwhile (another tab) is reported instead of overwritten.
+     * Change the status through the domain, which also announces it (finishing and cancelling
+     * tell the surveys); a tournament that changed meanwhile (another tab) is reported instead
+     * of overwritten.
      *
      * @param  Closure(TournamentLifecycleServiceInterface): void  $change
      */
-    private function endTournament(Closure $change): bool
+    private function changeStatus(Closure $change): bool
     {
         try {
             $change(app(TournamentLifecycleServiceInterface::class));
-        } catch (InvalidStateTransitionException) {
+        } catch (InvalidStateTransitionException|InsufficientParticipantsException $exception) {
             Notification::make()
-                ->title(__('tournaments::messages.errors.invalid_state_transition'))
+                ->title(__($exception instanceof InsufficientParticipantsException
+                    ? 'tournaments::messages.errors.insufficient_participants'
+                    : 'tournaments::messages.errors.invalid_state_transition'))
                 ->danger()
                 ->send();
 

@@ -116,6 +116,16 @@ final class TournamentTest extends TestCase
         $this->assertEquals(TournamentStatus::InProgress, $tournament->status());
     }
 
+    public function test_open_registration_can_start(): void
+    {
+        $tournament = $this->createTournament(TournamentStatus::RegistrationOpen);
+
+        $tournament->start();
+
+        $this->assertEquals(TournamentStatus::InProgress, $tournament->status());
+        $this->assertNotNull($tournament->startedAt());
+    }
+
     public function test_in_progress_can_finish(): void
     {
         $tournament = $this->createTournament(TournamentStatus::InProgress);
