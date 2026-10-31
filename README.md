@@ -84,7 +84,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 1. **Crear el evento** y publicarlo: el torneo se asocia a un evento publicado.
 2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
 3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Con fechas de apertura o cierre configuradas, la web solo acepta inscripciones entre ellas; el inicio del evento la cierra siempre.
-4. **Cerrar inscripción** e **Iniciar torneo** (comprueba el mínimo de participantes).
+4. **Cerrar inscripción** e **Iniciar torneo**. Se puede iniciar con la inscripción abierta o cerrada; iniciar la cierra. El mínimo de participantes cuenta solo las inscripciones que ocupan plaza: no los retirados, descalificados ni caducados, ni los invitados sin confirmar que no reservan plaza.
 5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
 6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
 
@@ -227,13 +227,13 @@ Un torneo o perfil guardado con el antiguo método `accelerated`, que no tenía 
 | Estado | Valor | Siguiente estado posible |
 |--------|-------|--------------------------|
 | Borrador | `draft` | `registration_open`, `cancelled` |
-| Inscripción abierta | `registration_open` | `registration_closed`, `cancelled` |
+| Inscripción abierta | `registration_open` | `registration_closed`, `in_progress`, `cancelled` |
 | Inscripción cerrada | `registration_closed` | `in_progress`, `cancelled` |
 | En curso | `in_progress` | `finished`, `cancelled` |
 | Finalizado | `finished` | — |
 | Cancelado | `cancelled` | — |
 
-Solo se aceptan inscripciones en `registration_open`, dentro de las fechas configuradas y antes del inicio del evento. Retirarse desde la web es posible hasta el inicio del evento mientras el torneo no esté en curso, finalizado o cancelado. El panel permite **Iniciar torneo** también desde `registration_open`.
+Solo se aceptan inscripciones en `registration_open`, dentro de las fechas configuradas y antes del inicio del evento. Retirarse desde la web es posible hasta el inicio del evento mientras el torneo no esté en curso, finalizado o cancelado. Las acciones de estado del panel pasan por estas transiciones: si otra persona cambió el estado entretanto, el panel avisa de que la transición no está permitida y no cambia nada.
 
 ### Participante
 
