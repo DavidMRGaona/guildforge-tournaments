@@ -11,14 +11,15 @@ final readonly class TournamentStarted
     public function __construct(
         public string $tournamentId,
         public int $participantCount,
-        public int $plannedRounds,
+        /** Null when the tournament sets no maximum of rounds */
+        public ?int $plannedRounds,
         public DateTimeImmutable $occurredAt,
     ) {}
 
     public static function create(
         string $tournamentId,
         int $participantCount,
-        int $plannedRounds,
+        ?int $plannedRounds,
     ): self {
         return new self(
             tournamentId: $tournamentId,
