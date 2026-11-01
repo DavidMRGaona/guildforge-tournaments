@@ -12,6 +12,8 @@ final class InvalidMatchResultException extends DomainException
 
     public const string SCORES_CONTRADICT_RESULT = 'scores_contradict_result';
 
+    public const string NOT_A_PLAYER_RESULT = 'not_a_player_result';
+
     private function __construct(string $message, private readonly string $reason)
     {
         parent::__construct($message);
@@ -30,6 +32,11 @@ final class InvalidMatchResultException extends DomainException
     public static function scoresContradictResult(string $matchId): self
     {
         return new self("The scores of match {$matchId} contradict its result.", self::SCORES_CONTRADICT_RESULT);
+    }
+
+    public static function notAPlayerResult(string $matchId): self
+    {
+        return new self("Players report a win or a draw for match {$matchId}; any other result is the organization's.", self::NOT_A_PLAYER_RESULT);
     }
 
     /**

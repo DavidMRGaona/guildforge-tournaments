@@ -33,6 +33,7 @@ use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
+use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RegistrationLockInterface;
@@ -89,6 +90,7 @@ use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
+use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
 use Modules\Tournaments\Infrastructure\Services\ProfileTournamentsDataProvider;
@@ -400,6 +402,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             MatchResultServiceInterface::class,
             MatchResultService::class
+        );
+
+        $this->app->bind(
+            MatchReportingServiceInterface::class,
+            MatchReportingService::class
         );
 
         $this->app->bind(

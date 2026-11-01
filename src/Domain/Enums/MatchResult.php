@@ -83,6 +83,31 @@ enum MatchResult: string
     }
 
     /**
+     * A result the match's players may report themselves; the rest are the organization's.
+     */
+    public function isReportableByPlayers(): bool
+    {
+        return in_array($this, [self::PlayerOneWin, self::PlayerTwoWin, self::Draw], true);
+    }
+
+    /**
+     * With both scores given, the winner cannot have scored less and a draw needs equal scores.
+     */
+    public function isContradictedBy(?int $player1Score, ?int $player2Score): bool
+    {
+        if ($player1Score === null || $player2Score === null) {
+            return false;
+        }
+
+        return match ($this) {
+            self::PlayerOneWin => $player1Score < $player2Score,
+            self::PlayerTwoWin => $player2Score < $player1Score,
+            self::Draw => $player1Score !== $player2Score,
+            default => false,
+        };
+    }
+
+    /**
      * Get all result values.
      *
      * @return array<string>

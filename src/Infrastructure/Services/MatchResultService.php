@@ -86,7 +86,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             throw InvalidMatchResultException::byeOnlyForByeMatches($dto->matchId);
         }
 
-        if (! $match->isBye() && $this->scoresContradict($dto)) {
+        if (! $match->isBye() && $dto->result->isContradictedBy($dto->player1Score, $dto->player2Score)) {
             throw InvalidMatchResultException::scoresContradictResult($dto->matchId);
         }
 
@@ -149,22 +149,5 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         }
 
         return $round->tournamentId();
-    }
-
-    /**
-     * With both scores given, the winner cannot have scored less and a draw needs equal scores.
-     */
-    private function scoresContradict(RecordMatchResultDTO $dto): bool
-    {
-        if ($dto->player1Score === null || $dto->player2Score === null) {
-            return false;
-        }
-
-        return match ($dto->result) {
-            MatchResult::PlayerOneWin => $dto->player1Score < $dto->player2Score,
-            MatchResult::PlayerTwoWin => $dto->player2Score < $dto->player1Score,
-            MatchResult::Draw => $dto->player1Score !== $dto->player2Score,
-            default => false,
-        };
     }
 }
