@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { router } from '@inertiajs/vue3';
 import CancelRegistration from '../../resources/js/pages/Tournaments/CancelRegistration.vue';
 import { linkWithText, nestedInteractiveLinks } from './support/interactive';
 
 type BlockedReason = 'already_cancelled' | 'tournament_started' | 'tournament_cancelled' | null;
 
-function mountPage(canCancel: boolean, cancelBlockedReason: BlockedReason = null) {
+function mountPage(canCancel: boolean, cancelBlockedReason: BlockedReason = null): VueWrapper {
     return mount(CancelRegistration, {
         props: {
             participant: {
@@ -28,9 +28,14 @@ describe('CancelRegistration', () => {
     it('cancels the registration of its link', async () => {
         const wrapper = mountPage(true);
 
-        await wrapper.findAll('button').find((button) => button.text() === 'Sí, cancelar inscripción')?.trigger('click');
+        await wrapper
+            .findAll('button')
+            .find((button) => button.text() === 'Sí, cancelar inscripción')
+            ?.trigger('click');
 
-        expect(router.delete).toHaveBeenCalledWith('/torneos/cancelar/token-123', { preserveScroll: true });
+        expect(router.delete).toHaveBeenCalledWith('/torneos/cancelar/token-123', {
+            preserveScroll: true,
+        });
     });
 
     it.each([
@@ -45,7 +50,9 @@ describe('CancelRegistration', () => {
     });
 
     it('does not claim the registration was cancelled when the tournament started', () => {
-        expect(mountPage(false, 'tournament_started').text()).not.toContain('Tu inscripción ya ha sido cancelada');
+        expect(mountPage(false, 'tournament_started').text()).not.toContain(
+            'Tu inscripción ya ha sido cancelada'
+        );
     });
 
     it('goes back to the tournaments with a single link, not a button inside a link', () => {
