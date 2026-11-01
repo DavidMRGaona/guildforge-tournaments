@@ -88,11 +88,11 @@ final class TournamentSurveySubjectSourceTest extends ModuleTestCase
 
         $attributes = [];
         foreach ($subject->attributes as $attribute) {
-            $attributes[$attribute->key] = [$attribute->label, $attribute->value];
+            $attributes[$attribute->key] = [$attribute->label, $attribute->value, $attribute->valueId];
         }
         $this->assertSame([
-            'game_system' => [__('tournaments::messages.surveys.attributes.game_system'), 'Juego de ejemplo'],
-            'tournament_format' => [__('tournaments::messages.surveys.attributes.tournament_format'), PairingMethod::Random->label()],
+            'game_system' => [__('tournaments::messages.surveys.attributes.game_system'), 'Juego de ejemplo', $profile->id],
+            'tournament_format' => [__('tournaments::messages.surveys.attributes.tournament_format'), PairingMethod::Random->label(), null],
         ], $attributes);
     }
 
@@ -218,6 +218,30 @@ final class TournamentSurveySubjectSourceTest extends ModuleTestCase
         $this->assertFalse($this->source->canManage($this->userWith('tournaments:tournaments.view')->id, $tournament->id));
         $this->assertFalse($this->source->canManage(UserModel::factory()->create()->id, $tournament->id));
         $this->assertFalse($this->source->canManage((string) Str::uuid(), $tournament->id));
+    }
+
+    public function test_it_lists_every_game_profile_by_id_for_the_survey_settings(): void
+    {
+        $profile = GameProfileModel::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Juego de ejemplo',
+            'slug' => 'juego-de-ejemplo-'.Str::random(6),
+            'stat_definitions' => [],
+            'scoring_rules' => [],
+            'tiebreaker_config' => [],
+            'pairing_config' => [],
+        ]);
+
+        $labels = [];
+        foreach ($this->source->attributeValues('game_system') as $value) {
+            $labels[$value->id] = $value->label;
+        }
+
+        $expected = GameProfileModel::query()->pluck('name', 'id')->all();
+        uasort($expected, strnatcasecmp(...));
+        $this->assertSame($expected, $labels);
+        $this->assertSame('Juego de ejemplo', $labels[$profile->id] ?? null);
+        $this->assertSame([], $this->source->attributeValues('tournament_format'));
     }
 
     /**

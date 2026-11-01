@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Surveys;
 
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
+use App\Application\Surveys\Contracts\SurveySubjectAttributeValuesInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Application\Surveys\DTOs\SurveyAudienceDTO;
 use App\Application\Surveys\DTOs\SurveyGuestDTO;
 use App\Application\Surveys\DTOs\SurveySubjectAttributeDTO;
+use App\Application\Surveys\DTOs\SurveySubjectAttributeValueDTO;
 use App\Application\Surveys\DTOs\SurveySubjectDTO;
 use App\Application\Surveys\Enums\SurveySubjectStatus;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -30,14 +32,17 @@ use Modules\Tournaments\Domain\ValueObjects\TournamentId;
  * Tournaments as survey subjects, through the core's contract: the surveys module, when
  * installed, asks it and nothing here depends on it. Whoever played a round is asked to answer,
  * with an account or as a guest whose email is confirmed; the tournament's organizers and whoever
- * may edit tournaments in the panel manage its surveys.
+ * may edit tournaments in the panel manage its surveys. Its game profile is its game system, sent
+ * with its id so surveys recognise it after a rename (a template per game system).
  */
-final readonly class TournamentSurveySubjectSource implements SurveySubjectSourceInterface
+final readonly class TournamentSurveySubjectSource implements SurveySubjectAttributeValuesInterface, SurveySubjectSourceInterface
 {
     /** Stored by surveys and their statistics: never changes. */
     public const string TYPE = 'tournament';
 
     private const string UPDATE_PERMISSION = 'tournaments:tournaments.update';
+
+    private const string GAME_SYSTEM = 'game_system';
 
     public function __construct(
         private TournamentRepositoryInterface $tournaments,
@@ -82,7 +87,9 @@ final readonly class TournamentSurveySubjectSource implements SurveySubjectSourc
             endsAt: $endsAt,
             organizerIds: $this->organizers->userIds($tournament->id()->value),
             attributes: [
-                new SurveySubjectAttributeDTO('game_system', __('tournaments::messages.surveys.attributes.game_system'), $profile instanceof GameProfile ? $profile->name() : null),
+                $profile instanceof GameProfile
+                    ? new SurveySubjectAttributeDTO(self::GAME_SYSTEM, __('tournaments::messages.surveys.attributes.game_system'), $profile->name(), $profile->id()->value)
+                    : new SurveySubjectAttributeDTO(self::GAME_SYSTEM, __('tournaments::messages.surveys.attributes.game_system'), null),
                 new SurveySubjectAttributeDTO('tournament_format', __('tournaments::messages.surveys.attributes.tournament_format'), $pairing->method->label()),
             ],
             url: route('tournaments.show', $tournament->slug()),
@@ -139,6 +146,24 @@ final readonly class TournamentSurveySubjectSource implements SurveySubjectSourc
         $user = UserModel::query()->find($userId);
 
         return $user instanceof UserModel && $this->authorization->can($user, self::UPDATE_PERMISSION);
+    }
+
+    /**
+     * Every game profile, by name, as the game systems its tournaments can be of.
+     */
+    public function attributeValues(string $key): array
+    {
+        if ($key !== self::GAME_SYSTEM) {
+            return [];
+        }
+
+        $profiles = $this->profiles->findAll();
+        usort($profiles, static fn (GameProfile $a, GameProfile $b): int => strnatcasecmp($a->name(), $b->name()));
+
+        return array_map(
+            static fn (GameProfile $profile): SurveySubjectAttributeValueDTO => new SurveySubjectAttributeValueDTO($profile->id()->value, $profile->name()),
+            $profiles,
+        );
     }
 
     private function tournament(string $subjectId): ?Tournament
