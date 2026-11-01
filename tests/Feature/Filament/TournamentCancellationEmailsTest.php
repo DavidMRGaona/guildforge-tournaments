@@ -65,7 +65,7 @@ final class TournamentCancellationEmailsTest extends ModuleTestCase
         $this->participant($tournament, ['guest_name' => 'Retirada', 'guest_email' => 'retirada@example.com', 'email_confirmed_at' => $this->now, 'status' => ParticipantStatus::Withdrawn->value]);
 
         Livewire::test(EditTournament::class, ['record' => $tournament->id])
-            ->callAction('cancelTournament')
+            ->callAction('cancelTournament', ['confirmation' => true])
             ->assertHasNoActionErrors();
 
         $this->assertSame(TournamentStatus::Cancelled, $tournament->fresh()?->status);
@@ -79,7 +79,7 @@ final class TournamentCancellationEmailsTest extends ModuleTestCase
     {
         $tournament = $this->tournament();
 
-        Livewire::test(EditTournament::class, ['record' => $tournament->id])->callAction('cancelTournament');
+        Livewire::test(EditTournament::class, ['record' => $tournament->id])->callAction('cancelTournament', ['confirmation' => true]);
 
         $this->assertSame([], $this->mails());
     }

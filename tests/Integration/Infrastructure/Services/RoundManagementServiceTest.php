@@ -419,6 +419,11 @@ final class RoundManagementServiceTest extends ModuleTestCase
 
                 return $this->inner->recalculate($tournamentId);
             }
+
+            public function byePoints(string $tournamentId): float
+            {
+                return $this->inner->byePoints($tournamentId);
+            }
         };
         $this->app->instance(StandingsServiceInterface::class, $counter);
 

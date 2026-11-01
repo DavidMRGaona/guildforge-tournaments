@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
-import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent, h, type VNode } from 'vue';
+import { flushPromises, mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils';
 import { router } from '@inertiajs/vue3';
 import EventTournamentSection from '../../resources/js/components/EventTournamentSection.vue';
 import type { Participant, Tournament } from '../../resources/js/types/tournaments';
@@ -12,14 +12,23 @@ const AlwaysClickableButton = defineComponent({
     inheritAttrs: false,
     emits: ['click'],
     setup(_props, { emit, slots }) {
-        return () => h('button', { type: 'button', onClick: (event: Event) => emit('click', event) }, slots.default?.());
+        return (): VNode =>
+            h(
+                'button',
+                { type: 'button', onClick: (event: Event) => emit('click', event) },
+                slots.default?.()
+            );
     },
 });
 
 function mountSection(
-    props: { tournament?: Tournament; userRegistration?: Participant | null; canRegister?: boolean } = {},
-    options: { alwaysClickable?: boolean } = {},
-) {
+    props: {
+        tournament?: Tournament;
+        userRegistration?: Participant | null;
+        canRegister?: boolean;
+    } = {},
+    options: { alwaysClickable?: boolean } = {}
+): VueWrapper {
     return mount(EventTournamentSection, {
         props: {
             tournament: props.tournament ?? tournament(),
@@ -28,11 +37,14 @@ function mountSection(
             guestConfirmation: null,
         },
         attachTo: document.body,
-        global: options.alwaysClickable === true ? { stubs: { BaseButton: AlwaysClickableButton } } : {},
+        global:
+            options.alwaysClickable === true
+                ? { stubs: { BaseButton: AlwaysClickableButton } }
+                : {},
     });
 }
 
-function button(wrapper: ReturnType<typeof mountSection>, label: string) {
+function button(wrapper: VueWrapper, label: string): DOMWrapper<HTMLButtonElement> | undefined {
     return wrapper.findAll('button').find((candidate) => candidate.text() === label);
 }
 
@@ -42,7 +54,9 @@ function openDialog(): HTMLElement | null {
 }
 
 function dialogButton(label: string): HTMLButtonElement | undefined {
-    return [...(openDialog()?.querySelectorAll('button') ?? [])].find((candidate) => candidate.textContent?.trim() === label);
+    return [...(openDialog()?.querySelectorAll('button') ?? [])].find(
+        (candidate) => candidate.textContent?.trim() === label
+    );
 }
 
 describe('EventTournamentSection', () => {
@@ -99,7 +113,9 @@ describe('EventTournamentSection', () => {
 
         it('does not offer to withdraw a registration that is no longer active', () => {
             signIn();
-            const wrapper = mountSection({ userRegistration: registration({ status: 'withdrawn' }) });
+            const wrapper = mountSection({
+                userRegistration: registration({ status: 'withdrawn' }),
+            });
 
             expect(button(wrapper, 'Cancelar inscripción')).toBeUndefined();
         });
@@ -127,7 +143,9 @@ describe('EventTournamentSection', () => {
 
             const withdraw = button(wrapper, 'Cancelar inscripción');
             expect(withdraw?.attributes('disabled')).toBeDefined();
-            expect(wrapper.find(`#${withdraw?.attributes('aria-describedby')}`).text()).toContain('verifica tu email');
+            expect(wrapper.find(`#${withdraw?.attributes('aria-describedby')}`).text()).toContain(
+                'verifica tu email'
+            );
 
             await withdraw?.trigger('click');
             expect(openDialog()).toBeNull();
@@ -140,7 +158,10 @@ describe('EventTournamentSection', () => {
             const registering = mountSection({}, { alwaysClickable: true });
             await button(registering, 'Inscribirse')?.trigger('click');
 
-            const withdrawing = mountSection({ userRegistration: registration() }, { alwaysClickable: true });
+            const withdrawing = mountSection(
+                { userRegistration: registration() },
+                { alwaysClickable: true }
+            );
             await button(withdrawing, 'Cancelar inscripción')?.trigger('click');
             await flushPromises();
 
@@ -159,10 +180,15 @@ describe('EventTournamentSection', () => {
         // Verification required after all (changed in another tab): to the notice, no error
         describe('when the server asks for the verification anyway', () => {
             beforeEach(() => {
-                fetchSpy.mockResolvedValue(new Response(JSON.stringify({ error: 'email_verification_required' }), {
-                    status: 403,
-                    headers: { 'Content-Type': 'application/json', 'X-Email-Verification-Required': '1' },
-                }));
+                fetchSpy.mockResolvedValue(
+                    new Response(JSON.stringify({ error: 'email_verification_required' }), {
+                        status: 403,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Email-Verification-Required': '1',
+                        },
+                    })
+                );
             });
 
             it('leads a registration to the notice', async () => {
@@ -172,7 +198,10 @@ describe('EventTournamentSection', () => {
                 await button(wrapper, 'Inscribirse')?.trigger('click');
                 await flushPromises();
 
-                expect(fetchSpy).toHaveBeenCalledWith('/torneos/tournament-1/inscripcion', expect.objectContaining({ method: 'POST' }));
+                expect(fetchSpy).toHaveBeenCalledWith(
+                    '/torneos/tournament-1/inscripcion',
+                    expect.objectContaining({ method: 'POST' })
+                );
                 expect(router.visit).toHaveBeenCalledWith('/verificar-email');
                 expect(router.reload).not.toHaveBeenCalled();
             });
@@ -186,7 +215,10 @@ describe('EventTournamentSection', () => {
                 dialogButton('Cancelar inscripción')?.click();
                 await flushPromises();
 
-                expect(fetchSpy).toHaveBeenCalledWith('/torneos/tournament-1/inscripcion', expect.objectContaining({ method: 'DELETE' }));
+                expect(fetchSpy).toHaveBeenCalledWith(
+                    '/torneos/tournament-1/inscripcion',
+                    expect.objectContaining({ method: 'DELETE' })
+                );
                 expect(openDialog()).toBeNull();
                 expect(router.visit).toHaveBeenCalledWith('/verificar-email');
             });

@@ -86,7 +86,7 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
                 ));
             }
 
-            $this->announce(MatchResultReported::create($dto->matchId, $tournament->id()->value, $dto->reportedById, $requiresConfirmation));
+            $this->announce(MatchResultReported::create($dto->matchId, $tournament->id()->value, $dto->reportedById, $requiresConfirmation, $this->clock->now()));
 
             return $requiresConfirmation ? MatchReportOutcome::AwaitingConfirmation : MatchReportOutcome::Recorded;
         });
@@ -101,7 +101,7 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
             if ($report instanceof MatchReport) {
                 $this->assertUnchanged($report, $seenReport);
                 $this->makeOfficial($report, $userId);
-                $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $userId));
+                $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $userId, $this->clock->now()));
             }
         });
     }
@@ -116,7 +116,7 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
                 $this->assertUnchanged($report, $seenReport);
                 $report->dispute($userId, $reason, $this->clock->now());
                 $this->reports->save($report);
-                $this->announce(MatchResultDisputed::create($matchId, $tournament->id()->value, $userId));
+                $this->announce(MatchResultDisputed::create($matchId, $tournament->id()->value, $userId, $this->clock->now()));
             }
         });
     }
@@ -135,7 +135,7 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
             $this->assertUnchanged($report, $seenReport);
 
             $this->makeOfficial($report, $organizerId);
-            $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $organizerId));
+            $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $organizerId, $this->clock->now()));
         });
     }
 
@@ -159,8 +159,9 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
                 array_values($pending),
             ));
 
+            $now = $this->clock->now();
             foreach ($pending as $report) {
-                $this->announce(MatchResultConfirmed::create($report->matchId(), $round->tournamentId(), $organizerId));
+                $this->announce(MatchResultConfirmed::create($report->matchId(), $round->tournamentId(), $organizerId, $now));
             }
 
             return count($pending);

@@ -173,6 +173,9 @@ final class TournamentMatch
         $this->player2Score = $player2Score;
         $this->player1Stats = $player1Stats;
         $this->player2Stats = $player2Stats;
+        // A confirmation vouches for the result it was given to, not for this one
+        $this->confirmedById = null;
+        $this->confirmedAt = null;
     }
 
     /**

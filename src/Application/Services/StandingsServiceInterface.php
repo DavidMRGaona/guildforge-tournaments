@@ -17,4 +17,11 @@ interface StandingsServiceInterface
      * @throws TournamentNotFoundException
      */
     public function recalculate(string $tournamentId): array;
+
+    /**
+     * The points a bye gives in the tournament, from the scoring rules the standings use.
+     *
+     * @throws TournamentNotFoundException
+     */
+    public function byePoints(string $tournamentId): float;
 }

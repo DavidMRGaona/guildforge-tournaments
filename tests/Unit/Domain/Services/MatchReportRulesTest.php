@@ -73,7 +73,11 @@ final class MatchReportRulesTest extends TestCase
         yield 'own disputed report' => [['report' => 'own-disputed'], [false, true, false, false]];
         yield 'opponent report' => [['report' => 'opponent'], [false, false, true, true]];
         yield 'opponent disputed report' => [['report' => 'opponent-disputed'], [false, false, false, false]];
-        yield 'opponent report, trusted mode' => [['report' => 'opponent', 'mode' => ResultReporting::PlayersTrusted], [false, false, false, false]];
+        // A report left from when the tournament asked for confirmation blocks nobody
+        yield 'opponent report, trusted mode' => [['report' => 'opponent', 'mode' => ResultReporting::PlayersTrusted], [true, false, true, false]];
+        yield 'opponent disputed report, trusted mode' => [['report' => 'opponent-disputed', 'mode' => ResultReporting::PlayersTrusted], [true, false, false, false]];
+        yield 'own report, trusted mode' => [['report' => 'own', 'mode' => ResultReporting::PlayersTrusted], [false, true, false, false]];
+        yield 'opponent report, admin only' => [['report' => 'opponent', 'mode' => ResultReporting::AdminOnly], [false, false, false, false]];
         yield 'opponent report, round finished' => [['report' => 'opponent', 'round' => RoundStatus::Finished], [false, false, false, false]];
     }
 

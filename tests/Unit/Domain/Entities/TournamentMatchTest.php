@@ -94,6 +94,19 @@ final class TournamentMatchTest extends TestCase
         $this->assertEquals(new DateTimeImmutable('2030-05-01 10:05:00'), $match->confirmedAt());
     }
 
+    public function test_reporting_again_forgets_the_earlier_confirmation(): void
+    {
+        $match = $this->createMatch();
+        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id', new DateTimeImmutable('2030-05-01 10:00:00'));
+        $match->confirmResult('confirmer-id', new DateTimeImmutable('2030-05-01 10:05:00'));
+
+        $match->reportResult(MatchResult::Draw, 'organizer-id', new DateTimeImmutable('2030-05-01 11:00:00'));
+
+        $this->assertFalse($match->isConfirmed());
+        $this->assertNull($match->confirmedById());
+        $this->assertNull($match->confirmedAt());
+    }
+
     public function test_reset_result(): void
     {
         $match = $this->createMatch();

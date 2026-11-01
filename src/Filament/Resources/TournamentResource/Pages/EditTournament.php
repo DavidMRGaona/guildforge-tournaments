@@ -8,6 +8,7 @@ use App\Application\Services\TimezoneServiceInterface;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Checkbox;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use LogicException;
@@ -15,6 +16,7 @@ use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
+use Modules\Tournaments\Domain\Exceptions\PendingMatchReportsException;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -95,6 +97,8 @@ final class EditTournament extends EditRecord
                 ->color('success')
                 ->visible(fn (): bool => $record->status === TournamentStatus::InProgress)
                 ->requiresConfirmation()
+                ->modalDescription(__('tournaments::messages.modal.finish_description'))
+                ->schema([$this->secondConfirmation('finish_tournament')])
                 ->action(function (): void {
                     if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->finish($this->tournament()->id))) {
                         return;
@@ -117,6 +121,7 @@ final class EditTournament extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading(__('tournaments::messages.actions.cancel_tournament'))
                 ->modalDescription(__('tournaments::messages.modal.cancel_description'))
+                ->schema([$this->secondConfirmation('cancel_tournament')])
                 ->action(function (): void {
                     // Participants are told by email
                     if (! $this->changeStatus(fn (TournamentLifecycleServiceInterface $lifecycle) => $lifecycle->cancel($this->tournament()->id))) {
@@ -131,6 +136,17 @@ final class EditTournament extends EditRecord
 
             DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Finishing and cancelling cannot be undone: a box that says what is lost must be ticked.
+     */
+    private function secondConfirmation(string $action): Checkbox
+    {
+        return Checkbox::make('confirmation')
+            ->label(__("tournaments::messages.actions.{$action}_confirmation_check"))
+            ->accepted()
+            ->required();
     }
 
     /**
@@ -174,6 +190,14 @@ final class EditTournament extends EditRecord
     {
         try {
             $change(app(TournamentLifecycleServiceInterface::class));
+        } catch (PendingMatchReportsException $exception) {
+            Notification::make()
+                ->title(__('tournaments::messages.errors.cannot_finish_with_reports'))
+                ->body(trans_choice('tournaments::messages.errors.pending_reports_to_resolve', $exception->count, ['count' => $exception->count]))
+                ->danger()
+                ->send();
+
+            return false;
         } catch (InvalidStateTransitionException|InsufficientParticipantsException $exception) {
             Notification::make()
                 ->title(__($exception instanceof InsufficientParticipantsException

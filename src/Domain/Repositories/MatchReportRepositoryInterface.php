@@ -21,4 +21,11 @@ interface MatchReportRepositoryInterface
     public function save(MatchReport $report): void;
 
     public function delete(string $matchId): void;
+
+    /**
+     * Reports of the tournament's matches, pending and disputed alike.
+     */
+    public function countByTournament(string $tournamentId): int;
+
+    public function deleteByTournament(string $tournamentId): void;
 }

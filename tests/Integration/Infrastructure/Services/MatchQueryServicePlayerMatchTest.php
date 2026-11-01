@@ -22,6 +22,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Tests\Support\PinsTheClock;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\ModuleTestCase;
 
 /**
@@ -130,6 +131,68 @@ final class MatchQueryServicePlayerMatchTest extends ModuleTestCase
         $this->assertInstanceOf(PlayerMatchResponseDTO::class, $mine);
         $this->assertSame('Invitada', $mine->opponentName);
         $this->assertTrue($mine->opponentIsGuest);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, ?string}>
+     */
+    public static function closedReasons(): iterable
+    {
+        yield 'open to the players' => ['players_with_confirmation', 'in_progress', 'confirmed', null];
+        yield 'the organization records' => ['admin_only', 'in_progress', 'confirmed', 'admin_only'];
+        yield 'withdrawn' => ['players_trusted', 'in_progress', 'withdrawn', 'not_playing'];
+        yield 'disqualified' => ['players_with_confirmation', 'in_progress', 'disqualified', 'not_playing'];
+        yield 'round not started' => ['players_with_confirmation', 'pending', 'confirmed', 'round_pending'];
+        yield 'admin only wins over the round' => ['admin_only', 'pending', 'withdrawn', 'admin_only'];
+    }
+
+    #[DataProvider('closedReasons')]
+    public function test_player_match_says_why_the_player_cannot_report(string $mode, string $round, string $status, ?string $reason): void
+    {
+        $this->tournament->update(['result_reporting' => $mode]);
+        $this->round->update(['status' => $round]);
+        ParticipantModel::query()->where('user_id', $this->one->id)->update(['status' => $status]);
+
+        $mine = $this->queries()->findPlayerMatch($this->tournament->id, $this->one->id);
+
+        $this->assertInstanceOf(PlayerMatchResponseDTO::class, $mine);
+        $this->assertSame($reason, $mine->toArray()['closed_reason']);
+    }
+
+    /**
+     * @return iterable<string, array{array<int, array<string, mixed>>|null, float}>
+     */
+    public static function byeRules(): iterable
+    {
+        $rule = static fn (string $result, float $points): array => ['name' => $result, 'points' => $points, 'priority' => 0, 'condition' => ['type' => 'result', 'result_value' => $result, 'stat' => null, 'operator' => null, 'value' => null]];
+
+        yield 'a rule for the bye' => [[$rule('win', 3), $rule('bye', 2)], 2.0];
+        yield 'a bye counts as a win' => [[$rule('win', 4), $rule('draw', 2)], 4.0];
+        yield 'no points for a win' => [[$rule('draw', 1)], 0.0];
+        yield 'the default rules' => [null, 3.0];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>|null  $rules
+     */
+    #[DataProvider('byeRules')]
+    public function test_a_bye_says_the_points_the_scoring_rules_give_it(?array $rules, float $points): void
+    {
+        $this->tournament->update(['scoring_rules' => $rules]);
+        $this->match->update(['player_2_id' => null, 'result' => 'bye']);
+
+        $mine = $this->queries()->findPlayerMatch($this->tournament->id, $this->one->id);
+
+        $this->assertInstanceOf(PlayerMatchResponseDTO::class, $mine);
+        $this->assertSame($points, $mine->toArray()['bye_points']);
+    }
+
+    public function test_a_match_with_a_rival_has_no_bye_points(): void
+    {
+        $mine = $this->queries()->findPlayerMatch($this->tournament->id, $this->one->id);
+
+        $this->assertInstanceOf(PlayerMatchResponseDTO::class, $mine);
+        $this->assertNull($mine->toArray()['bye_points']);
     }
 
     public function test_history_lists_entries_with_names_and_actions(): void

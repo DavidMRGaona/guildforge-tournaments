@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Infrastructure\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Tournaments\Application\Services\ScoringRuleEvaluatorInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
+use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
@@ -34,6 +36,7 @@ final readonly class StandingsService implements StandingsServiceInterface
         private MatchRepositoryInterface $matches,
         private StandingRepositoryInterface $standings,
         private StandingCalculatorServiceInterface $calculator,
+        private ScoringRuleEvaluatorInterface $scoringRuleEvaluator,
     ) {}
 
     /**
@@ -109,6 +112,13 @@ final readonly class StandingsService implements StandingsServiceInterface
             $this->participants->findByTournament($tournamentId),
             static fn (Participant $participant): bool => $participant->canPlay() || isset($played[$participant->id()->value]),
         ));
+    }
+
+    public function byePoints(string $tournamentId): float
+    {
+        $tournament = $this->tournaments->findOrFail(TournamentId::fromString($tournamentId));
+
+        return $this->scoringRuleEvaluator->evaluate(MatchResult::Bye, $this->scoringRules($tournament))['player1'];
     }
 
     /**

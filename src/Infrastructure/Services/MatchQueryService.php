@@ -9,6 +9,7 @@ use Modules\Tournaments\Application\DTOs\Response\MatchReportResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\MatchResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\PlayerMatchResponseDTO;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Entities\MatchReport;
@@ -37,6 +38,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
         private RoundRepositoryInterface $rounds,
         private TournamentRepositoryInterface $tournaments,
         private MatchReportRules $rules,
+        private StandingsServiceInterface $standings,
     ) {}
 
     /**
@@ -60,9 +62,10 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 $match->player2Id() !== null
                     ? ($participantNames[$match->player2Id()] ?? (string) __('tournaments::messages.participants.unknown'))
                     : null,
-                // A report only waits on a match without result
+                // A report only waits on a match without result. The page only says whether it is
+                // pending or disputed, so the reporter's name is not looked up
                 report: isset($reports[$match->id()->value]) && ! $match->isCompleted()
-                    ? $this->reportResponse($reports[$match->id()->value])
+                    ? MatchReportResponseDTO::fromEntity($reports[$match->id()->value], '')
                     : null,
             ),
             $matches
@@ -105,6 +108,8 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
             report: $reportResponse,
             resultReporting: $tournament->resultReporting(),
             statDefinitions: $tournament->statDefinitions() ?? [],
+            closedReason: $this->rules->closedReasonFor($tournament, $round, $participant),
+            byePoints: $match->isBye() ? $this->standings->byePoints($tournamentId) : null,
         );
     }
 

@@ -27,6 +27,7 @@ use Modules\Tournaments\Domain\Exceptions\MatchReportClosedException;
 use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
 use Modules\Tournaments\Domain\Exceptions\UnauthorizedToReportResultException;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchHistoryModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -35,6 +36,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
+use Modules\Tournaments\Tests\Support\FixedClock;
 use Modules\Tournaments\Tests\Support\PinsTheClock;
 use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
@@ -381,6 +383,78 @@ final class MatchReportingServiceTest extends ModuleTestCase
         } finally {
             $this->assertSame(MatchResult::Draw, $this->match->refresh()->result);
         }
+    }
+
+    public function test_the_events_take_their_time_from_the_clock(): void
+    {
+        $this->app->instance(Clock::class, FixedClock::at('2026-06-10T09:30:00+00:00'));
+        $at = static fn (MatchResultReported|MatchResultConfirmed|MatchResultDisputed $event): string => $event->occurredAt->format(DATE_ATOM);
+
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->service()->dispute($this->match->id, $this->two->id, 'It was a draw', $this->seen());
+        $this->service()->report($this->dto(MatchResult::Draw, $this->one, 15, 15));
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+
+        Event::assertDispatched(MatchResultReported::class, fn (MatchResultReported $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
+        Event::assertNotDispatched(MatchResultReported::class, fn (MatchResultReported $event): bool => $at($event) !== '2026-06-10T09:30:00+00:00');
+        Event::assertDispatched(MatchResultDisputed::class, fn (MatchResultDisputed $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
+        Event::assertDispatched(MatchResultConfirmed::class, fn (MatchResultConfirmed $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
+    }
+
+    public function test_recording_again_from_the_panel_drops_the_rival_confirmation(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+        $organizer = UserModel::factory()->create();
+
+        app(MatchResultServiceInterface::class)->recordResult(new RecordMatchResultDTO(
+            matchId: $this->match->id,
+            result: MatchResult::Draw,
+            reportedById: $organizer->id,
+        ));
+
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::Draw, $match->result);
+        $this->assertSame($organizer->id, $match->reported_by_id);
+        $this->assertNull($match->confirmed_by_id);
+        $this->assertNull($match->confirmed_at);
+    }
+
+    public function test_after_dropping_the_confirmation_the_rival_reports_over_the_report_left(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $outcome = $this->service()->report($this->dto(MatchResult::Draw, $this->two, 15, 15));
+
+        $this->assertSame(MatchReportOutcome::Recorded, $outcome);
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::Draw, $match->result);
+        $this->assertSame($this->two->id, $match->reported_by_id);
+        $this->assertNull($this->reports()->find($this->match->id));
+    }
+
+    public function test_after_dropping_the_confirmation_the_rival_confirms_the_report_left(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::PlayerOneWin, $match->result);
+        $this->assertSame($this->two->id, $match->confirmed_by_id);
+        $this->assertNull($this->reports()->find($this->match->id));
+    }
+
+    public function test_after_dropping_the_confirmation_the_rival_cannot_dispute(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $this->expectException(UnauthorizedToReportResultException::class);
+
+        $this->service()->dispute($this->match->id, $this->two->id, 'It was a draw', $this->seen());
     }
 
     /**

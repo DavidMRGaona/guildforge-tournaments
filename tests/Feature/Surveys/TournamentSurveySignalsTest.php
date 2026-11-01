@@ -159,8 +159,8 @@ final class TournamentSurveySignalsTest extends ModuleTestCase
         $finished = $this->tournament(TournamentStatus::InProgress);
         $cancelled = $this->tournament(TournamentStatus::RegistrationClosed);
 
-        Livewire::test(EditTournament::class, ['record' => $finished->getRouteKey()])->callAction('finishTournament')->assertHasNoActionErrors();
-        Livewire::test(EditTournament::class, ['record' => $cancelled->getRouteKey()])->callAction('cancelTournament')->assertHasNoActionErrors();
+        Livewire::test(EditTournament::class, ['record' => $finished->getRouteKey()])->callAction('finishTournament', ['confirmation' => true])->assertHasNoActionErrors();
+        Livewire::test(EditTournament::class, ['record' => $cancelled->getRouteKey()])->callAction('cancelTournament', ['confirmation' => true])->assertHasNoActionErrors();
 
         $this->assertSame(TournamentStatus::Finished, $finished->refresh()->status);
         $this->assertSame(TournamentStatus::Cancelled, $cancelled->refresh()->status);
