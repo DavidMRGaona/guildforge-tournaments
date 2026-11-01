@@ -22,6 +22,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
+use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
@@ -35,6 +36,7 @@ use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Filament\InvalidMatchResultMessage;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -253,6 +255,27 @@ final class RoundsRelationManager extends RelationManager
                             ->send();
                     }),
 
+                Action::make('confirmPendingReports')
+                    ->label(__('tournaments::messages.actions.confirm_pending_reports'))
+                    ->icon('heroicon-o-check-badge')
+                    ->color('gray')
+                    ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress
+                        && MatchReportModel::query()
+                            ->whereNull('disputed_at')
+                            ->whereHas('match', static fn ($query) => $query->where('round_id', $record->id))
+                            ->exists())
+                    ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
+                    ->requiresConfirmation()
+                    ->modalDescription(__('tournaments::messages.modal.confirm_pending_reports'))
+                    ->action(function (RoundModel $record, MatchReportingServiceInterface $reporting): void {
+                        $confirmed = $reporting->confirmPendingInRound($record->id, (string) auth()->id());
+
+                        Notification::make()
+                            ->title(trans_choice('tournaments::messages.messages.pending_reports_confirmed', $confirmed, ['count' => $confirmed]))
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('completeRound')
                     ->label(__('tournaments::messages.actions.complete_round'))
                     ->icon('heroicon-o-check-circle')
@@ -265,7 +288,7 @@ final class RoundsRelationManager extends RelationManager
                         } catch (PreviousRoundNotCompletedException $exception) {
                             Notification::make()
                                 ->title(__('tournaments::messages.errors.matches_not_completed'))
-                                ->body(__('tournaments::messages.errors.matches_not_completed_detail', ['count' => $exception->unreportedMatches()]))
+                                ->body($this->unreportedDetail($exception))
                                 ->danger()
                                 ->send();
 
@@ -283,6 +306,20 @@ final class RoundsRelationManager extends RelationManager
                     }),
             ])
             ->defaultSort('round_number', 'asc');
+    }
+
+    /**
+     * How many matches lack a result, and how many of them wait for the players' confirmation.
+     */
+    private function unreportedDetail(PreviousRoundNotCompletedException $exception): string
+    {
+        $detail = __('tournaments::messages.errors.matches_not_completed_detail', ['count' => $exception->unreportedMatches()]);
+
+        if ($exception->pendingReports() === 0) {
+            return $detail;
+        }
+
+        return $detail.'. '.trans_choice('tournaments::messages.errors.matches_pending_reports_detail', $exception->pendingReports(), ['count' => $exception->pendingReports()]);
     }
 
     /**

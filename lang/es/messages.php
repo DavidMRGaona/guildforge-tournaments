@@ -43,6 +43,10 @@ return [
         'disqualify_description' => '¿Estás seguro de que quieres descalificar a este participante? Esta acción no se puede deshacer.',
         'confirm_email_description' => 'El email del invitado quedará confirmado y le enviaremos el email de inscripción.',
         'cancel_description' => '¿Estás seguro de que quieres cancelar este torneo? Esta acción notificará a todos los participantes.',
+        'confirm_report' => ':name informó: :result',
+        'disputed_because' => 'El rival lo discute: :reason',
+        'reset_result' => 'La partida queda sin resultado y descarta el informe de los jugadores. Se puede volver a registrar, y el historial guarda el motivo.',
+        'confirm_pending_reports' => 'Los resultados que informaron los jugadores y nadie discute pasan a ser definitivos. Los discutidos se quedan para revisarlos uno a uno.',
     ],
 
     'permissions' => [
@@ -126,6 +130,23 @@ return [
         'players_trusted' => 'Jugadores sin confirmación',
     ],
 
+    'report_status' => [
+        'pending' => 'Pendiente',
+        'disputed' => 'Discutido',
+    ],
+
+    'match_history_action' => [
+        'recorded' => 'Registrado por la organización',
+        'reported' => 'Informado por un jugador',
+        'confirmed' => 'Confirmado',
+        'reset' => 'Restablecido',
+    ],
+
+    'history' => [
+        'change' => ':from → :to',
+        'reason' => 'Motivo: :reason',
+    ],
+
     'pairing_sort_criteria' => [
         'points' => 'Puntos',
         'stat' => 'Estadística',
@@ -168,6 +189,8 @@ return [
         'player_1_stats' => 'Estadísticas jugador 1',
         'player_2_stats' => 'Estadísticas jugador 2',
         'bye_opponent' => 'Bye',
+        'report_status' => 'Informe',
+        'reset_reason' => 'Motivo',
         'score_help' => 'Juegos (o puntos) ganados en la partida; los usan los desempates GWP, OGWP y margen de victoria',
         'rank' => 'Posición',
         'matches_played' => 'Partidas jugadas',
@@ -188,6 +211,10 @@ return [
         'start_round' => 'Iniciar ronda',
         'complete_round' => 'Completar ronda',
         'report_result' => 'Reportar resultado',
+        'confirm_report' => 'Confirmar informe',
+        'reset_result' => 'Restablecer',
+        'history' => 'Historial',
+        'confirm_pending_reports' => 'Confirmar informes pendientes',
         'confirm_result' => 'Confirmar resultado',
         'dispute_result' => 'Disputar resultado',
         'register' => 'Inscribirse',
@@ -221,6 +248,9 @@ return [
         'result_confirmed' => 'Resultado confirmado',
         'result_disputed' => 'Resultado disputado',
         'results_updated' => 'Resultados actualizados',
+        'report_confirmed' => 'Resultado confirmado',
+        'result_reset' => 'Resultado restablecido',
+        'pending_reports_confirmed' => '{0} No había informes pendientes|{1} Se ha confirmado :count resultado|[2,*] Se han confirmado :count resultados',
         'registered_successfully' => 'Inscripción realizada correctamente',
         'guest_registration_claimed' => 'Ya tenías una inscripción como invitado; ahora está en tu cuenta.',
         'guest_confirmation_sent_hold' => 'Te hemos enviado un email para confirmar la inscripción. Confírmala antes del :date o la plaza se liberará.',
@@ -261,6 +291,8 @@ return [
         'result_not_confirmed' => 'El resultado requiere confirmación del oponente',
         'matches_not_completed' => 'No se han completado todas las partidas',
         'matches_not_completed_detail' => 'Quedan :count partidas sin resultado',
+        'matches_pending_reports_detail' => '{1} :count tiene un informe de los jugadores pendiente de confirmar o discutido|[2,*] :count tienen un informe de los jugadores pendiente de confirmar o discutido',
+        'no_pending_report' => 'La partida ya no tiene ningún informe pendiente',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
     ],
 
@@ -328,7 +360,7 @@ return [
         'profile_rules_notice' => 'Los puntos o desempates que este torneo no tiene propios se toman del perfil «:profile». Si los cambias aquí, pasan a ser del torneo y tienen prioridad sobre el perfil',
         'options' => 'Opciones',
         'result_reporting' => 'Reporte de resultados',
-        'result_reporting_help' => 'Define quién puede reportar los resultados de las partidas',
+        'result_reporting_help' => 'Quién registra los resultados. Con «Jugadores con confirmación», un jugador informa desde la web y su rival lo confirma o lo discute; con «Jugadores sin confirmación», el resultado vale en cuanto se informa. La organización siempre puede registrarlos, confirmarlos y restablecerlos desde el panel',
         'allow_guests' => 'Permitir invitados',
         'allow_guests_help' => 'Permite inscribir participantes sin cuenta de usuario',
         'show_participants' => 'Mostrar participantes',

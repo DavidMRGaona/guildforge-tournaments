@@ -25,6 +25,9 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use DateTimeImmutable;
+use Modules\Tournaments\Domain\Entities\MatchReport;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -87,6 +90,21 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertSame(MatchResult::Draw, $match->refresh()->result);
+    }
+
+    public function test_without_report_results_reports_cannot_be_confirmed_reset_or_reviewed(): void
+    {
+        $match = $this->match();
+        app(MatchReportRepositoryInterface::class)->save(new MatchReport($match->id, MatchResult::PlayerOneWin, UserModel::factory()->create()->id, new DateTimeImmutable('2030-05-01 10:00:00')));
+        $this->actingAs($this->userWith([self::UPDATE, self::MANAGE_PARTICIPANTS]));
+
+        $this->matchesManager($match)
+            ->assertTableActionHidden('confirmReport', $match)
+            ->assertTableActionHidden('resetResult', $match)
+            ->assertTableActionHidden('history', $match);
+        $this->roundsManager()->assertTableActionHidden('confirmPendingReports', $match->round);
+
+        $this->assertInstanceOf(MatchReport::class, app(MatchReportRepositoryInterface::class)->find($match->id));
     }
 
     public function test_without_report_results_a_match_result_cannot_be_reported(): void

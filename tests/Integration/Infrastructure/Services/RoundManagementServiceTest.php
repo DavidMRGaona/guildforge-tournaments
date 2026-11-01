@@ -6,11 +6,13 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Services;
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use DateTimeImmutable;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Entities\Standing;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
@@ -23,6 +25,7 @@ use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
@@ -193,6 +196,24 @@ final class RoundManagementServiceTest extends ModuleTestCase
         }
 
         $this->assertSame(RoundStatus::InProgress, RoundModel::query()->findOrFail($round->id)->status);
+    }
+
+    public function test_a_round_with_reports_waiting_says_how_many_wait(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+        $round = $this->rounds()->generateNextRound($tournament->id);
+        $this->rounds()->startRound($round->id);
+        $match = MatchModel::query()->where('round_id', $round->id)->firstOrFail();
+        app(MatchReportRepositoryInterface::class)->save(new MatchReport($match->id, MatchResult::PlayerOneWin, $this->admin()->id, new DateTimeImmutable('2026-06-10 11:00:00')));
+
+        try {
+            $this->rounds()->completeRound($round->id);
+            $this->fail('A round with reports waiting for confirmation was completed');
+        } catch (PreviousRoundNotCompletedException $exception) {
+            $this->assertSame(2, $exception->unreportedMatches());
+            $this->assertSame(1, $exception->pendingReports());
+        }
     }
 
     public function test_completing_a_round_with_every_result_finishes_it_once(): void
