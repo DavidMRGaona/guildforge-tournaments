@@ -301,7 +301,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                             {{ t('tournaments.check_in.enter_email') }}
                         </p>
 
-                        <form @submit.prevent="handleEmailCheckIn" class="space-y-4">
+                        <form class="space-y-4" @submit.prevent="handleEmailCheckIn">
                             <div>
                                 <label
                                     for="check-in-email"

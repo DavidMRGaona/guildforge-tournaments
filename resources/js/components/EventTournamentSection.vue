@@ -500,7 +500,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </h2>
 
                     <!-- Form -->
-                    <form @submit.prevent="submitGuestRegistration" class="space-y-4">
+                    <form class="space-y-4" @submit.prevent="submitGuestRegistration">
                         <!-- Name field -->
                         <div>
                             <label

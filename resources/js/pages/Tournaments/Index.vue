@@ -16,9 +16,7 @@ interface Props {
     currentFilter: TournamentStatusFilterType;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-    currentFilter: 'all',
-});
+const props = defineProps<Props>();
 
 const { t } = useI18n();
 
