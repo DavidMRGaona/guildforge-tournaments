@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Application\DTOs\Response\RoundResponseDTO;
+use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
@@ -15,6 +17,9 @@ use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Events\RoundCompleted;
+use Modules\Tournaments\Domain\Events\RoundGenerated;
+use Modules\Tournaments\Domain\Events\RoundStarted;
 use Modules\Tournaments\Domain\Exceptions\CannotGeneratePairingsException;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
@@ -45,6 +50,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         private StandingsServiceInterface $standings,
         private GameProfileRepositoryInterface $gameProfiles,
         private Clock $clock,
+        private RegistrationLockInterface $lock,
     ) {}
 
     public function generateNextRound(string $tournamentId): RoundResponseDTO
@@ -115,6 +121,18 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
             // A bye scores at once
             $this->standings->recalculate($tournamentId);
 
+            $generated = RoundGenerated::create(
+                $round->id()->value,
+                $tournamentId,
+                $roundNumber,
+                count($matches),
+                array_filter($matches, static fn (TournamentMatch $match): bool => $match->isBye()) !== [],
+            );
+
+            DB::afterCommit(static function () use ($generated): void {
+                event($generated);
+            });
+
             return RoundResponseDTO::fromEntity(
                 $round,
                 count($matches),
@@ -125,26 +143,39 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
 
     public function startRound(string $roundId): RoundResponseDTO
     {
-        $round = $this->rounds->findOrFail(RoundId::fromString($roundId));
-        $round->start($this->clock->now());
-        $this->rounds->save($round);
+        return $this->withLockedRound($roundId, function (Round $round): RoundResponseDTO {
+            $round->start($this->clock->now());
+            $this->rounds->save($round);
 
-        return $this->toResponse($round);
+            $started = RoundStarted::create($round->id()->value, $round->tournamentId(), $round->roundNumber());
+
+            DB::afterCommit(static function () use ($started): void {
+                event($started);
+            });
+
+            return $this->toResponse($round);
+        });
     }
 
     public function completeRound(string $roundId): RoundResponseDTO
     {
-        $round = $this->rounds->findOrFail(RoundId::fromString($roundId));
+        return $this->withLockedRound($roundId, function (Round $round) use ($roundId): RoundResponseDTO {
+            $unreported = $this->matches->countUnreportedByRound($roundId);
+            if ($unreported > 0) {
+                throw PreviousRoundNotCompletedException::hasUnreportedMatches($roundId, $unreported);
+            }
 
-        $unreported = $this->matches->countUnreportedByRound($roundId);
-        if ($unreported > 0) {
-            throw PreviousRoundNotCompletedException::hasUnreportedMatches($roundId, $unreported);
-        }
+            $round->complete($this->clock->now());
+            $this->rounds->save($round);
 
-        $round->complete($this->clock->now());
-        $this->rounds->save($round);
+            $completed = RoundCompleted::create($round->id()->value, $round->tournamentId(), $round->roundNumber());
 
-        return $this->toResponse($round);
+            DB::afterCommit(static function () use ($completed): void {
+                event($completed);
+            });
+
+            return $this->toResponse($round);
+        });
     }
 
     public function find(string $roundId): ?RoundResponseDTO
@@ -170,6 +201,22 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         $round = $this->rounds->findCurrentRound($tournamentId);
 
         return $round instanceof Round ? $this->toResponse($round) : null;
+    }
+
+    /**
+     * Run the change on the round as read under its tournament's lock, held until the commit:
+     * a second click waits and finds the round already moved on.
+     *
+     * @param  Closure(Round): RoundResponseDTO  $change
+     */
+    private function withLockedRound(string $roundId, Closure $change): RoundResponseDTO
+    {
+        $tournamentId = $this->rounds->findOrFail(RoundId::fromString($roundId))->tournamentId();
+
+        return $this->lock->forTournament(
+            $tournamentId,
+            fn (): RoundResponseDTO => $change($this->rounds->findOrFail(RoundId::fromString($roundId))),
+        );
     }
 
     /**

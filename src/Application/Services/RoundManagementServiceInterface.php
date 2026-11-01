@@ -15,7 +15,7 @@ use Modules\Tournaments\Domain\Exceptions\TournamentNotFoundException;
 interface RoundManagementServiceInterface
 {
     /**
-     * Generate pairings for the next round using the Swiss algorithm.
+     * Generate pairings for the next round using the Swiss algorithm: RoundGenerated after the commit.
      *
      * @throws TournamentNotFoundException
      * @throws PreviousRoundNotCompletedException
@@ -25,7 +25,7 @@ interface RoundManagementServiceInterface
     public function generateNextRound(string $tournamentId): RoundResponseDTO;
 
     /**
-     * Start a round (allows matches to be played).
+     * Start a round (allows matches to be played): RoundStarted after the commit.
      *
      * @throws RoundNotFoundException
      * @throws InvalidStateTransitionException
@@ -33,7 +33,7 @@ interface RoundManagementServiceInterface
     public function startRound(string $roundId): RoundResponseDTO;
 
     /**
-     * Complete a round (all matches must be reported).
+     * Complete a round (all matches must be reported): RoundCompleted after the commit.
      *
      * @throws RoundNotFoundException
      * @throws InvalidStateTransitionException
