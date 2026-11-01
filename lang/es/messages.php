@@ -716,6 +716,26 @@ return [
     'emails' => [
         'view_tournament' => 'Ver torneo',
         'view_tournament_line' => 'Puedes consultar el torneo en :url',
+        'match_result' => [
+            'win' => 'Gana :name',
+        ],
+        'match_result_reported' => [
+            'subject' => 'Resultado informado en :tournament',
+            'greeting' => 'Hola, :name',
+            'intro' => ':reporter ha informado del resultado de vuestra partida en :tournament: :result.',
+            'to_confirm' => 'Entra en la página del torneo para confirmarlo o discutirlo. Hasta entonces no cuenta en la clasificación.',
+            'trusted' => 'El resultado ya cuenta en la clasificación. Si no es correcto, díselo a la organización del torneo.',
+            'organization_confirms' => 'La organización lo confirmará. Si no es correcto, díselo antes.',
+            'review' => 'Revisar el resultado',
+        ],
+        'match_result_disputed' => [
+            'subject' => 'Resultado discutido en :tournament',
+            'greeting' => 'Hola, :name',
+            'intro' => ':disputer no está de acuerdo con el resultado informado de su partida en :tournament: :result.',
+            'reason' => 'Motivo',
+            'organization' => 'Revísalo en el panel, en la pestaña Rondas del torneo: puedes confirmarlo o restablecerlo.',
+            'reporter' => 'Puedes corregir tu informe desde la página del torneo; si no, lo decidirá la organización.',
+        ],
         'tournament_reminder' => [
             'subject' => 'Recordatorio: :tournament, :date',
             'greeting' => '¡Hola, :name!',

@@ -48,6 +48,8 @@ use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Console\Commands\ExpireGuestRegistrationsCommand;
 use Modules\Tournaments\Console\Commands\SendTournamentRemindersCommand;
 use Modules\Tournaments\Domain\Events\GuestConfirmationRequested;
+use Modules\Tournaments\Domain\Events\MatchResultDisputed;
+use Modules\Tournaments\Domain\Events\MatchResultReported;
 use Modules\Tournaments\Domain\Events\ParticipantConfirmed;
 use Modules\Tournaments\Domain\Events\ParticipantDisqualified;
 use Modules\Tournaments\Domain\Events\ParticipantRegistered;
@@ -109,6 +111,8 @@ use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
+use Modules\Tournaments\Listeners\SendMatchResultDisputedEmails;
+use Modules\Tournaments\Listeners\SendMatchResultReportedEmail;
 use Modules\Tournaments\Listeners\SendParticipantConfirmedEmail;
 use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
@@ -208,6 +212,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         Event::listen(TournamentCancelled::class, SendTournamentCancelledEmails::class);
         Event::listen(ParticipantDisqualified::class, SendParticipantDisqualifiedEmail::class);
         Event::listen(ParticipantConfirmed::class, SendParticipantConfirmedEmail::class);
+        Event::listen(MatchResultReported::class, SendMatchResultReportedEmail::class);
+        Event::listen(MatchResultDisputed::class, SendMatchResultDisputedEmails::class);
     }
 
     /**
