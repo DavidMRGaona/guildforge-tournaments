@@ -33,17 +33,20 @@ final class MatchReportRules
         ?Participant $actor,
     ): MatchReportActions {
         $mayReport = $this->passes(fn () => $this->assertCanReport($tournament, $round, $match, $report, $actor));
+        $ownReport = $report instanceof MatchReport && $report->reportedById() === $actor?->userId();
 
         return new MatchReportActions(
-            canReport: $mayReport && ! $report instanceof MatchReport,
-            canCorrect: $mayReport && $report instanceof MatchReport,
+            canReport: $mayReport && ! $ownReport,
+            canCorrect: $mayReport && $ownReport,
             canConfirm: $this->passes(fn () => $this->assertCanConfirm($tournament, $round, $match, $report, $actor)),
             canDispute: $this->passes(fn () => $this->assertCanDispute($tournament, $round, $match, $report, $actor)),
         );
     }
 
     /**
-     * Report the result, or correct one's own report while it waits for confirmation.
+     * Report the result, or correct one's own report while it waits for confirmation. Without
+     * confirmation, a report left from before the mode changed blocks neither player: whoever
+     * sends a result makes it official.
      *
      * @throws UnauthorizedToReportResultException
      * @throws MatchReportClosedException
@@ -57,12 +60,17 @@ final class MatchReportRules
     ): void {
         $userId = $this->assertOpenToPlayer($tournament, $round, $match, $actor);
 
-        if ($report instanceof MatchReport && $report->reportedById() !== $userId) {
+        if ($report instanceof MatchReport
+            && $report->reportedById() !== $userId
+            && $tournament->resultReporting() === ResultReporting::PlayersWithConfirmation) {
             throw MatchReportClosedException::alreadyReportedByOpponent($match->id()->value);
         }
     }
 
     /**
+     * The opponent confirms the report; also one left from before the tournament stopped asking
+     * for confirmation.
+     *
      * @throws UnauthorizedToReportResultException
      * @throws MatchReportClosedException
      * @throws ResultNotConfirmedException
@@ -74,7 +82,7 @@ final class MatchReportRules
         ?MatchReport $report,
         ?Participant $actor,
     ): void {
-        $this->assertOpponentOfReport($tournament, $round, $match, $report, $actor);
+        $this->assertOpponentOfReport($tournament, $round, $match, $report, $actor, ResultReporting::PlayersWithConfirmation, ResultReporting::PlayersTrusted);
     }
 
     /**
@@ -89,11 +97,11 @@ final class MatchReportRules
         ?MatchReport $report,
         ?Participant $actor,
     ): void {
-        $this->assertOpponentOfReport($tournament, $round, $match, $report, $actor);
+        $this->assertOpponentOfReport($tournament, $round, $match, $report, $actor, ResultReporting::PlayersWithConfirmation);
     }
 
     /**
-     * The opponent of the reporter acts on a report that waits for them.
+     * The opponent of the reporter acts on a report that waits for them, in one of the modes.
      */
     private function assertOpponentOfReport(
         Tournament $tournament,
@@ -101,11 +109,12 @@ final class MatchReportRules
         TournamentMatch $match,
         ?MatchReport $report,
         ?Participant $actor,
+        ResultReporting ...$modes,
     ): void {
         $matchId = $match->id()->value;
         $userId = $this->assertOpenToPlayer($tournament, $round, $match, $actor);
 
-        if ($tournament->resultReporting() !== ResultReporting::PlayersWithConfirmation) {
+        if (! in_array($tournament->resultReporting(), $modes, true)) {
             throw UnauthorizedToReportResultException::confirmationNotRequired($matchId, $userId);
         }
 

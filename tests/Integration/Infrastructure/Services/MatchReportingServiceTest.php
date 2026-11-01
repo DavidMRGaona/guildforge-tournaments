@@ -383,6 +383,43 @@ final class MatchReportingServiceTest extends ModuleTestCase
         }
     }
 
+    public function test_after_dropping_the_confirmation_the_rival_reports_over_the_report_left(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $outcome = $this->service()->report($this->dto(MatchResult::Draw, $this->two, 15, 15));
+
+        $this->assertSame(MatchReportOutcome::Recorded, $outcome);
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::Draw, $match->result);
+        $this->assertSame($this->two->id, $match->reported_by_id);
+        $this->assertNull($this->reports()->find($this->match->id));
+    }
+
+    public function test_after_dropping_the_confirmation_the_rival_confirms_the_report_left(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::PlayerOneWin, $match->result);
+        $this->assertSame($this->two->id, $match->confirmed_by_id);
+        $this->assertNull($this->reports()->find($this->match->id));
+    }
+
+    public function test_after_dropping_the_confirmation_the_rival_cannot_dispute(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->tournament->update(['result_reporting' => 'players_trusted']);
+
+        $this->expectException(UnauthorizedToReportResultException::class);
+
+        $this->service()->dispute($this->match->id, $this->two->id, 'It was a draw', $this->seen());
+    }
+
     /**
      * What the opponent saw of the report waiting for them.
      */
