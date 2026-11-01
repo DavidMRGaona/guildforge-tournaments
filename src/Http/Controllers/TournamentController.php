@@ -109,6 +109,10 @@ final class TournamentController extends Controller
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
             'canCheckIn' => $canCheckIn,
+            // Their own match of the current round, with the report only its players see
+            'myMatch' => $user !== null && $hasStarted
+                ? $this->matchQuery->findPlayerMatch($tournament->id, (string) $user->id)?->toArray()
+                : null,
             'guestConfirmation' => $this->guestConfirmation->forTournament($tournament->id),
             // Its surveys, through the core: a surveys module answers, and without one nothing shows
             'surveyLinks' => $user !== null ? $this->surveyLinksFor($tournament->id, (string) $user->id) : null,

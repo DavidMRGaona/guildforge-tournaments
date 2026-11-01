@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import Show from '../../resources/js/pages/Tournaments/Show.vue';
 import type { Tournament, TournamentShowProps } from '../../resources/js/types/tournaments';
-import { tournament } from './support/fixtures';
+import { playerMatch, tournament } from './support/fixtures';
 import { linkWithText, nestedInteractiveLinks } from './support/interactive';
 
 function mountPage(
@@ -34,6 +34,19 @@ const started: Partial<Tournament> = {
 };
 
 describe('Show', () => {
+    it('shows the player their match of the current round', () => {
+        const wrapper = mountPage(started, { myMatch: playerMatch() });
+
+        expect(wrapper.text()).toContain('Tu partida');
+        expect(wrapper.text()).toContain('Enviar resultado');
+    });
+
+    it('shows no match block to someone who does not play', () => {
+        const wrapper = mountPage(started, { myMatch: null });
+
+        expect(wrapper.text()).not.toContain('Tu partida');
+    });
+
     it('links to the tournament surveys and to the ones sent to the person', () => {
         const wrapper = mountPage(
             {},

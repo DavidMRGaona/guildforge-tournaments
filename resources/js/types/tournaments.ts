@@ -146,6 +146,63 @@ export interface Match {
     is_reported: boolean;
     is_confirmed: boolean;
     needs_confirmation: boolean;
+    /** Whether a players' report waits for confirmation, never what it says */
+    report: { status: MatchReportStatus } | null;
+}
+
+export type MatchReportStatus = 'pending' | 'disputed';
+
+/** The result a player may report themselves */
+export type ReportableResult = Extract<MatchResult, 'player_one_win' | 'player_two_win' | 'draw'>;
+
+export type StatValue = number | boolean;
+
+/** A report waiting for confirmation, as the match's players see it */
+export interface MatchReport {
+    status: MatchReportStatus;
+    result: MatchResult;
+    result_label: string;
+    player_1_score: number | null;
+    player_2_score: number | null;
+    player_1_stats: Record<string, StatValue> | null;
+    player_2_stats: Record<string, StatValue> | null;
+    reported_by_id: string;
+    reported_by_name: string;
+    reported_at: string | null;
+    dispute_reason: string | null;
+    disputed_at: string | null;
+    /** Sent back to confirm or dispute exactly this version */
+    fingerprint: string;
+}
+
+export interface MatchReportActions {
+    can_report: boolean;
+    can_correct: boolean;
+    can_confirm: boolean;
+    can_dispute: boolean;
+}
+
+export interface StatDefinition {
+    key: string;
+    name: string;
+    type: 'integer' | 'float' | 'boolean';
+    min_value: number | null;
+    max_value: number | null;
+    per_player: boolean;
+    required: boolean;
+    description: string | null;
+}
+
+/** The signed-in player's own match in the current round */
+export interface PlayerMatch {
+    match: Match;
+    side: 1 | 2;
+    opponent_name: string | null;
+    opponent_is_guest: boolean;
+    actions: MatchReportActions;
+    report: MatchReport | null;
+    result_reporting: ResultReporting;
+    stat_definitions: StatDefinition[];
 }
 
 export interface RoundWithMatches {
@@ -231,6 +288,8 @@ export interface TournamentShowProps {
     guestConfirmation: GuestConfirmationTerms | null;
     /** Its surveys for this person, when a surveys module offers any */
     surveyLinks?: TournamentSurveyLinks | null;
+    /** The player's match of the current round, for them only */
+    myMatch?: PlayerMatch | null;
 }
 
 /** A survey of the tournament one person can reach, through the core's survey links contract */

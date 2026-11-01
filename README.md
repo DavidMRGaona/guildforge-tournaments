@@ -12,10 +12,10 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Cancelación de invitados**: enlace con token único, sin necesidad de iniciar sesión.
 - **Check-in**: ventana configurable antes del evento, desde el panel o desde la web pública. Con confirmación manual solo hacen check-in los participantes confirmados; sin ella, también los inscritos (la misma regla en el panel y en la web). La web solo tiene en cuenta inscripciones activas: la del email indicado o, con sesión, la de la cuenta. Admite 10 intentos por minuto y 60 por hora y IP.
 - **Rondas con emparejamiento suizo**: **Generar ronda** crea la ronda y sus partidas, con bye para el número impar de jugadores.
-- **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel; cada resultado recalcula la clasificación.
+- **Resultados y clasificación**: resultados con estadísticas por jugador registrados desde el panel o, si el torneo lo permite, informados por los jugadores desde la web (ver [Informe de resultados por los jugadores](#informe-de-resultados-por-los-jugadores)); cada resultado definitivo recalcula la clasificación y queda en el historial de la partida.
 - **Reglas configurables**: estadísticas de partida, reglas de puntuación por resultado o por estadísticas y criterios de desempate.
 - **Perfiles de juego**: plantillas con estadísticas, reglas, desempates y emparejamiento; incluye perfiles del sistema.
-- **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción; al participante, cuando la organización aprueba su inscripción (con notas opcionales) o lo descalifica (con el motivo opcional).
+- **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción; al participante, cuando la organización aprueba su inscripción (con notas opcionales) o lo descalifica (con el motivo opcional); al rival cuando un jugador informa del resultado, y a la organización y a quien informó cuando se discute.
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve una persona (emails, panel, web) se muestra en la zona de visualización del sitio (por defecto Europe/Madrid).
 - **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
 
@@ -264,7 +264,7 @@ Un informe de los jugadores que espera confirmación no es un resultado: la part
 | Jugadores con confirmación | `players_with_confirmation` | Un jugador informa y el resultado espera a que el rival lo confirme o lo discuta |
 | Jugadores sin confirmación | `players_trusted` | El resultado vale en cuanto un jugador lo informa |
 
-Informa uno de los dos jugadores de la partida, con cuenta y con la inscripción confirmada o con check-in hecho, mientras el torneo y la ronda están **En curso** y la partida no tiene resultado. Los invitados sin cuenta no informan, y los byes no se informan. Un jugador informa victoria de uno de los dos o empate, con las puntuaciones (opcionales, y sin contradecir el resultado) y las estadísticas del torneo; la doble derrota solo la pone la organización.
+Desde la ficha del torneo, en el bloque **Tu partida**, informa uno de los dos jugadores de la partida, con cuenta y con la inscripción confirmada o con check-in hecho, mientras el torneo y la ronda están **En curso** y la partida no tiene resultado. Los invitados sin cuenta no informan, y los byes no se informan. Un jugador informa victoria de uno de los dos o empate, con las puntuaciones (opcionales, y sin contradecir el resultado) y las estadísticas del torneo; la doble derrota solo la pone la organización.
 
 Con confirmación:
 
@@ -364,6 +364,11 @@ Los torneos son sujetos encuestables a través del contrato del core (`SurveySub
 | POST | `/torneos/confirmar/{token}` | `tournaments.confirm-registration.store` | Invitados con enlace |
 | GET | `/torneos/cancelar/{token}` | `tournaments.cancel-confirmation` | Invitados con enlace |
 | DELETE | `/torneos/cancelar/{token}` | `tournaments.cancel-by-token` | Invitados con enlace |
+| POST | `/torneos/partidas/{matchId}/resultado` | `tournaments.matches.report` | Jugadores de la partida (JSON) |
+| POST | `/torneos/partidas/{matchId}/confirmar` | `tournaments.matches.confirm` | El rival de quien informó (JSON) |
+| POST | `/torneos/partidas/{matchId}/discutir` | `tournaments.matches.dispute` | El rival de quien informó (JSON) |
+
+Las tres rutas de partidas piden sesión (y la verificación de email cuando el sitio la exige) y admiten 10 peticiones por minuto y usuario. Responden 403 a quien no puede informar, 409 si la partida ya no admite el cambio (ronda terminada, resultado ya definitivo o un informe corregido mientras se miraba) y 422 con los errores de cada campo. Confirmar y discutir llevan la huella (`report`) del informe que se mostró.
 
 `tournaments.index` aparece entre las páginas que se pueden enlazar desde el editor de menús.
 
@@ -372,7 +377,7 @@ Los torneos son sujetos encuestables a través del contrato del core (`SurveySub
 | Página | Descripción |
 |--------|-------------|
 | `Tournaments/Index` | Listado con filtro por estado |
-| `Tournaments/Show` | Detalle, inscripción y participantes |
+| `Tournaments/Show` | Detalle, inscripción, participantes y, para quien juega, su partida de la ronda actual |
 | `Tournaments/Standings` | Clasificación |
 | `Tournaments/Rounds` | Rondas y partidas |
 | `Tournaments/CheckIn` | Check-in |
@@ -388,6 +393,7 @@ Los torneos son sujetos encuestables a través del contrato del core (`SurveySub
 | `TournamentCard` | Tarjeta de torneo |
 | `TournamentStatusFilter` | Filtro por estado del listado |
 | `MyTournamentCard` | Tarjeta de «Mis torneos» |
+| `MyMatchCard` | «Tu partida» en la ficha: mesa y rival, formulario de resultado (con las estadísticas del torneo), confirmar o discutir el informe del rival, corregir el propio |
 | `EventTournamentSection` | Sección del torneo en la página del evento (slot `event-detail-actions`) |
 | `profile/ProfileTournamentsSection` | Pestaña «Torneos» del perfil (slot `profile-sections`) |
 | `profile/ProfileTournamentCard` | Tarjeta de la pestaña del perfil |
@@ -405,8 +411,10 @@ El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts
 | Torneo cancelado desde el panel (`TournamentCancelled`) | Cada participante activo |
 | Aprobación desde el panel, **Confirmar** (`ParticipantConfirmed`) | El participante, con las notas de la organización si las hay |
 | Descalificación desde el panel (`ParticipantDisqualified`) | El participante descalificado, con el motivo si lo hay |
+| Un jugador informa del resultado (`MatchResultReported`) | El rival: con confirmación, que lo confirme o lo discuta; sin confirmación, que ya cuenta y que hable con la organización si no es correcto; si es invitado, que lo confirmará la organización |
+| El rival discute el resultado (`MatchResultDisputed`) | El email de notificaciones del torneo y quien informó, con el motivo |
 
-Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Los avisos de aprobación, cancelación y descalificación van al email de la cuenta o al del invitado solo si este lo confirmó (o la organización lo avaló antes, por ejemplo al hacer el check-in); a una dirección sin confirmar no se envía nada. `src/Domain/Events` define además eventos de torneo, ronda, partida y clasificación que todavía no se emiten.
+Con la confirmación por email, el email de inscripción (`ParticipantRegistered`) se envía al confirmar. Los avisos de aprobación, cancelación y descalificación van al email de la cuenta o al del invitado solo si este lo confirmó (o la organización lo avaló antes, por ejemplo al hacer el check-in); a una dirección sin confirmar no se envía nada. `MatchResultConfirmed` se emite al confirmar un informe, sin correo.
 
 ## Permisos
 
@@ -427,7 +435,6 @@ Las pestañas **Rondas** y **Participantes** están en la edición del torneo, a
 
 ## Limitaciones actuales
 
-- **Informe de resultados por jugadores**: el panel ya confirma, restablece y muestra el historial, pero la web pública aún no tiene el formulario del jugador.
 - **Método `accelerated`**: los torneos y perfiles que aún lo tengan guardado se emparejan como `swiss`, pero hay que elegir otro método antes de guardar su formulario (ver [Configuración de emparejamientos](#configuración-de-emparejamientos)).
 
 ## Arquitectura

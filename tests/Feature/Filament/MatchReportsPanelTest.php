@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
+use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
@@ -191,6 +192,39 @@ final class MatchReportsPanelTest extends ModuleTestCase
         $this->report($this->match, disputed: true);
 
         $this->roundsManager()->assertTableActionHidden('confirmPendingReports', $this->round);
+    }
+
+    public function test_manage_matches_keeps_a_result_players_recorded_while_it_was_open(): void
+    {
+        $this->report($this->match);
+        $manager = $this->roundsManager()->mountTableAction('manageMatches', $this->round);
+        // The rival confirmed meanwhile: the match now has its official result
+        $report = $this->reports()->find($this->match->id);
+        $this->assertInstanceOf(MatchReport::class, $report);
+        app(MatchReportingServiceInterface::class)->confirm($this->match->id, (string) $this->match->player2?->user_id, $report->fingerprint());
+
+        $manager->callMountedTableAction()->assertHasNoTableActionErrors();
+
+        $this->assertSame(MatchResult::PlayerOneWin, $this->match->refresh()->result);
+        $this->assertSame(0, MatchHistoryModel::query()->where('match_id', $this->match->id)->where('action', MatchHistoryAction::Recorded->value)->count());
+    }
+
+    public function test_manage_matches_does_not_overwrite_a_row_that_changed_meanwhile(): void
+    {
+        $manager = $this->roundsManager()->mountTableAction('manageMatches', $this->round);
+        $rows = $manager->get('mountedActions.0.data.matches');
+        $this->assertIsArray($rows);
+        $key = array_key_first($rows);
+        $this->assertNotNull($key);
+        $rows[$key]['result'] = MatchResult::Draw->value;
+        // Recorded elsewhere while the slide-over was open
+        $this->results()->recordResult(new RecordMatchResultDTO($this->match->id, MatchResult::PlayerTwoWin, UserModel::factory()->create()->id));
+
+        $manager->set('mountedActions.0.data.matches', $rows)
+            ->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.results_changed_meanwhile'));
+
+        $this->assertSame(MatchResult::PlayerTwoWin, $this->match->refresh()->result);
     }
 
     public function test_completing_a_round_with_reports_waiting_says_so(): void

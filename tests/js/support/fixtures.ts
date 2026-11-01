@@ -1,4 +1,12 @@
-import type { Match, Participant, Round, RoundWithMatches, Tournament } from '../../../resources/js/types/tournaments';
+import type {
+    Match,
+    MatchReport,
+    Participant,
+    PlayerMatch,
+    Round,
+    RoundWithMatches,
+    Tournament,
+} from '../../../resources/js/types/tournaments';
 
 /** A tournament open for registration; override what the test is about. */
 export function tournament(overrides: Partial<Tournament> = {}): Tournament {
@@ -104,7 +112,66 @@ export function roundWithMatches(overrides: Partial<Round> = {}): RoundWithMatch
         is_reported: true,
         is_confirmed: true,
         needs_confirmation: false,
+        report: null,
     };
 
     return { round, matches: [match] };
+}
+
+/** The signed-in player's match (they are player 1, John), nothing reported yet. */
+export function playerMatch(overrides: Partial<PlayerMatch> = {}): PlayerMatch {
+    const match: Match = {
+        ...roundWithMatches().matches[0],
+        id: 'match-1',
+        table_number: 3,
+        result: 'not_played',
+        result_label: 'Sin jugar',
+        player_1_score: null,
+        player_2_score: null,
+        is_reported: false,
+        is_confirmed: false,
+    };
+
+    return {
+        match,
+        side: 1,
+        opponent_name: 'Jane Doe',
+        opponent_is_guest: false,
+        actions: { can_report: true, can_correct: false, can_confirm: false, can_dispute: false },
+        report: null,
+        result_reporting: 'players_with_confirmation',
+        stat_definitions: [
+            {
+                key: 'vp',
+                name: 'Puntos de victoria',
+                type: 'integer',
+                min_value: 0,
+                max_value: 100,
+                per_player: true,
+                required: true,
+                description: null,
+            },
+        ],
+        ...overrides,
+    };
+}
+
+/** A report waiting for confirmation, made by the opponent (Jane) unless overridden. */
+export function matchReport(overrides: Partial<MatchReport> = {}): MatchReport {
+    return {
+        status: 'pending',
+        result: 'player_two_win',
+        result_label: 'Victoria jugador 2',
+        player_1_score: 10,
+        player_2_score: 20,
+        player_1_stats: { vp: 10 },
+        player_2_stats: { vp: 20 },
+        reported_by_id: 'user-2',
+        reported_by_name: 'Jane Doe',
+        reported_at: '2026-10-10T11:00:00Z',
+        dispute_reason: null,
+        disputed_at: null,
+        fingerprint: 'abc123',
+        ...overrides,
+    };
 }

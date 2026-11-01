@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use Closure;
 use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
+use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Entities\MatchReport;
@@ -31,6 +33,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         private StandingsServiceInterface $standings,
         private MatchHistoryRepositoryInterface $history,
         private MatchReportRepositoryInterface $reports,
+        private RegistrationLockInterface $lock,
         private Clock $clock,
     ) {}
 
@@ -44,7 +47,9 @@ final readonly class MatchResultService implements MatchResultServiceInterface
      */
     public function recordResults(array $dtos): void
     {
-        DB::transaction(function () use ($dtos): void {
+        // Under the tournament's lock, like the players' reports: neither overwrites the other
+        // unseen, and a report is never left next to the result recorded here
+        $this->underLocks($this->tournamentsOf($dtos), function () use ($dtos): void {
             $tournamentIds = [];
             foreach ($dtos as $dto) {
                 $tournamentIds[$this->apply($dto)] = true;
@@ -53,6 +58,44 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             foreach (array_keys($tournamentIds) as $tournamentId) {
                 $this->standings->recalculate($tournamentId);
             }
+        });
+    }
+
+    /**
+     * @param  array<RecordMatchResultDTO>  $dtos
+     * @return list<string> Sorted, so two batches always lock in the same order
+     */
+    private function tournamentsOf(array $dtos): array
+    {
+        $tournamentIds = [];
+        foreach ($dtos as $dto) {
+            $match = $this->matches->findOrFail(MatchId::fromString($dto->matchId));
+            $tournamentIds[] = $this->rounds->findOrFail(RoundId::fromString($match->roundId()))->tournamentId();
+        }
+
+        $tournamentIds = array_values(array_unique($tournamentIds));
+        sort($tournamentIds);
+
+        return $tournamentIds;
+    }
+
+    /**
+     * @param  list<string>  $tournamentIds
+     * @param  Closure(): void  $callback
+     */
+    private function underLocks(array $tournamentIds, Closure $callback): void
+    {
+        if ($tournamentIds === []) {
+            DB::transaction($callback);
+
+            return;
+        }
+
+        $first = array_shift($tournamentIds);
+        $this->lock->forTournament($first, function () use ($tournamentIds, $callback): null {
+            $this->underLocks($tournamentIds, $callback);
+
+            return null;
         });
     }
 

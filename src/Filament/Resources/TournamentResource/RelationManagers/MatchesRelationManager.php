@@ -27,6 +27,7 @@ use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchReportClosedException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
@@ -93,7 +94,7 @@ final class MatchesRelationManager extends RelationManager
                     ->label(__('tournaments::messages.fields.report_status'))
                     ->badge()
                     ->getStateUsing(fn (MatchModel $record): ?string => match (true) {
-                        ! $record->report instanceof MatchReportModel => null,
+                        ! $record->report instanceof MatchReportModel, $record->result !== MatchResult::NotPlayed => null,
                         $record->report->disputed_at !== null => (string) __('tournaments::messages.report_status.disputed'),
                         default => (string) __('tournaments::messages.report_status.pending'),
                     })
@@ -196,7 +197,7 @@ final class MatchesRelationManager extends RelationManager
                     ->label(__('tournaments::messages.actions.confirm_report'))
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->visible(fn (MatchModel $record): bool => $record->report instanceof MatchReportModel)
+                    ->visible(fn (MatchModel $record): bool => $record->report instanceof MatchReportModel && $record->result === MatchResult::NotPlayed)
                     ->authorize(fn (): bool => $this->canReportResults())
                     ->requiresConfirmation()
                     ->modalDescription(fn (MatchModel $record): string => $this->reportSummary($record))
@@ -208,6 +209,13 @@ final class MatchesRelationManager extends RelationManager
                     ->action(function (MatchModel $record, array $data, MatchReportingServiceInterface $reporting): void {
                         try {
                             $reporting->confirmAsOrganizer($record->id, (string) auth()->id(), (string) ($data['report'] ?? ''));
+                        } catch (MatchReportClosedException) {
+                            Notification::make()
+                                ->title(__('tournaments::messages.errors.no_pending_report'))
+                                ->danger()
+                                ->send();
+
+                            return;
                         } catch (ResultNotConfirmedException $exception) {
                             Notification::make()
                                 ->title($exception->reportWasChanged()

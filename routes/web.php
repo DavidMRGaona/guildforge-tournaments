@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Tournaments\Http\Controllers\GuestCancellationController;
 use Modules\Tournaments\Http\Controllers\GuestConfirmationController;
+use Modules\Tournaments\Http\Controllers\MatchReportController;
 use Modules\Tournaments\Http\Controllers\MyTournamentsController;
 use Modules\Tournaments\Http\Controllers\TournamentCheckInController;
 use Modules\Tournaments\Http\Controllers\TournamentController;
@@ -32,6 +33,18 @@ Route::prefix('torneos')->name('tournaments.')->group(function (): void {
     Route::post('/confirmar/{token}', [GuestConfirmationController::class, 'store'])
         ->middleware('throttle:tournaments-guest-confirmation')
         ->name('confirm-registration.store');
+
+    // A player's side of their match result (JSON from the tournament page). Behind `auth`,
+    // so the core's "email verification required" rule applies. Limited per user
+    Route::prefix('partidas/{matchId}')
+        ->whereUuid('matchId')
+        ->middleware(['auth', 'throttle:tournaments-match-report'])
+        ->name('matches.')
+        ->group(function (): void {
+            Route::post('/resultado', [MatchReportController::class, 'report'])->name('report');
+            Route::post('/confirmar', [MatchReportController::class, 'confirm'])->name('confirm');
+            Route::post('/discutir', [MatchReportController::class, 'dispute'])->name('dispute');
+        });
 
     // My tournaments (authenticated users only)
     Route::get('/mis-torneos', MyTournamentsController::class)

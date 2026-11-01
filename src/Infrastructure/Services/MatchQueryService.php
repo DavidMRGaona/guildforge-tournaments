@@ -60,7 +60,8 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 $match->player2Id() !== null
                     ? ($participantNames[$match->player2Id()] ?? (string) __('tournaments::messages.participants.unknown'))
                     : null,
-                report: isset($reports[$match->id()->value])
+                // A report only waits on a match without result
+                report: isset($reports[$match->id()->value]) && ! $match->isCompleted()
                     ? $this->reportResponse($reports[$match->id()->value])
                     : null,
             ),
@@ -87,7 +88,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
         $side = $match->player1Id() === $participant->id()->value ? 1 : 2;
         $opponentId = $side === 1 ? $match->player2Id() : $match->player1Id();
         $opponent = $opponentId !== null ? $this->participantRepository->find(ParticipantId::fromString($opponentId)) : null;
-        $report = $this->reports->find($match->id()->value);
+        $report = $match->isCompleted() ? null : $this->reports->find($match->id()->value);
         $reportResponse = $report instanceof MatchReport ? $this->reportResponse($report) : null;
 
         return new PlayerMatchResponseDTO(

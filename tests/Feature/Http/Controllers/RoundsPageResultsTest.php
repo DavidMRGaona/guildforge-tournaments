@@ -120,6 +120,22 @@ final class RoundsPageResultsTest extends ModuleTestCase
             });
     }
 
+    public function test_a_report_left_next_to_an_official_result_is_not_shown_as_pending(): void
+    {
+        [$tournament, $round, $one, $two] = $this->roundInProgress('rondas-huerfano');
+        $match = MatchModel::create(['round_id' => $round->id, 'player_1_id' => $one->id, 'player_2_id' => $two->id, 'result' => 'draw']);
+        app(MatchReportRepositoryInterface::class)->save(new MatchReport($match->id, MatchResult::PlayerOneWin, (string) $one->user_id, new DateTimeImmutable('2030-05-01 10:00:00')));
+
+        $this->get('/torneos/rondas-huerfano/rondas')
+            ->assertOk()
+            ->assertInertia(function (Assert $page): void {
+                $match = $page->toArray()['props']['rounds'][0]['matches'][0];
+
+                $this->assertNull($match['report']);
+                $this->assertFalse($match['needs_confirmation']);
+            });
+    }
+
     /**
      * @return array{TournamentModel, RoundModel, ParticipantModel, ParticipantModel}
      */
