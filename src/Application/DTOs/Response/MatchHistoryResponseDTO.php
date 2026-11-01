@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Application\DTOs\Response;
 use App\Application\Services\TimezoneServiceInterface;
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 
 final readonly class MatchHistoryResponseDTO
@@ -24,6 +25,7 @@ final readonly class MatchHistoryResponseDTO
         public string $changedByName,
         public ?string $reason,
         public DateTimeImmutable $changedAt,
+        public MatchHistoryAction $action,
     ) {}
 
     public static function fromEntity(
@@ -43,6 +45,7 @@ final readonly class MatchHistoryResponseDTO
             changedByName: $changedByName,
             reason: $history->reason(),
             changedAt: $history->changedAt(),
+            action: $history->action(),
         );
     }
 
@@ -76,6 +79,8 @@ final readonly class MatchHistoryResponseDTO
             'changed_by_name' => $this->changedByName,
             'reason' => $this->reason,
             'changed_at' => (string) $timezone->iso($this->changedAt),
+            'action' => $this->action->value,
+            'action_label' => $this->action->label(),
             'is_initial_report' => $this->isInitialReport(),
             'result_changed' => $this->resultChanged(),
         ];

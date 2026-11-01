@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Unit\Application\DTOs\Response;
 
 use DateTimeImmutable;
+use Modules\Tournaments\Application\DTOs\Response\MatchReportResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\MatchResponseDTO;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use PHPUnit\Framework\TestCase;
@@ -30,7 +31,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
         $this->assertEquals('match-123', $dto->id);
@@ -47,7 +47,7 @@ final class MatchResponseDTOTest extends TestCase
         $this->assertNull($dto->reportedAt);
         $this->assertNull($dto->confirmedById);
         $this->assertNull($dto->confirmedAt);
-        $this->assertFalse($dto->isDisputed);
+        $this->assertFalse($dto->isDisputed());
     }
 
     public function test_can_create_dto_for_reported_match(): void
@@ -71,7 +71,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
         $this->assertEquals(MatchResult::PlayerOneWin, $dto->result);
@@ -104,7 +103,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: 'p2',
             confirmedByName: 'Bob',
             confirmedAt: $confirmedAt,
-            isDisputed: false,
         );
 
         $this->assertEquals('p2', $dto->confirmedById);
@@ -131,7 +129,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
         $this->assertNull($dto->player2Id);
@@ -173,7 +170,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
         $this->assertTrue($dto->isReported());
@@ -205,7 +201,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: 'p2',
             confirmedByName: 'P2',
             confirmedAt: new DateTimeImmutable,
-            isDisputed: false,
         );
 
         $this->assertTrue($dto->isConfirmed());
@@ -218,8 +213,9 @@ final class MatchResponseDTOTest extends TestCase
         $this->assertFalse($dto->isConfirmed());
     }
 
-    public function test_needs_confirmation_returns_true_when_reported_but_not_confirmed(): void
+    public function test_an_official_result_without_confirmation_needs_none(): void
     {
+        // Recorded from the panel: reported, never confirmed, and nothing waits for anybody
         $dto = new MatchResponseDTO(
             id: 'match',
             roundId: 'round',
@@ -231,16 +227,66 @@ final class MatchResponseDTOTest extends TestCase
             result: MatchResult::PlayerOneWin,
             player1Score: 2,
             player2Score: 0,
-            reportedById: 'p1',
-            reportedByName: 'P1',
-            reportedAt: new DateTimeImmutable,
+            reportedById: 'admin',
+            reportedByName: 'Admin',
+            reportedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
+        $this->assertFalse($dto->needsConfirmation());
+        $this->assertFalse($dto->isDisputed());
+    }
+
+    public function test_a_pending_report_needs_confirmation(): void
+    {
+        $dto = $this->matchWithReport(disputed: false);
+
         $this->assertTrue($dto->needsConfirmation());
+        $this->assertFalse($dto->isDisputed());
+    }
+
+    public function test_a_disputed_report_is_disputed_and_needs_no_confirmation(): void
+    {
+        $dto = $this->matchWithReport(disputed: true);
+
+        $this->assertFalse($dto->needsConfirmation());
+        $this->assertTrue($dto->isDisputed());
+    }
+
+    private function matchWithReport(bool $disputed): MatchResponseDTO
+    {
+        return new MatchResponseDTO(
+            id: 'match',
+            roundId: 'round',
+            player1Id: 'p1',
+            player1Name: 'P1',
+            player2Id: 'p2',
+            player2Name: 'P2',
+            tableNumber: 1,
+            result: MatchResult::NotPlayed,
+            player1Score: null,
+            player2Score: null,
+            reportedById: null,
+            reportedByName: null,
+            reportedAt: null,
+            confirmedById: null,
+            confirmedByName: null,
+            confirmedAt: null,
+            report: new MatchReportResponseDTO(
+                result: MatchResult::PlayerOneWin,
+                player1Score: 2,
+                player2Score: 0,
+                player1Stats: null,
+                player2Stats: null,
+                reportedById: 'u1',
+                reportedByName: 'P1',
+                reportedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
+                disputeReason: $disputed ? 'No' : null,
+                disputedAt: $disputed ? new DateTimeImmutable('2030-05-01 10:05:00') : null,
+            ),
+        );
     }
 
     public function test_needs_confirmation_returns_false_when_confirmed(): void
@@ -262,7 +308,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: 'p2',
             confirmedByName: 'P2',
             confirmedAt: new DateTimeImmutable,
-            isDisputed: false,
         );
 
         $this->assertFalse($dto->needsConfirmation());
@@ -287,7 +332,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
 
         $this->assertFalse($dto->needsConfirmation());
@@ -317,7 +361,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: 'p2-array',
             confirmedByName: 'Player 2',
             confirmedAt: $confirmedAt,
-            isDisputed: false,
         );
 
         $this->assertEquals('match-array', $dto->id);
@@ -337,7 +380,7 @@ final class MatchResponseDTOTest extends TestCase
         $this->assertEquals('p2-array', $dto->confirmedById);
         $this->assertEquals('Player 2', $dto->confirmedByName);
         $this->assertEquals($confirmedAt, $dto->confirmedAt);
-        $this->assertFalse($dto->isDisputed);
+        $this->assertFalse($dto->isDisputed());
         $this->assertFalse($dto->isBye());
         $this->assertTrue($dto->isReported());
         $this->assertTrue($dto->isConfirmed());
@@ -363,7 +406,6 @@ final class MatchResponseDTOTest extends TestCase
             confirmedById: null,
             confirmedByName: null,
             confirmedAt: null,
-            isDisputed: false,
         );
     }
 }
