@@ -86,7 +86,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Con fechas de apertura o cierre configuradas, la web solo acepta inscripciones entre ellas; el inicio del evento la cierra siempre.
 4. **Cerrar inscripción** e **Iniciar torneo**. Se puede iniciar con la inscripción abierta o cerrada; iniciar la cierra. El mínimo de participantes cuenta solo las inscripciones que ocupan plaza: no los retirados, descalificados ni caducados, ni los invitados sin confirmar que no reservan plaza.
 5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado definitivo: un informe de los jugadores pendiente de confirmar o discutido no cuenta, y el aviso dice cuántos hay).
-6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
+6. **Finalizar torneo**: no se puede mientras queden resultados informados por los jugadores sin confirmar o discutidos (el aviso dice cuántos). Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado; cancelar descarta esos informes. Las dos acciones son irreversibles y piden marcar una casilla que dice qué se pierde.
 
 ```
 [Evento publicado] → [Crear torneo: Borrador] → [Abrir inscripción] → [Cerrar inscripción]
@@ -271,7 +271,11 @@ Con confirmación:
 - Quien informó puede corregir su informe hasta que se confirme; corregirlo quita la discusión y vuelve a pedir confirmación.
 - El rival confirma (el resultado pasa a ser definitivo) o lo discute con un motivo. Solo se confirma o se discute la versión que se vio: si quien informó la corrige entretanto, hay que volver a mirarla.
 - Si el rival es un invitado, confirma la organización.
-- No hay plazo: la ronda no se completa mientras queden informes pendientes o discutidos.
+- No hay plazo: la ronda no se completa, ni el torneo se finaliza, mientras queden informes pendientes o discutidos.
+
+Si el torneo pasa de **Jugadores con confirmación** a **Jugadores sin confirmación** con un informe pendiente, ese informe no bloquea a nadie: el rival puede confirmarlo o enviar su propio resultado, que vale en el acto y descarta el informe; quien informó puede corregirlo o volver a enviarlo para que cuente.
+
+Cuando un jugador no puede informar, **Tu partida** dice por qué: la organización registra los resultados, ya no juega en el torneo (retirado o descalificado) o la ronda aún no ha empezado. En un bye dice los puntos que le dan las reglas de puntuación del torneo.
 
 En la pestaña **Rondas**, **Gestionar partidas** muestra la columna **Informe** (*Pendiente* o *Discutido*, con el motivo al pasar el ratón) y las acciones:
 
@@ -279,7 +283,7 @@ En la pestaña **Rondas**, **Gestionar partidas** muestra la columna **Informe**
 - **Restablecer**: deja la partida sin resultado y descarta el informe, con un motivo obligatorio. No es irreversible (el resultado se puede volver a registrar), así que pide una sola confirmación. Los byes se corrigen desde **Gestionar partidas** de la ronda.
 - **Historial**: cada cambio del resultado definitivo, con quién y cuándo lo hizo, el resultado anterior y el nuevo y el motivo. Registrar un resultado desde el panel, informarlo en un torneo sin confirmación, confirmarlo y restablecerlo dejan una entrada.
 
-Cada ronda en curso con informes sin discutir ofrece **Confirmar informes pendientes**, que los pasa todos a definitivos de una vez. Si la organización registra un resultado mientras hay un informe pendiente, manda el suyo y el informe se descarta. Las tres acciones piden `tournaments.report_results`.
+Cada ronda en curso con informes sin discutir ofrece **Confirmar informes pendientes**, que los pasa todos a definitivos de una vez. Si la organización registra un resultado mientras hay un informe pendiente, manda el suyo y el informe se descarta; el modal **Reportar resultado** lo avisa antes de guardar. Volver a registrar una partida ya confirmada quita la confirmación anterior. Las tres acciones piden `tournaments.report_results`.
 
 ## Emparejamiento y clasificación
 
