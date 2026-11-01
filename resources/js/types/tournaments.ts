@@ -203,7 +203,14 @@ export interface PlayerMatch {
     report: MatchReport | null;
     result_reporting: ResultReporting;
     stat_definitions: StatDefinition[];
+    /** Why the player cannot report, when it is theirs to know */
+    closed_reason: ReportingClosedReason | null;
+    /** The points the bye gives, on a bye */
+    bye_points: number | null;
 }
+
+/** Why a player cannot report: the organization records it, they no longer play, the round waits */
+export type ReportingClosedReason = 'admin_only' | 'not_playing' | 'round_pending';
 
 export interface RoundWithMatches {
     round: Round;

@@ -257,4 +257,214 @@ describe('MyMatchCard', () => {
         expect(wrapper.text()).toContain('Resultado: Empate (15-15)');
         expect(wrapper.find('form').exists()).toBe(false);
     });
+
+    describe('why the player cannot report', () => {
+        const closed = {
+            can_report: false,
+            can_correct: false,
+            can_confirm: false,
+            can_dispute: false,
+        };
+
+        it('tells a withdrawn or disqualified player the organization records it', () => {
+            const wrapper = mountCard({
+                result_reporting: 'players_trusted',
+                closed_reason: 'not_playing',
+                actions: closed,
+            });
+
+            expect(wrapper.text()).toContain(
+                'Ya no juegas en este torneo: la organización registrará el resultado.'
+            );
+        });
+
+        it('tells the player to wait for the round to start', () => {
+            const wrapper = mountCard({ closed_reason: 'round_pending', actions: closed });
+
+            expect(wrapper.text()).toContain(
+                'Podrás informar del resultado cuando empiece la ronda.'
+            );
+            expect(wrapper.text()).not.toContain('La organización registrará');
+        });
+    });
+
+    describe('a bye', () => {
+        function bye(points: number): VueWrapper {
+            return mountCard({
+                match: { ...playerMatch().match, is_bye: true, player_2_id: null, player_2_name: null },
+                opponent_name: null,
+                bye_points: points,
+                actions: {
+                    can_report: false,
+                    can_correct: false,
+                    can_confirm: false,
+                    can_dispute: false,
+                },
+            });
+        }
+
+        it('says the points the scoring rules give it', () => {
+            expect(bye(3).text()).toContain('Descansas en esta ronda: el bye te da 3 puntos.');
+            expect(bye(1).text()).toContain('Descansas en esta ronda: el bye te da 1 punto.');
+            expect(bye(2.5).text()).toContain('Descansas en esta ronda: el bye te da 2,5 puntos.');
+        });
+
+        it('says when it gives no points', () => {
+            expect(bye(0).text()).toContain('Descansas en esta ronda: el bye no suma puntos.');
+        });
+    });
+
+    it('shows an error about a field the form does not show', async () => {
+        fetchSpy.mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    message: 'Error',
+                    errors: { 'player_1_stats.painted': ['Falta saber si está pintado'] },
+                }),
+                { status: 422, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+        const wrapper = mountCard();
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        const alert = wrapper.find('form [role="alert"]');
+        expect(alert.exists()).toBe(true);
+        expect(alert.text()).toBe('Falta saber si está pintado');
+    });
+
+    it('moves the focus to the first field with an error', async () => {
+        fetchSpy.mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    message: 'Error',
+                    errors: {
+                        'player_2_stats.vp': ['Demasiados puntos'],
+                        player_1_score: ['No puede ser negativa'],
+                    },
+                }),
+                { status: 422, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+        const wrapper = mount(MyMatchCard, {
+            props: { playerMatch: playerMatch() },
+            attachTo: document.body,
+        });
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        expect(document.activeElement).toBe(wrapper.find('input[name="player_1_score"]').element);
+    });
+
+    describe('disputing', () => {
+        const rivalActions = {
+            can_report: false,
+            can_correct: false,
+            can_confirm: true,
+            can_dispute: true,
+        };
+
+        it('moves the focus to the reason', async () => {
+            const wrapper = mount(MyMatchCard, {
+                props: { playerMatch: playerMatch({ report: matchReport(), actions: rivalActions }) },
+                attachTo: document.body,
+            });
+
+            await button(wrapper, 'Discutir')?.trigger('click');
+            await flushPromises();
+
+            expect(document.activeElement).toBe(wrapper.find('textarea[name="reason"]').element);
+        });
+
+        it('announces a missing reason apart from the help', async () => {
+            const wrapper = mountCard({ report: matchReport(), actions: rivalActions });
+
+            await button(wrapper, 'Discutir')?.trigger('click');
+            const help = wrapper.find('textarea[name="reason"] + p');
+            expect(help.classes()).toContain('text-base-muted');
+            expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+
+            await button(wrapper, 'Enviar')?.trigger('click');
+            await flushPromises();
+
+            const alert = wrapper.find('[role="alert"]');
+            expect(alert.text()).toBe('Escribe el motivo para que la organización lo revise.');
+            expect(alert.classes()).toContain('text-error');
+            expect(alert.classes()).not.toContain('text-base-muted');
+            const describedBy = wrapper.find('textarea[name="reason"]').attributes('aria-describedby') ?? '';
+            expect(describedBy.split(' ')).toContain(alert.attributes('id'));
+            expect(wrapper.findAll('.text-base-muted.text-error')).toHaveLength(0);
+        });
+    });
+
+    describe('after the tournament stops asking for confirmation', () => {
+        const leftover = {
+            result_reporting: 'players_trusted' as const,
+            report: matchReport(),
+            actions: { can_report: true, can_correct: false, can_confirm: true, can_dispute: false },
+        };
+
+        it('lets the rival confirm the report left or send their own', async () => {
+            const wrapper = mountCard(leftover);
+
+            expect(wrapper.text()).toContain('Jane Doe ha informado: Gana Jane Doe (10-20)');
+            expect(button(wrapper, 'Confirmar')).toBeDefined();
+            expect(button(wrapper, 'Discutir')).toBeUndefined();
+            expect(wrapper.find('form').exists()).toBe(false);
+
+            await button(wrapper, 'Enviar otro resultado')?.trigger('click');
+
+            expect(wrapper.find('form').exists()).toBe(true);
+        });
+
+        it('keeps the other actions still while one is sent', async () => {
+            fetchSpy.mockReturnValue(new Promise(() => undefined));
+            const wrapper = mountCard(leftover);
+
+            await button(wrapper, 'Confirmar')?.trigger('click');
+
+            expect(button(wrapper, 'Enviar otro resultado')?.attributes('disabled')).toBeDefined();
+        });
+
+        it('lets the rival who disputed it send their own result', async () => {
+            const wrapper = mountCard({
+                ...leftover,
+                report: matchReport({ status: 'disputed', dispute_reason: 'Fue empate' }),
+                actions: { can_report: true, can_correct: false, can_confirm: false, can_dispute: false },
+            });
+
+            expect(wrapper.text()).toContain('Has discutido el resultado');
+            await button(wrapper, 'Enviar otro resultado')?.trigger('click');
+
+            expect(wrapper.find('form').exists()).toBe(true);
+        });
+
+        it('asks the reporter to send their report again', () => {
+            const wrapper = mountCard({
+                result_reporting: 'players_trusted',
+                report: matchReport({ reported_by_name: 'John Doe', reported_by_id: 'user-1' }),
+                actions: { can_report: false, can_correct: true, can_confirm: false, can_dispute: false },
+            });
+
+            expect(wrapper.text()).toContain(
+                'Lo enviaste cuando hacía falta que Jane Doe lo confirmara: Gana Jane Doe (10-20). Corrígelo o envíalo de nuevo para que cuente.'
+            );
+        });
+    });
+
+    it('reloads the standings with the match after a result is sent', async () => {
+        const wrapper = mountCard({ result_reporting: 'players_trusted' });
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        expect(router.reload).toHaveBeenCalledWith({
+            only: ['myMatch', 'currentRound', 'standings'],
+        });
+    });
 });

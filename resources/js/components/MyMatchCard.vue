@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, useId } from 'vue';
+import { computed, nextTick, reactive, ref, useId } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -18,7 +18,7 @@ const props = defineProps<{
     playerMatch: PlayerMatch;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { error: notifyError, success: notifySuccess } = useNotifications();
 const gate = useVerificationGate();
 const id = useId();
@@ -38,11 +38,15 @@ const opponent = computed(() => props.playerMatch.opponent_name ?? '');
 const hasOfficialResult = computed(() => match.value.result !== 'not_played');
 const sides: Side[] = [1, 2];
 
-// The reporter reopens the form to correct a report waiting for confirmation
+// The reporter reopens the form to correct a report waiting for confirmation; without
+// confirmation, the rival of a report left from before opens it to send their own result
 const correcting = ref(false);
 const showForm = computed(
-    () => actions.value.can_report || (actions.value.can_correct && correcting.value)
+    () =>
+        (actions.value.can_report && (report.value === null || correcting.value)) ||
+        (actions.value.can_correct && correcting.value)
 );
+const isTrusted = computed(() => props.playerMatch.result_reporting === 'players_trusted');
 
 const form = reactive<{
     result: ReportableResult | '';
@@ -51,10 +55,53 @@ const form = reactive<{
 }>({ result: '', scores: { 1: '', 2: '' }, stats: { 1: {}, 2: {} } });
 const errors = ref<Record<string, string>>({});
 const processing = ref(false);
+const formRef = ref<HTMLFormElement | null>(null);
 
 const disputing = ref(false);
 const disputeReason = ref('');
 const disputeError = ref('');
+const reasonRef = ref<HTMLTextAreaElement | null>(null);
+const reasonError = computed(() => errors.value.reason ?? disputeError.value);
+
+/** The fields the form shows; an error about any other (a stat removed meanwhile) goes on top */
+const formFields = computed(() => {
+    const fields = new Set(['result']);
+    for (const side of sides) {
+        fields.add(`player_${side}_score`);
+        for (const stat of props.playerMatch.stat_definitions) {
+            fields.add(`player_${side}_stats.${stat.key}`);
+        }
+    }
+
+    return fields;
+});
+const otherErrors = computed(() =>
+    Object.entries(errors.value)
+        .filter(([field]) => !formFields.value.has(field))
+        .map(([, message]) => message)
+);
+
+const byeText = computed(() => {
+    const points = props.playerMatch.bye_points ?? 0;
+    if (points === 0) {
+        return t('tournaments.my_match.bye_no_points');
+    }
+
+    return t('tournaments.my_match.bye', points, {
+        named: { points: new Intl.NumberFormat(locale.value).format(points) },
+    });
+});
+
+const closedText = computed(() => {
+    switch (props.playerMatch.closed_reason) {
+        case 'not_playing':
+            return t('tournaments.my_match.not_playing');
+        case 'round_pending':
+            return t('tournaments.my_match.round_pending');
+        default:
+            return t('tournaments.my_match.admin_only');
+    }
+});
 
 const resultOptions = computed<{ value: ReportableResult; label: string }[]>(() => [
     { value: 'player_one_win', label: t('tournaments.my_match.win', { name: names.value[1] }) },
@@ -100,6 +147,18 @@ function fieldId(field: string): string {
 
 function errorId(field: string): string | undefined {
     return errors.value[field] !== undefined ? `${fieldId(field)}-error` : undefined;
+}
+
+async function startDisputing(): Promise<void> {
+    disputing.value = true;
+    await nextTick();
+    reasonRef.value?.focus();
+}
+
+/** After a refused send, the first field with an error, in the order the form shows them */
+async function focusFirstError(): Promise<void> {
+    await nextTick();
+    formRef.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
 }
 
 function startCorrecting(): void {
@@ -192,7 +251,8 @@ async function post(
             notifySuccess(data.message ?? '');
             correcting.value = false;
             disputing.value = false;
-            router.reload({ only: ['myMatch', 'currentRound'] });
+            // A result that counts at once changes the standings too
+            router.reload({ only: ['myMatch', 'currentRound', 'standings'] });
             return true;
         }
 
@@ -200,6 +260,13 @@ async function post(
             errors.value = Object.fromEntries(
                 Object.entries(data.errors).map(([field, messages]) => [field, messages[0] ?? ''])
             );
+            // Disabled fields take no focus: release them first
+            processing.value = false;
+            if (action === 'resultado') {
+                await focusFirstError();
+            } else if (action === 'discutir') {
+                reasonRef.value?.focus();
+            }
             return false;
         }
 
@@ -241,7 +308,8 @@ async function confirmReport(): Promise<void> {
 async function sendDispute(): Promise<void> {
     disputeError.value = '';
     if (disputeReason.value.trim() === '') {
-        disputeError.value = t('tournaments.my_match.reason_help');
+        disputeError.value = t('tournaments.my_match.reason_required');
+        reasonRef.value?.focus();
         return;
     }
 
@@ -279,7 +347,7 @@ const inputClass =
         </p>
 
         <p v-if="match.is_bye" class="mt-3 text-sm text-base-secondary">
-            {{ t('tournaments.my_match.bye') }}
+            {{ byeText }}
         </p>
 
         <p v-else-if="hasOfficialResult" class="mt-3 text-sm font-medium text-base-primary">
@@ -315,9 +383,19 @@ const inputClass =
                         variant="secondary"
                         size="sm"
                         :disabled="processing"
-                        @click="disputing = true"
+                        @click="startDisputing"
                     >
                         {{ t('tournaments.my_match.dispute') }}
+                    </BaseButton>
+                    <!-- Without confirmation, sending one's own result replaces the report -->
+                    <BaseButton
+                        v-if="actions.can_report"
+                        variant="secondary"
+                        size="sm"
+                        :disabled="processing"
+                        @click="correcting = true"
+                    >
+                        {{ t('tournaments.my_match.send_another') }}
                     </BaseButton>
                 </div>
                 <div v-else class="space-y-2">
@@ -330,25 +408,30 @@ const inputClass =
                     </label>
                     <textarea
                         :id="`${id}-reason`"
+                        ref="reasonRef"
                         v-model="disputeReason"
                         name="reason"
                         required
                         maxlength="500"
                         rows="3"
-                        :aria-invalid="disputeError !== '' || errors.reason !== undefined"
-                        :aria-describedby="`${id}-reason-help`"
+                        :aria-invalid="reasonError !== ''"
+                        :aria-describedby="
+                            reasonError !== ''
+                                ? `${id}-reason-help ${id}-reason-error`
+                                : `${id}-reason-help`
+                        "
                         :class="inputClass"
                     />
+                    <p :id="`${id}-reason-help`" class="text-sm text-base-muted">
+                        {{ t('tournaments.my_match.reason_help') }}
+                    </p>
                     <p
-                        :id="`${id}-reason-help`"
-                        class="text-sm text-base-muted"
-                        :class="{
-                            'text-error': disputeError !== '' || errors.reason !== undefined,
-                        }"
+                        v-if="reasonError !== ''"
+                        :id="`${id}-reason-error`"
+                        class="text-sm text-error"
+                        role="alert"
                     >
-                        {{
-                            errors.reason ?? (disputeError || t('tournaments.my_match.reason_help'))
-                        }}
+                        {{ reasonError }}
                     </p>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <BaseButton size="sm" :loading="processing" @click="sendDispute">
@@ -379,14 +462,21 @@ const inputClass =
                     </template>
                     <template v-else>
                         {{
-                            t('tournaments.my_match.waiting_for', {
-                                name: opponent,
-                                result: reportSummary,
-                            })
+                            t(
+                                isTrusted
+                                    ? 'tournaments.my_match.left_from_confirmation'
+                                    : 'tournaments.my_match.waiting_for',
+                                { name: opponent, result: reportSummary }
+                            )
                         }}
                     </template>
                 </p>
-                <BaseButton variant="secondary" size="sm" @click="startCorrecting">
+                <BaseButton
+                    variant="secondary"
+                    size="sm"
+                    :disabled="processing"
+                    @click="startCorrecting"
+                >
                     {{ t('tournaments.my_match.correct') }}
                 </BaseButton>
             </div>
@@ -402,9 +492,26 @@ const inputClass =
                     })
                 }}
             </p>
+            <!-- A dispute left from when the tournament asked for confirmation: send one's own -->
+            <BaseButton
+                v-if="actions.can_report && !actions.can_confirm && !actions.can_dispute"
+                class="mt-3"
+                variant="secondary"
+                size="sm"
+                :disabled="processing"
+                @click="correcting = true"
+            >
+                {{ t('tournaments.my_match.send_another') }}
+            </BaseButton>
         </template>
 
-        <form v-else-if="showForm" class="mt-3 space-y-4" novalidate @submit.prevent="submitReport">
+        <form
+            v-else-if="showForm"
+            ref="formRef"
+            class="mt-3 space-y-4"
+            novalidate
+            @submit.prevent="submitReport"
+        >
             <fieldset :aria-describedby="errorId('result')">
                 <legend class="mb-2 text-sm font-medium text-base-secondary">
                     {{ t('tournaments.my_match.result') }}
@@ -423,6 +530,7 @@ const inputClass =
                             :value="option.value"
                             required
                             :disabled="processing"
+                            :aria-invalid="errors.result !== undefined"
                             class="h-4 w-4 border-strong text-primary focus:ring-primary-500"
                         />
                         <label
@@ -547,6 +655,11 @@ const inputClass =
                 </div>
             </div>
 
+            <!-- An error about a field the form does not show, e.g. a stat removed meanwhile -->
+            <div v-if="otherErrors.length > 0" class="space-y-1 text-sm text-error" role="alert">
+                <p v-for="message in otherErrors" :key="message">{{ message }}</p>
+            </div>
+
             <p class="text-sm text-base-muted">{{ hint }}</p>
 
             <div class="flex flex-col gap-2 sm:flex-row">
@@ -566,7 +679,7 @@ const inputClass =
         </form>
 
         <p v-else class="mt-3 text-sm text-base-secondary">
-            {{ t('tournaments.my_match.admin_only') }}
+            {{ closedText }}
         </p>
     </section>
 </template>

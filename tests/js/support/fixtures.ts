@@ -140,6 +140,8 @@ export function playerMatch(overrides: Partial<PlayerMatch> = {}): PlayerMatch {
         actions: { can_report: true, can_correct: false, can_confirm: false, can_dispute: false },
         report: null,
         result_reporting: 'players_with_confirmation',
+        closed_reason: null,
+        bye_points: null,
         stat_definitions: [
             {
                 key: 'vp',
