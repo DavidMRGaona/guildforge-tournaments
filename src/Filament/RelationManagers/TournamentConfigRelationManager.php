@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\RelationManagers;
 
+use App\Filament\Forms\Components\EndSurveyField;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
 use Filament\Forms\Components\DateTimePicker;
@@ -30,6 +31,7 @@ use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Filament\RegistrationClosingDateRule;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 
 /**
  * @property Schema $configForm
@@ -128,8 +130,10 @@ final class TournamentConfigRelationManager extends RelationManager
 
     public function configForm(Schema $schema): Schema
     {
+        // The tournament, when there is one, so the end survey field loads and saves its choice
         return $schema
             ->components($this->getFormSchema())
+            ->model(TournamentModel::where('event_id', $this->getOwnerRecord()->getKey())->first() ?? TournamentModel::class)
             ->statePath('configData');
     }
 
@@ -269,6 +273,8 @@ final class TournamentConfigRelationManager extends RelationManager
                         ->suffix(__('tournaments::messages.minutes'))
                         ->default(30)
                         ->visible(fn (Get $get): bool => (bool) $get('requires_check_in')),
+                    // Which survey goes out when it ends; hidden without the surveys module
+                    EndSurveyField::forSubject(TournamentSurveySubjectSource::TYPE)->columnSpanFull(),
                 ])
                 ->columns(2)
                 ->visible(fn (Get $get): bool => (bool) $get('tournament_enabled')),
@@ -332,7 +338,8 @@ final class TournamentConfigRelationManager extends RelationManager
             $tournament->update($data);
         } else {
             $data['status'] = TournamentStatus::Draft->value;
-            TournamentModel::create($data);
+            // The end survey field saves once the tournament exists
+            $this->configForm->model(TournamentModel::create($data))->saveRelationships();
         }
 
         Notification::make()

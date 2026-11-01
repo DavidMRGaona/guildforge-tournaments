@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
@@ -49,6 +50,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\R
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 
 final class TournamentResource extends BaseResource
 {
@@ -495,6 +497,9 @@ final class TournamentResource extends BaseResource
                                     ->email()
                                     ->required()
                                     ->maxLength(255),
+
+                                // Which survey goes out when it ends; hidden without the surveys module
+                                EndSurveyField::forSubject(TournamentSurveySubjectSource::TYPE)->columnSpanFull(),
                             ])
                             ->columns(2),
                     ])
