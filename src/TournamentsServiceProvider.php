@@ -265,6 +265,16 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             ];
         });
 
+        RateLimiter::for('tournaments-match-report', static function (Request $request): Limit {
+            $tooMany = static fn (Request $request, array $headers): HttpResponse => response()->json(
+                ['message' => __('tournaments::messages.my_match.errors.too_many_attempts')],
+                429,
+                $headers,
+            );
+
+            return Limit::perMinute(10)->by('user:'.($request->user()?->getAuthIdentifier() ?? $request->ip()))->response($tooMany);
+        });
+
         RateLimiter::for('tournaments-public-check-in', static function (Request $request): array {
             $ip = $request->ip() ?? 'unknown';
             $tooMany = static function (Request $request, array $headers): HttpResponse {

@@ -179,12 +179,12 @@ final class MatchResultEmailsTest extends ModuleTestCase
      */
     private function mails(): array
     {
-        return array_map(function (SentMessage $message): array {
+        return array_values(array_map(function (SentMessage $message): array {
             $email = $message->getOriginalMessage();
             $this->assertInstanceOf(Email::class, $email);
 
             return ['to' => $email->getTo()[0]->getAddress(), 'text' => (string) $email->getTextBody()];
-        }, $this->transport()->messages()->all());
+        }, $this->transport()->messages()->all()));
     }
 
     private function clearMails(): void

@@ -191,6 +191,7 @@ return [
         'bye_opponent' => 'Bye',
         'report_status' => 'Informe',
         'reset_reason' => 'Motivo',
+        'dispute_reason' => 'Motivo',
         'score_help' => 'Juegos (o puntos) ganados en la partida; los usan los desempates GWP, OGWP y margen de victoria',
         'rank' => 'Posición',
         'matches_played' => 'Partidas jugadas',
@@ -888,5 +889,20 @@ return [
         'check_in_title' => 'Check-in - :name',
         'cancel_registration_title' => 'Cancelar inscripción',
         'confirm_registration_title' => 'Confirmar inscripción',
+    ],
+    'my_match' => [
+        'recorded' => 'Resultado registrado',
+        'awaiting_confirmation' => 'Resultado enviado: falta que tu rival lo confirme',
+        'confirmed' => 'Resultado confirmado',
+        'disputed' => 'Hemos avisado a la organización de que no estás de acuerdo',
+        'errors' => [
+            'not_allowed' => 'No puedes informar del resultado de esta partida',
+            'closed' => 'Esta partida ya no admite informes: puede que ya tenga resultado o que la ronda haya terminado',
+            'changed' => 'Tu rival ha cambiado el resultado mientras lo mirabas: revísalo de nuevo',
+            'nothing_to_confirm' => 'Ya no hay ningún resultado pendiente de confirmar',
+            'scores_contradict_result' => 'Las puntuaciones no cuadran con el resultado',
+            'invalid_result' => 'El resultado no es válido para esta partida',
+            'too_many_attempts' => 'Demasiados intentos. Espera un minuto y vuelve a probar',
+        ],
     ],
 ];
