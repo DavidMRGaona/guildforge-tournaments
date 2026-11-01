@@ -7,7 +7,9 @@ describe('TournamentStatusFilter', () => {
     it('announces which filter is applied', () => {
         const wrapper = mount(TournamentStatusFilter, { props: { currentFilter: 'upcoming' } });
 
-        const pressed = wrapper.findAll('button').map((button) => [button.text(), button.attributes('aria-pressed')]);
+        const pressed = wrapper
+            .findAll('button')
+            .map((button) => [button.text(), button.attributes('aria-pressed')]);
 
         expect(pressed).toEqual([
             ['Todos', 'false'],
