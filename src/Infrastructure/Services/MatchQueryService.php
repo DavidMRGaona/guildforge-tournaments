@@ -60,9 +60,10 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
                 $match->player2Id() !== null
                     ? ($participantNames[$match->player2Id()] ?? (string) __('tournaments::messages.participants.unknown'))
                     : null,
-                // A report only waits on a match without result
+                // A report only waits on a match without result. The page only says whether it is
+                // pending or disputed, so the reporter's name is not looked up
                 report: isset($reports[$match->id()->value]) && ! $match->isCompleted()
-                    ? $this->reportResponse($reports[$match->id()->value])
+                    ? MatchReportResponseDTO::fromEntity($reports[$match->id()->value], '')
                     : null,
             ),
             $matches

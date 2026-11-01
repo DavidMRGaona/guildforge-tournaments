@@ -7,9 +7,11 @@ namespace Modules\Tournaments\Tests\Feature\Http\Controllers;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use DateTimeImmutable;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
+use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
@@ -118,6 +120,30 @@ final class RoundsPageResultsTest extends ModuleTestCase
                 $this->assertTrue($matches[$disputed->id]['is_disputed']);
                 $this->assertFalse($matches[$disputed->id]['needs_confirmation']);
             });
+    }
+
+    public function test_the_rounds_page_reads_the_reports_without_a_query_per_report(): void
+    {
+        [$tournament, $round, $one, $two] = $this->roundInProgress('rondas-consultas');
+        $three = $this->participant($tournament);
+        $four = $this->participant($tournament);
+        $first = MatchModel::create(['round_id' => $round->id, 'player_1_id' => $one->id, 'player_2_id' => $two->id, 'result' => 'not_played']);
+        $second = MatchModel::create(['round_id' => $round->id, 'player_1_id' => $three->id, 'player_2_id' => $four->id, 'result' => 'not_played']);
+        $queries = function () use ($round): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            app(MatchQueryServiceInterface::class)->getMatchesForRound($round->id);
+            DB::disableQueryLog();
+
+            return count(DB::getQueryLog());
+        };
+        $withoutReports = $queries();
+
+        $reports = app(MatchReportRepositoryInterface::class);
+        $reports->save(new MatchReport($first->id, MatchResult::PlayerOneWin, (string) $one->user_id, new DateTimeImmutable('2030-05-01 10:00:00')));
+        $reports->save(new MatchReport($second->id, MatchResult::Draw, (string) $three->user_id, new DateTimeImmutable('2030-05-01 10:00:00')));
+
+        $this->assertSame($withoutReports, $queries());
     }
 
     public function test_a_report_left_next_to_an_official_result_is_not_shown_as_pending(): void
