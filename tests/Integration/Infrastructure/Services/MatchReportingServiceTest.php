@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\MatchReportOutcome;
+use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\DTOs\ReportMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
+use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
@@ -160,6 +162,14 @@ final class MatchReportingServiceTest extends ModuleTestCase
         $this->assertSame(MatchResult::Draw, $report->result());
         $this->assertFalse($report->isDisputed());
         Event::assertDispatchedTimes(MatchResultReported::class, 2);
+    }
+
+    public function test_a_correction_that_changes_nothing_does_not_announce_it_again(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+
+        Event::assertDispatchedTimes(MatchResultReported::class, 1);
     }
 
     public function test_reporter_cannot_confirm_own_report(): void
@@ -320,6 +330,56 @@ final class MatchReportingServiceTest extends ModuleTestCase
             $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id, $seen);
         } finally {
             $this->assertSame(MatchResult::NotPlayed, $this->match->refresh()->result);
+        }
+    }
+
+    public function test_organizer_writes_take_the_tournament_lock(): void
+    {
+        $inner = app(RegistrationLockInterface::class);
+        $spy = new class($inner) implements RegistrationLockInterface
+        {
+            /** @var list<string> */
+            public array $locked = [];
+
+            public function __construct(private readonly RegistrationLockInterface $inner) {}
+
+            public function forTournament(string $tournamentId, Closure $callback): mixed
+            {
+                $this->locked[] = $tournamentId;
+
+                return $this->inner->forTournament($tournamentId, $callback);
+            }
+
+            public function forParticipant(string $participantId, Closure $callback): mixed
+            {
+                return $this->inner->forParticipant($participantId, $callback);
+            }
+
+            public function forConfirmationToken(string $token, Closure $callback): mixed
+            {
+                return $this->inner->forConfirmationToken($token, $callback);
+            }
+        };
+        $this->app->instance(RegistrationLockInterface::class, $spy);
+
+        app(MatchResultServiceInterface::class)->recordResult(new RecordMatchResultDTO($this->match->id, MatchResult::Draw, UserModel::factory()->create()->id));
+
+        $this->assertSame([$this->tournament->id], $spy->locked);
+    }
+
+    public function test_organizer_cannot_confirm_a_report_over_an_official_result(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
+        $seen = $this->seen();
+        // A leftover: the match got its result some other way
+        $this->match->update(['result' => MatchResult::Draw->value]);
+
+        $this->expectException(MatchReportClosedException::class);
+
+        try {
+            $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id, $seen);
+        } finally {
+            $this->assertSame(MatchResult::Draw, $this->match->refresh()->result);
         }
     }
 

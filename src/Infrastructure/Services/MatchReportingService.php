@@ -21,6 +21,7 @@ use Modules\Tournaments\Domain\Events\MatchResultConfirmed;
 use Modules\Tournaments\Domain\Events\MatchResultDisputed;
 use Modules\Tournaments\Domain\Events\MatchResultReported;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Exceptions\MatchReportClosedException;
 use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
@@ -68,7 +69,10 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
             $requiresConfirmation = $tournament->resultReporting() === ResultReporting::PlayersWithConfirmation;
 
             if ($requiresConfirmation) {
-                $this->storeReport($dto, $report);
+                // A correction that changes nothing is not news for the opponent
+                if (! $this->storeReport($dto, $report)) {
+                    return MatchReportOutcome::AwaitingConfirmation;
+                }
             } else {
                 $this->results->recordResult(new RecordMatchResultDTO(
                     matchId: $dto->matchId,
@@ -122,6 +126,10 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
         $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $organizerId, $seenReport): void {
             if (! $report instanceof MatchReport) {
                 throw ResultNotConfirmedException::noPendingReport($matchId);
+            }
+
+            if ($match->isCompleted()) {
+                throw MatchReportClosedException::resultAlreadyFinal($matchId);
             }
 
             $this->assertUnchanged($report, $seenReport);
@@ -191,11 +199,24 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
         }
     }
 
-    private function storeReport(ReportMatchResultDTO $dto, ?MatchReport $report): void
+    /**
+     * @return bool Whether the report says something new
+     */
+    private function storeReport(ReportMatchResultDTO $dto, ?MatchReport $report): bool
     {
         $now = $this->clock->now();
 
         if ($report instanceof MatchReport) {
+            $sameValues = $report->result() === $dto->result
+                && $report->player1Score() === $dto->player1Score
+                && $report->player2Score() === $dto->player2Score
+                && $report->player1Stats() == $dto->player1Stats
+                && $report->player2Stats() == $dto->player2Stats;
+            // Sending the same again keeps it as it is, a dispute included
+            if ($sameValues) {
+                return false;
+            }
+
             $report->correct($dto->result, $dto->player1Score, $dto->player2Score, $dto->player1Stats, $dto->player2Stats, $now);
         } else {
             $report = new MatchReport(
@@ -211,6 +232,8 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
         }
 
         $this->reports->save($report);
+
+        return true;
     }
 
     /**

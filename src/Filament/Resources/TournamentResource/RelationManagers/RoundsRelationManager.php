@@ -36,6 +36,7 @@ use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Filament\InvalidMatchResultMessage;
+use Modules\Tournaments\Filament\MatchFormSnapshot;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
@@ -159,6 +160,7 @@ final class RoundsRelationManager extends RelationManager
                                 'player_1_stats' => $match->player_1_stats ?? [],
                                 'player_2_stats' => $match->player_2_stats ?? [],
                                 'is_bye' => $match->player_2_id === null,
+                                'original' => MatchFormSnapshot::ofMatch($match),
                             ];
                         }
 
@@ -183,6 +185,7 @@ final class RoundsRelationManager extends RelationManager
                     ])
                     ->action(function (RoundModel $record, array $data, MatchResultServiceInterface $results): void {
                         $changes = [];
+                        $changedMeanwhile = 0;
                         foreach ($data['matches'] as $matchData) {
                             $match = $record->matches()->find($matchData['match_id']);
                             if (! $match instanceof MatchModel) {
@@ -194,12 +197,19 @@ final class RoundsRelationManager extends RelationManager
                             $player1Score = $this->score($matchData['player_1_score'] ?? null);
                             $player2Score = $this->score($matchData['player_2_score'] ?? null);
 
-                            // Only record what changed
-                            if ($match->result->value === $matchData['result']
-                                && $match->player_1_score === $player1Score
-                                && $match->player_2_score === $player2Score
-                                && $match->player_1_stats == ($player1Stats ?: null)
-                                && $match->player_2_stats == ($player2Stats ?: null)) {
+                            $submitted = MatchFormSnapshot::of((string) $matchData['result'], $player1Score, $player2Score, $player1Stats ?: null, $player2Stats ?: null);
+                            $current = MatchFormSnapshot::ofMatch($match);
+                            $original = is_string($matchData['original'] ?? null) ? $matchData['original'] : $current;
+
+                            // Only what the organizer changed, and nothing that already says the same
+                            if ($submitted === $original || $submitted === $current) {
+                                continue;
+                            }
+
+                            // Recorded elsewhere while the form was open (a player's report): keep it
+                            if ($current !== $original) {
+                                $changedMeanwhile++;
+
                                 continue;
                             }
 
@@ -223,6 +233,16 @@ final class RoundsRelationManager extends RelationManager
                                     ? __('tournaments::messages.errors.result_locked_by_next_round')
                                     : InvalidMatchResultMessage::for($exception))
                                 ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        if ($changedMeanwhile > 0) {
+                            Notification::make()
+                                ->title(__('tournaments::messages.errors.results_changed_meanwhile'))
+                                ->body(trans_choice('tournaments::messages.errors.results_changed_meanwhile_detail', $changedMeanwhile, ['count' => $changedMeanwhile]))
+                                ->warning()
                                 ->send();
 
                             return;
@@ -378,6 +398,8 @@ final class RoundsRelationManager extends RelationManager
         $schema = [
             // A hidden() field is left out of the submitted state; Hidden is kept
             Hidden::make('match_id'),
+            // The row as it was when the form opened
+            Hidden::make('original'),
 
             TextInput::make('table_number')
                 ->label(__('tournaments::messages.fields.table_number'))

@@ -72,6 +72,33 @@ describe('MyMatchCard', () => {
         expect(router.reload).toHaveBeenCalled();
     });
 
+    it('sends an untouched yes-or-no stat as no', async () => {
+        const wrapper = mountCard({
+            stat_definitions: [
+                {
+                    key: 'painted',
+                    name: 'Ejército pintado',
+                    type: 'boolean',
+                    min_value: null,
+                    max_value: null,
+                    per_player: true,
+                    required: true,
+                    description: null,
+                },
+            ],
+        });
+
+        await wrapper.findAll('input[type="radio"]')[1].setValue(true);
+        await wrapper.find('input[name="player_1_stats.painted"]').setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        expect(body.player_1_stats).toEqual({ painted: true });
+        expect(body.player_2_stats).toEqual({ painted: false });
+    });
+
     it('shows server validation errors next to their field', async () => {
         fetchSpy.mockResolvedValue(
             new Response(

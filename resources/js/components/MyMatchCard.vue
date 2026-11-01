@@ -141,9 +141,8 @@ function statsPayload(side: Side): Record<string, StatValue> | null {
     for (const stat of props.playerMatch.stat_definitions) {
         const input = form.stats[side][stat.key];
         if (stat.type === 'boolean') {
-            if (typeof input === 'boolean') {
-                values[stat.key] = input;
-            }
+            // An untouched box says no: a required yes-or-no stat is answered either way
+            values[stat.key] = input === true;
         } else if (typeof input === 'number' || typeof input === 'string') {
             const value = score(input);
             if (value !== null) {
