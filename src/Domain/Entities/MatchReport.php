@@ -107,8 +107,8 @@ final class MatchReport
             $this->result->value,
             $this->player1Score,
             $this->player2Score,
-            self::sorted($this->player1Stats),
-            self::sorted($this->player2Stats),
+            $this->sorted($this->player1Stats),
+            $this->sorted($this->player2Stats),
             $this->reportedAt->format('U'),
         ]));
     }
@@ -142,7 +142,7 @@ final class MatchReport
      * @param  array<string, mixed>|null  $stats
      * @return array<string, mixed>|null
      */
-    private static function sorted(?array $stats): ?array
+    private function sorted(?array $stats): ?array
     {
         if ($stats !== null) {
             ksort($stats);

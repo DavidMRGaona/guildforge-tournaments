@@ -89,6 +89,22 @@ final class MatchReportsPanelTest extends ModuleTestCase
         $this->assertNull($this->reports()->find($this->match->id));
     }
 
+    public function test_a_report_corrected_while_the_modal_was_open_is_not_confirmed(): void
+    {
+        $this->report($this->match);
+        $manager = $this->matchesManager()->mountTableAction('confirmReport', $this->match);
+        // The reporter corrected it meanwhile
+        $report = $this->reports()->find($this->match->id);
+        $this->assertInstanceOf(MatchReport::class, $report);
+        $report->correct(MatchResult::Draw, 15, 15, null, null, new DateTimeImmutable('2026-06-10 11:30:00'));
+        $this->reports()->save($report);
+
+        $manager->callMountedTableAction()
+            ->assertNotified(__('tournaments::messages.errors.report_changed'));
+
+        $this->assertSame(MatchResult::NotPlayed, $this->match->refresh()->result);
+    }
+
     public function test_a_disputed_report_shows_as_disputed(): void
     {
         $this->report($this->match, disputed: true);

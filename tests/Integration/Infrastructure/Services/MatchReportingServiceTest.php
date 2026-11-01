@@ -218,7 +218,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
         $this->service()->dispute($this->match->id, $this->two->id, 'No', $this->seen());
 
-        $this->service()->confirmAsOrganizer($this->match->id, $organizer->id);
+        $this->service()->confirmAsOrganizer($this->match->id, $organizer->id, $this->seen());
 
         $match = $this->match->refresh();
         $this->assertSame(MatchResult::PlayerOneWin, $match->result);
@@ -231,7 +231,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     {
         $this->expectException(ResultNotConfirmedException::class);
 
-        $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id);
+        $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id, 'nothing-was-shown');
     }
 
     public function test_confirm_pending_in_round_skips_disputed(): void
@@ -277,7 +277,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
         $seen = $this->seen();
         // The organization confirmed it while this request waited for the tournament's lock
-        $this->whileWaitingForTheLock(fn () => $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id));
+        $this->whileWaitingForTheLock(fn () => $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id, $seen));
 
         try {
             $this->service()->confirm($this->match->id, $this->two->id, $seen);
@@ -306,6 +306,21 @@ final class MatchReportingServiceTest extends ModuleTestCase
         $this->expectException(ResultNotConfirmedException::class);
 
         $this->service()->dispute($this->match->id, $this->two->id, 'No', $seen);
+    }
+
+    public function test_organizer_confirming_a_report_changed_since_it_was_shown_fails(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 10));
+        $seen = $this->seen();
+        $this->service()->report($this->dto(MatchResult::PlayerTwoWin, $this->one, 10, 20));
+
+        $this->expectException(ResultNotConfirmedException::class);
+
+        try {
+            $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id, $seen);
+        } finally {
+            $this->assertSame(MatchResult::NotPlayed, $this->match->refresh()->result);
+        }
     }
 
     /**

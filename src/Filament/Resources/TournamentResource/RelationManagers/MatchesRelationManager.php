@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
+use App\Application\Services\TimezoneServiceInterface;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -18,7 +20,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Application\Services\TimezoneServiceInterface;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\DTOs\Response\MatchHistoryResponseDTO;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
@@ -28,6 +29,7 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Filament\InvalidMatchResultMessage;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
@@ -92,8 +94,8 @@ final class MatchesRelationManager extends RelationManager
                     ->badge()
                     ->getStateUsing(fn (MatchModel $record): ?string => match (true) {
                         ! $record->report instanceof MatchReportModel => null,
-                        $record->report->disputed_at !== null => __('tournaments::messages.report_status.disputed'),
-                        default => __('tournaments::messages.report_status.pending'),
+                        $record->report->disputed_at !== null => (string) __('tournaments::messages.report_status.disputed'),
+                        default => (string) __('tournaments::messages.report_status.pending'),
                     })
                     ->color(fn (MatchModel $record): string => $record->report?->disputed_at !== null ? 'danger' : 'warning')
                     ->tooltip(fn (MatchModel $record): ?string => $record->report?->dispute_reason),
@@ -198,12 +200,19 @@ final class MatchesRelationManager extends RelationManager
                     ->authorize(fn (): bool => $this->canReportResults())
                     ->requiresConfirmation()
                     ->modalDescription(fn (MatchModel $record): string => $this->reportSummary($record))
-                    ->action(function (MatchModel $record, MatchReportingServiceInterface $reporting): void {
+                    // What the modal shows: a correction made while it is open is not confirmed blindly
+                    ->fillForm(fn (MatchModel $record, MatchReportRepositoryInterface $reports): array => [
+                        'report' => $reports->find($record->id)?->fingerprint(),
+                    ])
+                    ->schema([Hidden::make('report')])
+                    ->action(function (MatchModel $record, array $data, MatchReportingServiceInterface $reporting): void {
                         try {
-                            $reporting->confirmAsOrganizer($record->id, (string) auth()->id());
-                        } catch (ResultNotConfirmedException) {
+                            $reporting->confirmAsOrganizer($record->id, (string) auth()->id(), (string) ($data['report'] ?? ''));
+                        } catch (ResultNotConfirmedException $exception) {
                             Notification::make()
-                                ->title(__('tournaments::messages.errors.no_pending_report'))
+                                ->title($exception->reportWasChanged()
+                                    ? __('tournaments::messages.errors.report_changed')
+                                    : __('tournaments::messages.errors.no_pending_report'))
                                 ->danger()
                                 ->send();
 

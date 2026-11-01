@@ -293,6 +293,7 @@ return [
         'matches_not_completed_detail' => 'Quedan :count partidas sin resultado',
         'matches_pending_reports_detail' => '{1} :count tiene un informe de los jugadores pendiente de confirmar o discutido|[2,*] :count tienen un informe de los jugadores pendiente de confirmar o discutido',
         'no_pending_report' => 'La partida ya no tiene ningún informe pendiente',
+        'report_changed' => 'El jugador ha corregido su informe mientras lo mirabas: vuelve a abrirlo para ver el nuevo',
         'invalid_token' => 'El enlace de cancelación no es válido o ha expirado',
     ],
 

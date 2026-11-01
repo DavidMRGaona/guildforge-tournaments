@@ -50,12 +50,12 @@ interface MatchReportingServiceInterface
     public function dispute(string $matchId, string $userId, string $reason, string $seenReport): void;
 
     /**
-     * The organization accepts a report, disputed or not.
+     * The organization accepts the report it was shown, disputed or not.
      *
      * @throws MatchNotFoundException
      * @throws ResultNotConfirmedException
      */
-    public function confirmAsOrganizer(string $matchId, string $organizerId): void;
+    public function confirmAsOrganizer(string $matchId, string $organizerId, string $seenReport): void;
 
     /**
      * The organization accepts every report of the round that nobody disputed.

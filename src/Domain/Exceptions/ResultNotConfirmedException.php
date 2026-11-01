@@ -8,7 +8,7 @@ use DomainException;
 
 final class ResultNotConfirmedException extends DomainException
 {
-    private function __construct(string $message)
+    private function __construct(string $message, private readonly bool $changed = false)
     {
         parent::__construct($message);
     }
@@ -25,7 +25,15 @@ final class ResultNotConfirmedException extends DomainException
 
     public static function reportChanged(string $matchId): self
     {
-        return new self("The result reported for match {$matchId} changed since it was shown.");
+        return new self("The result reported for match {$matchId} changed since it was shown.", true);
+    }
+
+    /**
+     * The report was corrected after it was shown: show it again rather than say nothing waits.
+     */
+    public function reportWasChanged(): bool
+    {
+        return $this->changed;
     }
 
     public static function disputed(string $matchId): self

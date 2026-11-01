@@ -36,8 +36,8 @@ use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Filament\InvalidMatchResultMessage;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 

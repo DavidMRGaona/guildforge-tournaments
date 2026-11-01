@@ -21,7 +21,6 @@ use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
 use Modules\Tournaments\Domain\Exceptions\UnauthorizedToReportResultException;
 use Modules\Tournaments\Domain\Services\MatchReportRules;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
-use Modules\Tournaments\Domain\ValueObjects\MatchReportActions;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Domain\ValueObjects\ScoreWeight;
@@ -89,7 +88,6 @@ final class MatchReportRulesTest extends TestCase
 
         $actions = $this->rules->actionsFor($tournament, $round, $match, $report, $actor);
 
-        $this->assertInstanceOf(MatchReportActions::class, $actions);
         $this->assertSame(
             $expected,
             [$actions->canReport, $actions->canCorrect, $actions->canConfirm, $actions->canDispute],

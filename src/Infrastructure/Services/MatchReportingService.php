@@ -117,12 +117,14 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
         });
     }
 
-    public function confirmAsOrganizer(string $matchId, string $organizerId): void
+    public function confirmAsOrganizer(string $matchId, string $organizerId, string $seenReport): void
     {
-        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $organizerId): void {
+        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $organizerId, $seenReport): void {
             if (! $report instanceof MatchReport) {
                 throw ResultNotConfirmedException::noPendingReport($matchId);
             }
+
+            $this->assertUnchanged($report, $seenReport);
 
             $this->makeOfficial($report, $organizerId);
             $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $organizerId));
