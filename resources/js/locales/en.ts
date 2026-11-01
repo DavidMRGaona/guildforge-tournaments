@@ -11,6 +11,39 @@ export default {
             results: 'Results of «{title}»',
         },
 
+        // The player's own match of the current round (tournament page)
+        my_match: {
+            title: 'Your match',
+            table: 'Table {number}',
+            against: 'against {name}',
+            bye: 'You have a bye this round: it already counts as a win.',
+            result: 'Result',
+            win: '{name} wins',
+            draw: 'Draw',
+            score_of: 'Score of {name}',
+            stats_of: 'Stats of {name}',
+            optional: 'optional',
+            submit: 'Send result',
+            correct: 'Correct',
+            cancel: 'Cancel',
+            confirm: 'Confirm',
+            dispute: 'Dispute',
+            send: 'Send',
+            reason: 'Reason',
+            reason_help: 'Tell the organizers what really happened.',
+            reported_by: '{name} reported: {result}',
+            waiting_for: 'Waiting for {name} to confirm it: {result}',
+            disputed_by:
+                '{name} disputes it: {reason}. You may correct it; otherwise the organizers decide.',
+            you_disputed: 'You disputed the result: the organizers will review it.',
+            official: 'Result: {result}',
+            admin_only: 'The organizers will record the result of this match.',
+            trusted_hint: 'The result counts as soon as you send it.',
+            confirmation_hint: '{name} will have to confirm it.',
+            guest_hint: '{name} has no account: the organizers will confirm the result.',
+            error: 'It could not be sent. Please try again.',
+        },
+
         // Status labels
         status: {
             draft: 'Draft',

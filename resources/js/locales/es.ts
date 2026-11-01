@@ -11,6 +11,39 @@ export default {
             results: 'Resultados de «{title}»',
         },
 
+        // The player's own match of the current round (tournament page)
+        my_match: {
+            title: 'Tu partida',
+            table: 'Mesa {number}',
+            against: 'contra {name}',
+            bye: 'Descansas en esta ronda: el bye ya cuenta como victoria.',
+            result: 'Resultado',
+            win: 'Gana {name}',
+            draw: 'Empate',
+            score_of: 'Puntuación de {name}',
+            stats_of: 'Estadísticas de {name}',
+            optional: 'opcional',
+            submit: 'Enviar resultado',
+            correct: 'Corregir',
+            cancel: 'Cancelar',
+            confirm: 'Confirmar',
+            dispute: 'Discutir',
+            send: 'Enviar',
+            reason: 'Motivo',
+            reason_help: 'Cuenta a la organización qué pasó en realidad.',
+            reported_by: '{name} ha informado: {result}',
+            waiting_for: 'Esperando a que {name} lo confirme: {result}',
+            disputed_by:
+                '{name} lo discute: {reason}. Puedes corregirlo; si no, decidirá la organización.',
+            you_disputed: 'Has discutido el resultado: lo revisará la organización.',
+            official: 'Resultado: {result}',
+            admin_only: 'La organización registrará el resultado de esta partida.',
+            trusted_hint: 'El resultado contará en cuanto lo envíes.',
+            confirmation_hint: '{name} tendrá que confirmarlo.',
+            guest_hint: '{name} no tiene cuenta: la organización confirmará el resultado.',
+            error: 'No se ha podido enviar. Inténtalo de nuevo.',
+        },
+
         // My tournaments page
         my_tournaments: {
             title: 'Mis torneos',
@@ -158,7 +191,7 @@ export default {
             matches_label: 'partidas',
             no_matches: 'No hay partidas en esta ronda',
             bye: 'Bye (descansa)',
-            disputed: 'Disputado',
+            disputed: 'Discutido',
             pending_confirmation: 'Pendiente de confirmación',
             registered_participants: 'Participantes inscritos',
             no_participants_yet: 'Aún no hay participantes inscritos',

@@ -11,6 +11,7 @@ import type {
     RegistrationJsonResponse,
 } from '../../types/tournaments';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import MyMatchCard from '../../components/MyMatchCard.vue';
 import { useTournaments } from '../../composables/useTournaments';
 import { statusBadgeClasses } from '../../utils/statusColors';
 import { useAuth } from '@/composables/useAuth';
@@ -616,6 +617,9 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         />
                     </div>
                 </div>
+
+                <!-- The player's own match: report, confirm or dispute its result -->
+                <MyMatchCard v-if="myMatch" :player-match="myMatch" />
 
                 <!-- Participants List (during registration) -->
                 <div v-if="showParticipantsList" class="mb-6">

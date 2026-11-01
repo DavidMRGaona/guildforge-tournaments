@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import Rounds from '../../resources/js/pages/Tournaments/Rounds.vue';
 import { roundWithMatches, tournament } from './support/fixtures';
+import type { RoundWithMatches } from '../../resources/js/types/tournaments';
 
 function mountPage(): VueWrapper {
     return mount(Rounds, {
@@ -9,15 +10,25 @@ function mountPage(): VueWrapper {
             tournament: tournament({ status: 'in_progress', display_status: 'in_progress' }),
             rounds: [
                 roundWithMatches({ id: 'round-1', round_number: 1 }),
-                roundWithMatches({ id: 'round-2', round_number: 2, status: 'in_progress', status_label: 'En curso' }),
+                roundWithMatches({
+                    id: 'round-2',
+                    round_number: 2,
+                    status: 'in_progress',
+                    status_label: 'En curso',
+                }),
             ],
         },
         attachTo: document.body,
     });
 }
 
-function header(wrapper: VueWrapper, roundNumber: number): ReturnType<VueWrapper['findAll']>[number] {
-    const found = wrapper.findAll('button').find((button) => button.text().includes(`Ronda ${roundNumber}`));
+function header(
+    wrapper: VueWrapper,
+    roundNumber: number
+): ReturnType<VueWrapper['findAll']>[number] {
+    const found = wrapper
+        .findAll('button')
+        .find((button) => button.text().includes(`Ronda ${roundNumber}`));
     if (found === undefined) {
         throw new Error(`No header for round ${roundNumber}`);
     }
@@ -26,6 +37,48 @@ function header(wrapper: VueWrapper, roundNumber: number): ReturnType<VueWrapper
 }
 
 describe('Rounds', () => {
+    it('shows pending only for pending reports', () => {
+        const withMatch = (
+            overrides: Partial<RoundWithMatches['matches'][number]>
+        ): RoundWithMatches => {
+            const round = roundWithMatches({ status: 'in_progress', status_label: 'En curso' });
+            round.matches = [{ ...round.matches[0], ...overrides }];
+
+            return round;
+        };
+        const mountWith = (round: RoundWithMatches): VueWrapper =>
+            mount(Rounds, {
+                props: {
+                    tournament: tournament({
+                        status: 'in_progress',
+                        display_status: 'in_progress',
+                    }),
+                    rounds: [round],
+                },
+            });
+
+        // An official result never waits for anybody
+        expect(mountWith(withMatch({})).text()).not.toContain('Pendiente de confirmación');
+        expect(
+            mountWith(
+                withMatch({
+                    result: 'not_played',
+                    report: { status: 'pending' },
+                    needs_confirmation: true,
+                })
+            ).text()
+        ).toContain('Pendiente de confirmación');
+        expect(
+            mountWith(
+                withMatch({
+                    result: 'not_played',
+                    report: { status: 'disputed' },
+                    is_disputed: true,
+                })
+            ).text()
+        ).toContain('Discutido');
+    });
+
     it('announces whether each round is open', () => {
         const wrapper = mountPage();
 
@@ -56,6 +109,8 @@ describe('Rounds', () => {
             expect(panel?.textContent).toContain('John Doe');
         }
 
-        expect(header(wrapper, 1).attributes('aria-controls')).not.toBe(header(wrapper, 2).attributes('aria-controls'));
+        expect(header(wrapper, 1).attributes('aria-controls')).not.toBe(
+            header(wrapper, 2).attributes('aria-controls')
+        );
     });
 });
