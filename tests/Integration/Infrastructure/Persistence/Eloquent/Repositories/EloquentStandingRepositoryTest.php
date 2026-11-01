@@ -13,12 +13,14 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
+use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Modules\Tournaments\TournamentsServiceProvider;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 final class EloquentStandingRepositoryTest extends TestCase
 {
+    use AssertsContainerBindings;
     use RefreshDatabase;
 
     private EloquentStandingRepository $repository;
@@ -68,7 +70,7 @@ final class EloquentStandingRepositoryTest extends TestCase
         // The module may not auto-boot in the test environment
         $this->app->register(TournamentsServiceProvider::class);
 
-        $this->assertInstanceOf(EloquentStandingRepository::class, app(StandingRepositoryInterface::class));
+        $this->assertContainerBinds(StandingRepositoryInterface::class, EloquentStandingRepository::class);
     }
 
     public function test_it_saves_new_standing(): void
