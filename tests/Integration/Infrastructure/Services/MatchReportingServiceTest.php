@@ -383,6 +383,25 @@ final class MatchReportingServiceTest extends ModuleTestCase
         }
     }
 
+    public function test_recording_again_from_the_panel_drops_the_rival_confirmation(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+        $organizer = UserModel::factory()->create();
+
+        app(MatchResultServiceInterface::class)->recordResult(new RecordMatchResultDTO(
+            matchId: $this->match->id,
+            result: MatchResult::Draw,
+            reportedById: $organizer->id,
+        ));
+
+        $match = $this->match->refresh();
+        $this->assertSame(MatchResult::Draw, $match->result);
+        $this->assertSame($organizer->id, $match->reported_by_id);
+        $this->assertNull($match->confirmed_by_id);
+        $this->assertNull($match->confirmed_at);
+    }
+
     public function test_after_dropping_the_confirmation_the_rival_reports_over_the_report_left(): void
     {
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
