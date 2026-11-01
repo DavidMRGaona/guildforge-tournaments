@@ -36,6 +36,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Modules\Tournaments\Tests\Support\PinsTheClock;
+use Modules\Tournaments\Domain\Services\Clock;
+use Modules\Tournaments\Tests\Support\FixedClock;
 use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -381,6 +383,22 @@ final class MatchReportingServiceTest extends ModuleTestCase
         } finally {
             $this->assertSame(MatchResult::Draw, $this->match->refresh()->result);
         }
+    }
+
+    public function test_the_events_take_their_time_from_the_clock(): void
+    {
+        $this->app->instance(Clock::class, FixedClock::at('2026-06-10T09:30:00+00:00'));
+        $at = static fn (object $event): string => $event->occurredAt->format(DATE_ATOM);
+
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
+        $this->service()->dispute($this->match->id, $this->two->id, 'It was a draw', $this->seen());
+        $this->service()->report($this->dto(MatchResult::Draw, $this->one, 15, 15));
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
+
+        Event::assertDispatched(MatchResultReported::class, fn (MatchResultReported $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
+        Event::assertNotDispatched(MatchResultReported::class, fn (MatchResultReported $event): bool => $at($event) !== '2026-06-10T09:30:00+00:00');
+        Event::assertDispatched(MatchResultDisputed::class, fn (MatchResultDisputed $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
+        Event::assertDispatched(MatchResultConfirmed::class, fn (MatchResultConfirmed $event): bool => $at($event) === '2026-06-10T09:30:00+00:00');
     }
 
     public function test_recording_again_from_the_panel_drops_the_rival_confirmation(): void

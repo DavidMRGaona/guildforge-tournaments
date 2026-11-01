@@ -25,13 +25,14 @@ final readonly class MatchResultReported
         string $tournamentId,
         string $reportedByUserId,
         bool $requiresConfirmation,
+        DateTimeImmutable $occurredAt,
     ): self {
         return new self(
             matchId: $matchId,
             tournamentId: $tournamentId,
             reportedByUserId: $reportedByUserId,
             requiresConfirmation: $requiresConfirmation,
-            occurredAt: new DateTimeImmutable,
+            occurredAt: $occurredAt,
         );
     }
 }

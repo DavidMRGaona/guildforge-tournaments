@@ -18,13 +18,13 @@ final readonly class MatchResultConfirmed
         public DateTimeImmutable $occurredAt,
     ) {}
 
-    public static function create(string $matchId, string $tournamentId, string $confirmedByUserId): self
+    public static function create(string $matchId, string $tournamentId, string $confirmedByUserId, DateTimeImmutable $occurredAt): self
     {
         return new self(
             matchId: $matchId,
             tournamentId: $tournamentId,
             confirmedByUserId: $confirmedByUserId,
-            occurredAt: new DateTimeImmutable,
+            occurredAt: $occurredAt,
         );
     }
 }
