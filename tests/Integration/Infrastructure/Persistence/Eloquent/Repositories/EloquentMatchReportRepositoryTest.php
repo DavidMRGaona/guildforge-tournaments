@@ -129,6 +129,31 @@ final class EloquentMatchReportRepositoryTest extends TestCase
         $this->assertNull($this->repository->find($this->match->id));
     }
 
+    public function test_count_by_tournament_counts_pending_and_disputed_reports_of_that_tournament_only(): void
+    {
+        $tournament = TournamentModel::query()->firstOrFail();
+        $disputed = $this->report($this->createMatch($tournament)->id);
+        $disputed->dispute($this->users[1]->id, 'It was a draw', new DateTimeImmutable('2030-05-01 10:30:00'));
+        $this->repository->save($this->report($this->match->id));
+        $this->repository->save($disputed);
+        $this->repository->save($this->report($this->matchOfAnotherTournament()->id));
+
+        $this->assertSame(2, $this->repository->countByTournament($tournament->id));
+    }
+
+    public function test_delete_by_tournament_leaves_the_reports_of_other_tournaments(): void
+    {
+        $tournament = TournamentModel::query()->firstOrFail();
+        $elsewhere = $this->matchOfAnotherTournament();
+        $this->repository->save($this->report($this->match->id));
+        $this->repository->save($this->report($elsewhere->id));
+
+        $this->repository->deleteByTournament($tournament->id);
+
+        $this->assertNull($this->repository->find($this->match->id));
+        $this->assertInstanceOf(MatchReport::class, $this->repository->find($elsewhere->id));
+    }
+
     private function report(string $matchId): MatchReport
     {
         return new MatchReport(
@@ -141,7 +166,7 @@ final class EloquentMatchReportRepositoryTest extends TestCase
         );
     }
 
-    private function createMatch(TournamentModel $tournament): MatchModel
+    private function createMatch(TournamentModel $tournament, ?RoundModel $round = null): MatchModel
     {
         $one = ParticipantModel::create([
             'tournament_id' => $tournament->id,
@@ -155,10 +180,28 @@ final class EloquentMatchReportRepositoryTest extends TestCase
         ]);
 
         return MatchModel::create([
-            'round_id' => $this->round->id,
+            'round_id' => ($round ?? $this->round)->id,
             'player_1_id' => $one->id,
             'player_2_id' => $two->id,
             'result' => 'not_played',
         ]);
+    }
+
+    private function matchOfAnotherTournament(): MatchModel
+    {
+        $tournament = TournamentModel::create([
+            'event_id' => EventModel::factory()->create()->id,
+            'name' => 'Other Tournament',
+            'slug' => 'other-tournament',
+            'status' => 'in_progress',
+            'result_reporting' => 'players_with_confirmation',
+        ]);
+        $round = RoundModel::create([
+            'tournament_id' => $tournament->id,
+            'round_number' => 1,
+            'status' => 'in_progress',
+        ]);
+
+        return $this->createMatch($tournament, $round);
     }
 }

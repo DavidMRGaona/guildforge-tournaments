@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories;
 
+use Illuminate\Database\Eloquent\Builder;
 use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
@@ -56,6 +57,25 @@ final readonly class EloquentMatchReportRepository implements MatchReportReposit
     public function delete(string $matchId): void
     {
         MatchReportModel::query()->where('match_id', $matchId)->delete();
+    }
+
+    public function countByTournament(string $tournamentId): int
+    {
+        return $this->ofTournament($tournamentId)->count();
+    }
+
+    public function deleteByTournament(string $tournamentId): void
+    {
+        $this->ofTournament($tournamentId)->delete();
+    }
+
+    /**
+     * @return Builder<MatchReportModel>
+     */
+    private function ofTournament(string $tournamentId): Builder
+    {
+        return MatchReportModel::query()
+            ->whereHas('match.round', static fn ($query) => $query->where('tournament_id', $tournamentId));
     }
 
     private function toEntity(MatchReportModel $model): MatchReport

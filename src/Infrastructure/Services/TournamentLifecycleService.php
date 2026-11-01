@@ -15,6 +15,8 @@ use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Events\TournamentFinished;
 use Modules\Tournaments\Domain\Events\TournamentStarted;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
+use Modules\Tournaments\Domain\Exceptions\PendingMatchReportsException;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
@@ -28,6 +30,7 @@ final readonly class TournamentLifecycleService implements TournamentLifecycleSe
         private StandingRepositoryInterface $standings,
         private ParticipantRepositoryInterface $participants,
         private RegistrationLockInterface $lock,
+        private MatchReportRepositoryInterface $reports,
     ) {}
 
     public function openRegistration(string $tournamentId): void
@@ -76,6 +79,12 @@ final readonly class TournamentLifecycleService implements TournamentLifecycleSe
         $this->lock->forTournament($tournamentId, function () use ($tournamentId): void {
             $tournament = $this->tournaments->findOrFail(new TournamentId($tournamentId));
             $tournament->finish();
+
+            $pendingReports = $this->reports->countByTournament($tournamentId);
+            if ($pendingReports > 0) {
+                throw PendingMatchReportsException::cannotFinish($tournamentId, $pendingReports);
+            }
+
             $this->tournaments->save($tournament);
 
             $leader = $this->standings->findByTournamentOrderedByRank($tournamentId)[0] ?? null;
@@ -100,6 +109,8 @@ final readonly class TournamentLifecycleService implements TournamentLifecycleSe
             $previousStatus = $tournament->status();
             $tournament->cancel();
             $this->tournaments->save($tournament);
+            // The results of a cancelled tournament count for nothing
+            $this->reports->deleteByTournament($tournamentId);
 
             $cancelled = TournamentCancelled::create($tournamentId, $previousStatus);
 
