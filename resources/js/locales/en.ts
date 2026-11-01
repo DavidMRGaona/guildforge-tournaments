@@ -43,7 +43,8 @@ export default {
             you_disputed: 'You disputed the result: the organizers will review it.',
             official: 'Result: {result}',
             admin_only: 'The organizers will record the result of this match.',
-            not_playing: 'You no longer play in this tournament: the organizers will record the result.',
+            not_playing:
+                'You no longer play in this tournament: the organizers will record the result.',
             round_pending: 'You can report the result once the round starts.',
             trusted_hint: 'The result counts as soon as you send it.',
             confirmation_hint: '{name} will have to confirm it.',

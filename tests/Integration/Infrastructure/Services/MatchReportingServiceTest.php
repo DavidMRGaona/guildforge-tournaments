@@ -27,6 +27,7 @@ use Modules\Tournaments\Domain\Exceptions\MatchReportClosedException;
 use Modules\Tournaments\Domain\Exceptions\ResultNotConfirmedException;
 use Modules\Tournaments\Domain\Exceptions\UnauthorizedToReportResultException;
 use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchHistoryModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -35,9 +36,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
-use Modules\Tournaments\Tests\Support\PinsTheClock;
-use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Tests\Support\FixedClock;
+use Modules\Tournaments\Tests\Support\PinsTheClock;
 use RuntimeException;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -388,7 +388,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     public function test_the_events_take_their_time_from_the_clock(): void
     {
         $this->app->instance(Clock::class, FixedClock::at('2026-06-10T09:30:00+00:00'));
-        $at = static fn (object $event): string => $event->occurredAt->format(DATE_ATOM);
+        $at = static fn (MatchResultReported|MatchResultConfirmed|MatchResultDisputed $event): string => $event->occurredAt->format(DATE_ATOM);
 
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 15));
         $this->service()->dispute($this->match->id, $this->two->id, 'It was a draw', $this->seen());

@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Application\Services;
 
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\InvalidStateTransitionException;
+use Modules\Tournaments\Domain\Exceptions\PendingMatchReportsException;
 use Modules\Tournaments\Domain\Exceptions\TournamentNotFoundException;
 
 /**
@@ -46,12 +47,14 @@ interface TournamentLifecycleServiceInterface
      *
      * @throws TournamentNotFoundException
      * @throws InvalidStateTransitionException when it is not in progress (also when already finished)
+     * @throws PendingMatchReportsException while results the players reported wait for a decision
      */
     public function finish(string $tournamentId): void;
 
     /**
      * Cancel a tournament that has not ended: TournamentCancelled (its participants are mailed),
-     * and SurveySubjectCancelled for a surveys module (core event).
+     * and SurveySubjectCancelled for a surveys module (core event). The results the players
+     * reported and nobody confirmed are discarded.
      *
      * @throws TournamentNotFoundException
      * @throws InvalidStateTransitionException when it already finished or was cancelled

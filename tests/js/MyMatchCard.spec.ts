@@ -291,7 +291,12 @@ describe('MyMatchCard', () => {
     describe('a bye', () => {
         function bye(points: number): VueWrapper {
             return mountCard({
-                match: { ...playerMatch().match, is_bye: true, player_2_id: null, player_2_name: null },
+                match: {
+                    ...playerMatch().match,
+                    is_bye: true,
+                    player_2_id: null,
+                    player_2_name: null,
+                },
                 opponent_name: null,
                 bye_points: points,
                 actions: {
@@ -370,7 +375,9 @@ describe('MyMatchCard', () => {
 
         it('moves the focus to the reason', async () => {
             const wrapper = mount(MyMatchCard, {
-                props: { playerMatch: playerMatch({ report: matchReport(), actions: rivalActions }) },
+                props: {
+                    playerMatch: playerMatch({ report: matchReport(), actions: rivalActions }),
+                },
                 attachTo: document.body,
             });
 
@@ -395,7 +402,8 @@ describe('MyMatchCard', () => {
             expect(alert.text()).toBe('Escribe el motivo para que la organización lo revise.');
             expect(alert.classes()).toContain('text-error');
             expect(alert.classes()).not.toContain('text-base-muted');
-            const describedBy = wrapper.find('textarea[name="reason"]').attributes('aria-describedby') ?? '';
+            const describedBy =
+                wrapper.find('textarea[name="reason"]').attributes('aria-describedby') ?? '';
             expect(describedBy.split(' ')).toContain(alert.attributes('id'));
             expect(wrapper.findAll('.text-base-muted.text-error')).toHaveLength(0);
         });
@@ -405,7 +413,12 @@ describe('MyMatchCard', () => {
         const leftover = {
             result_reporting: 'players_trusted' as const,
             report: matchReport(),
-            actions: { can_report: true, can_correct: false, can_confirm: true, can_dispute: false },
+            actions: {
+                can_report: true,
+                can_correct: false,
+                can_confirm: true,
+                can_dispute: false,
+            },
         };
 
         it('lets the rival confirm the report left or send their own', async () => {
@@ -434,7 +447,12 @@ describe('MyMatchCard', () => {
             const wrapper = mountCard({
                 ...leftover,
                 report: matchReport({ status: 'disputed', dispute_reason: 'Fue empate' }),
-                actions: { can_report: true, can_correct: false, can_confirm: false, can_dispute: false },
+                actions: {
+                    can_report: true,
+                    can_correct: false,
+                    can_confirm: false,
+                    can_dispute: false,
+                },
             });
 
             expect(wrapper.text()).toContain('Has discutido el resultado');
@@ -447,7 +465,12 @@ describe('MyMatchCard', () => {
             const wrapper = mountCard({
                 result_reporting: 'players_trusted',
                 report: matchReport({ reported_by_name: 'John Doe', reported_by_id: 'user-1' }),
-                actions: { can_report: false, can_correct: true, can_confirm: false, can_dispute: false },
+                actions: {
+                    can_report: false,
+                    can_correct: true,
+                    can_confirm: false,
+                    can_dispute: false,
+                },
             });
 
             expect(wrapper.text()).toContain(
