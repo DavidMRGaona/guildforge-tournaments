@@ -85,7 +85,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
 3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Con fechas de apertura o cierre configuradas, la web solo acepta inscripciones entre ellas; el inicio del evento la cierra siempre.
 4. **Cerrar inscripción** e **Iniciar torneo**. Se puede iniciar con la inscripción abierta o cerrada; iniciar la cierra. El mínimo de participantes cuenta solo las inscripciones que ocupan plaza: no los retirados, descalificados ni caducados, ni los invitados sin confirmar que no reservan plaza.
-5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado).
+5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado definitivo: un informe de los jugadores pendiente de confirmar o discutido no cuenta, y el aviso dice cuántos hay).
 6. **Finalizar torneo**. Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado.
 
 ```
@@ -252,6 +252,35 @@ Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_p
 
 `player_one_win`, `player_two_win`, `draw`, `double_loss`, `bye` y `not_played` (valor inicial).
 
+Un informe de los jugadores que espera confirmación no es un resultado: la partida sigue en `not_played` hasta que se confirma (ver [Informe de resultados por los jugadores](#informe-de-resultados-por-los-jugadores)). Mientras espera está **Pendiente**, y si el rival lo discute, **Discutido**.
+
+## Informe de resultados por los jugadores
+
+**Reporte de resultados** (pestaña **Opciones** del torneo y pestaña del torneo en el formulario de eventos) decide quién registra los resultados:
+
+| Modo | Valor | Qué pasa |
+|------|-------|----------|
+| Solo administradores | `admin_only` | Solo la organización, desde el panel |
+| Jugadores con confirmación | `players_with_confirmation` | Un jugador informa y el resultado espera a que el rival lo confirme o lo discuta |
+| Jugadores sin confirmación | `players_trusted` | El resultado vale en cuanto un jugador lo informa |
+
+Informa uno de los dos jugadores de la partida, con cuenta y con la inscripción confirmada o con check-in hecho, mientras el torneo y la ronda están **En curso** y la partida no tiene resultado. Los invitados sin cuenta no informan, y los byes no se informan. Un jugador informa victoria de uno de los dos o empate, con las puntuaciones (opcionales, y sin contradecir el resultado) y las estadísticas del torneo; la doble derrota solo la pone la organización.
+
+Con confirmación:
+
+- Quien informó puede corregir su informe hasta que se confirme; corregirlo quita la discusión y vuelve a pedir confirmación.
+- El rival confirma (el resultado pasa a ser definitivo) o lo discute con un motivo. Solo se confirma o se discute la versión que se vio: si quien informó la corrige entretanto, hay que volver a mirarla.
+- Si el rival es un invitado, confirma la organización.
+- No hay plazo: la ronda no se completa mientras queden informes pendientes o discutidos.
+
+En la pestaña **Rondas**, **Gestionar partidas** muestra la columna **Informe** (*Pendiente* o *Discutido*, con el motivo al pasar el ratón) y las acciones:
+
+- **Confirmar informe**: el informe que muestra el modal pasa a ser el resultado, también si está discutido.
+- **Restablecer**: deja la partida sin resultado y descarta el informe, con un motivo obligatorio. No es irreversible (el resultado se puede volver a registrar), así que pide una sola confirmación. Los byes se corrigen desde **Gestionar partidas** de la ronda.
+- **Historial**: cada cambio del resultado definitivo, con quién y cuándo lo hizo, el resultado anterior y el nuevo y el motivo. Registrar un resultado desde el panel, informarlo en un torneo sin confirmación, confirmarlo y restablecerlo dejan una entrada.
+
+Cada ronda en curso con informes sin discutir ofrece **Confirmar informes pendientes**, que los pasa todos a definitivos de una vez. Si la organización registra un resultado mientras hay un informe pendiente, manda el suyo y el informe se descarta. Las tres acciones piden `tournaments.report_results`.
+
 ## Emparejamiento y clasificación
 
 **Generar ronda** solo está disponible con el torneo **En curso** y se niega (con un aviso) si:
@@ -397,7 +426,7 @@ Las pestañas **Rondas** y **Participantes** están en la edición del torneo, a
 
 ## Limitaciones actuales
 
-- **Reporte de resultados por jugadores**: la opción se guarda, pero la web pública no tiene formulario de resultados; se registran desde el panel.
+- **Informe de resultados por jugadores**: el panel ya confirma, restablece y muestra el historial, pero la web pública aún no tiene el formulario del jugador.
 - **Método `accelerated`**: los torneos y perfiles que aún lo tengan guardado se emparejan como `swiss`, pero hay que elegir otro método antes de guardar su formulario (ver [Configuración de emparejamientos](#configuración-de-emparejamientos)).
 
 ## Arquitectura
