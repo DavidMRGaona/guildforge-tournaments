@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Unit\Domain\Entities;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -30,6 +31,7 @@ final class MatchHistoryTest extends TestCase
             changedById: $changedById,
             reason: 'Score correction after review',
             changedAt: $changedAt,
+            action: MatchHistoryAction::Reset,
         );
 
         $this->assertEquals($matchId, $history->matchId());
@@ -42,6 +44,7 @@ final class MatchHistoryTest extends TestCase
         $this->assertEquals($changedById, $history->changedById());
         $this->assertEquals('Score correction after review', $history->reason());
         $this->assertEquals($changedAt, $history->changedAt());
+        $this->assertSame(MatchHistoryAction::Reset, $history->action());
     }
 
     public function test_it_creates_from_result_change(): void
@@ -59,8 +62,12 @@ final class MatchHistoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: $changedById,
             reason: null,
+            changedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
+            action: MatchHistoryAction::Confirmed,
         );
 
+        $this->assertSame(MatchHistoryAction::Confirmed, $history->action());
+        $this->assertEquals(new DateTimeImmutable('2030-05-01 10:00:00'), $history->changedAt());
         $this->assertNotEmpty($history->id());
         $this->assertEquals($matchId, $history->matchId());
         $this->assertEquals(MatchResult::NotPlayed, $history->previousResult());
@@ -80,6 +87,8 @@ final class MatchHistoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: Uuid::uuid4()->toString(),
             reason: null,
+            changedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertNull($history->previousResult());

@@ -55,7 +55,7 @@ final readonly class MatchResponseDTO
             confirmedById: $match->confirmedById(),
             confirmedByName: $confirmedByName,
             confirmedAt: $match->confirmedAt(),
-            isDisputed: $match->isDisputed(),
+            isDisputed: false,
         );
     }
 

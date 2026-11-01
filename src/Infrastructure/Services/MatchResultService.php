@@ -11,6 +11,7 @@ use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
@@ -23,6 +24,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         private MatchRepositoryInterface $matches,
         private RoundRepositoryInterface $rounds,
         private StandingsServiceInterface $standings,
+        private Clock $clock,
     ) {}
 
     public function recordResult(RecordMatchResultDTO $dto): void
@@ -82,6 +84,7 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             $match->reportResult(
                 result: $dto->result,
                 reportedById: $dto->reportedById,
+                at: $this->clock->now(),
                 player1Score: $match->isBye() ? null : $dto->player1Score,
                 player2Score: $match->isBye() ? null : $dto->player2Score,
                 player1Stats: $dto->player1Stats,

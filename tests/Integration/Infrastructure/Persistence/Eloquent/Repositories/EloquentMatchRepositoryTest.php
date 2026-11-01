@@ -546,25 +546,4 @@ final class EloquentMatchRepositoryTest extends TestCase
         $this->assertNotNull($retrieved->confirmedAt());
         $this->assertTrue($retrieved->isConfirmed());
     }
-
-    public function test_it_handles_disputed_flag(): void
-    {
-        $id = MatchId::generate();
-
-        $match = new TournamentMatch(
-            id: $id,
-            roundId: $this->round->id,
-            player1Id: $this->participant1->id,
-            player2Id: $this->participant2->id,
-            result: MatchResult::PlayerOneWin,
-            isDisputed: true,
-        );
-
-        $this->repository->save($match);
-
-        $retrieved = $this->repository->find($id);
-
-        $this->assertNotNull($retrieved);
-        $this->assertTrue($retrieved->isDisputed());
-    }
 }

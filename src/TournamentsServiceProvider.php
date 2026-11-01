@@ -54,6 +54,7 @@ use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
@@ -78,6 +79,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameProfileRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchHistoryRepository;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchReportRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
@@ -317,6 +319,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             MatchHistoryRepositoryInterface::class,
             EloquentMatchHistoryRepository::class
+        );
+
+        $this->app->bind(
+            MatchReportRepositoryInterface::class,
+            EloquentMatchReportRepository::class
         );
 
         $this->app->bind(

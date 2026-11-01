@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 
 /**
@@ -24,6 +25,7 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
  * @property string $changed_by_id
  * @property string|null $reason
  * @property Carbon $changed_at
+ * @property MatchHistoryAction $action
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read MatchModel $match
@@ -52,6 +54,7 @@ final class MatchHistoryModel extends Model
         'changed_by_id',
         'reason',
         'changed_at',
+        'action',
     ];
 
     /**
@@ -67,6 +70,7 @@ final class MatchHistoryModel extends Model
             'previous_player_2_score' => 'integer',
             'new_player_2_score' => 'integer',
             'changed_at' => 'datetime',
+            'action' => MatchHistoryAction::class,
         ];
     }
 

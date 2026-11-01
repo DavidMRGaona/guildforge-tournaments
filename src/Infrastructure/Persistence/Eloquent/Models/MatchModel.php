@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 
 /**
@@ -26,7 +27,6 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
  * @property Carbon|null $reported_at
  * @property string|null $confirmed_by_id
  * @property Carbon|null $confirmed_at
- * @property bool $is_disputed
  * @property array<string, mixed>|null $player_1_stats
  * @property array<string, mixed>|null $player_2_stats
  * @property Carbon|null $created_at
@@ -35,6 +35,7 @@ use Modules\Tournaments\Domain\Enums\MatchResult;
  * @property-read ParticipantModel $player1
  * @property-read ParticipantModel|null $player2
  * @property-read Collection<int, MatchHistoryModel> $history
+ * @property-read MatchReportModel|null $report
  */
 final class MatchModel extends Model
 {
@@ -60,7 +61,6 @@ final class MatchModel extends Model
         'reported_at',
         'confirmed_by_id',
         'confirmed_at',
-        'is_disputed',
         'player_1_stats',
         'player_2_stats',
     ];
@@ -75,7 +75,6 @@ final class MatchModel extends Model
             'table_number' => 'integer',
             'player_1_score' => 'integer',
             'player_2_score' => 'integer',
-            'is_disputed' => 'boolean',
             'reported_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'player_1_stats' => 'array',
@@ -113,5 +112,13 @@ final class MatchModel extends Model
     public function history(): HasMany
     {
         return $this->hasMany(MatchHistoryModel::class, 'match_id');
+    }
+
+    /**
+     * @return HasOne<MatchReportModel, $this>
+     */
+    public function report(): HasOne
+    {
+        return $this->hasOne(MatchReportModel::class, 'match_id');
     }
 }

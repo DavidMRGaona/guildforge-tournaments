@@ -6,8 +6,10 @@ namespace Modules\Tournaments\Tests\Integration\Infrastructure\Persistence\Eloqu
 
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchHistoryModel;
@@ -94,6 +96,8 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: $this->user->id,
             reason: 'Initial result report',
+            changedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
+            action: MatchHistoryAction::Reported,
         );
 
         $this->repository->save($history);
@@ -109,7 +113,36 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
             'new_player_2_score' => 1,
             'changed_by_id' => $this->user->id,
             'reason' => 'Initial result report',
+            'action' => 'reported',
         ]);
+    }
+
+    public function test_history_entries_keep_their_action(): void
+    {
+        foreach ([MatchHistoryAction::Confirmed, MatchHistoryAction::Reset] as $action) {
+            $this->repository->save(MatchHistory::fromResultChange(
+                matchId: $this->match->id,
+                previousResult: MatchResult::PlayerOneWin,
+                newResult: MatchResult::NotPlayed,
+                previousPlayer1Score: null,
+                newPlayer1Score: null,
+                previousPlayer2Score: null,
+                newPlayer2Score: null,
+                changedById: $this->user->id,
+                reason: null,
+                changedAt: $action === MatchHistoryAction::Confirmed
+                    ? new DateTimeImmutable('2030-05-01 10:00:00')
+                    : new DateTimeImmutable('2030-05-01 11:00:00'),
+                action: $action,
+            ));
+        }
+
+        $actions = array_map(
+            static fn (MatchHistory $entry): MatchHistoryAction => $entry->action(),
+            $this->repository->findByMatch($this->match->id),
+        );
+
+        $this->assertSame([MatchHistoryAction::Confirmed, MatchHistoryAction::Reset], $actions);
     }
 
     public function test_it_saves_history_without_previous_result(): void
@@ -124,6 +157,8 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
             newPlayer2Score: 1,
             changedById: $this->user->id,
             reason: null,
+            changedAt: new DateTimeImmutable('2030-05-01 10:00:00'),
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->repository->save($history);

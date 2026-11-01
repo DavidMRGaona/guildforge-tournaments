@@ -69,6 +69,7 @@ final class TournamentMatchTest extends TestCase
         $match->reportResult(
             result: MatchResult::PlayerOneWin,
             reportedById: $reporterId,
+            at: new DateTimeImmutable('2030-05-01 10:00:00'),
             player1Score: 2,
             player2Score: 1
         );
@@ -77,37 +78,27 @@ final class TournamentMatchTest extends TestCase
         $this->assertEquals(2, $match->player1Score());
         $this->assertEquals(1, $match->player2Score());
         $this->assertEquals($reporterId, $match->reportedById());
-        $this->assertInstanceOf(DateTimeImmutable::class, $match->reportedAt());
+        $this->assertEquals(new DateTimeImmutable('2030-05-01 10:00:00'), $match->reportedAt());
     }
 
     public function test_confirm_result(): void
     {
         $match = $this->createMatch();
-        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id');
+        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id', new DateTimeImmutable('2030-05-01 10:00:00'));
 
         $confirmerId = '770e8400-e29b-41d4-a716-446655440003';
-        $match->confirmResult($confirmerId);
+        $match->confirmResult($confirmerId, new DateTimeImmutable('2030-05-01 10:05:00'));
 
         $this->assertTrue($match->isConfirmed());
         $this->assertEquals($confirmerId, $match->confirmedById());
-        $this->assertInstanceOf(DateTimeImmutable::class, $match->confirmedAt());
-    }
-
-    public function test_dispute_result(): void
-    {
-        $match = $this->createMatch();
-        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id');
-
-        $match->dispute();
-
-        $this->assertTrue($match->isDisputed());
+        $this->assertEquals(new DateTimeImmutable('2030-05-01 10:05:00'), $match->confirmedAt());
     }
 
     public function test_reset_result(): void
     {
         $match = $this->createMatch();
-        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id', 2, 1);
-        $match->confirmResult('confirmer-id');
+        $match->reportResult(MatchResult::PlayerOneWin, 'reporter-id', new DateTimeImmutable('2030-05-01 10:00:00'), 2, 1);
+        $match->confirmResult('confirmer-id', new DateTimeImmutable('2030-05-01 10:05:00'));
 
         $match->resetResult();
 
@@ -118,7 +109,6 @@ final class TournamentMatchTest extends TestCase
         $this->assertNull($match->reportedAt());
         $this->assertNull($match->confirmedById());
         $this->assertNull($match->confirmedAt());
-        $this->assertFalse($match->isDisputed());
     }
 
     public function test_involves_participant(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Domain\Entities;
 
 use DateTimeImmutable;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Ramsey\Uuid\Uuid;
 
@@ -22,6 +23,7 @@ final readonly class MatchHistory
         private string $changedById,
         private ?string $reason,
         private DateTimeImmutable $changedAt,
+        private MatchHistoryAction $action,
     ) {}
 
     public static function fromResultChange(
@@ -34,6 +36,8 @@ final readonly class MatchHistory
         ?int $newPlayer2Score,
         string $changedById,
         ?string $reason,
+        DateTimeImmutable $changedAt,
+        MatchHistoryAction $action,
     ): self {
         return new self(
             id: Uuid::uuid4()->toString(),
@@ -46,7 +50,8 @@ final readonly class MatchHistory
             newPlayer2Score: $newPlayer2Score,
             changedById: $changedById,
             reason: $reason,
-            changedAt: new DateTimeImmutable,
+            changedAt: $changedAt,
+            action: $action,
         );
     }
 
@@ -103,5 +108,10 @@ final readonly class MatchHistory
     public function changedAt(): DateTimeImmutable
     {
         return $this->changedAt;
+    }
+
+    public function action(): MatchHistoryAction
+    {
+        return $this->action;
     }
 }
