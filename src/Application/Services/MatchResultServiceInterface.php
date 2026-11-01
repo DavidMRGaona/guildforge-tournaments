@@ -31,4 +31,13 @@ interface MatchResultServiceInterface
      * @throws MatchResultLockedException
      */
     public function recordResults(array $dtos): void;
+
+    /**
+     * Clear a match's result, or discard the report waiting for confirmation, keeping the
+     * reason in the match history.
+     *
+     * @throws MatchNotFoundException
+     * @throws MatchResultLockedException When the result of a finished round followed by another
+     */
+    public function resetResult(string $matchId, string $resetById, string $reason): void;
 }

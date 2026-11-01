@@ -29,7 +29,6 @@ final class TournamentMatch
         private ?DateTimeImmutable $reportedAt = null,
         private ?string $confirmedById = null,
         private ?DateTimeImmutable $confirmedAt = null,
-        private bool $isDisputed = false,
         private readonly ?DateTimeImmutable $createdAt = null,
         private readonly ?DateTimeImmutable $updatedAt = null,
     ) {}
@@ -110,11 +109,6 @@ final class TournamentMatch
         return $this->confirmedAt;
     }
 
-    public function isDisputed(): bool
-    {
-        return $this->isDisputed;
-    }
-
     public function createdAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
@@ -166,6 +160,7 @@ final class TournamentMatch
     public function reportResult(
         MatchResult $result,
         string $reportedById,
+        DateTimeImmutable $at,
         ?int $player1Score = null,
         ?int $player2Score = null,
         ?array $player1Stats = null,
@@ -173,7 +168,7 @@ final class TournamentMatch
     ): void {
         $this->result = $result;
         $this->reportedById = $reportedById;
-        $this->reportedAt = new DateTimeImmutable;
+        $this->reportedAt = $at;
         $this->player1Score = $player1Score;
         $this->player2Score = $player2Score;
         $this->player1Stats = $player1Stats;
@@ -183,19 +178,10 @@ final class TournamentMatch
     /**
      * Confirm the reported result.
      */
-    public function confirmResult(string $confirmedById): void
+    public function confirmResult(string $confirmedById, DateTimeImmutable $at): void
     {
         $this->confirmedById = $confirmedById;
-        $this->confirmedAt = new DateTimeImmutable;
-        $this->isDisputed = false;
-    }
-
-    /**
-     * Dispute the reported result.
-     */
-    public function dispute(): void
-    {
-        $this->isDisputed = true;
+        $this->confirmedAt = $at;
     }
 
     /**
@@ -212,7 +198,6 @@ final class TournamentMatch
         $this->reportedAt = null;
         $this->confirmedById = null;
         $this->confirmedAt = null;
-        $this->isDisputed = false;
     }
 
     /**

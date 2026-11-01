@@ -25,6 +25,7 @@ use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
 use Modules\Tournaments\Domain\Exceptions\PreviousRoundNotCompletedException;
 use Modules\Tournaments\Domain\Exceptions\RoundAlreadyGeneratedException;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
@@ -51,6 +52,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         private GameProfileRepositoryInterface $gameProfiles,
         private Clock $clock,
         private RegistrationLockInterface $lock,
+        private MatchReportRepositoryInterface $reports,
     ) {}
 
     public function generateNextRound(string $tournamentId): RoundResponseDTO
@@ -162,7 +164,7 @@ final readonly class RoundManagementService implements RoundManagementServiceInt
         return $this->withLockedRound($roundId, function (Round $round) use ($roundId): RoundResponseDTO {
             $unreported = $this->matches->countUnreportedByRound($roundId);
             if ($unreported > 0) {
-                throw PreviousRoundNotCompletedException::hasUnreportedMatches($roundId, $unreported);
+                throw PreviousRoundNotCompletedException::hasUnreportedMatches($roundId, $unreported, count($this->reports->findByRound($roundId)));
             }
 
             $round->complete($this->clock->now());

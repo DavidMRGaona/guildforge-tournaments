@@ -8,12 +8,18 @@ use Illuminate\Support\Facades\DB;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Domain\Entities\MatchHistory;
+use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Entities\Round;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Exceptions\InvalidMatchResultException;
 use Modules\Tournaments\Domain\Exceptions\MatchResultLockedException;
+use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
+use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\ValueObjects\MatchId;
 use Modules\Tournaments\Domain\ValueObjects\RoundId;
 
@@ -23,6 +29,9 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         private MatchRepositoryInterface $matches,
         private RoundRepositoryInterface $rounds,
         private StandingsServiceInterface $standings,
+        private MatchHistoryRepositoryInterface $history,
+        private MatchReportRepositoryInterface $reports,
+        private Clock $clock,
     ) {}
 
     public function recordResult(RecordMatchResultDTO $dto): void
@@ -47,8 +56,20 @@ final readonly class MatchResultService implements MatchResultServiceInterface
         });
     }
 
+    public function resetResult(string $matchId, string $resetById, string $reason): void
+    {
+        $this->recordResult(new RecordMatchResultDTO(
+            matchId: $matchId,
+            result: MatchResult::NotPlayed,
+            reportedById: $resetById,
+            action: MatchHistoryAction::Reset,
+            reason: $reason,
+        ));
+    }
+
     /**
-     * Validate and store one result.
+     * Validate and store one result. The official result wins over any report still waiting
+     * for confirmation, which is discarded.
      *
      * @return string The match's tournament id
      */
@@ -65,9 +86,14 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             throw InvalidMatchResultException::byeOnlyForByeMatches($dto->matchId);
         }
 
-        if (! $match->isBye() && $this->scoresContradict($dto)) {
+        if (! $match->isBye() && $dto->result->isContradictedBy($dto->player1Score, $dto->player2Score)) {
             throw InvalidMatchResultException::scoresContradictResult($dto->matchId);
         }
+
+        $previousResult = $match->result();
+        $previousPlayer1Score = $match->player1Score();
+        $previousPlayer2Score = $match->player2Score();
+        $now = $this->clock->now();
 
         if ($dto->result === MatchResult::NotPlayed) {
             // The next round was paired from this result: it may change, not disappear
@@ -82,32 +108,46 @@ final readonly class MatchResultService implements MatchResultServiceInterface
             $match->reportResult(
                 result: $dto->result,
                 reportedById: $dto->reportedById,
+                at: $now,
                 player1Score: $match->isBye() ? null : $dto->player1Score,
                 player2Score: $match->isBye() ? null : $dto->player2Score,
                 player1Stats: $dto->player1Stats,
                 player2Stats: $match->isBye() ? null : $dto->player2Stats,
             );
+
+            if ($dto->confirmedById !== null) {
+                $match->confirmResult($dto->confirmedById, $now);
+            }
         }
 
         $this->matches->save($match);
 
-        return $round->tournamentId();
-    }
-
-    /**
-     * With both scores given, the winner cannot have scored less and a draw needs equal scores.
-     */
-    private function scoresContradict(RecordMatchResultDTO $dto): bool
-    {
-        if ($dto->player1Score === null || $dto->player2Score === null) {
-            return false;
+        $hadReport = $this->reports->find($dto->matchId) instanceof MatchReport;
+        if ($hadReport) {
+            $this->reports->delete($dto->matchId);
         }
 
-        return match ($dto->result) {
-            MatchResult::PlayerOneWin => $dto->player1Score < $dto->player2Score,
-            MatchResult::PlayerTwoWin => $dto->player2Score < $dto->player1Score,
-            MatchResult::Draw => $dto->player1Score !== $dto->player2Score,
-            default => false,
-        };
+        $changed = $previousResult !== $match->result()
+            || $previousPlayer1Score !== $match->player1Score()
+            || $previousPlayer2Score !== $match->player2Score();
+
+        // Discarding a waiting report is a reset too, even with no result to clear
+        if ($changed || ($hadReport && $dto->action === MatchHistoryAction::Reset)) {
+            $this->history->save(MatchHistory::fromResultChange(
+                matchId: $dto->matchId,
+                previousResult: $previousResult,
+                newResult: $match->result(),
+                previousPlayer1Score: $previousPlayer1Score,
+                newPlayer1Score: $match->player1Score(),
+                previousPlayer2Score: $previousPlayer2Score,
+                newPlayer2Score: $match->player2Score(),
+                changedById: $dto->changedById ?? $dto->reportedById,
+                reason: $dto->reason,
+                changedAt: $now,
+                action: $dto->action,
+            ));
+        }
+
+        return $round->tournamentId();
     }
 }

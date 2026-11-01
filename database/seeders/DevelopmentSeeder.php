@@ -374,7 +374,6 @@ final class DevelopmentSeeder extends Seeder
                 'reported_at' => $isPlayed ? now()->subHours(random_int(1, 3)) : null,
                 'confirmed_by_id' => $isPlayed ? $user->id : null,
                 'confirmed_at' => $isPlayed ? now()->subHours(random_int(0, 2)) : null,
-                'is_disputed' => false,
             ],
         );
     }

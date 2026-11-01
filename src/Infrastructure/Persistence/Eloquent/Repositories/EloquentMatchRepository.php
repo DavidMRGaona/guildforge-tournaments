@@ -32,7 +32,6 @@ final readonly class EloquentMatchRepository implements MatchRepositoryInterface
                 'reported_at' => $match->reportedAt(),
                 'confirmed_by_id' => $match->confirmedById(),
                 'confirmed_at' => $match->confirmedAt(),
-                'is_disputed' => $match->isDisputed(),
             ]
         );
     }
@@ -170,7 +169,6 @@ final readonly class EloquentMatchRepository implements MatchRepositoryInterface
             reportedAt: $model->reported_at?->toDateTimeImmutable(),
             confirmedById: $model->confirmed_by_id,
             confirmedAt: $model->confirmed_at?->toDateTimeImmutable(),
-            isDisputed: $model->is_disputed,
             createdAt: $model->created_at?->toDateTimeImmutable(),
             updatedAt: $model->updated_at?->toDateTimeImmutable(),
         );

@@ -28,7 +28,8 @@ final readonly class MatchResponseDTO
         public ?string $confirmedById,
         public ?string $confirmedByName,
         public ?DateTimeImmutable $confirmedAt,
-        public bool $isDisputed,
+        // The players' report waiting for confirmation, when there is one
+        public ?MatchReportResponseDTO $report = null,
     ) {}
 
     public static function fromEntity(
@@ -37,6 +38,7 @@ final readonly class MatchResponseDTO
         ?string $player2Name = null,
         ?string $reportedByName = null,
         ?string $confirmedByName = null,
+        ?MatchReportResponseDTO $report = null,
     ): self {
         return new self(
             id: $match->id()->value,
@@ -55,7 +57,7 @@ final readonly class MatchResponseDTO
             confirmedById: $match->confirmedById(),
             confirmedByName: $confirmedByName,
             confirmedAt: $match->confirmedAt(),
-            isDisputed: $match->isDisputed(),
+            report: $report,
         );
     }
 
@@ -74,13 +76,17 @@ final readonly class MatchResponseDTO
         return $this->confirmedAt instanceof DateTimeImmutable;
     }
 
+    /**
+     * A player's report waits for the opponent (an official result never waits for anybody).
+     */
     public function needsConfirmation(): bool
     {
-        if ($this->isBye()) {
-            return false;
-        }
+        return $this->report instanceof MatchReportResponseDTO && ! $this->report->isDisputed();
+    }
 
-        return $this->isReported() && ! $this->isConfirmed();
+    public function isDisputed(): bool
+    {
+        return $this->report instanceof MatchReportResponseDTO && $this->report->isDisputed();
     }
 
     /**
@@ -108,11 +114,13 @@ final readonly class MatchResponseDTO
             'confirmed_by_id' => $this->confirmedById,
             'confirmed_by_name' => $this->confirmedByName,
             'confirmed_at' => $timezone->iso($this->confirmedAt),
-            'is_disputed' => $this->isDisputed,
+            'is_disputed' => $this->isDisputed(),
             'is_bye' => $this->isBye(),
             'is_reported' => $this->isReported(),
             'is_confirmed' => $this->isConfirmed(),
             'needs_confirmation' => $this->needsConfirmation(),
+            // Whether a report waits, never what it says: that is for its players
+            'report' => $this->report?->toPublicArray(),
         ];
     }
 }

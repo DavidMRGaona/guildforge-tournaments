@@ -24,6 +24,7 @@ final readonly class EloquentMatchHistoryRepository implements MatchHistoryRepos
             'changed_by_id' => $history->changedById(),
             'reason' => $history->reason(),
             'changed_at' => $history->changedAt(),
+            'action' => $history->action(),
         ]);
     }
 
@@ -53,6 +54,7 @@ final readonly class EloquentMatchHistoryRepository implements MatchHistoryRepos
             changedById: $model->changed_by_id,
             reason: $model->reason,
             changedAt: $model->changed_at->toDateTimeImmutable(),
+            action: $model->action,
         );
     }
 }

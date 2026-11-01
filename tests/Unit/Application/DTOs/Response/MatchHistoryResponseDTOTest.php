@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Unit\Application\DTOs\Response;
 
 use DateTimeImmutable;
 use Modules\Tournaments\Application\DTOs\Response\MatchHistoryResponseDTO;
+use Modules\Tournaments\Domain\Enums\MatchHistoryAction;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Tests\TestCase;
 
@@ -28,6 +29,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Admin User',
             reason: 'Score correction after video review',
             changedAt: $changedAt,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertEquals('history-123', $dto->id);
@@ -61,6 +63,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Player One',
             reason: null,
             changedAt: $changedAt,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertNull($dto->previousResult);
@@ -85,6 +88,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'User',
             reason: null,
             changedAt: new DateTimeImmutable,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertTrue($dto->isInitialReport());
@@ -105,6 +109,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Admin',
             reason: 'Correction',
             changedAt: new DateTimeImmutable,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertFalse($dto->isInitialReport());
@@ -125,6 +130,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Admin',
             reason: null,
             changedAt: new DateTimeImmutable,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertTrue($dto->resultChanged());
@@ -145,6 +151,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Admin',
             reason: 'Score update only',
             changedAt: new DateTimeImmutable,
+            action: MatchHistoryAction::Recorded,
         );
 
         $this->assertFalse($dto->resultChanged());
@@ -167,6 +174,7 @@ final class MatchHistoryResponseDTOTest extends TestCase
             changedByName: 'Array User',
             reason: 'Initial report',
             changedAt: $changedAt,
+            action: MatchHistoryAction::Recorded,
         );
 
         $array = $dto->toArray();

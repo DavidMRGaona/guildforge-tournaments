@@ -33,6 +33,7 @@ use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\GuestConfirmationQueryInterface;
 use Modules\Tournaments\Application\Services\GuestRegistrationSettingsInterface;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
+use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RegistrationLockInterface;
@@ -54,6 +55,7 @@ use Modules\Tournaments\Domain\Events\ParticipantWithdrawn;
 use Modules\Tournaments\Domain\Events\TournamentCancelled;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchHistoryRepositoryInterface;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
@@ -78,6 +80,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentGameProfileRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchHistoryRepository;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchReportRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentParticipantRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
@@ -87,6 +90,7 @@ use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
 use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
+use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
 use Modules\Tournaments\Infrastructure\Services\ProfileTournamentsDataProvider;
@@ -320,6 +324,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         );
 
         $this->app->bind(
+            MatchReportRepositoryInterface::class,
+            EloquentMatchReportRepository::class
+        );
+
+        $this->app->bind(
             StandingRepositoryInterface::class,
             EloquentStandingRepository::class
         );
@@ -393,6 +402,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         $this->app->bind(
             MatchResultServiceInterface::class,
             MatchResultService::class
+        );
+
+        $this->app->bind(
+            MatchReportingServiceInterface::class,
+            MatchReportingService::class
         );
 
         $this->app->bind(

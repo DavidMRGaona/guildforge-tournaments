@@ -8,13 +8,16 @@ use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use DateTimeImmutable;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Modules\Tournaments\Domain\Entities\MatchReport;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Repositories\MatchReportRepositoryInterface;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
@@ -87,6 +90,21 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertSame(MatchResult::Draw, $match->refresh()->result);
+    }
+
+    public function test_without_report_results_reports_cannot_be_confirmed_reset_or_reviewed(): void
+    {
+        $match = $this->match();
+        app(MatchReportRepositoryInterface::class)->save(new MatchReport($match->id, MatchResult::PlayerOneWin, UserModel::factory()->create()->id, new DateTimeImmutable('2030-05-01 10:00:00')));
+        $this->actingAs($this->userWith([self::UPDATE, self::MANAGE_PARTICIPANTS]));
+
+        $this->matchesManager($match)
+            ->assertTableActionHidden('confirmReport', $match)
+            ->assertTableActionHidden('resetResult', $match)
+            ->assertTableActionHidden('history', $match);
+        $this->roundsManager()->assertTableActionHidden('confirmPendingReports', $match->round);
+
+        $this->assertInstanceOf(MatchReport::class, app(MatchReportRepositoryInterface::class)->find($match->id));
     }
 
     public function test_without_report_results_a_match_result_cannot_be_reported(): void

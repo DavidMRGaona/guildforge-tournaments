@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
-use App\Application\Authorization\Services\AuthorizationServiceInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\StandingsResponseDTO;
@@ -13,37 +11,24 @@ use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
-use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Entities\Tournament;
-use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
-use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
-use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
-use Modules\Tournaments\Domain\Repositories\RoundRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\Services\Clock;
-use Modules\Tournaments\Domain\ValueObjects\MatchId;
-use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
-use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final readonly class TournamentQueryService implements TournamentQueryServiceInterface
 {
-    private const string REPORT_RESULTS_PERMISSION = 'tournaments:tournaments.report_results';
-
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
         private StandingRepositoryInterface $standingRepository,
-        private RoundRepositoryInterface $roundRepository,
-        private MatchRepositoryInterface $matchRepository,
         private UserDataProviderInterface $userDataProvider,
         private Clock $clock,
-        private AuthorizationServiceInterface $authorization,
     ) {}
 
     public function find(string $tournamentId): ?TournamentResponseDTO
@@ -188,119 +173,6 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
         }
 
         return true;
-    }
-
-    public function canUserReportResult(string $matchId, string $userId): bool
-    {
-        // Whoever records results from the panel may report any match (admins hold it implicitly)
-        $user = UserModel::query()->find($userId);
-        if ($user instanceof UserModel && $this->authorization->can($user, self::REPORT_RESULTS_PERMISSION)) {
-            return true;
-        }
-
-        $match = $this->matchRepository->find(MatchId::fromString($matchId));
-        if (! $match instanceof TournamentMatch) {
-            return false;
-        }
-
-        $round = $this->roundRepository->find(
-            RoundId::fromString($match->roundId())
-        );
-        if (! $round instanceof Round) {
-            return false;
-        }
-
-        $tournament = $this->tournamentRepository->find(
-            TournamentId::fromString($round->tournamentId())
-        );
-        if (! $tournament instanceof Tournament) {
-            return false;
-        }
-
-        $resultReporting = $tournament->resultReporting();
-
-        if ($resultReporting === ResultReporting::AdminOnly) {
-            return false;
-        }
-
-        $player1Participant = $this->participantRepository->find(
-            ParticipantId::fromString($match->player1Id())
-        );
-        $player2Participant = $match->player2Id() !== null
-            ? $this->participantRepository->find(
-                ParticipantId::fromString($match->player2Id())
-            )
-            : null;
-
-        $isPlayer1 = $player1Participant instanceof Participant && $player1Participant->userId() === $userId;
-        $isPlayer2 = $player2Participant instanceof Participant && $player2Participant->userId() === $userId;
-
-        return $isPlayer1 || $isPlayer2;
-    }
-
-    public function canUserConfirmResult(string $matchId, string $userId): bool
-    {
-        $match = $this->matchRepository->find(MatchId::fromString($matchId));
-        if (! $match instanceof TournamentMatch) {
-            return false;
-        }
-
-        if (! $match->reportedAt() instanceof \DateTimeImmutable) {
-            return false;
-        }
-
-        if ($match->confirmedAt() instanceof \DateTimeImmutable) {
-            return false;
-        }
-
-        $round = $this->roundRepository->find(
-            RoundId::fromString($match->roundId())
-        );
-        if (! $round instanceof Round) {
-            return false;
-        }
-
-        $tournament = $this->tournamentRepository->find(
-            TournamentId::fromString($round->tournamentId())
-        );
-        if (! $tournament instanceof Tournament) {
-            return false;
-        }
-
-        if ($tournament->resultReporting() !== ResultReporting::PlayersWithConfirmation) {
-            return false;
-        }
-
-        $player1Participant = $this->participantRepository->find(
-            ParticipantId::fromString($match->player1Id())
-        );
-        $player2Participant = $match->player2Id() !== null
-            ? $this->participantRepository->find(
-                ParticipantId::fromString($match->player2Id())
-            )
-            : null;
-
-        $reporterParticipantId = null;
-        if ($player1Participant instanceof Participant && $player1Participant->userId() === $match->reportedById()) {
-            $reporterParticipantId = $player1Participant->id()->value;
-        } elseif ($player2Participant instanceof Participant && $player2Participant->userId() === $match->reportedById()) {
-            $reporterParticipantId = $player2Participant->id()->value;
-        }
-
-        if ($reporterParticipantId === null) {
-            return false;
-        }
-
-        $isPlayer1 = $player1Participant instanceof Participant && $player1Participant->userId() === $userId;
-        $isPlayer2 = $player2Participant instanceof Participant && $player2Participant->userId() === $userId;
-
-        if (! $isPlayer1 && ! $isPlayer2) {
-            return false;
-        }
-
-        $userParticipantId = $isPlayer1 ? $player1Participant->id()->value : $player2Participant->id()->value;
-
-        return $userParticipantId !== $reporterParticipantId;
     }
 
     public function getParticipantCount(string $tournamentId): int
