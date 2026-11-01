@@ -20,7 +20,9 @@ describe('ConfirmRegistration', () => {
             },
         });
 
-        expect(linkWithText(wrapper, 'Ver torneo')?.attributes('href')).toBe('/torneos/torneo-de-primavera');
+        expect(linkWithText(wrapper, 'Ver torneo')?.attributes('href')).toBe(
+            '/torneos/torneo-de-primavera'
+        );
         expect(nestedInteractiveLinks(wrapper)).toEqual([]);
     });
 });

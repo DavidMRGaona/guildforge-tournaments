@@ -18,7 +18,7 @@ describe('statusBadgeClasses', () => {
         'shows %s as gray',
         (color) => {
             expect(statusBadgeClasses(color)).toBe('bg-base-secondary/10 text-base-secondary');
-        },
+        }
     );
 });
 
