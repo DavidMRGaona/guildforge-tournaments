@@ -21,7 +21,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 
 ## Requisitos
 
-- GuildForge core `^3.29` (almacenamiento de fechas en UTC, zona horaria de visualización y contrato de encuestas)
+- GuildForge core `^3.31` (almacenamiento de fechas en UTC, zona horaria de visualización, contrato de encuestas y campo «Encuesta al terminar»)
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -342,6 +342,7 @@ Los torneos son sujetos encuestables a través del contrato del core (`SurveySub
 - **Fin**: al pulsar **Finalizar torneo** se avisa al módulo de encuestas después de guardar, con el momento de finalizarlo; un segundo clic no vuelve a avisar.
 - **Cancelación**: al cancelar el torneo, o al borrarlo antes de que termine (también al desactivarlo en la pestaña del evento o al borrar el evento), se avisa también, para que las encuestas preparadas para su final no se queden esperando.
 - **Ficha**: la organización ve **Encuestas del torneo** en cualquier estado del torneo (desde ahí prepara la encuesta antes de que termine); cada participante ve **Responder** mientras puede responder y **Resultados** cuando la encuesta los comparte con quien responde.
+- **Encuesta al terminar**: el formulario del torneo (pestaña **Opciones**) y la pestaña **Torneo** del evento llevan el campo «Encuesta al terminar» del core, para elegir la plantilla del tipo (por defecto), otra plantilla (por ejemplo, la de su juego), una encuesta propia o ninguna. Sin el módulo de encuestas no aparece.
 
 ## Web pública
 
