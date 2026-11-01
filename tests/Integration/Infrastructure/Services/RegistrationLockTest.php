@@ -10,10 +10,13 @@ use Illuminate\Support\Str;
 use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
+use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Tests\Support\Modules\ModuleTestCase;
 
 final class RegistrationLockTest extends ModuleTestCase
 {
+    use AssertsContainerBindings;
+
     protected ?string $moduleName = 'tournaments';
 
     protected bool $autoEnableModule = true;
@@ -35,7 +38,7 @@ final class RegistrationLockTest extends ModuleTestCase
 
     public function test_the_lock_is_bound_to_the_database_implementation(): void
     {
-        $this->assertInstanceOf(DatabaseRegistrationLock::class, app(RegistrationLockInterface::class));
+        $this->assertContainerBinds(RegistrationLockInterface::class, DatabaseRegistrationLock::class);
     }
 
     public function test_the_lock_runs_the_callback_in_a_transaction_and_returns_its_value(): void

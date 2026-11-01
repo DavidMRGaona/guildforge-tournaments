@@ -19,11 +19,13 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\TestCase;
 
 final class EloquentTournamentRepositoryTest extends TestCase
 {
+    use AssertsContainerBindings;
     use RefreshDatabase;
 
     private EloquentTournamentRepository $repository;
@@ -39,7 +41,7 @@ final class EloquentTournamentRepositoryTest extends TestCase
         // The module may not auto-boot in the test environment
         $this->app->register(TournamentsServiceProvider::class);
 
-        $this->assertInstanceOf(EloquentTournamentRepository::class, app(TournamentRepositoryInterface::class));
+        $this->assertContainerBinds(TournamentRepositoryInterface::class, EloquentTournamentRepository::class);
     }
 
     public function test_it_saves_new_tournament(): void

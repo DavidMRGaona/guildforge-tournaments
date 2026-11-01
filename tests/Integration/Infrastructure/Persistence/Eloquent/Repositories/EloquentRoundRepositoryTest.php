@@ -15,11 +15,13 @@ use Modules\Tournaments\Domain\ValueObjects\RoundId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
+use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\TestCase;
 
 final class EloquentRoundRepositoryTest extends TestCase
 {
+    use AssertsContainerBindings;
     use RefreshDatabase;
 
     private EloquentRoundRepository $repository;
@@ -46,7 +48,7 @@ final class EloquentRoundRepositoryTest extends TestCase
         // The module may not auto-boot in the test environment
         $this->app->register(TournamentsServiceProvider::class);
 
-        $this->assertInstanceOf(EloquentRoundRepository::class, app(RoundRepositoryInterface::class));
+        $this->assertContainerBinds(RoundRepositoryInterface::class, EloquentRoundRepository::class);
     }
 
     public function test_it_saves_new_round(): void

@@ -16,12 +16,14 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentMatchHistoryRepository;
+use Modules\Tournaments\Tests\Support\AssertsContainerBindings;
 use Modules\Tournaments\TournamentsServiceProvider;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 final class EloquentMatchHistoryRepositoryTest extends TestCase
 {
+    use AssertsContainerBindings;
     use RefreshDatabase;
 
     private EloquentMatchHistoryRepository $repository;
@@ -77,7 +79,7 @@ final class EloquentMatchHistoryRepositoryTest extends TestCase
         // The module may not auto-boot in the test environment
         $this->app->register(TournamentsServiceProvider::class);
 
-        $this->assertInstanceOf(EloquentMatchHistoryRepository::class, app(MatchHistoryRepositoryInterface::class));
+        $this->assertContainerBinds(MatchHistoryRepositoryInterface::class, EloquentMatchHistoryRepository::class);
     }
 
     public function test_it_saves_match_history_entry(): void
