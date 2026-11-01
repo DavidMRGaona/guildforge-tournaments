@@ -46,6 +46,7 @@ return [
         'finish_description' => 'La clasificación queda cerrada tal como está ahora.',
         'confirm_report' => ':name informó: :result',
         'disputed_because' => 'El rival lo discute: :reason',
+        'report_discarded' => 'Al guardar este resultado se descartará el informe de los jugadores.',
         'reset_result' => 'La partida queda sin resultado y descarta el informe de los jugadores. Se puede volver a registrar, y el historial guarda el motivo.',
         'confirm_pending_reports' => 'Los resultados que informaron los jugadores y nadie discute pasan a ser definitivos. Los discutidos se quedan para revisarlos uno a uno.',
     ],

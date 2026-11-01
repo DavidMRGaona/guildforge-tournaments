@@ -108,6 +108,10 @@ final class MatchesRelationManager extends RelationManager
                     ->color('primary')
                     ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
                     ->authorize(fn (): bool => $this->canReportResults())
+                    // The official result replaces the players' report: say what is lost
+                    ->modalDescription(fn (MatchModel $record): ?string => $record->report instanceof MatchReportModel
+                        ? rtrim($this->reportSummary($record), '.').'. '.__('tournaments::messages.modal.report_discarded')
+                        : null)
                     ->schema(function (MatchModel $record): array {
                         $fields = [
                             Select::make('result')

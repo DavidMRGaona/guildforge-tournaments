@@ -106,6 +106,26 @@ final class MatchReportsPanelTest extends ModuleTestCase
         $this->assertSame(MatchResult::NotPlayed, $this->match->refresh()->result);
     }
 
+    public function test_recording_a_result_warns_of_the_report_it_discards(): void
+    {
+        $this->report($this->match, disputed: true);
+
+        $this->matchesManager()
+            ->mountTableAction('reportResult', $this->match)
+            ->assertMountedActionModalSee([
+                $this->match->player1->participant_name.' informó',
+                'El rival lo discute: We drew',
+                'Al guardar este resultado se descartará el informe de los jugadores.',
+            ]);
+    }
+
+    public function test_recording_a_result_without_a_report_warns_of_nothing(): void
+    {
+        $this->matchesManager()
+            ->mountTableAction('reportResult', $this->match)
+            ->assertMountedActionModalDontSee('se descartará el informe');
+    }
+
     public function test_a_disputed_report_shows_as_disputed(): void
     {
         $this->report($this->match, disputed: true);
