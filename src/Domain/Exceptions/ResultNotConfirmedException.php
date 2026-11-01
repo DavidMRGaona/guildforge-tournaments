@@ -13,9 +13,14 @@ final class ResultNotConfirmedException extends DomainException
         parent::__construct($message);
     }
 
-    public static function awaitingConfirmation(string $matchId): self
+    public static function noPendingReport(string $matchId): self
     {
-        return new self("Match {$matchId} result is awaiting confirmation from the opponent.");
+        return new self("Match {$matchId} has no reported result waiting for confirmation.");
+    }
+
+    public static function alreadyDisputed(string $matchId): self
+    {
+        return new self("The result reported for match {$matchId} is already disputed.");
     }
 
     public static function disputed(string $matchId): self
