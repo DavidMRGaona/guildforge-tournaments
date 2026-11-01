@@ -98,6 +98,22 @@ final class MatchReport
     }
 
     /**
+     * Identifies what the report says, so the opponent confirms the version they saw and never a
+     * correction made meanwhile.
+     */
+    public function fingerprint(): string
+    {
+        return hash('sha256', (string) json_encode([
+            $this->result->value,
+            $this->player1Score,
+            $this->player2Score,
+            self::sorted($this->player1Stats),
+            self::sorted($this->player2Stats),
+            $this->reportedAt->format('U'),
+        ]));
+    }
+
+    /**
      * The reporter changes their report: it waits for confirmation again, without the dispute.
      *
      * @param  array<string, mixed>|null  $player1Stats
@@ -120,6 +136,19 @@ final class MatchReport
         $this->disputedById = null;
         $this->disputeReason = null;
         $this->disputedAt = null;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $stats
+     * @return array<string, mixed>|null
+     */
+    private static function sorted(?array $stats): ?array
+    {
+        if ($stats !== null) {
+            ksort($stats);
+        }
+
+        return $stats;
     }
 
     public function dispute(string $byUserId, string $reason, DateTimeImmutable $at): void

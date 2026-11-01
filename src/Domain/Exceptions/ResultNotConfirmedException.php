@@ -23,6 +23,11 @@ final class ResultNotConfirmedException extends DomainException
         return new self("The result reported for match {$matchId} is already disputed.");
     }
 
+    public static function reportChanged(string $matchId): self
+    {
+        return new self("The result reported for match {$matchId} changed since it was shown.");
+    }
+
     public static function disputed(string $matchId): self
     {
         return new self("Match {$matchId} result has been disputed and requires admin intervention.");

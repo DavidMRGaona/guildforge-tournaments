@@ -88,26 +88,28 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
         });
     }
 
-    public function confirm(string $matchId, string $userId): void
+    public function confirm(string $matchId, string $userId, string $seenReport): void
     {
-        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $userId): void {
+        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $userId, $seenReport): void {
             $actor = $this->participants->findByUserAndTournament($userId, $tournament->id()->value);
             $this->rules->assertCanConfirm($tournament, $round, $match, $report, $actor);
 
             if ($report instanceof MatchReport) {
+                $this->assertUnchanged($report, $seenReport);
                 $this->makeOfficial($report, $userId);
                 $this->announce(MatchResultConfirmed::create($matchId, $tournament->id()->value, $userId));
             }
         });
     }
 
-    public function dispute(string $matchId, string $userId, string $reason): void
+    public function dispute(string $matchId, string $userId, string $reason, string $seenReport): void
     {
-        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $userId, $reason): void {
+        $this->underLock($matchId, function (Tournament $tournament, Round $round, TournamentMatch $match, ?MatchReport $report) use ($matchId, $userId, $reason, $seenReport): void {
             $actor = $this->participants->findByUserAndTournament($userId, $tournament->id()->value);
             $this->rules->assertCanDispute($tournament, $round, $match, $report, $actor);
 
             if ($report instanceof MatchReport) {
+                $this->assertUnchanged($report, $seenReport);
                 $report->dispute($userId, $reason, $this->clock->now());
                 $this->reports->save($report);
                 $this->announce(MatchResultDisputed::create($matchId, $tournament->id()->value, $userId));
@@ -175,6 +177,16 @@ final readonly class MatchReportingService implements MatchReportingServiceInter
 
             return $callback($tournament, $round, $match, $this->reports->find($matchId));
         });
+    }
+
+    /**
+     * @throws ResultNotConfirmedException When the report was corrected after it was shown
+     */
+    private function assertUnchanged(MatchReport $report, string $seenReport): void
+    {
+        if (! hash_equals($report->fingerprint(), $seenReport)) {
+            throw ResultNotConfirmedException::reportChanged($report->matchId());
+        }
     }
 
     private function storeReport(ReportMatchResultDTO $dto, ?MatchReport $report): void

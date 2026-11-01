@@ -119,7 +119,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     {
         $this->service()->report($this->dto(MatchResult::Draw, $this->one, 15, 15));
 
-        $this->service()->confirm($this->match->id, $this->two->id);
+        $this->service()->confirm($this->match->id, $this->two->id, $this->seen());
 
         $match = $this->match->refresh();
         $this->assertSame(MatchResult::Draw, $match->result);
@@ -137,7 +137,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     {
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
 
-        $this->service()->dispute($this->match->id, $this->two->id, 'We drew the last game');
+        $this->service()->dispute($this->match->id, $this->two->id, 'We drew the last game', $this->seen());
 
         $report = $this->reports()->find($this->match->id);
         $this->assertInstanceOf(MatchReport::class, $report);
@@ -151,7 +151,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     public function test_reporter_corrects_and_dispute_is_cleared(): void
     {
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
-        $this->service()->dispute($this->match->id, $this->two->id, 'No');
+        $this->service()->dispute($this->match->id, $this->two->id, 'No', $this->seen());
 
         $this->service()->report($this->dto(MatchResult::Draw, $this->one));
 
@@ -168,7 +168,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
 
         $this->expectException(UnauthorizedToReportResultException::class);
 
-        $this->service()->confirm($this->match->id, $this->one->id);
+        $this->service()->confirm($this->match->id, $this->one->id, $this->seen());
     }
 
     public function test_the_opponent_cannot_overwrite_a_report_waiting_for_them(): void
@@ -216,7 +216,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
     {
         $organizer = UserModel::factory()->create();
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
-        $this->service()->dispute($this->match->id, $this->two->id, 'No');
+        $this->service()->dispute($this->match->id, $this->two->id, 'No', $this->seen());
 
         $this->service()->confirmAsOrganizer($this->match->id, $organizer->id);
 
@@ -241,7 +241,7 @@ final class MatchReportingServiceTest extends ModuleTestCase
         $other = $this->match($this->participant($three), $this->participant($four));
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
         $this->service()->report(new ReportMatchResultDTO($other->id, MatchResult::Draw, $three->id));
-        $this->service()->dispute($other->id, $four->id, 'No');
+        $this->service()->dispute($other->id, $four->id, 'No', $this->seen($other->id));
 
         $confirmed = $this->service()->confirmPendingInRound($this->round->id, UserModel::factory()->create()->id);
 
@@ -275,16 +275,48 @@ final class MatchReportingServiceTest extends ModuleTestCase
     public function test_second_concurrent_confirmation_fails(): void
     {
         $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one));
+        $seen = $this->seen();
         // The organization confirmed it while this request waited for the tournament's lock
         $this->whileWaitingForTheLock(fn () => $this->service()->confirmAsOrganizer($this->match->id, UserModel::factory()->create()->id));
 
         try {
-            $this->service()->confirm($this->match->id, $this->two->id);
+            $this->service()->confirm($this->match->id, $this->two->id, $seen);
             $this->fail('The second confirmation must see the result already confirmed.');
         } catch (MatchReportClosedException) {
             Event::assertDispatchedTimes(MatchResultConfirmed::class, 1);
             $this->assertNotSame($this->two->id, $this->match->refresh()->confirmed_by_id);
         }
+    }
+
+    public function test_confirming_a_report_changed_since_it_was_seen_fails(): void
+    {
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 20, 10));
+        $seen = $this->seen();
+        // The reporter changed it while the opponent was looking at the first version
+        $this->service()->report($this->dto(MatchResult::PlayerOneWin, $this->one, 30, 10));
+
+        try {
+            $this->service()->confirm($this->match->id, $this->two->id, $seen);
+            $this->fail('A report must be confirmed as the opponent saw it.');
+        } catch (ResultNotConfirmedException) {
+            $this->assertSame(MatchResult::NotPlayed, $this->match->refresh()->result);
+            Event::assertNotDispatched(MatchResultConfirmed::class);
+        }
+
+        $this->expectException(ResultNotConfirmedException::class);
+
+        $this->service()->dispute($this->match->id, $this->two->id, 'No', $seen);
+    }
+
+    /**
+     * What the opponent saw of the report waiting for them.
+     */
+    private function seen(?string $matchId = null): string
+    {
+        $report = $this->reports()->find($matchId ?? $this->match->id);
+        $this->assertInstanceOf(MatchReport::class, $report);
+
+        return $report->fingerprint();
     }
 
     /**
