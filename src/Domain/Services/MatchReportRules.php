@@ -10,6 +10,7 @@ use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Round;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
+use Modules\Tournaments\Domain\Enums\ReportingClosedReason;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
@@ -41,6 +42,20 @@ final class MatchReportRules
             canConfirm: $this->passes(fn () => $this->assertCanConfirm($tournament, $round, $match, $report, $actor)),
             canDispute: $this->passes(fn () => $this->assertCanDispute($tournament, $round, $match, $report, $actor)),
         );
+    }
+
+    /**
+     * Why the player cannot report, when the reason is theirs to know: the organization records
+     * the results, they no longer play, or the round has not started. Null otherwise.
+     */
+    public function closedReasonFor(Tournament $tournament, Round $round, ?Participant $actor): ?ReportingClosedReason
+    {
+        return match (true) {
+            $tournament->resultReporting() === ResultReporting::AdminOnly => ReportingClosedReason::AdminOnly,
+            $actor instanceof Participant && ! $actor->canPlay() => ReportingClosedReason::NotPlaying,
+            $round->status() === RoundStatus::Pending => ReportingClosedReason::RoundPending,
+            default => null,
+        };
     }
 
     /**

@@ -9,6 +9,7 @@ use Modules\Tournaments\Application\DTOs\Response\MatchReportResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\MatchResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\PlayerMatchResponseDTO;
 use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\MatchHistory;
 use Modules\Tournaments\Domain\Entities\MatchReport;
@@ -37,6 +38,7 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
         private RoundRepositoryInterface $rounds,
         private TournamentRepositoryInterface $tournaments,
         private MatchReportRules $rules,
+        private StandingsServiceInterface $standings,
     ) {}
 
     /**
@@ -106,6 +108,8 @@ final readonly class MatchQueryService implements MatchQueryServiceInterface
             report: $reportResponse,
             resultReporting: $tournament->resultReporting(),
             statDefinitions: $tournament->statDefinitions() ?? [],
+            closedReason: $this->rules->closedReasonFor($tournament, $round, $participant),
+            byePoints: $match->isBye() ? $this->standings->byePoints($tournamentId) : null,
         );
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Application\DTOs\Response;
 
+use Modules\Tournaments\Domain\Enums\ReportingClosedReason;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\ValueObjects\MatchReportActions;
 use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
@@ -16,6 +17,7 @@ final readonly class PlayerMatchResponseDTO
     /**
      * @param  1|2  $side  Which player of the match they are
      * @param  array<StatDefinition>  $statDefinitions  What the report asks for each player
+     * @param  float|null  $byePoints  What the bye gives them, on a bye
      */
     public function __construct(
         public MatchResponseDTO $match,
@@ -26,6 +28,8 @@ final readonly class PlayerMatchResponseDTO
         public ?MatchReportResponseDTO $report,
         public ResultReporting $resultReporting,
         public array $statDefinitions,
+        public ?ReportingClosedReason $closedReason = null,
+        public ?float $byePoints = null,
     ) {}
 
     /**
@@ -45,6 +49,8 @@ final readonly class PlayerMatchResponseDTO
                 static fn (StatDefinition $stat): array => $stat->toArray(),
                 $this->statDefinitions,
             ),
+            'closed_reason' => $this->closedReason?->value,
+            'bye_points' => $this->byePoints,
         ];
     }
 }
