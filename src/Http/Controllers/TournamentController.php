@@ -124,7 +124,7 @@ final class TournamentController extends Controller
      * What the person reaches from the page: the tournament's surveys page when they organize it,
      * and the surveys sent to them.
      *
-     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>}|null
+     * @return array{manageUrl: string|null, surveys: list<array{title: string, url: string, action: string}>, guideId: string|null}|null
      */
     private function surveyLinksFor(string $tournamentId, string $userId): ?array
     {
@@ -140,6 +140,8 @@ final class TournamentController extends Controller
                 'url' => $link->url,
                 'action' => $link->action->value,
             ], $links->surveys),
+            // The help guide the surveys module picks for this person
+            'guideId' => $links->guideId,
         ];
     }
 

@@ -53,11 +53,13 @@ final class TournamentSurveyLinksTest extends ModuleTestCase
         $this->fakeLinks(new SurveySubjectLinksDTO(
             manageUrl: 'https://example.com/encuestas/sujeto/tournament/'.$tournament->id,
             surveys: [new SurveyLinkDTO('Valoración del torneo', 'https://example.com/encuestas/1', SurveyLinkAction::ViewResults)],
+            guideId: 'surveys.organizer-end-survey',
         ));
 
         $this->actingAs($user)->get(route('tournaments.show', $tournament->slug))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('surveyLinks.manageUrl', 'https://example.com/encuestas/sujeto/tournament/'.$tournament->id)
+                ->where('surveyLinks.guideId', 'surveys.organizer-end-survey')
                 ->where('surveyLinks.surveys.0.title', 'Valoración del torneo')
                 ->where('surveyLinks.surveys.0.url', 'https://example.com/encuestas/1')
                 ->where('surveyLinks.surveys.0.action', 'view_results'));

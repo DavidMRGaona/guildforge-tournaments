@@ -10,6 +10,7 @@ import type {
     GuestRegistrationField,
     RegistrationJsonResponse,
 } from '../../types/tournaments';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import MyMatchCard from '../../components/MyMatchCard.vue';
 import { useTournaments } from '../../composables/useTournaments';
@@ -554,9 +555,12 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     class="mb-6 rounded-lg border border-default p-4"
                     :aria-labelledby="surveysHeadingId"
                 >
-                    <h2 :id="surveysHeadingId" class="mb-3 font-semibold text-base-primary">
-                        {{ t('tournaments.surveys.heading') }}
-                    </h2>
+                    <div class="mb-3 flex items-center gap-2">
+                        <h2 :id="surveysHeadingId" class="font-semibold text-base-primary">
+                            {{ t('tournaments.surveys.heading') }}
+                        </h2>
+                        <HelpLink v-if="surveyLinks.guideId" :guide="surveyLinks.guideId" />
+                    </div>
                     <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <a
                             v-if="surveyLinks.manageUrl"

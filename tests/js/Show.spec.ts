@@ -57,6 +57,7 @@ describe('Show', () => {
                         { title: 'Valoración', url: '/encuestas/1', action: 'respond' },
                         { title: 'Ronda final', url: '/encuestas/2', action: 'view_results' },
                     ],
+                    guideId: 'surveys.organizer-end-survey',
                 },
             }
         );
@@ -71,6 +72,9 @@ describe('Show', () => {
         expect(linkWithText(wrapper, 'Resultados de «Ronda final»')?.attributes('href')).toBe(
             '/encuestas/2'
         );
+        expect(wrapper.get('[data-testid="help-link"]').attributes('data-guide')).toBe(
+            'surveys.organizer-end-survey'
+        );
     });
 
     it('offers a player their survey without the organizer link', () => {
@@ -80,6 +84,7 @@ describe('Show', () => {
                 surveyLinks: {
                     manageUrl: null,
                     surveys: [{ title: 'Valoración', url: '/encuestas/1', action: 'respond' }],
+                    guideId: null,
                 },
             }
         );
