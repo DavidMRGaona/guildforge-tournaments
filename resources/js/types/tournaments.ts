@@ -311,6 +311,8 @@ export interface TournamentSurveyLinks {
     /** The tournament's surveys page, for its organizers */
     manageUrl: string | null;
     surveys: TournamentSurveyLink[];
+    /** The help guide on these surveys for this person, from the surveys module */
+    guideId: string | null;
 }
 
 /**
