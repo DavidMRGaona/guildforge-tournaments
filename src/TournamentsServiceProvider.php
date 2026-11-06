@@ -690,7 +690,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
         $tournament = $attributes->get($key);
 
-        return $tournament instanceof TournamentResponseDTO ? $tournament : null;
+        // A draft is not public yet, as on its own pages
+        return $tournament instanceof TournamentResponseDTO && ! $tournament->isDraft() ? $tournament : null;
     }
 
     private function getEventIdFromCurrentRoute(): ?string

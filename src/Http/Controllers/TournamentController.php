@@ -230,15 +230,15 @@ final class TournamentController extends Controller
         ))->toArray();
     }
 
+    /**
+     * The tournament behind a public page, by id or slug; a draft is not public yet, so it is
+     * not found. A cancelled one stays reachable, shown as cancelled.
+     */
     private function findTournament(string $identifier): ?TournamentResponseDTO
     {
-        if (Str::isUuid($identifier)) {
-            $tournament = $this->tournamentQuery->find($identifier);
-            if ($tournament instanceof TournamentResponseDTO) {
-                return $tournament;
-            }
-        }
+        $tournament = Str::isUuid($identifier) ? $this->tournamentQuery->find($identifier) : null;
+        $tournament ??= $this->tournamentQuery->findBySlug($identifier);
 
-        return $this->tournamentQuery->findBySlug($identifier);
+        return $tournament?->isDraft() === false ? $tournament : null;
     }
 }
