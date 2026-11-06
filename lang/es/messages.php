@@ -6,6 +6,13 @@ return [
     'navigation' => 'Torneos',
     'minutes' => 'minutos',
 
+    // Site search (core): group, one result and the tag of results that are over
+    'search' => [
+        'label' => 'Torneos',
+        'item' => 'Torneo',
+        'past' => 'Finalizado',
+    ],
+
     // Navigation group for standalone resource
     'navigation.group' => 'Torneos',
 
