@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\Eloquent\Concerns\StoresInstantsInStorageTime
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -143,6 +144,17 @@ final class TournamentModel extends Model
             'show_participants' => 'boolean',
             'self_check_in_allowed' => 'boolean',
         ];
+    }
+
+    /**
+     * The rule of the public listing (and of the site search): neither drafts nor cancelled tournaments.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopePubliclyListed(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', [TournamentStatus::Draft->value, TournamentStatus::Cancelled->value]);
     }
 
     public function getSlugEntityType(): string

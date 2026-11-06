@@ -13,7 +13,6 @@ use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\Participant;
 use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
-use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\StandingRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
@@ -256,13 +255,7 @@ final readonly class TournamentQueryService implements TournamentQueryServiceInt
      */
     private function buildPublishedQuery(?array $statusFilter = null): Builder
     {
-        $excludedStatuses = [
-            TournamentStatus::Draft->value,
-            TournamentStatus::Cancelled->value,
-        ];
-
-        $query = TournamentModel::query()
-            ->whereNotIn('status', $excludedStatuses);
+        $query = TournamentModel::query()->publiclyListed();
 
         if ($statusFilter !== null && $statusFilter !== []) {
             $query->whereIn('status', $statusFilter);

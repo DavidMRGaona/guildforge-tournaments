@@ -11,6 +11,7 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
@@ -88,6 +89,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\Infrastructure\Search\RefreshesSearchDocuments;
+use Modules\Tournaments\Infrastructure\Search\TournamentSearchSource;
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
@@ -299,6 +302,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     private function registerModelObservers(): void
     {
         TournamentModel::observe(TournamentObserver::class);
+        RefreshesSearchDocuments::register();
 
         // The database would drop an event's tournament by cascade, unseen: delete it as a model
         // first, so it is told to the surveys (and its image removed)
@@ -724,6 +728,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentSurveySubjectSource::class,
+        ];
+    }
+
+    /**
+     * Tournaments of the public listing in the site search (core ≥ 3.36).
+     *
+     * @return array<class-string<IndexedSearchSourceInterface>>
+     */
+    public function registerSearchSources(): array
+    {
+        return [
+            TournamentSearchSource::class,
         ];
     }
 
