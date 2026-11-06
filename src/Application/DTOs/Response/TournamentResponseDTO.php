@@ -141,6 +141,12 @@ final readonly class TournamentResponseDTO
         return $this->registrationOpen;
     }
 
+    /** Not published yet: its public pages answer as if it did not exist. */
+    public function isDraft(): bool
+    {
+        return $this->status === TournamentStatus::Draft;
+    }
+
     public function isInProgress(): bool
     {
         return $this->status === TournamentStatus::InProgress;
