@@ -5,6 +5,7 @@ import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import type { MyTournamentsPageProps } from '../../types/tournaments';
 import MyTournamentCard from '../../components/MyTournamentCard.vue';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 
 const props = defineProps<MyTournamentsPageProps>();
@@ -42,6 +43,7 @@ function loadMore(): void {
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                         {{ t('tournaments.my_tournaments.title') }}
+                        <HelpLink guide="tournaments.follow-tournament" class="ml-1 align-middle" />
                     </h1>
                     <p class="mt-1 text-base-muted">
                         {{ t('tournaments.my_tournaments.subtitle') }}

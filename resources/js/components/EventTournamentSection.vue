@@ -8,6 +8,7 @@ import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
 import { useRoutes } from '@/composables/useRoutes';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useTournaments } from '../composables/useTournaments';
 import { useGuestRegistrationMemory } from '../composables/useGuestRegistrationMemory';
@@ -354,6 +355,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     <Trophy class="h-5 w-5 text-primary" aria-hidden="true" />
                     <h3 class="font-semibold text-base-primary">
                         {{ t('tournaments.public.event_tournament') }}
+                        <HelpLink guide="tournaments.sign-up" class="ml-1 align-middle" />
                     </h3>
                     <span
                         class="rounded-full px-2 py-0.5 text-xs font-medium"

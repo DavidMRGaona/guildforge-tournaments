@@ -8,6 +8,7 @@ import type {
 } from '../../types/tournaments';
 import TournamentList from '../../components/TournamentList.vue';
 import TournamentStatusFilter from '../../components/TournamentStatusFilter.vue';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { usePagination } from '@/composables/usePagination';
 
@@ -41,6 +42,7 @@ function handleNext(): void {
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-base-primary">
                 {{ t('tournaments.title') }}
+                <HelpLink guide="tournaments.overview" class="ml-1 align-middle" />
             </h1>
             <p class="mt-2 text-lg text-base-muted">
                 {{ t('tournaments.listing.subtitle') }}

@@ -8,6 +8,7 @@ import type {
     CheckInJsonResponse,
     CheckInField,
 } from '../../types/tournaments';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
@@ -198,6 +199,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                 <div class="mb-6 text-center">
                     <h1 class="text-2xl font-bold text-base-primary">
                         {{ t('tournaments.check_in.title') }}
+                        <HelpLink guide="tournaments.check-in" class="ml-1 align-middle" />
                     </h1>
                     <p class="mt-2 text-base-muted">
                         {{ tournament.name }}

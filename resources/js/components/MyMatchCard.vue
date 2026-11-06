@@ -2,6 +2,7 @@
 import { computed, nextTick, reactive, ref, useId } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useNotifications } from '@/composables/useNotifications';
 import { useVerificationGate } from '@/composables/useVerificationGate';
@@ -336,6 +337,7 @@ const inputClass =
     >
         <h2 :id="`${id}-title`" class="font-semibold text-base-primary">
             {{ t('tournaments.my_match.title') }}
+            <HelpLink guide="tournaments.report-result" class="ml-1 align-middle" />
         </h2>
         <p class="mt-1 text-sm text-base-secondary">
             <template v-if="match.table_number !== null">

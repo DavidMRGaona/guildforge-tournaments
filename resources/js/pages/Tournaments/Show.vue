@@ -376,6 +376,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                     <h1 class="mb-4 text-3xl font-bold text-base-primary sm:text-4xl">
                         {{ tournament.name }}
+                        <HelpLink guide="tournaments.sign-up" class="ml-1 align-middle" />
                     </h1>
 
                     <p v-if="tournament.description" class="text-lg text-base-muted">

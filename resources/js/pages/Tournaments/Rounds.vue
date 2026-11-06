@@ -3,6 +3,7 @@ import { ChevronDown, ChevronLeft } from '@lucide/vue';
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import HelpLink from '@/components/knowledge/HelpLink.vue';
 import type { TournamentRoundsProps } from '../../types/tournaments';
 import { useTournaments } from '../../composables/useTournaments';
 import { statusBadgeClasses } from '../../utils/statusColors';
@@ -61,6 +62,7 @@ const sortedRounds = computed(() => {
             <div class="border-b border-default p-6">
                 <h1 class="text-2xl font-bold text-base-primary sm:text-3xl">
                     {{ t('tournaments.public.rounds') }}
+                    <HelpLink guide="tournaments.follow-tournament" class="ml-1 align-middle" />
                 </h1>
                 <p class="mt-1 text-base-muted">
                     {{ tournament.name }}

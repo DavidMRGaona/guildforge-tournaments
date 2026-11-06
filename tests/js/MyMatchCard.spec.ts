@@ -34,6 +34,14 @@ describe('MyMatchCard', () => {
         vi.unstubAllGlobals();
     });
 
+    it('links its heading to the guide on reporting a result', () => {
+        const wrapper = mountCard();
+
+        expect(wrapper.get('h2 [data-testid="help-link"]').attributes('data-guide')).toBe(
+            'tournaments.report-result'
+        );
+    });
+
     it('shows the form when the player can report', () => {
         const wrapper = mountCard();
 
