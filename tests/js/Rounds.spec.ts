@@ -37,6 +37,14 @@ function header(
 }
 
 describe('Rounds', () => {
+    it('links its heading to the guide on following a tournament', () => {
+        const wrapper = mountPage();
+
+        expect(wrapper.get('h1 [data-testid="help-link"]').attributes('data-guide')).toBe(
+            'tournaments.follow-tournament'
+        );
+    });
+
     it('shows pending only for pending reports', () => {
         const withMatch = (
             overrides: Partial<RoundWithMatches['matches'][number]>

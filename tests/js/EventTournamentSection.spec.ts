@@ -71,6 +71,14 @@ describe('EventTournamentSection', () => {
         vi.unstubAllGlobals();
     });
 
+    it('links its heading to the guide on signing up', () => {
+        const wrapper = mountSection();
+
+        expect(wrapper.get('h3 [data-testid="help-link"]').attributes('data-guide')).toBe(
+            'tournaments.sign-up'
+        );
+    });
+
     describe('withdrawing', () => {
         it('offers to withdraw while the server allows it', () => {
             signIn();

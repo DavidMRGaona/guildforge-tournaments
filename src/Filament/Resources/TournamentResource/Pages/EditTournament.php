@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\Pages;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Concerns\HasKnowledgeGuideAction;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -22,6 +23,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 
 final class EditTournament extends EditRecord
 {
+    use HasKnowledgeGuideAction;
+
     protected static string $resource = TournamentResource::class;
 
     public function getTitle(): string
@@ -33,7 +36,7 @@ final class EditTournament extends EditRecord
     {
         $record = $this->tournament();
 
-        return [
+        return array_filter([
             Action::make('openRegistration')
                 ->label(__('tournaments::messages.actions.open_registration'))
                 ->icon('heroicon-o-lock-open')
@@ -135,7 +138,8 @@ final class EditTournament extends EditRecord
                 }),
 
             DeleteAction::make(),
-        ];
+            $this->knowledgeGuideAction('tournaments.panel.tournament-lifecycle'),
+        ]);
     }
 
     /**

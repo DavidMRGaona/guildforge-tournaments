@@ -34,6 +34,14 @@ const started: Partial<Tournament> = {
 };
 
 describe('Show', () => {
+    it('links its heading to the guide on signing up', () => {
+        const wrapper = mountPage();
+
+        expect(wrapper.get('h1 [data-testid="help-link"]').attributes('data-guide')).toBe(
+            'tournaments.sign-up'
+        );
+    });
+
     it('shows the player their match of the current round', () => {
         const wrapper = mountPage(started, { myMatch: playerMatch() });
 
@@ -72,7 +80,7 @@ describe('Show', () => {
         expect(linkWithText(wrapper, 'Resultados de «Ronda final»')?.attributes('href')).toBe(
             '/encuestas/2'
         );
-        expect(wrapper.get('[data-testid="help-link"]').attributes('data-guide')).toBe(
+        expect(wrapper.get('section [data-testid="help-link"]').attributes('data-guide')).toBe(
             'surveys.organizer-end-survey'
         );
     });
