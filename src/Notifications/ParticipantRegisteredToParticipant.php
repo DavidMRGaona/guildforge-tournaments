@@ -23,6 +23,7 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
         private readonly ?string $tournamentSlug = null,
         private readonly ?string $notes = null,
         private readonly ?bool $awaitingApproval = null,
+        private readonly ?bool $selfCheckInAllowed = null,
     ) {}
 
     /**
@@ -64,16 +65,15 @@ final class ParticipantRegisteredToParticipant extends Notification implements S
             ]));
         }
 
+        // ?? like isset(): a notification queued before these properties existed comes back without
+        // them, and reading an uninitialized property directly throws
+        $tournamentSlug = $this->tournamentSlug ?? null;
+
         // The approval email reminds them of the check-in
         if ($this->requiresCheckIn && ! $awaitingApproval) {
-            $message->line(__('tournaments::messages.emails.registration_confirmed.check_in_required', [
-                'minutes' => $this->checkInStartsBefore ?? 30,
-            ]));
+            $message->line(CheckInReminderLine::for($this->checkInStartsBefore, $this->selfCheckInAllowed ?? null, $tournamentSlug));
         }
 
-        // ?? like isset(): a notification queued before this property existed comes back without
-        // it, and reading an uninitialized property directly throws
-        $tournamentSlug = $this->tournamentSlug ?? null;
         $tournamentUrl = $tournamentSlug !== null ? route('tournaments.show', $tournamentSlug) : null;
 
         // Guests get the cancellation button; accounts manage it from the tournament page

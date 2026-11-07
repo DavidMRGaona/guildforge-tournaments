@@ -19,13 +19,13 @@ Cada torneo decide quién hace el check-in:
 
 ## Cuándo puedes hacerlo
 
-El check-in abre unos minutos antes del inicio del evento (el correo de tu inscripción dice cuántos) y cierra cuando empieza. Una vez que el torneo está en curso ya no se puede.
+El check-in abre unos minutos antes del inicio del evento y cierra cuando empieza. El correo de tu inscripción, el de su aprobación y el recordatorio dicen cuántos minutos y, si lo haces desde la web, traen el enlace a la página de check-in. Una vez que el torneo está en curso ya no se puede.
 
 Si el torneo necesita que la organización apruebe las inscripciones, solo puedes hacer el check-in cuando tu inscripción esté **Confirmado**.
 
 ## Con tu cuenta
 
-1. Abre la página del torneo. Mientras el check-in está abierto, verás el botón **Hacer check-in** bajo **Ya estás inscrito**. También lo tienes en **Mis torneos**, con la hora a la que cierra.
+1. Abre la página del torneo. Mientras el check-in está abierto, verás el botón **Hacer check-in** bajo **Ya estás inscrito**; antes, la página dice cuándo abre. También lo tienes en **Mis torneos**, con la hora a la que cierra.
 2. Pulsa **Hacer check-in**.
 3. En la página **Check-in**, pulsa **Hacer check-in**.
 
@@ -33,7 +33,7 @@ Verás «¡Check-in realizado!» con la hora, y tu inscripción pasa a **Registr
 
 ## Si te inscribiste como invitado
 
-1. Abre la página del torneo y entra en su check-in. La dirección es la del torneo terminada en `/check-in`.
+1. Pulsa el enlace al check-in del correo de tu inscripción, o abre la página del torneo: sin iniciar sesión, el recuadro **Check-in** dice cuándo abre y, mientras está abierto, tiene el botón **Hacer check-in**.
 2. Escribe el correo con el que te inscribiste.
 3. Marca que aceptas el tratamiento de tus datos según la **política de privacidad**.
 4. Pulsa **Hacer check-in**.

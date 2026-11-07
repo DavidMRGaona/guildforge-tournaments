@@ -166,6 +166,13 @@ export default {
             already_registered: 'Ya estás inscrito',
             registered_status: 'Estado: {status}',
             check_in_now: 'Hacer check-in',
+            check_in_title: 'Check-in',
+            guest_check_in_open:
+                'Si te inscribiste, haz el check-in con el email de tu inscripción hasta las {time}.',
+            guest_check_in_upcoming:
+                'El check-in abre el {date} a las {time}. Si te inscribiste, lo harás con el email de tu inscripción.',
+            check_in_opens_on: 'El check-in abre el {date} a las {time}.',
+            go_to_check_in: 'Ir al check-in',
             registration_open: 'Inscripción abierta',
             registration_upcoming: 'Inscripción próximamente',
             registration_opens_on: 'La inscripción se abre el {date}',

@@ -103,6 +103,7 @@ final class SendTournamentRemindersCommand extends Command
                     requiresCheckIn: $tournament->requiresCheckIn(),
                     checkInStartsBefore: $tournament->checkInStartsBefore(),
                     cancellationToken: $participant->userId() === null ? $participant->cancellationToken() : null,
+                    selfCheckInAllowed: $tournament->selfCheckInAllowed(),
                 ));
 
                 $sent++;

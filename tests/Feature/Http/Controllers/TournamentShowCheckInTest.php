@@ -130,6 +130,34 @@ final class TournamentShowCheckInTest extends ModuleTestCase
             ->assertInertia(fn (Assert $page) => $page->where('canCheckIn', false));
     }
 
+    public function test_a_visitor_gets_the_open_window_to_reach_the_check_in(): void
+    {
+        $tournament = $this->tournament();
+
+        $this->get(route('tournaments.show', $tournament->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('checkInWindow.status', 'open')
+                ->whereNot('checkInWindow.closes_at', null));
+    }
+
+    public function test_the_page_says_when_the_check_in_opens(): void
+    {
+        $tournament = $this->tournament(startsInMinutes: 120);
+
+        $this->get(route('tournaments.show', $tournament->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('checkInWindow.status', 'not_yet')
+                ->whereNot('checkInWindow.opens_at', null));
+    }
+
+    public function test_the_window_is_not_offered_without_self_check_in(): void
+    {
+        $tournament = $this->tournament(['self_check_in_allowed' => false]);
+
+        $this->get(route('tournaments.show', $tournament->slug))
+            ->assertInertia(fn (Assert $page) => $page->where('checkInWindow.status', 'not_available'));
+    }
+
     private function registration(TournamentModel $tournament, UserModel $user, ParticipantStatus $status): ParticipantModel
     {
         return ParticipantModel::create([

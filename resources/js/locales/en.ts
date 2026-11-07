@@ -136,6 +136,13 @@ export default {
             already_registered: 'Already registered',
             registered_status: 'Status: {status}',
             check_in_now: 'Check in',
+            check_in_title: 'Check-in',
+            guest_check_in_open:
+                'If you signed up, check in with the email of your registration until {time}.',
+            guest_check_in_upcoming:
+                'Check-in opens on {date} at {time}. If you signed up, you will use the email of your registration.',
+            check_in_opens_on: 'Check-in opens on {date} at {time}.',
+            go_to_check_in: 'Go to check-in',
             registration_open: 'Registration open',
             registration_upcoming: 'Registration opening soon',
             registration_opens_on: 'Registration opens on {date}',

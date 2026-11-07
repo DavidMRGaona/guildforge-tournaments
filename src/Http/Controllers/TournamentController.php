@@ -73,6 +73,8 @@ final class TournamentController extends Controller
         $userRegistration = null;
         $canRegister = false;
         $canCheckIn = false;
+        // When the self check-in opens and closes: the page links visitors (guests) to it
+        $checkInWindow = $this->checkInWindow->calculate($tournament, $tournament->eventStartsAt);
 
         if ($user !== null) {
             $registration = $this->participantManagement->findByUserAndTournament(
@@ -84,7 +86,7 @@ final class TournamentController extends Controller
 
             // The rule of the check-in itself: self check-in open now and the registration may check in
             $canCheckIn = $registration instanceof ParticipantResponseDTO
-                && $this->checkInWindow->calculate($tournament, $tournament->eventStartsAt)['status'] === 'open'
+                && $checkInWindow['status'] === 'open'
                 && $this->participantManagement->canCheckIn($registration->status, $tournament->requiresManualConfirmation);
 
             $canRegister = $this->tournamentQuery->canUserRegister(
@@ -109,6 +111,7 @@ final class TournamentController extends Controller
             'userRegistration' => $userRegistration,
             'canRegister' => $canRegister,
             'canCheckIn' => $canCheckIn,
+            'checkInWindow' => $checkInWindow,
             // Their own match of the current round, with the report only its players see
             'myMatch' => $user !== null && $hasStarted
                 ? $this->matchQuery->findPlayerMatch($tournament->id, (string) $user->id)?->toArray()

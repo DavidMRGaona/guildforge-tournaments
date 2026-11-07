@@ -45,6 +45,7 @@ final readonly class SendParticipantConfirmedEmail
             checkInStartsBefore: $tournament->checkInStartsBefore(),
             tournamentSlug: $tournament->slug(),
             notes: $event->notes,
+            selfCheckInAllowed: $tournament->selfCheckInAllowed(),
         ));
     }
 }

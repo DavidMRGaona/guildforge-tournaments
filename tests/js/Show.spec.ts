@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import Show from '../../resources/js/pages/Tournaments/Show.vue';
 import type { Tournament, TournamentShowProps } from '../../resources/js/types/tournaments';
-import { playerMatch, tournament } from './support/fixtures';
+import { playerMatch, registration, tournament } from './support/fixtures';
 import { linkWithText, nestedInteractiveLinks } from './support/interactive';
 import { signIn } from './support/page';
 
@@ -19,6 +19,7 @@ function mountPage(
             userRegistration: null,
             canRegister: false,
             canCheckIn: false,
+            checkInWindow: { status: 'not_available', opens_at: null, closes_at: null },
             guestConfirmation: null,
             ...props,
         },
@@ -137,6 +138,74 @@ describe('Show', () => {
             '/torneos/torneo-de-primavera/rondas'
         );
         expect(nestedInteractiveLinks(wrapper)).toEqual([]);
+    });
+
+    describe('the check-in', () => {
+        const withCheckIn: Partial<Tournament> = { requires_check_in: true };
+        // Madrid time: opens at 17:30 and closes at 18:00 on 14 November
+        const openWindow = {
+            status: 'open' as const,
+            opens_at: '2026-11-14T17:30:00+01:00',
+            closes_at: '2026-11-14T18:00:00+01:00',
+        };
+        const upcomingWindow = { ...openWindow, status: 'not_yet' as const };
+
+        it('links a visitor to the check-in while it is open', () => {
+            const wrapper = mountPage(withCheckIn, { checkInWindow: openWindow });
+
+            expect(wrapper.text()).toContain(
+                'Si te inscribiste, haz el check-in con el email de tu inscripción hasta las 18:00.'
+            );
+            expect(linkWithText(wrapper, 'Hacer check-in')?.attributes('href')).toBe(
+                '/torneos/torneo-de-primavera/check-in'
+            );
+        });
+
+        it('tells a visitor when it opens', () => {
+            const wrapper = mountPage(withCheckIn, { checkInWindow: upcomingWindow });
+
+            expect(wrapper.text()).toContain(
+                'El check-in abre el 14 de noviembre a las 17:30. Si te inscribiste, lo harás con el email de tu inscripción.'
+            );
+            expect(linkWithText(wrapper, 'Ir al check-in')?.attributes('href')).toBe(
+                '/torneos/torneo-de-primavera/check-in'
+            );
+        });
+
+        it('shows nothing when the participants cannot check in themselves or it closed', () => {
+            for (const status of ['not_available', 'closed'] as const) {
+                const wrapper = mountPage(withCheckIn, {
+                    checkInWindow: { ...openWindow, status },
+                });
+
+                expect(linkWithText(wrapper, 'Hacer check-in')).toBeUndefined();
+                expect(linkWithText(wrapper, 'Ir al check-in')).toBeUndefined();
+            }
+        });
+
+        it('tells a registered account when it opens', () => {
+            signIn();
+            const wrapper = mountPage(withCheckIn, {
+                checkInWindow: upcomingWindow,
+                userRegistration: registration(),
+            });
+
+            expect(wrapper.text()).toContain('El check-in abre el 14 de noviembre a las 17:30.');
+            expect(wrapper.text()).not.toContain('Si te inscribiste');
+        });
+
+        it('does not repeat it to an account already checked in', () => {
+            signIn();
+            const wrapper = mountPage(withCheckIn, {
+                checkInWindow: upcomingWindow,
+                userRegistration: registration({
+                    status: 'checked_in',
+                    status_label: 'Registrado',
+                }),
+            });
+
+            expect(wrapper.text()).not.toContain('El check-in abre');
+        });
     });
 
     describe('when the person cannot register', () => {
