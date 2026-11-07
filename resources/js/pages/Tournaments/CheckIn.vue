@@ -253,7 +253,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                     <!-- Authenticated User - Button to check in -->
                     <div v-else-if="isAuthenticated && isRegistered">
                         <p class="mb-4 text-center text-base-muted">
-                            {{ t('tournaments.check_in.enter_email') }}
+                            {{ t('tournaments.check_in.confirm_attendance') }}
                         </p>
                         <BaseButton
                             variant="primary"
@@ -309,7 +309,7 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                     for="check-in-email"
                                     class="mb-1 block text-sm font-medium text-base-secondary"
                                 >
-                                    {{ t('common.email') }}
+                                    {{ t('tournaments.check_in.email') }}
                                     <span class="text-error" aria-label="required">*</span>
                                 </label>
                                 <input

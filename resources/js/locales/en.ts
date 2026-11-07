@@ -223,6 +223,8 @@ export default {
         check_in: {
             title: 'Check-in',
             enter_email: 'Enter your email to check in',
+            email: 'Email',
+            confirm_attendance: 'Press the button to confirm you are here.',
             or_login: 'or sign in',
             submit: 'Check in',
             success: 'Checked in!',
