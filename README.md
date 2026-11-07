@@ -246,6 +246,8 @@ Solo se aceptan inscripciones en `registration_open`, dentro de las fechas confi
 | Caducada | `expired` | — (el invitado puede volver a apuntarse) |
 | Descalificado | `disqualified` | — |
 
+Solo juegan (rondas, clasificación, informes y calendario personal) los participantes `confirmed` y `checked_in`. En un torneo sin confirmación manual ni check-in, la inscripción pasa a `confirmed` en cuanto no le falta nada: con cuenta, al inscribirse (también al volver a inscribirse o al quedarse con su inscripción de invitado); sin cuenta, al confirmar el email, por el enlace o desde el panel. No es una aprobación: no se envía «Inscripción aprobada». Si un torneo que no ha empezado se queda sin esos dos requisitos al guardarlo (en **Torneos** o en la pestaña del evento), sus inscripciones `registered` que no esperan la confirmación del email pasan a `confirmed`; la migración `2026_11_07_000001` hizo lo mismo con los torneos que ya existían. Las que añade la organización desde el panel conservan el estado que elija.
+
 Desde el panel (pestaña **Participantes**, con el permiso `tournaments.manage_participants`) se añaden participantes (inscritos, confirmados o con check-in hecho) y se confirman, se hace check-in, se retiran o se descalifican; confirmar, check-in y descalificar también funcionan en bloque. Al confirmar se pueden escribir notas para el participante y al descalificar, el motivo (opcionales, hasta 1000 caracteres; en bloque, el mismo texto para todos): van en el correo que recibe.
 
 ### Resultado de partida

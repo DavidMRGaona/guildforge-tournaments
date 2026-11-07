@@ -25,6 +25,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
+use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
@@ -358,6 +359,8 @@ final class TournamentConfigRelationManager extends RelationManager
 
         if ($tournament instanceof TournamentModel) {
             $tournament->update($data);
+            // Without manual confirmation nor check-in, the registrations left pending play
+            app(ParticipantManagementServiceInterface::class)->admitPendingRegistrations($tournament->id);
         } else {
             $data['status'] = TournamentStatus::Draft->value;
             // Registrations and withdrawals notify this address: start with the person creating it,

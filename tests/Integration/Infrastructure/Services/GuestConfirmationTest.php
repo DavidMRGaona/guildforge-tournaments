@@ -116,7 +116,8 @@ final class GuestConfirmationTest extends ModuleTestCase
         $this->assertSame($tournament->slug, $result->tournamentSlug);
 
         $row->refresh();
-        $this->assertSame(ParticipantStatus::Registered, $row->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $row->status);
         $this->assertEquals($this->now, $row->email_confirmed_at);
         $this->assertNull($row->confirmation_expires_at);
         // Kept, so a second click can say it was already confirmed
@@ -295,7 +296,8 @@ final class GuestConfirmationTest extends ModuleTestCase
 
         $this->assertSame(GuestConfirmationOutcome::Confirmed, $result->outcome);
         $row->refresh();
-        $this->assertSame(ParticipantStatus::Registered, $row->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $row->status);
         $this->assertEquals($this->now, $row->email_confirmed_at);
         Event::assertDispatchedTimes(ParticipantRegistered::class, 1);
     }

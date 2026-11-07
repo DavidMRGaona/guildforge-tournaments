@@ -30,7 +30,10 @@ Dos marcas te ayudan con las personas sin cuenta:
 Las rondas solo emparejan a los participantes **Confirmado** o **Registrado**:
 
 - Si el torneo tiene **Requiere confirmación manual**, aprueba cada inscripción con **Confirmar**.
-- Si no, las inscripciones se quedan en **Inscrito**: haz el check-in de quien vaya a jugar, aunque el torneo no pida check-in. **Check-in seleccionados** lo hace de una vez.
+- Si tiene **Requiere check-in**, las inscripciones se quedan en **Inscrito** hasta que hacen el check-in. **Check-in seleccionados** lo hace de una vez.
+- Si no pide ninguna de las dos, la inscripción pasa sola a **Confirmado**: con cuenta, al inscribirse; sin cuenta, al confirmar su email. No reciben el correo «Inscripción aprobada».
+
+Si quitas la confirmación manual o el check-in de un torneo que aún no ha empezado, y ya no pide ninguna de las dos, las inscripciones en **Inscrito** que no esperan la confirmación del email pasan a **Confirmado** al guardar.
 
 ## Añadir a alguien
 

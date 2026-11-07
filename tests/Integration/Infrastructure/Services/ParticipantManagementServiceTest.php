@@ -34,6 +34,7 @@ final class ParticipantManagementServiceTest extends TestCase
         parent::setUp();
 
         $event = EventModel::factory()->create();
+        // Neither manual confirmation nor check-in: a registration is confirmed at once
         $this->tournament = TournamentModel::create([
             'event_id' => $event->id,
             'name' => 'Test Tournament',
@@ -75,12 +76,12 @@ final class ParticipantManagementServiceTest extends TestCase
 
         // Should reactivate the existing participant, not create a new one
         $this->assertEquals($existingParticipant->id, $result->id);
-        $this->assertEquals(ParticipantStatus::Registered, $result->status);
+        $this->assertEquals(ParticipantStatus::Confirmed, $result->status);
 
         // Verify database state
         $this->assertDatabaseHas('tournaments_participants', [
             'id' => $existingParticipant->id,
-            'status' => ParticipantStatus::Registered->value,
+            'status' => ParticipantStatus::Confirmed->value,
         ]);
 
         // Should still only have one participant record
@@ -102,7 +103,7 @@ final class ParticipantManagementServiceTest extends TestCase
 
         $result = $this->service->register($dto);
 
-        $this->assertEquals(ParticipantStatus::Registered, $result->status);
+        $this->assertEquals(ParticipantStatus::Confirmed, $result->status);
         $this->assertDatabaseCount('tournaments_participants', 1);
 
         Event::assertDispatched(ParticipantRegistered::class);
@@ -134,7 +135,7 @@ final class ParticipantManagementServiceTest extends TestCase
         // Verify checked_in_at is cleared
         $this->assertDatabaseHas('tournaments_participants', [
             'id' => $existingParticipant->id,
-            'status' => ParticipantStatus::Registered->value,
+            'status' => ParticipantStatus::Confirmed->value,
             'checked_in_at' => null,
         ]);
     }

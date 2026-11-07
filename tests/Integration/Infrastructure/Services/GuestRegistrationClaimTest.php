@@ -182,7 +182,8 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
 
         $this->assertSame($guest->id, $result->id);
         $this->assertTrue($result->claimedGuestRegistration);
-        $this->assertSame(ParticipantStatus::Registered, $result->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $result->status);
 
         $row = ParticipantModel::query()->findOrFail($guest->id);
         $this->assertEquals($this->now, $row->email_confirmed_at);
@@ -309,10 +310,11 @@ final class GuestRegistrationClaimTest extends ModuleTestCase
 
         $this->assertSame($own->id, $result->id);
         $this->assertTrue($result->claimedGuestRegistration);
-        $this->assertSame(ParticipantStatus::Registered, $result->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $result->status);
 
         $ownRow = ParticipantModel::query()->findOrFail($own->id);
-        $this->assertSame(ParticipantStatus::Registered, $ownRow->status);
+        $this->assertSame(ParticipantStatus::Confirmed, $ownRow->status);
         $this->assertEquals($this->now, $ownRow->email_confirmed_at);
         $this->assertSame(GuestConfirmationMode::Hold, $ownRow->confirmation_mode);
         $this->assertNull($ownRow->confirmation_token);
