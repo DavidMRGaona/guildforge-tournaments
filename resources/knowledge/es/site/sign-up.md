@@ -6,7 +6,7 @@ category: tournaments
 audience: site
 order: 20
 keywords: [inscribirme, inscribirse, inscripción, apuntarme, apuntarse, apuntarse a un torneo, reservar plaza, plaza, plazas, jugar un torneo, competir, invitado, sin cuenta, confirmar inscripción, correo de confirmación, aprobación, pendiente de aprobar, inscrito, confirmado, incribirme, apuntrame]
-related: [tournaments.overview, tournaments.cancel-registration, tournaments.check-in, core.account.verify-email]
+related: [tournaments.overview, tournaments.cancel-registration, tournaments.check-in, core.account.verify-email, core.events.personal-calendar]
 ---
 Te inscribes desde la página del torneo o desde la ficha de su evento, en el recuadro **Torneo del evento**. Solo se puede mientras la inscripción está abierta y quedan plazas.
 
@@ -34,6 +34,8 @@ Verás «Inscripción realizada correctamente» y, en lugar del botón, **Ya est
 - Si la web lo tiene activado, un recordatorio unas horas antes de que empiece el evento.
 
 Tus torneos están en **Mis torneos** y en la pestaña **Torneos** de tu perfil.
+
+Cuando tu inscripción está **Confirmada** o ya has hecho el check-in, el evento del torneo aparece en tu calendario personal (el filtro **Solo en lo que estoy inscrito** del calendario). Mientras figure como **Inscrito**, o si la cancelas, no aparece. Quien organiza un torneo también lo ve ahí.
 
 ## Sin cuenta, como invitado
 
