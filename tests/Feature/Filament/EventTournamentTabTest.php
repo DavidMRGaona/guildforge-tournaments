@@ -60,6 +60,16 @@ final class EventTournamentTabTest extends ModuleTestCase
         $this->assertSame(['owp', 'median_buchholz'], array_column($tournament->tiebreaker_config ?? [], 'type'));
     }
 
+    public function test_the_rounds_field_says_that_an_empty_value_does_not_limit_the_rounds(): void
+    {
+        $event = EventModel::factory()->create();
+
+        $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->assertSee('Dejar vacío para no limitar las rondas')
+            ->assertDontSee('calcular automáticamente');
+    }
+
     public function test_the_tab_shows_the_tournament_rules(): void
     {
         $tournament = $this->tournament([
