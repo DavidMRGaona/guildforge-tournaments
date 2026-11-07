@@ -13,6 +13,7 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use LogicException;
+use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Exceptions\InsufficientParticipantsException;
@@ -217,6 +218,14 @@ final class EditTournament extends EditRecord
         }
 
         return true;
+    }
+
+    /**
+     * Without manual confirmation nor check-in, the registrations left pending play.
+     */
+    protected function afterSave(): void
+    {
+        app(ParticipantManagementServiceInterface::class)->admitPendingRegistrations($this->tournament()->id);
     }
 
     private function tournament(): TournamentModel

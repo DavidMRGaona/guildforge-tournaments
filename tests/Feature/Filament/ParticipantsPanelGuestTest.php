@@ -219,7 +219,8 @@ final class ParticipantsPanelGuestTest extends ModuleTestCase
 
         $pending->refresh();
         $this->assertEquals($this->now, $pending->email_confirmed_at);
-        $this->assertSame(ParticipantStatus::Registered, $pending->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $pending->status);
         Event::assertDispatchedTimes(ParticipantRegistered::class, 1);
         Event::assertDispatched(ParticipantRegistered::class, fn (ParticipantRegistered $event): bool => $event->participantId === $pending->id
             && ! $event->notifyOrganizer);

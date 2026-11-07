@@ -22,8 +22,8 @@ Verás «Inscripción realizada correctamente» y, en lugar del botón, **Ya est
 
 | Estado | Qué significa |
 |---|---|
-| **Inscrito** | Tienes plaza. Si el torneo necesita que la organización apruebe las inscripciones, aún falta que lo haga. |
-| **Confirmado** | La organización ha aprobado tu inscripción. |
+| **Inscrito** | Tienes plaza, pero aún te falta algo para jugar: que la organización apruebe tu inscripción, si el torneo lo pide, o hacer el check-in. |
+| **Confirmado** | Vas a jugar: la organización ha aprobado tu inscripción o el torneo no pide nada más. |
 | **Registrado** | Ya has hecho el check-in: estás en el local y vas a jugar. |
 
 ### Los correos que recibes

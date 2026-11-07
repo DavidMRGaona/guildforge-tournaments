@@ -168,7 +168,8 @@ final class GuestRegistrationExpirerTest extends ModuleTestCase
         $counts = $this->expirer()->run(CarbonImmutable::now());
 
         $this->assertSame(0, $counts['expired']);
-        $this->assertSame(ParticipantStatus::Registered, $row->refresh()->status);
+        // The tournament asks for nothing else: with the email confirmed it plays
+        $this->assertSame(ParticipantStatus::Confirmed, $row->refresh()->status);
         $this->assertSame([], $this->expiryEmails());
     }
 

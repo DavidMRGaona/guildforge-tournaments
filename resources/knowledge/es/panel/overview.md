@@ -49,15 +49,15 @@ El módulo de torneos organiza competiciones por rondas dentro de los eventos de
 
 | Estado | Qué significa |
 |---|---|
-| **Inscrito** | Se ha inscrito. Si el torneo pide confirmación manual, espera a que lo apruebes. |
-| **Confirmado** | Tiene la inscripción aprobada. |
+| **Inscrito** | Se ha inscrito y le falta algo para jugar: que apruebes la inscripción, si el torneo pide confirmación manual; hacer el check-in, si lo pide; o, sin cuenta, confirmar su email. |
+| **Confirmado** | Juega: has aprobado su inscripción o el torneo no pide confirmación manual ni check-in. |
 | **Registrado** | Ha hecho el check-in: está en el local. |
 | **Retirado** | Se ha dado de baja, o lo has retirado tú. |
 | **Descalificado** | Lo has descalificado. Es definitivo. |
 | **Caducada** | Era una persona sin cuenta que no confirmó su email a tiempo. |
 
 > [!IMPORTANT]
-> Las rondas solo emparejan a los participantes **Confirmado** o **Registrado**. Quien sigue en **Inscrito** se queda fuera. Si el torneo no pide confirmación manual, haz el check-in de los presentes antes de generar la primera ronda.
+> Las rondas solo emparejan a los participantes **Confirmado** o **Registrado**. Quien sigue en **Inscrito** se queda fuera. Si el torneo no pide confirmación manual ni check-in, las inscripciones pasan solas a **Confirmado**. Si pide check-in, haz el check-in de los presentes antes de generar la primera ronda.
 
 ## Estados de una ronda
 

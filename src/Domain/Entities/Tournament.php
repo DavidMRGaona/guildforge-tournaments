@@ -168,6 +168,22 @@ final class Tournament
     }
 
     /**
+     * Whether a registration with nothing pending plays: neither manual confirmation nor check-in.
+     */
+    public function admitsRegistrationsDirectly(): bool
+    {
+        return ! $this->requiresManualConfirmation && ! $this->requiresCheckIn;
+    }
+
+    /**
+     * Whether the tournament has not started yet (draft or with the registration open or closed).
+     */
+    public function isBeforeStart(): bool
+    {
+        return in_array($this->status, [TournamentStatus::Draft, TournamentStatus::RegistrationOpen, TournamentStatus::RegistrationClosed], true);
+    }
+
+    /**
      * @return array<string>
      */
     public function allowedRoles(): array

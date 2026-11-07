@@ -41,7 +41,7 @@ Con la inscripción abierta o cerrada, pulsa **Iniciar torneo** y confirma. Pasa
 Hace falta tener al menos el **Mínimo de participantes** con la inscripción activa (**Inscrito**, **Confirmado** o **Registrado**). Si no, sale «No hay suficientes participantes para iniciar el torneo».
 
 > [!IMPORTANT]
-> Las rondas solo emparejan a los participantes **Confirmado** o **Registrado**. Antes de generar la primera, aprueba las inscripciones pendientes o haz el check-in de los presentes en la pestaña **Participantes**.
+> Las rondas solo emparejan a los participantes **Confirmado** o **Registrado**. Si el torneo pide confirmación manual o check-in, antes de generar la primera aprueba las inscripciones pendientes o haz el check-in de los presentes en la pestaña **Participantes**. Si no pide ninguna de las dos, las inscripciones ya están en **Confirmado**.
 
 ## Finalizar el torneo
 

@@ -144,6 +144,15 @@ interface ParticipantManagementServiceInterface
     public function findByUserAndTournament(string $userId, string $tournamentId): ?ParticipantResponseDTO;
 
     /**
+     * Confirm the registrations with nothing pending once a tournament that has not started asks
+     * neither for manual confirmation nor for check-in (its requirements were removed). Guests
+     * still awaiting their email confirmation wait for it. No approval email is sent.
+     *
+     * @return int How many registrations were confirmed
+     */
+    public function admitPendingRegistrations(string $tournamentId): int;
+
+    /**
      * Whether a participant in this status may be checked in, from the panel or by themselves:
      * with manual confirmation only confirmed participants, otherwise registered ones too.
      */

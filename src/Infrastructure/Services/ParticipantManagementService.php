@@ -260,8 +260,35 @@ final readonly class ParticipantManagementService implements ParticipantManageme
 
     public function confirmEmailByOrganization(string $participantId): ParticipantResponseDTO
     {
-        // Vouching for the email is the whole action
-        return $this->actAsOrganization($participantId, takesSeat: true, act: static function (): void {});
+        // Vouching for the email is the whole action, and in a tournament that asks for nothing it plays
+        return $this->actAsOrganization($participantId, takesSeat: true, act: function (Participant $participant): void {
+            $tournament = $this->tournamentRepository->find(TournamentId::fromString($participant->tournamentId()));
+
+            if ($tournament instanceof Tournament) {
+                $this->admitIfNothingPending($participant, $tournament);
+            }
+        });
+    }
+
+    public function admitPendingRegistrations(string $tournamentId): int
+    {
+        return $this->lock->forTournament($tournamentId, function () use ($tournamentId): int {
+            $tournament = $this->tournamentRepository->find(TournamentId::fromString($tournamentId));
+
+            if (! $tournament instanceof Tournament || ! $tournament->isBeforeStart()) {
+                return 0;
+            }
+
+            $admitted = 0;
+            foreach ($this->participantRepository->findByTournamentAndStatus($tournamentId, ParticipantStatus::Registered) as $participant) {
+                if ($this->admitIfNothingPending($participant, $tournament)) {
+                    $this->participantRepository->save($participant);
+                    $admitted++;
+                }
+            }
+
+            return $admitted;
+        });
     }
 
     public function confirm(string $participantId, ?string $notes = null): ParticipantResponseDTO
@@ -707,6 +734,23 @@ final readonly class ParticipantManagementService implements ParticipantManageme
     /**
      * A note of the organisation for an email, or null when it says nothing.
      */
+    /**
+     * Confirm a registration with nothing pending (no guest email to confirm) in a tournament that
+     * asks neither for manual confirmation nor for check-in: it plays. Not an approval: no email.
+     */
+    private function admitIfNothingPending(Participant $participant, Tournament $tournament): bool
+    {
+        if (! $tournament->admitsRegistrationsDirectly()
+            || $participant->status() !== ParticipantStatus::Registered
+            || $participant->isAwaitingEmailConfirmation()) {
+            return false;
+        }
+
+        $participant->confirm();
+
+        return true;
+    }
+
     private function note(?string $text): ?string
     {
         $text = $text !== null ? trim($text) : null;
@@ -800,6 +844,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             );
         }
 
+        $this->admitIfNothingPending($participant, $tournament);
         $this->recordFingerprint($participant, $dto);
         $this->participantRepository->save($participant);
 
@@ -875,6 +920,8 @@ final readonly class ParticipantManagementService implements ParticipantManageme
             $participant->claimForUser($userId, $now->toDateTimeImmutable());
         }
 
+        // The account's verified email confirms it: nothing else may be pending
+        $this->admitIfNothingPending($participant, $tournament);
         $this->recordFingerprint($participant, $dto);
         $this->participantRepository->save($participant);
 
@@ -1118,6 +1165,7 @@ final readonly class ParticipantManagementService implements ParticipantManageme
         }
 
         $participant->markEmailConfirmed($now->toDateTimeImmutable());
+        $this->admitIfNothingPending($participant, $tournament);
         $this->participantRepository->save($participant);
 
         return [
