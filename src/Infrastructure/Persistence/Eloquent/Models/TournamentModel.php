@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Tournaments\Domain\Enums\ResultReporting;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
@@ -189,6 +190,16 @@ final class TournamentModel extends Model
     public function rounds(): HasMany
     {
         return $this->hasMany(RoundModel::class, 'tournament_id');
+    }
+
+    /**
+     * The matches of every round.
+     *
+     * @return HasManyThrough<MatchModel, RoundModel, $this>
+     */
+    public function matches(): HasManyThrough
+    {
+        return $this->hasManyThrough(MatchModel::class, RoundModel::class, 'tournament_id', 'round_id');
     }
 
     /**

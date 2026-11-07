@@ -220,20 +220,17 @@ final class TournamentsPanelTest extends ModuleTestCase
     public function test_tournament_relation_managers_render(): void
     {
         $tournament = $this->tournament();
-        $round = RoundModel::create([
+        RoundModel::create([
             'id' => (string) Str::uuid(),
             'tournament_id' => $tournament->id,
             'round_number' => 1,
             'status' => 'pending',
         ]);
 
-        foreach ([ParticipantsRelationManager::class, RoundsRelationManager::class] as $relationManager) {
+        foreach ([ParticipantsRelationManager::class, RoundsRelationManager::class, MatchesRelationManager::class] as $relationManager) {
             Livewire::test($relationManager, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
                 ->assertOk();
         }
-
-        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $round, 'pageClass' => EditTournament::class])
-            ->assertOk();
     }
 
     public function test_event_config_relation_manager_renders_and_saves(): void

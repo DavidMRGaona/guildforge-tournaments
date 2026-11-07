@@ -162,7 +162,7 @@ final class TournamentStatusActionsPanelTest extends ModuleTestCase
             ->assertNotified(
                 Notification::make()
                     ->title('No se puede finalizar el torneo')
-                    ->body('Quedan 2 resultados informados por los jugadores sin confirmar o discutidos. Resuélvelos en la pestaña «Rondas» antes de finalizar.')
+                    ->body('Quedan 2 resultados informados por los jugadores sin confirmar o discutidos. Resuélvelos en la pestaña «Partidas» antes de finalizar.')
                     ->danger(),
             );
 

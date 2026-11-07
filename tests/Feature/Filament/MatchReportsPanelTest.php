@@ -293,7 +293,7 @@ final class MatchReportsPanelTest extends ModuleTestCase
      */
     private function matchesManager(): Testable
     {
-        return Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $this->round, 'pageClass' => EditTournament::class]);
+        return Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $this->tournament, 'pageClass' => EditTournament::class]);
     }
 
     /**

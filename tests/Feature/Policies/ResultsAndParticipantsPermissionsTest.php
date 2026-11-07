@@ -98,10 +98,8 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
         app(MatchReportRepositoryInterface::class)->save(new MatchReport($match->id, MatchResult::PlayerOneWin, UserModel::factory()->create()->id, new DateTimeImmutable('2030-05-01 10:00:00')));
         $this->actingAs($this->userWith([self::UPDATE, self::MANAGE_PARTICIPANTS]));
 
-        $this->matchesManager($match)
-            ->assertTableActionHidden('confirmReport', $match)
-            ->assertTableActionHidden('resetResult', $match)
-            ->assertTableActionHidden('history', $match);
+        // Not even the matches tab, where the actions of each match are
+        $this->matchesManager($match)->assertForbidden();
         $this->roundsManager()->assertTableActionHidden('confirmPendingReports', $match->round);
 
         $this->assertInstanceOf(MatchReport::class, app(MatchReportRepositoryInterface::class)->find($match->id));
@@ -112,7 +110,8 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
         $match = $this->match();
         $this->actingAs($this->userWith([self::UPDATE, self::MANAGE_PARTICIPANTS]));
 
-        $this->matchesManager($match)->assertTableActionHidden('reportResult', $match);
+        $this->assertFalse(MatchesRelationManager::canViewForRecord($this->tournament, EditTournament::class));
+        $this->matchesManager($match)->assertForbidden();
 
         $this->assertSame(MatchResult::NotPlayed, $match->refresh()->result);
     }
@@ -245,10 +244,9 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
         $participant = $this->participant(ParticipantStatus::Confirmed);
         $this->actingAs($this->userWith([self::UPDATE]));
 
-        // What the browser would send if it ignored that the buttons are not there
-        $this->matchesManager($match)
-            ->call('mountAction', 'reportResult', [], ['table' => true, 'recordKey' => $match->id])
-            ->assertSet('mountedActions', []);
+        // What the browser would send if it ignored that the buttons are not there; the matches
+        // tab does not even mount
+        $this->matchesManager($match)->assertForbidden();
         $this->participantsManager()
             ->call('mountAction', 'check_in', [], ['table' => true, 'recordKey' => $participant->id])
             ->assertSet('mountedActions', [])
@@ -335,6 +333,6 @@ final class ResultsAndParticipantsPermissionsTest extends ModuleTestCase
      */
     private function matchesManager(MatchModel $match): Testable
     {
-        return Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $match->round, 'pageClass' => EditTournament::class]);
+        return Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $match->round->tournament, 'pageClass' => EditTournament::class]);
     }
 }

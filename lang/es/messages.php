@@ -36,6 +36,7 @@ return [
             'completed_at' => 'Completada',
         ],
         'rounds_title' => 'Rondas',
+        'matches_title' => 'Partidas',
     ],
 
     // Table display
@@ -198,6 +199,7 @@ return [
         'player_1_stats' => 'Estadísticas jugador 1',
         'player_2_stats' => 'Estadísticas jugador 2',
         'bye_opponent' => 'Bye',
+        'round' => 'Ronda',
         'report_status' => 'Informe',
         'reset_reason' => 'Motivo',
         'dispute_reason' => 'Motivo',
@@ -293,7 +295,7 @@ return [
         'invalid_state_transition' => 'Transición de estado no permitida',
         'insufficient_participants' => 'No hay suficientes participantes para iniciar el torneo',
         'cannot_finish_with_reports' => 'No se puede finalizar el torneo',
-        'pending_reports_to_resolve' => '{1} Queda 1 resultado informado por los jugadores sin confirmar o discutido. Resuélvelo en la pestaña «Rondas» antes de finalizar.|[2,*] Quedan :count resultados informados por los jugadores sin confirmar o discutidos. Resuélvelos en la pestaña «Rondas» antes de finalizar.',
+        'pending_reports_to_resolve' => '{1} Queda 1 resultado informado por los jugadores sin confirmar o discutido. Resuélvelo en la pestaña «Partidas» antes de finalizar.|[2,*] Quedan :count resultados informados por los jugadores sin confirmar o discutidos. Resuélvelos en la pestaña «Partidas» antes de finalizar.',
         'previous_round_not_completed' => 'La ronda anterior debe tener todos los resultados y estar completada',
         'cannot_generate_pairings' => 'No se pueden generar los emparejamientos: el torneo debe estar en curso y sin superar el máximo de rondas',
         'not_enough_players_for_round' => 'Hacen falta al menos 2 participantes confirmados o presentados para generar una ronda',
@@ -758,7 +760,7 @@ return [
             'greeting' => 'Hola, :name',
             'intro' => ':disputer no está de acuerdo con el resultado informado de su partida en :tournament: :result.',
             'reason' => 'Motivo',
-            'organization' => 'Revísalo en el panel, en la pestaña Rondas del torneo: puedes confirmarlo o restablecerlo.',
+            'organization' => 'Revísalo en el panel, en la pestaña Partidas del torneo: puedes confirmarlo o restablecerlo.',
             'reporter' => 'Puedes corregir tu informe desde la página del torneo; si no, lo decidirá la organización.',
         ],
         'tournament_reminder' => [
