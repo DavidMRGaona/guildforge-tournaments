@@ -529,8 +529,22 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         <h3 class="font-semibold text-primary">
                             {{ t('tournaments.public.cannot_register') }}
                         </h3>
-                        <p class="mt-1 text-sm text-primary">
-                            {{ t('tournaments.public.login_to_register') }}
+                        <template v-if="!isAuthenticated">
+                            <p class="mt-1 text-sm text-primary">
+                                {{ t('tournaments.public.login_to_register') }}
+                            </p>
+                            <Link
+                                href="/iniciar-sesion"
+                                class="mt-2 inline-block text-sm font-medium text-primary underline underline-offset-2 hover:no-underline"
+                            >
+                                {{ t('common.login') }}
+                            </Link>
+                        </template>
+                        <p v-else-if="isFull" class="mt-1 text-sm text-primary">
+                            {{ t('tournaments.public.cannot_register_full') }}
+                        </p>
+                        <p v-else class="mt-1 text-sm text-primary">
+                            {{ t('tournaments.public.cannot_register_role') }}
                         </p>
                     </div>
 
