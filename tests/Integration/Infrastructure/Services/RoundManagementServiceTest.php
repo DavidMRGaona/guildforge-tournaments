@@ -246,6 +246,20 @@ final class RoundManagementServiceTest extends ModuleTestCase
         $this->rounds()->generateNextRound($tournament->id);
     }
 
+    public function test_without_a_maximum_rounds_go_on_beyond_the_recommended_number(): void
+    {
+        $tournament = $this->tournament();
+        $this->participants($tournament, 4);
+
+        // 4 participants recommend 2 rounds, but an empty maximum limits nothing
+        foreach ([1, 2, 3] as $number) {
+            $round = $this->rounds()->generateNextRound($tournament->id);
+            $this->assertSame($number, $round->roundNumber);
+            $this->reportAll($round->id);
+            RoundModel::query()->whereKey($round->id)->update(['status' => RoundStatus::Finished->value]);
+        }
+    }
+
     public function test_later_rounds_pair_by_score_and_avoid_rematches(): void
     {
         $tournament = $this->tournament();

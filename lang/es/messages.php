@@ -361,7 +361,7 @@ return [
         'max_participants_help' => 'Dejar vacío para ilimitado',
         'min_participants' => 'Mínimo de participantes',
         'max_rounds' => 'Número de rondas',
-        'max_rounds_help' => 'Dejar vacío para calcular automáticamente',
+        'max_rounds_help' => 'Dejar vacío para no limitar las rondas: la organización decide cuándo terminar el torneo',
         'dates' => 'Fechas',
         'registration_opens_at' => 'Apertura de inscripción',
         'registration_closes_at' => 'Cierre de inscripción',
