@@ -60,6 +60,33 @@ final class EventTournamentTabTest extends ModuleTestCase
         $this->assertSame(['owp', 'median_buchholz'], array_column($tournament->tiebreaker_config ?? [], 'type'));
     }
 
+    public function test_a_tournament_created_from_the_tab_notifies_the_person_who_created_it(): void
+    {
+        $event = EventModel::factory()->create();
+
+        $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->set('configData.name', 'Torneo del evento')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
+        $this->assertNotSame('', (string) auth()->user()?->email);
+        $this->assertSame(auth()->user()->email, $tournament->notification_email);
+    }
+
+    public function test_saving_the_tab_again_keeps_the_notification_email_of_the_tournament(): void
+    {
+        $tournament = $this->tournament(['notification_email' => 'organizacion@example.com']);
+
+        $this->tab($tournament->event)
+            ->set('configData.name', 'Otro nombre')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('organizacion@example.com', $tournament->refresh()->notification_email);
+    }
+
     public function test_the_tab_shows_the_tournament_rules(): void
     {
         $tournament = $this->tournament([
