@@ -142,6 +142,9 @@ export default {
             cannot_register: 'Cannot register',
             cannot_withdraw: 'Cannot cancel registration',
             login_to_register: 'Login to register',
+            cannot_register_full: 'The tournament has no spots left.',
+            cannot_register_role:
+                'This tournament is reserved for certain roles and your account has none of them.',
             started_at: 'Started',
             current_round_title: 'Round {round} in progress',
             matches_completed: '{completed} of {total} matches completed',
@@ -223,6 +226,8 @@ export default {
         check_in: {
             title: 'Check-in',
             enter_email: 'Enter your email to check in',
+            email: 'Email',
+            confirm_attendance: 'Press the button to confirm you are here.',
             or_login: 'or sign in',
             submit: 'Check in',
             success: 'Checked in!',
