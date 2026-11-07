@@ -360,6 +360,9 @@ final class TournamentConfigRelationManager extends RelationManager
             $tournament->update($data);
         } else {
             $data['status'] = TournamentStatus::Draft->value;
+            // Registrations and withdrawals notify this address: start with the person creating it,
+            // who can change it in the tournament form
+            $data['notification_email'] = (string) auth()->user()?->email;
             // The end survey field saves once the tournament exists
             $this->configForm->model(TournamentModel::create($data))->saveRelationships();
         }

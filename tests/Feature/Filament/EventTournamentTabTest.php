@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -58,6 +59,35 @@ final class EventTournamentTabTest extends ModuleTestCase
         );
         $this->assertSame('result', data_get($tournament->scoring_rules, '0.condition.type'));
         $this->assertSame(['owp', 'median_buchholz'], array_column($tournament->tiebreaker_config ?? [], 'type'));
+    }
+
+    public function test_a_tournament_created_from_the_tab_notifies_the_person_who_created_it(): void
+    {
+        $event = EventModel::factory()->create();
+
+        $this->tab($event)
+            ->set('configData.tournament_enabled', true)
+            ->set('configData.name', 'Torneo del evento')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
+        $user = auth()->user();
+        $this->assertInstanceOf(UserModel::class, $user);
+        $this->assertNotSame('', $user->email);
+        $this->assertSame($user->email, $tournament->notification_email);
+    }
+
+    public function test_saving_the_tab_again_keeps_the_notification_email_of_the_tournament(): void
+    {
+        $tournament = $this->tournament(['notification_email' => 'organizacion@example.com']);
+
+        $this->tab($tournament->event)
+            ->set('configData.name', 'Otro nombre')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('organizacion@example.com', $tournament->refresh()->notification_email);
     }
 
     public function test_the_rounds_field_says_that_an_empty_value_does_not_limit_the_rounds(): void
