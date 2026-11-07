@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
+use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -71,8 +72,10 @@ final class EventTournamentTabTest extends ModuleTestCase
             ->assertHasNoErrors();
 
         $tournament = TournamentModel::query()->where('event_id', $event->id)->sole();
-        $this->assertNotSame('', (string) auth()->user()?->email);
-        $this->assertSame(auth()->user()->email, $tournament->notification_email);
+        $user = auth()->user();
+        $this->assertInstanceOf(UserModel::class, $user);
+        $this->assertNotSame('', $user->email);
+        $this->assertSame($user->email, $tournament->notification_email);
     }
 
     public function test_saving_the_tab_again_keeps_the_notification_email_of_the_tournament(): void
