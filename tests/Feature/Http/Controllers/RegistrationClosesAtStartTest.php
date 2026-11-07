@@ -98,6 +98,16 @@ final class RegistrationClosesAtStartTest extends ModuleTestCase
         $this->assertSame(ParticipantStatus::Registered, $participant->fresh()?->status);
     }
 
+    public function test_withdrawing_without_a_registration_says_the_user_is_not_registered(): void
+    {
+        $tournament = $this->tournament(now()->addWeek());
+
+        $this->actingAs(UserModel::factory()->create())
+            ->json('DELETE', $this->registrationUrl($tournament), [])
+            ->assertStatus(404)
+            ->assertJson(['message' => 'No estás inscrito en este torneo']);
+    }
+
     public function test_a_user_can_withdraw_after_registration_closes_until_the_event_starts(): void
     {
         $tournament = $this->tournament('2036-03-14 10:00:00', ['status' => TournamentStatus::RegistrationClosed]);

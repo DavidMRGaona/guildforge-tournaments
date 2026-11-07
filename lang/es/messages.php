@@ -286,6 +286,7 @@ return [
         'registration_with_this_email' => 'Ya hay una inscripción con este email.',
         'guest_email_has_account' => 'Este email pertenece a una cuenta. Inicia sesión para inscribirte.',
         'too_many_registration_attempts' => 'Has hecho demasiados intentos. Espera un momento y vuelve a probar.',
+        'not_registered' => 'No estás inscrito en este torneo',
         'cannot_withdraw' => 'No puedes retirarte del torneo en este momento',
         'cannot_withdraw_started' => 'El torneo ya ha comenzado: ya no puedes retirarte',
         'cannot_cancel_started' => 'El torneo ya ha comenzado: ya no puedes cancelar tu inscripción',
