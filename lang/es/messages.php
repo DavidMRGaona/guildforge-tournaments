@@ -715,6 +715,8 @@ return [
     'check_in' => [
         'title' => 'Check-in',
         'enter_email' => 'Introduce tu email para hacer check-in',
+        'email' => 'Email',
+        'confirm_attendance' => 'Pulsa el botón para confirmar que estás aquí.',
         'or_login' => 'o inicia sesión',
         'submit' => 'Hacer check-in',
         'success' => '¡Check-in realizado!',
