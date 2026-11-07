@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments;
 
+use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
@@ -78,6 +79,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
 use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -728,6 +730,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentSurveySubjectSource::class,
+        ];
+    }
+
+    /**
+     * Tournaments a person plays in or organizes, in their personal calendar (core ≥ 3.38).
+     *
+     * @return array<class-string<CalendarAttendanceSourceInterface>>
+     */
+    public function registerCalendarAttendanceSources(): array
+    {
+        return [
+            TournamentAttendanceSource::class,
         ];
     }
 
