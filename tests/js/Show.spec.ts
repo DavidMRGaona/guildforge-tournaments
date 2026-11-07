@@ -4,6 +4,7 @@ import Show from '../../resources/js/pages/Tournaments/Show.vue';
 import type { Tournament, TournamentShowProps } from '../../resources/js/types/tournaments';
 import { playerMatch, tournament } from './support/fixtures';
 import { linkWithText, nestedInteractiveLinks } from './support/interactive';
+import { signIn } from './support/page';
 
 function mountPage(
     overrides: Partial<Tournament> = {},
@@ -136,5 +137,36 @@ describe('Show', () => {
             '/torneos/torneo-de-primavera/rondas'
         );
         expect(nestedInteractiveLinks(wrapper)).toEqual([]);
+    });
+
+    describe('when the person cannot register', () => {
+        it('asks a guest to sign in', () => {
+            const wrapper = mountPage();
+
+            expect(wrapper.text()).toContain('No puedes inscribirte');
+            expect(wrapper.text()).toContain('Inicia sesión para inscribirte');
+            expect(linkWithText(wrapper, 'Iniciar sesión')?.attributes('href')).toBe(
+                '/iniciar-sesion'
+            );
+        });
+
+        it('tells a signed-in person that the tournament is full', () => {
+            signIn();
+            const wrapper = mountPage({ max_participants: 4, participant_count: 4 });
+
+            expect(wrapper.text()).toContain('No puedes inscribirte');
+            expect(wrapper.text()).toContain('El torneo ha completado todas sus plazas.');
+            expect(wrapper.text()).not.toContain('Inicia sesión');
+        });
+
+        it('tells a signed-in person that the tournament is limited to some roles', () => {
+            signIn();
+            const wrapper = mountPage({ max_participants: 16, participant_count: 4 });
+
+            expect(wrapper.text()).toContain(
+                'Este torneo está reservado a ciertos roles y tu cuenta no tiene ninguno.'
+            );
+            expect(wrapper.text()).not.toContain('Inicia sesión');
+        });
     });
 });

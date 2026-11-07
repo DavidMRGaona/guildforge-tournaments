@@ -172,6 +172,9 @@ export default {
             cannot_register: 'No puedes inscribirte',
             cannot_withdraw: 'No puedes cancelar tu inscripción',
             login_to_register: 'Inicia sesión para inscribirte',
+            cannot_register_full: 'El torneo ha completado todas sus plazas.',
+            cannot_register_role:
+                'Este torneo está reservado a ciertos roles y tu cuenta no tiene ninguno.',
             started_at: 'Iniciado',
             current_round_title: 'Ronda {round} en curso',
             matches_completed: '{completed} de {total} partidas completadas',
