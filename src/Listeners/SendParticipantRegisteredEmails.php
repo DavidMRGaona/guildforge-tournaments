@@ -64,6 +64,7 @@ final readonly class SendParticipantRegisteredEmails
             tournamentSlug: $tournament->slug(),
             notes: $event->notes,
             awaitingApproval: $tournament->requiresManualConfirmation() && $participant->status() === ParticipantStatus::Registered,
+            selfCheckInAllowed: $tournament->selfCheckInAllowed(),
         ));
 
         // Send to organizer, unless the registration is not news to them

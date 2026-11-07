@@ -746,6 +746,10 @@ return [
         'match_result' => [
             'win' => 'Gana :name',
         ],
+        'check_in' => [
+            'self' => 'El check-in abre :minutes minutos antes del inicio del evento y cierra cuando empieza. Puedes hacerlo en :url',
+            'at_the_venue' => 'El check-in abre :minutes minutos antes del inicio del evento: díselo a la organización al llegar.',
+        ],
         'match_result_reported' => [
             'subject' => 'Resultado informado en :tournament',
             'greeting' => 'Hola, :name',

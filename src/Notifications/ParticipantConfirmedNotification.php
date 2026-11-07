@@ -21,6 +21,7 @@ final class ParticipantConfirmedNotification extends Notification implements Sho
         private readonly ?int $checkInStartsBefore,
         private readonly string $tournamentSlug,
         private readonly ?string $notes = null,
+        private readonly ?bool $selfCheckInAllowed = null,
     ) {}
 
     /**
@@ -55,9 +56,8 @@ final class ParticipantConfirmedNotification extends Notification implements Sho
         }
 
         if ($this->requiresCheckIn) {
-            $message->line(__('tournaments::messages.emails.registration_confirmed.check_in_required', [
-                'minutes' => $this->checkInStartsBefore ?? 30,
-            ]));
+            // ?? like isset(): a notification queued before the property existed comes back without it
+            $message->line(CheckInReminderLine::for($this->checkInStartsBefore, $this->selfCheckInAllowed ?? null, $this->tournamentSlug));
         }
 
         return $message

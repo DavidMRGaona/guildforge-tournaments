@@ -292,6 +292,8 @@ export interface TournamentShowProps {
     userRegistration: Participant | null;
     canRegister: boolean;
     canCheckIn: boolean;
+    /** When the self check-in opens and closes; visitors reach its page from the tournament page */
+    checkInWindow: CheckInWindow;
     guestConfirmation: GuestConfirmationTerms | null;
     /** Its surveys for this person, when a surveys module offers any */
     surveyLinks?: TournamentSurveyLinks | null;

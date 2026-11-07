@@ -73,6 +73,47 @@ const canWithdraw = computed(() => {
 // The server decides who may check in now (registered, window open); the page lives under the same slug
 const checkInUrl = computed(() => `/torneos/${props.tournament.slug}/check-in`);
 
+// The self check-in is open or about to open (the server says); a visitor reaches its page from here
+const checkInReachable = computed(
+    () => props.checkInWindow.status === 'open' || props.checkInWindow.status === 'not_yet'
+);
+const showGuestCheckIn = computed(() => !isAuthenticated.value && checkInReachable.value);
+const showCheckInOpensOn = computed(
+    () =>
+        isRegistered.value &&
+        props.checkInWindow.status === 'not_yet' &&
+        props.userRegistration?.status !== 'checked_in'
+);
+
+const formatWindowDay = (isoDate: string | null): string =>
+    isoDate === null
+        ? ''
+        : new Date(isoDate).toLocaleDateString(locale.value, {
+              timeZone: VENUE_TIMEZONE,
+              day: 'numeric',
+              month: 'long',
+          });
+
+const formatWindowTime = (isoDate: string | null): string =>
+    isoDate === null
+        ? ''
+        : new Date(isoDate).toLocaleTimeString(locale.value, {
+              timeZone: VENUE_TIMEZONE,
+              hour: '2-digit',
+              minute: '2-digit',
+          });
+
+const guestCheckInText = computed((): string =>
+    props.checkInWindow.status === 'open'
+        ? t('tournaments.public.guest_check_in_open', {
+              time: formatWindowTime(props.checkInWindow.closes_at),
+          })
+        : t('tournaments.public.guest_check_in_upcoming', {
+              date: formatWindowDay(props.checkInWindow.opens_at),
+              time: formatWindowTime(props.checkInWindow.opens_at),
+          })
+);
+
 // The register or withdraw button is on screen, so its disabled reason must be too
 const showGateReason = computed(
     () => gate.blocked.value && (isRegistered.value ? canWithdraw.value : props.canRegister)
@@ -457,6 +498,31 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </p>
                 </div>
 
+                <!-- Check-in for visitors: a guest has no other way to reach it -->
+                <div
+                    v-if="showGuestCheckIn"
+                    class="mb-6 rounded-lg border border-primary bg-primary-light p-4"
+                >
+                    <h3 class="font-semibold text-primary">
+                        {{ t('tournaments.public.check_in_title') }}
+                    </h3>
+                    <p class="mt-1 text-sm text-primary">{{ guestCheckInText }}</p>
+                    <Link
+                        v-if="checkInWindow.status === 'open'"
+                        :href="checkInUrl"
+                        class="mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-base font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
+                    >
+                        {{ t('tournaments.public.check_in_now') }}
+                    </Link>
+                    <Link
+                        v-else
+                        :href="checkInUrl"
+                        class="mt-2 inline-block text-sm font-medium text-primary underline underline-offset-2 hover:no-underline"
+                    >
+                        {{ t('tournaments.public.go_to_check_in') }}
+                    </Link>
+                </div>
+
                 <!-- Registration Section -->
                 <div
                     v-if="tournament.is_registration_open || isRegistered"
@@ -500,6 +566,14 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                         >
                             {{ t('tournaments.public.check_in_now') }}
                         </Link>
+                        <p v-if="showCheckInOpensOn" class="mt-3 text-sm text-success">
+                            {{
+                                t('tournaments.public.check_in_opens_on', {
+                                    date: formatWindowDay(checkInWindow.opens_at),
+                                    time: formatWindowTime(checkInWindow.opens_at),
+                                })
+                            }}
+                        </p>
                     </div>
 
                     <div v-else-if="canRegister" class="flex items-center justify-between">

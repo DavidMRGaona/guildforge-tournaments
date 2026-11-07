@@ -28,7 +28,7 @@ Verás «Inscripción realizada correctamente» y, en lugar del botón, **Ya est
 
 ### Los correos que recibes
 
-- **Inscripción confirmada**: tu inscripción ha quedado registrada. Si el torneo pide check-in, el correo te recuerda cuántos minutos antes del inicio tienes que hacerlo.
+- **Inscripción confirmada**: tu inscripción ha quedado registrada. Si el torneo pide check-in, el correo dice cuántos minutos antes del inicio abre y, si lo haces desde la web, trae el enlace a su página.
 - **Inscripción recibida**: el torneo necesita que la organización apruebe las inscripciones. Te avisará por correo.
 - **Inscripción aprobada**: la organización ha aprobado tu inscripción. Puede traer **Notas de la organización**.
 - Si la web lo tiene activado, un recordatorio unas horas antes de que empiece el evento.
