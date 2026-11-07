@@ -47,7 +47,7 @@ Hace falta tener al menos el **Mínimo de participantes** con la inscripción ac
 
 Cuando se han jugado todas las rondas, pulsa **Finalizar torneo**. Marca la casilla «Entiendo que el torneo terminará con la clasificación actual y que no se puede deshacer» y confirma. Pasa a **Finalizado** y la clasificación queda cerrada tal como está.
 
-No se puede finalizar mientras quede algún resultado informado por los jugadores sin confirmar o discutido: el aviso dice cuántos quedan. Resuélvelos antes en la pestaña **Rondas** (lo explica la guía de resultados).
+No se puede finalizar mientras quede algún resultado informado por los jugadores sin confirmar o discutido: el aviso dice cuántos quedan. Resuélvelos antes en la pestaña **Partidas** (lo explica la guía de resultados).
 
 Si tu web tiene encuestas, al finalizar puede salir la encuesta elegida para el final del torneo.
 

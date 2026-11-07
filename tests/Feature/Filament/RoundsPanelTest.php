@@ -180,7 +180,7 @@ final class RoundsPanelTest extends ModuleTestCase
         $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
         $match = MatchModel::query()->where('round_id', $round->id)->sole();
 
-        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $round, 'pageClass' => EditTournament::class])
+        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
             ->callTableAction('reportResult', $match, data: ['result' => MatchResult::Draw->value, 'player_1_score' => 1, 'player_2_score' => 1])
             ->assertHasNoTableActionErrors();
 
@@ -197,7 +197,7 @@ final class RoundsPanelTest extends ModuleTestCase
         $round = RoundModel::query()->where('tournament_id', $tournament->id)->sole();
         $match = MatchModel::query()->where('round_id', $round->id)->sole();
 
-        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $round, 'pageClass' => EditTournament::class])
+        Livewire::test(MatchesRelationManager::class, ['ownerRecord' => $tournament, 'pageClass' => EditTournament::class])
             ->callTableAction('reportResult', $match, data: ['result' => MatchResult::PlayerOneWin->value, 'player_1_score' => 0, 'player_2_score' => 2])
             ->assertNotified(__('tournaments::messages.errors.scores_contradict_result'));
 

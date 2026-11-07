@@ -45,6 +45,7 @@ use Modules\Tournaments\Filament\RegistrationClosingDateRule;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\EditTournament;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTournaments;
+use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
 use Modules\Tournaments\Filament\TournamentFormDefaults;
@@ -719,6 +720,7 @@ final class TournamentResource extends BaseResource
         return [
             ParticipantsRelationManager::class,
             RoundsRelationManager::class,
+            MatchesRelationManager::class,
         ];
     }
 

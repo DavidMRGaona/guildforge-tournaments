@@ -17,6 +17,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,7 @@ use Modules\Tournaments\Filament\InvalidMatchResultMessage;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchReportModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final class MatchesRelationManager extends RelationManager
 {
@@ -44,15 +46,26 @@ final class MatchesRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        /** @var RoundModel $ownerRecord */
-        return __('tournaments::messages.table.round_number', ['number' => $ownerRecord->round_number]).' - '.__('tournaments::messages.resource.fields.matches_count');
+        return __('tournaments::messages.resource.matches_title');
+    }
+
+    /**
+     * The tab only shows to who may record results (tournaments.report_results).
+     */
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()?->can('reportResults', $ownerRecord) ?? false;
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('report'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['report', 'round']))
             ->columns([
+                TextColumn::make('round.round_number')
+                    ->label(__('tournaments::messages.fields.round'))
+                    ->formatStateUsing(fn (int $state): string => __('tournaments::messages.table.round_number', ['number' => $state])),
+
                 TextColumn::make('table_number')
                     ->label(__('tournaments::messages.fields.table_number'))
                     ->sortable()
@@ -100,6 +113,27 @@ final class MatchesRelationManager extends RelationManager
                     })
                     ->color(fn (MatchModel $record): string => $record->report?->disputed_at !== null ? 'danger' : 'warning')
                     ->tooltip(fn (MatchModel $record): ?string => $record->report?->dispute_reason),
+            ])
+            ->filters([
+                // The last round first: the one whose results are being recorded
+                SelectFilter::make('round_id')
+                    ->label(__('tournaments::messages.fields.round'))
+                    ->options(fn (): array => $this->roundOptions())
+                    ->default(fn (): ?string => array_key_first($this->roundOptions())),
+
+                SelectFilter::make('report')
+                    ->label(__('tournaments::messages.fields.report_status'))
+                    ->options([
+                        'pending' => __('tournaments::messages.report_status.pending'),
+                        'disputed' => __('tournaments::messages.report_status.disputed'),
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'pending' => $query->where('result', MatchResult::NotPlayed->value)
+                            ->whereHas('report', static fn (Builder $report): Builder => $report->whereNull('disputed_at')),
+                        'disputed' => $query->where('result', MatchResult::NotPlayed->value)
+                            ->whereHas('report', static fn (Builder $report): Builder => $report->whereNotNull('disputed_at')),
+                        default => $query,
+                    }),
             ])
             ->recordActions([
                 Action::make('reportResult')
@@ -289,7 +323,29 @@ final class MatchesRelationManager extends RelationManager
                         $queries->getHistory($record->id),
                     )),
             ])
-            ->defaultSort('table_number', 'asc');
+            // Without the round filter, the last round first and its tables in order
+            ->defaultSort(fn (Builder $query): Builder => $query
+                ->orderByDesc('tournaments_rounds.round_number')
+                ->orderBy('tournaments_matches.table_number'));
+    }
+
+    /**
+     * The rounds of the tournament, the last one first.
+     *
+     * @return array<string, string>
+     */
+    private function roundOptions(): array
+    {
+        /** @var TournamentModel $tournament */
+        $tournament = $this->getOwnerRecord();
+
+        $options = [];
+        foreach ($tournament->rounds()->orderByDesc('round_number')->get() as $round) {
+            /** @var RoundModel $round */
+            $options[$round->id] = __('tournaments::messages.table.round_number', ['number' => $round->round_number]);
+        }
+
+        return $options;
     }
 
     /**
@@ -337,10 +393,7 @@ final class MatchesRelationManager extends RelationManager
      */
     private function canReportResults(): bool
     {
-        /** @var RoundModel $round */
-        $round = $this->getOwnerRecord();
-
-        return auth()->user()?->can('reportResults', $round->tournament) ?? false;
+        return auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false;
     }
 
     /**

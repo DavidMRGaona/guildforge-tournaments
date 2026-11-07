@@ -85,7 +85,7 @@ En el panel, el grupo **Torneos** contiene **Torneos** y **Perfiles de torneo**.
 2. **Crear el torneo** en **Torneos** → **Crear torneo** (8 pestañas, ver abajo). Se crea en estado **Borrador**.
 3. **Abrir inscripción** con la acción de la cabecera al editar el torneo. Con fechas de apertura o cierre configuradas, la web solo acepta inscripciones entre ellas; el inicio del evento la cierra siempre.
 4. **Cerrar inscripción** e **Iniciar torneo**. Se puede iniciar con la inscripción abierta o cerrada; iniciar la cierra. El mínimo de participantes cuenta solo las inscripciones que ocupan plaza: no los retirados, descalificados ni caducados, ni los invitados sin confirmar que no reservan plaza.
-5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida) y **Completar ronda** (exige que todas las partidas tengan resultado definitivo: un informe de los jugadores pendiente de confirmar o discutido no cuenta, y el aviso dice cuántos hay).
+5. En la pestaña de **Rondas**: **Generar ronda** (crea la ronda y sus partidas, ver [Emparejamiento y clasificación](#emparejamiento-y-clasificación)), **Iniciar ronda**, **Gestionar partidas** (resultado y estadísticas de cada partida), **Confirmar informes pendientes** (los que nadie discute) y **Completar ronda** (exige que todas las partidas tengan resultado definitivo: un informe de los jugadores pendiente de confirmar o discutido no cuenta, y el aviso dice cuántos hay). Las acciones de cada partida están en la pestaña **Partidas** (ver [Informe de resultados por los jugadores](#informe-de-resultados-por-los-jugadores)).
 6. **Finalizar torneo**: no se puede mientras queden resultados informados por los jugadores sin confirmar o discutidos (el aviso dice cuántos). Se puede **Cancelar torneo** en cualquier estado salvo finalizado o cancelado; cancelar descarta esos informes. Las dos acciones son irreversibles y piden marcar una casilla que dice qué se pierde.
 
 ```
@@ -277,8 +277,9 @@ Si el torneo pasa de **Jugadores con confirmación** a **Jugadores sin confirmac
 
 Cuando un jugador no puede informar, **Tu partida** dice por qué: la organización registra los resultados, ya no juega en el torneo (retirado o descalificado) o la ronda aún no ha empezado. En un bye dice los puntos que le dan las reglas de puntuación del torneo.
 
-En la pestaña **Rondas**, **Gestionar partidas** muestra la columna **Informe** (*Pendiente* o *Discutido*, con el motivo al pasar el ratón) y las acciones:
+La pestaña **Partidas** del torneo (solo con `tournaments.report_results`) lista sus partidas con la columna **Informe** (*Pendiente* o *Discutido*, con el motivo al pasar el ratón), los filtros **Ronda** (por defecto la última) e **Informe**, y las acciones de cada partida. Es la pestaña que nombra el correo de resultado discutido a la organización.
 
+- **Reportar resultado**: registra el resultado oficial de una partida sin resultado; si había un informe de los jugadores, el modal avisa de que se descarta.
 - **Confirmar informe**: el informe que muestra el modal pasa a ser el resultado, también si está discutido.
 - **Restablecer**: deja la partida sin resultado y descarta el informe, con un motivo obligatorio. No es irreversible (el resultado se puede volver a registrar), así que pide una sola confirmación. Los byes se corrigen desde **Gestionar partidas** de la ronda.
 - **Historial**: cada cambio del resultado definitivo, con quién y cuándo lo hizo, el resultado anterior y el nuevo y el motivo. Registrar un resultado desde el panel, informarlo en un torneo sin confirmación, confirmarlo y restablecerlo dejan una entrada.
