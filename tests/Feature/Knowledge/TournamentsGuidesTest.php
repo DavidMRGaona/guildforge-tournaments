@@ -120,7 +120,12 @@ final class TournamentsGuidesTest extends ModuleTestCase
             'tournaments.panel.scoring',
         ], $this->visiblePanelGuides($this->userWith('tournaments:tournaments.manage_config')));
 
-        $this->assertSame(['tournaments.panel.event-tournament'], $this->visiblePanelGuides($this->userWith('events.update')));
+        // The event's tournament tab needs both: editing the event and seeing the tournaments
+        $this->assertSame([], $this->visiblePanelGuides($this->userWith('events.update')));
+        $this->assertSame([
+            'tournaments.panel.event-tournament',
+            'tournaments.panel.overview',
+        ], $this->visiblePanelGuides($this->userWith('events.update', 'tournaments:tournaments.view_any')));
 
         $this->assertSame(['tournaments.panel.settings'], $this->visiblePanelGuides($this->userWith('modules.configure')));
 

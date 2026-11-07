@@ -7,6 +7,8 @@ namespace Modules\Tournaments\Filament\RelationManagers;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -21,6 +23,7 @@ use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Modules\Tournaments\Domain\Enums\ConditionType;
 use Modules\Tournaments\Domain\Enums\Tiebreaker;
@@ -70,9 +73,12 @@ final class TournamentConfigRelationManager extends RelationManager
         return __('tournaments::messages.config.title');
     }
 
+    /**
+     * Editing the event is not enough: the tab follows the tournaments permissions.
+     */
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord instanceof EventModel;
+        return $ownerRecord instanceof EventModel && Gate::allows('viewAny', TournamentModel::class);
     }
 
     public function mount(): void
@@ -148,6 +154,8 @@ final class TournamentConfigRelationManager extends RelationManager
                     Toggle::make('tournament_enabled')
                         ->label(__('tournaments::messages.config.tournament_enabled'))
                         ->helperText(__('tournaments::messages.config.tournament_enabled_help'))
+                        // Switching it creates or deletes the tournament; save() checks it again
+                        ->disabled(fn (): bool => ! $this->canSwitchTournament())
                         ->live()
                         ->columnSpanFull(),
                     TextInput::make('name')
@@ -283,22 +291,36 @@ final class TournamentConfigRelationManager extends RelationManager
 
     public function save(): void
     {
-        $formData = $this->configForm->getState();
         $eventId = $this->getOwnerRecord()->getKey();
+        $tournament = $this->currentTournament();
 
-        if (! $formData['tournament_enabled']) {
-            // Delete tournament if it exists and is disabled, as a model: the surveys hear of it
-            TournamentModel::where('event_id', $eventId)->first()?->delete();
+        // What the save does decides the permission, checked before anything else: a Livewire
+        // method can be called without the tab or its toggle. The raw state is what was sent;
+        // the validated state leaves out the toggle when it is disabled
+        if (! (bool) ($this->configData['tournament_enabled'] ?? false)) {
+            if (! $tournament instanceof TournamentModel) {
+                $this->notifyDisabled();
 
-            Notification::make()
-                ->title(__('tournaments::messages.config.tournament_disabled'))
-                ->success()
-                ->send();
+                return;
+            }
+
+            abort_unless(Gate::allows('delete', $tournament), 403);
+
+            if ($tournament->participants()->exists()) {
+                // Deleting takes the participants with it: only through the confirmation
+                $this->mountAction('disableTournament');
+
+                return;
+            }
+
+            $this->disableTournament($tournament);
 
             return;
         }
 
-        $tournament = TournamentModel::where('event_id', $eventId)->first();
+        abort_unless($tournament instanceof TournamentModel ? Gate::allows('update', $tournament) : Gate::allows('create', TournamentModel::class), 403);
+
+        $formData = $this->configForm->getState();
 
         $data = [
             'event_id' => $eventId,
@@ -334,7 +356,7 @@ final class TournamentConfigRelationManager extends RelationManager
             }
         }
 
-        if ($tournament) {
+        if ($tournament instanceof TournamentModel) {
             $tournament->update($data);
         } else {
             $data['status'] = TournamentStatus::Draft->value;
@@ -344,6 +366,78 @@ final class TournamentConfigRelationManager extends RelationManager
 
         Notification::make()
             ->title(__('tournaments::messages.config.saved'))
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Switching off a tournament with participants: it deletes them with their rounds and
+     * results, so it asks for a second confirmation that says so.
+     */
+    public function disableTournamentAction(): Action
+    {
+        return Action::make('disableTournament')
+            ->label(__('tournaments::messages.config.disable'))
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading(__('tournaments::messages.config.disable_confirmation_title'))
+            ->modalDescription(__('tournaments::messages.config.disable_confirmation_description'))
+            ->modalSubmitActionLabel(__('tournaments::messages.config.disable_confirm'))
+            ->schema([
+                Checkbox::make('confirmation')
+                    ->label(__('tournaments::messages.config.disable_confirmation_check'))
+                    ->accepted()
+                    ->required(),
+            ])
+            ->visible(fn (): bool => ($tournament = $this->currentTournament()) instanceof TournamentModel && Gate::allows('delete', $tournament))
+            ->action(function (): void {
+                $tournament = $this->currentTournament();
+
+                if ($tournament instanceof TournamentModel && Gate::allows('delete', $tournament)) {
+                    $this->disableTournament($tournament);
+                }
+            });
+    }
+
+    /**
+     * Whether the toggle may create (no tournament yet) or delete (a tournament) the tournament.
+     */
+    public function canSwitchTournament(): bool
+    {
+        $tournament = $this->currentTournament();
+
+        return $tournament instanceof TournamentModel ? Gate::allows('delete', $tournament) : Gate::allows('create', TournamentModel::class);
+    }
+
+    /**
+     * Whether the save button can do anything: create, change or switch off the tournament.
+     */
+    public function canSaveTournament(): bool
+    {
+        $tournament = $this->currentTournament();
+
+        return $tournament instanceof TournamentModel
+            ? Gate::allows('update', $tournament) || Gate::allows('delete', $tournament)
+            : Gate::allows('create', TournamentModel::class);
+    }
+
+    private function currentTournament(): ?TournamentModel
+    {
+        return TournamentModel::where('event_id', $this->getOwnerRecord()->getKey())->first();
+    }
+
+    private function disableTournament(TournamentModel $tournament): void
+    {
+        // As a model: the surveys hear of it
+        $tournament->delete();
+
+        $this->notifyDisabled();
+    }
+
+    private function notifyDisabled(): void
+    {
+        Notification::make()
+            ->title(__('tournaments::messages.config.tournament_disabled'))
             ->success()
             ->send();
     }

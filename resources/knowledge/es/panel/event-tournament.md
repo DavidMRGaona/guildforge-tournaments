@@ -9,7 +9,7 @@ keywords: [evento, eventos, torneo del evento, habilitar torneo, activar torneo,
 related: [core.panel.manage-events, tournaments.panel.create-tournament, tournaments.panel.scoring, tournaments.panel.tournament-lifecycle]
 conditions:
   permissions:
-    all: ['events.update']
+    all: ['events.update', 'tournaments:tournaments.view_any']
 ---
 Cada evento puede tener un torneo. Desde el propio evento puedes crearlo y ajustar lo básico sin salir de su ficha. Para el resto de opciones, usa el formulario del torneo en **Torneos** (lo explica la guía «Crear un torneo»).
 
@@ -20,12 +20,14 @@ Cada evento puede tener un torneo. Desde el propio evento puedes crearlo y ajust
 3. Baja hasta la pestaña **Configuración del torneo**.
 4. Al terminar, pulsa **Guardar configuración**. Sale el aviso «Configuración guardada».
 
+La pestaña solo aparece si puedes ver los torneos. Lo que puedes hacer en ella depende de tus permisos de torneos: crear el torneo, cambiarlo o quitarlo. Si te falta el permiso, **Habilitar torneo** sale bloqueado, y sin ninguno de ellos no aparece el botón **Guardar configuración**.
+
 ## Activar el torneo
 
 Activa **Habilitar torneo**. Al hacerlo aparecen los demás campos, con el nombre del evento como **Nombre del torneo**. Al guardar, el torneo se crea como **Borrador**: no se ve en la web hasta que abres su inscripción desde **Torneos**.
 
 > [!WARNING]
-> Si desactivas **Habilitar torneo** y guardas, el torneo se borra, con sus inscripciones, sus rondas y sus resultados. Sale el aviso «Torneo deshabilitado».
+> Si desactivas **Habilitar torneo** y guardas, el torneo se borra, con sus inscripciones, sus rondas y sus resultados. Si ya tiene inscripciones, antes se abre una ventana: marca la casilla que confirma que se borra todo y pulsa **Sí, deshabilitar**. Sale el aviso «Torneo deshabilitado».
 
 ## Los campos
 
