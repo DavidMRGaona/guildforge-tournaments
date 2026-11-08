@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Actions\RowDetailsAction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Hidden;
@@ -71,6 +72,7 @@ final class MatchesRelationManager extends RelationManager
 
                 TextColumn::make('table_number')
                     ->label(__('tournaments::messages.fields.table_number'))
+                    ->alignCenter()
                     ->sortable()
                     ->default('-')
                     ->wrapHeader(),
@@ -104,6 +106,7 @@ final class MatchesRelationManager extends RelationManager
 
                 TextColumn::make('player_1_score')
                     ->label(__('tournaments::messages.fields.player_1_score'))
+                    ->alignCenter()
                     ->default('-')
                     ->toggleable()
                     ->visibleFrom('lg')
@@ -111,6 +114,7 @@ final class MatchesRelationManager extends RelationManager
 
                 TextColumn::make('player_2_score')
                     ->label(__('tournaments::messages.fields.player_2_score'))
+                    ->alignCenter()
                     ->default('-')
                     ->toggleable()
                     ->visibleFrom('lg')
@@ -154,6 +158,7 @@ final class MatchesRelationManager extends RelationManager
             ->recordActions([
                 // One menu: 4 labelled actions made the table overflow its container
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('reportResult')
                         ->label(__('tournaments::messages.actions.report_result'))
                         ->icon('heroicon-o-pencil-square')

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
+use App\Filament\Actions\RowDetailsAction;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -73,6 +74,7 @@ final class RoundsRelationManager extends RelationManager
 
                 TextColumn::make('matches_count')
                     ->label(__('tournaments::messages.resource.fields.matches_count'))
+                    ->alignCenter()
                     ->counts('matches')
                     ->sortable()
                     ->visibleFrom('sm')
@@ -80,6 +82,7 @@ final class RoundsRelationManager extends RelationManager
 
                 TextColumn::make('completed_matches')
                     ->label(__('tournaments::messages.resource.fields.completed_matches'))
+                    ->alignCenter()
                     ->getStateUsing(function (RoundModel $record): string {
                         $total = $record->matches()->count();
                         $completed = $record->matches()
@@ -148,6 +151,7 @@ final class RoundsRelationManager extends RelationManager
             ->recordActions([
                 // One menu: 4 labelled actions made the table overflow its container
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('manageMatches')
                         ->label(__('tournaments::messages.actions.manage_matches'))
                         ->icon('heroicon-o-table-cells')
