@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Filament\Resources;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -43,11 +44,11 @@ final class GameProfileResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 40;
 
     public static function getNavigationGroup(): string
     {
-        return __('tournaments::messages.navigation.group');
+        return PanelNavigationGroup::Catalogues->getLabel();
     }
 
     public static function getNavigationLabel(): string

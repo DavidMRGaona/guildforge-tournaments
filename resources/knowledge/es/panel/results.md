@@ -25,7 +25,7 @@ En cualquier modo puedes registrar o corregir un resultado desde el panel. Lo qu
 
 ## Registrar los resultados de una ronda
 
-1. Abre **Torneos** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Rondas**.
+1. Abre **Actividades** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Rondas**.
 2. En el menú **⋯** de la ronda, pulsa **Gestionar partidas**. Se abre la lista de sus partidas, una por mesa («Mesa 1 - … vs …»).
 3. En cada partida, elige el resultado en **Estado**: **Victoria jugador 1**, **Victoria jugador 2**, **Empate**, **Doble derrota** o **Sin jugar**.
 4. Si quieres, escribe **Puntos jugador 1** y **Puntos jugador 2**: los juegos o puntos ganados en la partida. Los usan algunos desempates.
@@ -38,7 +38,7 @@ Para dejar una partida sin resultado, elige **Sin jugar**. La partida de un bye 
 
 ## La pestaña Partidas
 
-Abre **Torneos** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Partidas**. Muestra las partidas de la última ronda; con el filtro **Ronda** ves las de otra, y con el filtro **Informe**, solo las que tienen un informe de los jugadores **Pendiente** o **Discutido**. La columna **Informe** dice lo mismo, y al pasar por encima de **Discutido** ves el motivo.
+Abre **Actividades** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Partidas**. Muestra las partidas de la última ronda; con el filtro **Ronda** ves las de otra, y con el filtro **Informe**, solo las que tienen un informe de los jugadores **Pendiente** o **Discutido**. La columna **Informe** dice lo mismo, y al pasar por encima de **Discutido** ves el motivo.
 
 Cada partida tiene sus acciones en el menú **⋯** de su fila. En una pantalla estrecha ves solo la **Mesa** y los jugadores; el resto de columnas aparecen según el ancho:
 

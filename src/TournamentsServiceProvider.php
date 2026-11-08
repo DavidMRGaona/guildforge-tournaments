@@ -771,17 +771,13 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Register navigation groups provided by this module.
+     * The sidebar groups belong to the core (PanelNavigationGroup): the module declares none.
      *
      * @return array<string, array{icon?: string, sort?: int}>
      */
     public function registerNavigationGroups(): array
     {
-        return [
-            __('tournaments::messages.navigation.group') => [
-                'sort' => 11, // After 'Contenido' (10), before 'Mesas de rol' (12)
-            ],
-        ];
+        return [];
     }
 
     /**

@@ -15,7 +15,7 @@ Un torneo siempre pertenece a un evento publicado. Puedes crearlo aquí, con tod
 
 ## Crear el torneo
 
-1. En el menú lateral, abre **Torneos** y elige **Torneos**.
+1. En el menú lateral, abre **Actividades** y elige **Torneos**.
 2. Pulsa **Crear torneo**.
 3. Rellena las pestañas que necesites (las explica esta guía).
 4. Pulsa **Crear**.

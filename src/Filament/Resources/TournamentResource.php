@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Filament\Resources;
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
+use App\Filament\Support\PanelNavigationGroup;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
 use Filament\Actions\BulkActionGroup;
@@ -60,11 +61,11 @@ final class TournamentResource extends BaseResource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-trophy';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 20;
 
     public static function getNavigationGroup(): string
     {
-        return __('tournaments::messages.navigation.group');
+        return PanelNavigationGroup::Activities->getLabel();
     }
 
     public static function getNavigationLabel(): string

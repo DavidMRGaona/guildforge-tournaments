@@ -13,9 +13,6 @@ return [
         'past' => 'Finalizado',
     ],
 
-    // Navigation group for standalone resource
-    'navigation.group' => 'Torneos',
-
     // Standalone resource labels
     'resource' => [
         'navigation' => 'Torneos',
