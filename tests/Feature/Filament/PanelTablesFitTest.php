@@ -207,6 +207,15 @@ final class PanelTablesFitTest extends ModuleTestCase
     /**
      * @param  class-string<HasTable>  $page
      */
+    /**
+     * «Ver detalles» shows every column with its label, so a column without one read «Created at».
+     */
+    public function test_the_creation_date_column_has_a_translated_label(): void
+    {
+        $this->assertSame('Creado', __('tournaments::messages.fields.created_at', [], 'es'));
+        $this->assertSame(__('tournaments::messages.fields.created_at'), $this->tableOf(ListTournaments::class)->getColumn('created_at')?->getLabel());
+    }
+
     private function tableOf(string $page): Table
     {
         $params = is_subclass_of($page, RelationManager::class)

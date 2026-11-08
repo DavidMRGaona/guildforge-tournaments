@@ -681,6 +681,7 @@ final class TournamentResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
+                    ->label(__('tournaments::messages.fields.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

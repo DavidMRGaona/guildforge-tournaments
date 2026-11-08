@@ -170,6 +170,7 @@ return [
     ],
 
     'fields' => [
+        'created_at' => 'Creado',
         'image' => 'Imagen',
         'name' => 'Nombre del torneo',
         'slug' => 'URL amigable',
