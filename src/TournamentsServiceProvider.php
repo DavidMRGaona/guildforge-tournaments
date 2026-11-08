@@ -771,16 +771,6 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * The sidebar groups belong to the core (PanelNavigationGroup): the module declares none.
-     *
-     * @return array<string, array{icon?: string, sort?: int}>
-     */
-    public function registerNavigationGroups(): array
-    {
-        return [];
-    }
-
-    /**
      * Register navigation items provided by this module.
      *
      * @return array<NavigationItemDTO>
