@@ -18,7 +18,7 @@ Los participantes de un torneo están en la pestaña **Participantes** de su fic
 1. Abre **Torneos** → **Torneos** y pulsa **Editar** en el torneo.
 2. Baja hasta la pestaña **Participantes**.
 
-Arriba de la lista ves un resumen, por ejemplo «12 total · 8 confirmados · 4 con check-in». Cada fila muestra el **Nombre**, el **Email**, si es **Invitado** (sin cuenta), el **Estado**, el **Bye recibido**, la **Semilla**, la **Hora de check-in** y la **Fecha de inscripción**. Puedes filtrar por **Estado** y por **Email confirmado**.
+Arriba de la lista ves un resumen, por ejemplo «12 total · 8 confirmados · 4 con check-in». Cada fila muestra el **Nombre**, el **Email**, si es **Invitado** (sin cuenta), el **Estado**, el **Bye recibido**, la **Semilla**, la **Hora de check-in** y la **Fecha de inscripción**. En una pantalla estrecha solo ves el **Nombre** y el **Estado**: el resto de columnas aparecen según el ancho de la pantalla (**Bye recibido**, **Semilla** y **Hora de check-in**, solo en pantallas muy anchas). Puedes filtrar por **Estado** y por **Email confirmado**.
 
 Dos marcas te ayudan con las personas sin cuenta:
 
@@ -46,6 +46,8 @@ Si quitas la confirmación manual o el check-in de un torneo que aún no ha empe
 Desde el panel no cuentan las fechas de inscripción: puedes añadir a alguien con la inscripción cerrada o el torneo empezado. Sí cuenta el **Máximo de participantes**. El email de un invitado añadido aquí se da por confirmado, y no se envía ningún correo.
 
 ## Las acciones de cada fila
+
+Están en el menú **⋯** de cada fila; solo salen las que valen para esa inscripción.
 
 | Acción | Cuándo sale | Qué hace | Correo |
 |---|---|---|---|

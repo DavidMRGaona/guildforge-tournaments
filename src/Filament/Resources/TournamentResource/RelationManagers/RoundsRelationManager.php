@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationMana
 
 use DomainException;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -60,7 +61,8 @@ final class RoundsRelationManager extends RelationManager
                 TextColumn::make('round_number')
                     ->label(__('tournaments::messages.resource.fields.round_number'))
                     ->formatStateUsing(fn (int $state): string => __('tournaments::messages.table.round_number', ['number' => $state]))
-                    ->sortable(),
+                    ->sortable()
+                    ->wrapHeader(),
 
                 TextColumn::make('status')
                     ->label(__('tournaments::messages.fields.status'))
@@ -72,7 +74,9 @@ final class RoundsRelationManager extends RelationManager
                 TextColumn::make('matches_count')
                     ->label(__('tournaments::messages.resource.fields.matches_count'))
                     ->counts('matches')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm')
+                    ->wrapHeader(),
 
                 TextColumn::make('completed_matches')
                     ->label(__('tournaments::messages.resource.fields.completed_matches'))
@@ -83,19 +87,25 @@ final class RoundsRelationManager extends RelationManager
                             ->count();
 
                         return "{$completed}/{$total}";
-                    }),
+                    })
+                    ->visibleFrom('md')
+                    ->wrapHeader(),
 
                 TextColumn::make('started_at')
                     ->label(__('tournaments::messages.resource.fields.started_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg')
+                    ->wrapHeader(),
 
                 TextColumn::make('completed_at')
                     ->label(__('tournaments::messages.resource.fields.completed_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('xl')
+                    ->wrapHeader(),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -136,194 +146,197 @@ final class RoundsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('manageMatches')
-                    ->label(__('tournaments::messages.actions.manage_matches'))
-                    ->icon('heroicon-o-table-cells')
-                    ->color('gray')
-                    ->modalWidth(Width::SevenExtraLarge)
-                    ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
-                    ->slideOver()
-                    ->fillForm(function (RoundModel $record): array {
-                        $matches = $record->matches()->with(['player1', 'player2'])->orderBy('table_number')->get();
-                        $matchesData = [];
+                // One menu: 4 labelled actions made the table overflow its container
+                ActionGroup::make([
+                    Action::make('manageMatches')
+                        ->label(__('tournaments::messages.actions.manage_matches'))
+                        ->icon('heroicon-o-table-cells')
+                        ->color('gray')
+                        ->modalWidth(Width::SevenExtraLarge)
+                        ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
+                        ->slideOver()
+                        ->fillForm(function (RoundModel $record): array {
+                            $matches = $record->matches()->with(['player1', 'player2'])->orderBy('table_number')->get();
+                            $matchesData = [];
 
-                        foreach ($matches as $match) {
-                            /** @var MatchModel $match */
-                            $matchesData[] = [
-                                'match_id' => $match->id,
-                                'table_number' => $match->table_number,
-                                'player1_name' => $match->player1->participant_name,
-                                'player2_name' => $match->player_2_id === null ? __('tournaments::messages.fields.bye_opponent') : ($match->player2->participant_name ?? __('tournaments::messages.participants.unknown')),
-                                'result' => $match->result->value,
-                                'player_1_score' => $match->player_1_score,
-                                'player_2_score' => $match->player_2_score,
-                                'player_1_stats' => $match->player_1_stats ?? [],
-                                'player_2_stats' => $match->player_2_stats ?? [],
-                                'is_bye' => $match->player_2_id === null,
-                                'original' => MatchFormSnapshot::ofMatch($match),
-                            ];
-                        }
-
-                        return ['matches' => $matchesData];
-                    })
-                    ->schema(fn (RoundModel $record): array => [
-                        Repeater::make('matches')
-                            ->label(__('tournaments::messages.resource.fields.matches_count'))
-                            ->schema(function () use ($record): array {
-                                $tournament = $record->tournament;
-
-                                return $this->getMatchFormSchema($tournament);
-                            })
-                            ->addable(false)
-                            ->deletable(false)
-                            ->reorderable(false)
-                            ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => isset($state['table_number'])
-                                ? __('tournaments::messages.fields.table_number').' '.$state['table_number'].' - '.$state['player1_name'].' vs '.$state['player2_name']
-                                : null)
-                            ->columnSpanFull(),
-                    ])
-                    ->action(function (RoundModel $record, array $data, MatchResultServiceInterface $results): void {
-                        $changes = [];
-                        $changedMeanwhile = 0;
-                        foreach ($data['matches'] as $matchData) {
-                            $match = $record->matches()->find($matchData['match_id']);
-                            if (! $match instanceof MatchModel) {
-                                continue;
+                            foreach ($matches as $match) {
+                                /** @var MatchModel $match */
+                                $matchesData[] = [
+                                    'match_id' => $match->id,
+                                    'table_number' => $match->table_number,
+                                    'player1_name' => $match->player1->participant_name,
+                                    'player2_name' => $match->player_2_id === null ? __('tournaments::messages.fields.bye_opponent') : ($match->player2->participant_name ?? __('tournaments::messages.participants.unknown')),
+                                    'result' => $match->result->value,
+                                    'player_1_score' => $match->player_1_score,
+                                    'player_2_score' => $match->player_2_score,
+                                    'player_1_stats' => $match->player_1_stats ?? [],
+                                    'player_2_stats' => $match->player_2_stats ?? [],
+                                    'is_bye' => $match->player_2_id === null,
+                                    'original' => MatchFormSnapshot::ofMatch($match),
+                                ];
                             }
 
-                            $player1Stats = $matchData['player_1_stats'] ?? null;
-                            $player2Stats = $matchData['player_2_stats'] ?? null;
-                            $player1Score = $this->score($matchData['player_1_score'] ?? null);
-                            $player2Score = $this->score($matchData['player_2_score'] ?? null);
+                            return ['matches' => $matchesData];
+                        })
+                        ->schema(fn (RoundModel $record): array => [
+                            Repeater::make('matches')
+                                ->label(__('tournaments::messages.resource.fields.matches_count'))
+                                ->schema(function () use ($record): array {
+                                    $tournament = $record->tournament;
 
-                            $submitted = MatchFormSnapshot::of((string) $matchData['result'], $player1Score, $player2Score, $player1Stats ?: null, $player2Stats ?: null);
-                            $current = MatchFormSnapshot::ofMatch($match);
-                            $original = is_string($matchData['original'] ?? null) ? $matchData['original'] : $current;
+                                    return $this->getMatchFormSchema($tournament);
+                                })
+                                ->addable(false)
+                                ->deletable(false)
+                                ->reorderable(false)
+                                ->collapsible()
+                                ->itemLabel(fn (array $state): ?string => isset($state['table_number'])
+                                    ? __('tournaments::messages.fields.table_number').' '.$state['table_number'].' - '.$state['player1_name'].' vs '.$state['player2_name']
+                                    : null)
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (RoundModel $record, array $data, MatchResultServiceInterface $results): void {
+                            $changes = [];
+                            $changedMeanwhile = 0;
+                            foreach ($data['matches'] as $matchData) {
+                                $match = $record->matches()->find($matchData['match_id']);
+                                if (! $match instanceof MatchModel) {
+                                    continue;
+                                }
 
-                            // Only what the organizer changed, and nothing that already says the same
-                            if ($submitted === $original || $submitted === $current) {
-                                continue;
+                                $player1Stats = $matchData['player_1_stats'] ?? null;
+                                $player2Stats = $matchData['player_2_stats'] ?? null;
+                                $player1Score = $this->score($matchData['player_1_score'] ?? null);
+                                $player2Score = $this->score($matchData['player_2_score'] ?? null);
+
+                                $submitted = MatchFormSnapshot::of((string) $matchData['result'], $player1Score, $player2Score, $player1Stats ?: null, $player2Stats ?: null);
+                                $current = MatchFormSnapshot::ofMatch($match);
+                                $original = is_string($matchData['original'] ?? null) ? $matchData['original'] : $current;
+
+                                // Only what the organizer changed, and nothing that already says the same
+                                if ($submitted === $original || $submitted === $current) {
+                                    continue;
+                                }
+
+                                // Recorded elsewhere while the form was open (a player's report): keep it
+                                if ($current !== $original) {
+                                    $changedMeanwhile++;
+
+                                    continue;
+                                }
+
+                                $changes[] = new RecordMatchResultDTO(
+                                    matchId: $match->id,
+                                    result: MatchResult::from($matchData['result']),
+                                    reportedById: (string) auth()->id(),
+                                    player1Stats: $player1Stats ?: null,
+                                    player2Stats: $player2Stats ?: null,
+                                    player1Score: $player1Score,
+                                    player2Score: $player2Score,
+                                );
                             }
 
-                            // Recorded elsewhere while the form was open (a player's report): keep it
-                            if ($current !== $original) {
-                                $changedMeanwhile++;
+                            // All or nothing, with one standings recalculation
+                            try {
+                                $results->recordResults($changes);
+                            } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                                Notification::make()
+                                    ->title($exception instanceof MatchResultLockedException
+                                        ? __('tournaments::messages.errors.result_locked_by_next_round')
+                                        : InvalidMatchResultMessage::for($exception))
+                                    ->danger()
+                                    ->send();
 
-                                continue;
+                                return;
                             }
 
-                            $changes[] = new RecordMatchResultDTO(
-                                matchId: $match->id,
-                                result: MatchResult::from($matchData['result']),
-                                reportedById: (string) auth()->id(),
-                                player1Stats: $player1Stats ?: null,
-                                player2Stats: $player2Stats ?: null,
-                                player1Score: $player1Score,
-                                player2Score: $player2Score,
-                            );
-                        }
+                            if ($changedMeanwhile > 0) {
+                                Notification::make()
+                                    ->title(__('tournaments::messages.errors.results_changed_meanwhile'))
+                                    ->body(trans_choice('tournaments::messages.errors.results_changed_meanwhile_detail', $changedMeanwhile, ['count' => $changedMeanwhile]))
+                                    ->warning()
+                                    ->send();
 
-                        // All or nothing, with one standings recalculation
-                        try {
-                            $results->recordResults($changes);
-                        } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                                return;
+                            }
+
                             Notification::make()
-                                ->title($exception instanceof MatchResultLockedException
-                                    ? __('tournaments::messages.errors.result_locked_by_next_round')
-                                    : InvalidMatchResultMessage::for($exception))
-                                ->danger()
+                                ->title(__('tournaments::messages.messages.results_updated'))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        }
+                    Action::make('startRound')
+                        ->label(__('tournaments::messages.actions.start_round'))
+                        ->icon('heroicon-o-play')
+                        ->color('success')
+                        ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::Pending)
+                        ->requiresConfirmation()
+                        ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
+                            try {
+                                $rounds->startRound($record->id);
+                            } catch (InvalidStateTransitionException) {
+                                $this->invalidTransitionNotice();
 
-                        if ($changedMeanwhile > 0) {
+                                return;
+                            }
+
                             Notification::make()
-                                ->title(__('tournaments::messages.errors.results_changed_meanwhile'))
-                                ->body(trans_choice('tournaments::messages.errors.results_changed_meanwhile_detail', $changedMeanwhile, ['count' => $changedMeanwhile]))
-                                ->warning()
+                                ->title(__('tournaments::messages.messages.round_started'))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        }
+                    Action::make('confirmPendingReports')
+                        ->label(__('tournaments::messages.actions.confirm_pending_reports'))
+                        ->icon('heroicon-o-check-badge')
+                        ->color('gray')
+                        ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress
+                            && MatchReportModel::query()
+                                ->whereNull('disputed_at')
+                                ->whereHas('match', static fn ($query) => $query->where('round_id', $record->id))
+                                ->exists())
+                        ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
+                        ->requiresConfirmation()
+                        ->modalDescription(__('tournaments::messages.modal.confirm_pending_reports'))
+                        ->action(function (RoundModel $record, MatchReportingServiceInterface $reporting): void {
+                            $confirmed = $reporting->confirmPendingInRound($record->id, (string) auth()->id());
 
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.results_updated'))
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('startRound')
-                    ->label(__('tournaments::messages.actions.start_round'))
-                    ->icon('heroicon-o-play')
-                    ->color('success')
-                    ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::Pending)
-                    ->requiresConfirmation()
-                    ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
-                        try {
-                            $rounds->startRound($record->id);
-                        } catch (InvalidStateTransitionException) {
-                            $this->invalidTransitionNotice();
-
-                            return;
-                        }
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.round_started'))
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('confirmPendingReports')
-                    ->label(__('tournaments::messages.actions.confirm_pending_reports'))
-                    ->icon('heroicon-o-check-badge')
-                    ->color('gray')
-                    ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress
-                        && MatchReportModel::query()
-                            ->whereNull('disputed_at')
-                            ->whereHas('match', static fn ($query) => $query->where('round_id', $record->id))
-                            ->exists())
-                    ->authorize(fn (): bool => auth()->user()?->can('reportResults', $this->getOwnerRecord()) ?? false)
-                    ->requiresConfirmation()
-                    ->modalDescription(__('tournaments::messages.modal.confirm_pending_reports'))
-                    ->action(function (RoundModel $record, MatchReportingServiceInterface $reporting): void {
-                        $confirmed = $reporting->confirmPendingInRound($record->id, (string) auth()->id());
-
-                        Notification::make()
-                            ->title(trans_choice('tournaments::messages.messages.pending_reports_confirmed', $confirmed, ['count' => $confirmed]))
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('completeRound')
-                    ->label(__('tournaments::messages.actions.complete_round'))
-                    ->icon('heroicon-o-check-circle')
-                    ->color('primary')
-                    ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress)
-                    ->requiresConfirmation()
-                    ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
-                        try {
-                            $rounds->completeRound($record->id);
-                        } catch (PreviousRoundNotCompletedException $exception) {
                             Notification::make()
-                                ->title(__('tournaments::messages.errors.matches_not_completed'))
-                                ->body($this->unreportedDetail($exception))
-                                ->danger()
+                                ->title(trans_choice('tournaments::messages.messages.pending_reports_confirmed', $confirmed, ['count' => $confirmed]))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        } catch (InvalidStateTransitionException) {
-                            $this->invalidTransitionNotice();
+                    Action::make('completeRound')
+                        ->label(__('tournaments::messages.actions.complete_round'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('primary')
+                        ->visible(fn (RoundModel $record): bool => $record->status === RoundStatus::InProgress)
+                        ->requiresConfirmation()
+                        ->action(function (RoundModel $record, RoundManagementServiceInterface $rounds): void {
+                            try {
+                                $rounds->completeRound($record->id);
+                            } catch (PreviousRoundNotCompletedException $exception) {
+                                Notification::make()
+                                    ->title(__('tournaments::messages.errors.matches_not_completed'))
+                                    ->body($this->unreportedDetail($exception))
+                                    ->danger()
+                                    ->send();
 
-                            return;
-                        }
+                                return;
+                            } catch (InvalidStateTransitionException) {
+                                $this->invalidTransitionNotice();
 
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.round_completed'))
-                            ->success()
-                            ->send();
-                    }),
+                                return;
+                            }
+
+                            Notification::make()
+                                ->title(__('tournaments::messages.messages.round_completed'))
+                                ->success()
+                                ->send();
+                        }),
+                ]),
             ])
             ->defaultSort('round_number', 'asc');
     }

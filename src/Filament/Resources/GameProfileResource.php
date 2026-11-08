@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Filament\Resources;
 
 use App\Filament\Resources\BaseResource;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -365,17 +366,23 @@ final class GameProfileResource extends BaseResource
                 TextColumn::make('description')
                     ->label(__('tournaments::messages.game_profile.fields.description'))
                     ->limit(50)
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
 
                 IconColumn::make('is_system')
                     ->label(__('tournaments::messages.game_profile.fields.is_system'))
                     ->boolean()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm')
+                    ->wrapHeader(),
 
                 TextColumn::make('tournaments_count')
                     ->label(__('tournaments::messages.resource.plural'))
                     ->counts('tournaments')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md')
+                    ->wrapHeader(),
 
                 TextColumn::make('created_at')
                     ->label(__('Created at'))
@@ -384,26 +391,29 @@ final class GameProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
-                Action::make('duplicate')
-                    ->label(__('tournaments::messages.game_profile.actions.duplicate'))
-                    ->icon('heroicon-o-document-duplicate')
-                    ->schema([
-                        TextInput::make('name')
-                            ->label(__('tournaments::messages.game_profile.fields.name'))
-                            ->required()
-                            ->maxLength(255),
-                    ])
-                    ->action(function (GameProfileModel $record, array $data): void {
-                        // tournaments_count is the list's aggregate, not a column
-                        $copy = $record->replicate(['id', 'slug', 'tournaments_count']);
-                        $copy->name = $data['name'];
-                        $copy->is_system = false;
-                        $copy->save();
-                    })
-                    ->successNotificationTitle(__('tournaments::messages.game_profile.notifications.duplicated'))
-                    ->color('gray'),
+                // One menu: two labelled actions made the table overflow its container
+                ActionGroup::make([
+                    Action::make('duplicate')
+                        ->label(__('tournaments::messages.game_profile.actions.duplicate'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->schema([
+                            TextInput::make('name')
+                                ->label(__('tournaments::messages.game_profile.fields.name'))
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->action(function (GameProfileModel $record, array $data): void {
+                            // tournaments_count is the list's aggregate, not a column
+                            $copy = $record->replicate(['id', 'slug', 'tournaments_count']);
+                            $copy->name = $data['name'];
+                            $copy->is_system = false;
+                            $copy->save();
+                        })
+                        ->successNotificationTitle(__('tournaments::messages.game_profile.notifications.duplicated'))
+                        ->color('gray'),
 
-                EditAction::make(),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
