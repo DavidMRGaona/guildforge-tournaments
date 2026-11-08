@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Resources\BaseResource;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -658,6 +659,7 @@ final class TournamentResource extends BaseResource
 
                 TextColumn::make('participants_count')
                     ->label(__('tournaments::messages.resource.fields.participants_count'))
+                    ->alignCenter()
                     ->counts('participants')
                     ->sortable()
                     ->visibleFrom('md')
@@ -679,6 +681,7 @@ final class TournamentResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
+                    ->label(__('tournaments::messages.fields.created_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -697,6 +700,7 @@ final class TournamentResource extends BaseResource
                     ->searchable(),
             ])
             ->recordActions([
+                RowDetailsAction::makeIconButton(),
                 // An icon below md: the row opens the edit page too
                 EditAction::make()
                     ->button()

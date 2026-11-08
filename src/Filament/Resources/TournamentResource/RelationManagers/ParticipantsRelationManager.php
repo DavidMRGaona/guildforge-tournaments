@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Filament\Actions\RowDetailsAction;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -377,6 +378,7 @@ final class ParticipantsRelationManager extends RelationManager
                     ->wrapHeader(),
                 TextColumn::make('seed')
                     ->label(__('tournaments::messages.participants.seed'))
+                    ->alignCenter()
                     ->sortable()
                     ->toggleable()
                     ->visibleFrom('2xl')
@@ -417,6 +419,7 @@ final class ParticipantsRelationManager extends RelationManager
             ->recordActions([
                 // One menu: 6 labelled actions made the table overflow its container
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('confirm')
                         ->authorize(fn (): bool => $this->canManageParticipants())
                         ->label(__('tournaments::messages.participants.confirm'))

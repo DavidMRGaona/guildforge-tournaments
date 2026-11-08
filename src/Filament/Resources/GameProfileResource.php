@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Resources\BaseResource;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -379,6 +380,7 @@ final class GameProfileResource extends BaseResource
 
                 TextColumn::make('tournaments_count')
                     ->label(__('tournaments::messages.resource.plural'))
+                    ->alignCenter()
                     ->counts('tournaments')
                     ->sortable()
                     ->visibleFrom('md')
@@ -393,6 +395,7 @@ final class GameProfileResource extends BaseResource
             ->recordActions([
                 // One menu: two labelled actions made the table overflow its container
                 ActionGroup::make([
+                    RowDetailsAction::make(),
                     Action::make('duplicate')
                         ->label(__('tournaments::messages.game_profile.actions.duplicate'))
                         ->icon('heroicon-o-document-duplicate')

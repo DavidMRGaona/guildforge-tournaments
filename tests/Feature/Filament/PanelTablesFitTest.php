@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
+use App\Filament\Actions\RowDetailsAction;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Actions\ActionGroup;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
@@ -73,12 +75,62 @@ final class PanelTablesFitTest extends ModuleTestCase
         $this->assertInstanceOf(ActionGroup::class, $actions[0]);
     }
 
-    public function test_the_tournament_list_keeps_its_single_edit_action(): void
+    public function test_the_tournament_list_keeps_its_edit_button_outside_a_menu(): void
     {
         $actions = $this->tableOf(ListTournaments::class)->getRecordActions();
 
-        $this->assertCount(1, $actions);
+        // The labelled edit button stays outside; row details is an icon beside it
+        $this->assertCount(2, $actions);
         $this->assertNotInstanceOf(ActionGroup::class, $actions[0]);
+        $this->assertNotInstanceOf(ActionGroup::class, $actions[1]);
+    }
+
+    /**
+     * @param  class-string<HasTable>  $page
+     */
+    #[DataProvider('tablesWithSeveralActions')]
+    public function test_row_details_is_the_first_entry_of_the_menu(string $page): void
+    {
+        $group = $this->tableOf($page)->getRecordActions()[0];
+
+        $this->assertInstanceOf(ActionGroup::class, $group);
+        $this->assertSame(RowDetailsAction::NAME, array_key_first($group->getFlatActions()));
+    }
+
+    public function test_the_tournament_list_offers_row_details_beside_edit(): void
+    {
+        $table = $this->tableOf(ListTournaments::class);
+
+        $this->assertNotNull($table->getAction(RowDetailsAction::NAME));
+        $this->assertNotNull($table->getAction('edit'));
+    }
+
+    /**
+     * @return array<string, array{class-string<HasTable>, list<string>}>
+     */
+    public static function centredCounters(): array
+    {
+        return [
+            'tournaments' => [ListTournaments::class, ['participants_count']],
+            'game profiles' => [ListGameProfiles::class, ['tournaments_count']],
+            'participants' => [ParticipantsRelationManager::class, ['seed']],
+            'rounds' => [RoundsRelationManager::class, ['matches_count', 'completed_matches']],
+            'matches' => [MatchesRelationManager::class, ['table_number', 'player_1_score', 'player_2_score']],
+        ];
+    }
+
+    /**
+     * @param  class-string<HasTable>  $page
+     * @param  list<string>  $columns
+     */
+    #[DataProvider('centredCounters')]
+    public function test_short_counters_are_centred(string $page, array $columns): void
+    {
+        $table = $this->tableOf($page);
+
+        foreach ($columns as $name) {
+            $this->assertSame(Alignment::Center, $table->getColumn($name)?->getAlignment(), "Column {$name}");
+        }
     }
 
     /**
@@ -155,6 +207,15 @@ final class PanelTablesFitTest extends ModuleTestCase
     /**
      * @param  class-string<HasTable>  $page
      */
+    /**
+     * «Ver detalles» shows every column with its label, so a column without one read «Created at».
+     */
+    public function test_the_creation_date_column_has_a_translated_label(): void
+    {
+        $this->assertSame('Creado', __('tournaments::messages.fields.created_at', [], 'es'));
+        $this->assertSame(__('tournaments::messages.fields.created_at'), $this->tableOf(ListTournaments::class)->getColumn('created_at')?->getLabel());
+    }
+
     private function tableOf(string $page): Table
     {
         $params = is_subclass_of($page, RelationManager::class)
