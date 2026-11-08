@@ -15,7 +15,7 @@ La configuración del módulo decide los valores con que empieza cada torneo nue
 
 ## Abrir la configuración
 
-1. En el menú lateral, abre **Administración** y elige **Módulos**.
+1. En el menú lateral, abre **Sistema** y elige **Módulos**.
 2. En la tarjeta de **Torneos**, pulsa **Configuración**.
 3. Al terminar, pulsa **Guardar configuración**.
 

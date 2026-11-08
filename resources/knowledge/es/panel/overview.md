@@ -27,7 +27,7 @@ El módulo de torneos organiza competiciones por rondas dentro de los eventos de
 
 ## El recorrido de un torneo
 
-1. **Crearlo**, en **Torneos** o desde la pestaña **Configuración del torneo** de su evento. Nace como **Borrador** y no se ve en la web.
+1. **Crearlo**, en **Actividades** → **Torneos** o desde la pestaña **Configuración del torneo** de su evento. Nace como **Borrador** y no se ve en la web.
 2. **Abrir la inscripción**. La gente se inscribe desde la página del torneo o desde la ficha del evento.
 3. **Preparar a los participantes**: aprobar inscripciones si el torneo lo pide y hacer el check-in.
 4. **Iniciar el torneo**. La inscripción se cierra.
@@ -86,11 +86,11 @@ Ninguno de estos permisos se concede solo: se dan a cada rol en **Roles**. La ad
 | **Gestionar configuración de torneos** | Crear y cambiar los **Perfiles de torneo** |
 | **Editar evento** (del núcleo) | Configurar el torneo de un evento en su pestaña **Configuración del torneo** |
 
-Los ajustes generales del módulo están en **Administración** → **Módulos** y necesitan el permiso **Configurar módulos** (del núcleo).
+Los ajustes generales del módulo están en **Sistema** → **Módulos** y necesitan el permiso **Configurar módulos** (del núcleo).
 
 ## Dónde está cada cosa
 
-- En el menú lateral, el grupo **Torneos** tiene **Torneos** y **Perfiles de torneo**.
+- En el menú lateral, **Torneos** está en el grupo **Actividades** y **Perfiles de torneo** en **Catálogos**.
 - Dentro de un torneo están las pestañas **Participantes** y **Rondas**, y arriba los botones para cambiar su estado.
 - Dentro de un evento, la pestaña **Configuración del torneo** crea o cambia su torneo con lo básico.
 

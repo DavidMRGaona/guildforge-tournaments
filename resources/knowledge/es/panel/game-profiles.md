@@ -15,7 +15,7 @@ Un perfil de torneo reúne las reglas de un juego: sus estadísticas, su puntuac
 
 ## Ver los perfiles
 
-En el menú lateral, abre **Torneos** y elige **Perfiles de torneo**. La lista muestra el **Nombre**, la **Descripción**, si es un **Perfil del sistema** y cuántos **Torneos** lo usan.
+En el menú lateral, abre **Catálogos** (si está plegado, ábrelo) y elige **Perfiles de torneo**. La lista muestra el **Nombre**, la **Descripción**, si es un **Perfil del sistema** y cuántos **Torneos** lo usan.
 
 ## Los perfiles del sistema
 

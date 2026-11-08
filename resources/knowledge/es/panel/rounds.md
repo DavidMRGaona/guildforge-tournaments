@@ -15,7 +15,7 @@ Las rondas de un torneo están en la pestaña **Rondas** de su ficha. Cada ronda
 
 ## Ver las rondas
 
-1. Abre **Torneos** → **Torneos** y pulsa **Editar** en el torneo.
+1. Abre **Actividades** → **Torneos** y pulsa **Editar** en el torneo.
 2. Baja hasta la pestaña **Rondas**.
 
 Cada fila muestra el **Número de ronda**, el **Estado**, cuántas **Partidas** tiene, cuántas están **Completadas** («5/8») y las fechas **Iniciada** y **Completada**. En una pantalla estrecha ves solo el **Número de ronda** y el **Estado**; el resto aparece según el ancho. Las acciones de la ronda (**Gestionar partidas**, **Iniciar ronda**, **Confirmar informes pendientes** y **Completar ronda**) están en el menú **⋯** de cada fila.
