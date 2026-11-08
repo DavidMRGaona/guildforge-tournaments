@@ -34,7 +34,7 @@ El módulo trae cuatro: **Warhammer 40.000**, **Magic: The Gathering**, **Warham
 
 ## Duplicar un perfil
 
-1. Pulsa **Duplicar** en el perfil que quieres copiar.
+1. Abre el menú **⋯** del perfil que quieres copiar y pulsa **Duplicar**.
 2. Escribe el **Nombre** del nuevo.
 3. Confirma.
 
@@ -42,7 +42,7 @@ Sale «Perfil duplicado correctamente». La copia es un perfil tuyo: puedes camb
 
 ## Cambiar o borrar un perfil
 
-Pulsa **Editar**, cambia lo que necesites y pulsa **Guardar cambios**. Para quitar un perfil tuyo, pulsa **Borrar** en su ficha.
+Abre el menú **⋯** del perfil, pulsa **Editar**, cambia lo que necesites y pulsa **Guardar cambios**. Para quitar un perfil tuyo, pulsa **Borrar** en su ficha.
 
 Al elegir un perfil en un torneo, sus reglas se copian en el torneo. Cambiar el perfil después no cambia esas copias: solo afecta a los torneos que lo elijan desde entonces y a los que no tengan reglas propias de puntuación o de desempates.
 

@@ -26,7 +26,7 @@ En cualquier modo puedes registrar o corregir un resultado desde el panel. Lo qu
 ## Registrar los resultados de una ronda
 
 1. Abre **Torneos** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Rondas**.
-2. Pulsa **Gestionar partidas** en la ronda. Se abre la lista de sus partidas, una por mesa («Mesa 1 - … vs …»).
+2. En el menú **⋯** de la ronda, pulsa **Gestionar partidas**. Se abre la lista de sus partidas, una por mesa («Mesa 1 - … vs …»).
 3. En cada partida, elige el resultado en **Estado**: **Victoria jugador 1**, **Victoria jugador 2**, **Empate**, **Doble derrota** o **Sin jugar**.
 4. Si quieres, escribe **Puntos jugador 1** y **Puntos jugador 2**: los juegos o puntos ganados en la partida. Los usan algunos desempates.
 5. Si el torneo usa estadísticas, rellénalas en **Estadísticas jugador 1** y **Estadísticas jugador 2**.
@@ -40,7 +40,7 @@ Para dejar una partida sin resultado, elige **Sin jugar**. La partida de un bye 
 
 Abre **Torneos** → **Torneos**, pulsa **Editar** en el torneo y baja hasta la pestaña **Partidas**. Muestra las partidas de la última ronda; con el filtro **Ronda** ves las de otra, y con el filtro **Informe**, solo las que tienen un informe de los jugadores **Pendiente** o **Discutido**. La columna **Informe** dice lo mismo, y al pasar por encima de **Discutido** ves el motivo.
 
-Cada partida tiene sus acciones:
+Cada partida tiene sus acciones en el menú **⋯** de su fila. En una pantalla estrecha ves solo la **Mesa** y los jugadores; el resto de columnas aparecen según el ancho:
 
 | Acción | Cuándo sale | Qué hace |
 |---|---|---|
@@ -51,13 +51,13 @@ Cada partida tiene sus acciones:
 
 ## Corregir un resultado
 
-Abre **Gestionar partidas** en la ronda, aunque esté completada, cambia el resultado y guarda. También puedes pulsar **Restablecer** en la partida, en la pestaña **Partidas**, y volver a registrarlo. La clasificación se recalcula. Si la ronda ya está completada y hay otra después, puedes cambiar el resultado, pero no dejarlo **Sin jugar**.
+Abre **Gestionar partidas** en el menú **⋯** de la ronda, aunque esté completada, cambia el resultado y guarda. También puedes pulsar **Restablecer** en la partida, en la pestaña **Partidas**, y volver a registrarlo. La clasificación se recalcula. Si la ronda ya está completada y hay otra después, puedes cambiar el resultado, pero no dejarlo **Sin jugar**.
 
 ## Los informes de los jugadores
 
 Con **Jugadores con confirmación**, un resultado informado espera a que el rival lo confirme. En la página **Rondas** de la web sale como **Pendiente de confirmación**, o como **Discutido** si el rival no está de acuerdo.
 
-- **Confirmar los que nadie discute**: con la ronda en curso, pulsa **Confirmar informes pendientes** en la fila y confirma. Los resultados informados que nadie discute pasan a ser definitivos. Los discutidos se quedan para que los revises uno a uno.
+- **Confirmar los que nadie discute**: con la ronda en curso, abre el menú **⋯** de la fila de la ronda, pulsa **Confirmar informes pendientes** y confirma. Los resultados informados que nadie discute pasan a ser definitivos. Los discutidos se quedan para que los revises uno a uno.
 - **Resolver uno discutido**: cuando un rival discute, el **Email de notificaciones** del torneo recibe el correo «Resultado discutido en …», con el resultado informado y el motivo. Busca la partida en la pestaña **Partidas** (filtro **Informe** → **Discutido**) y decide qué pasó: **Confirmar informe** si el informe es correcto, o **Restablecer** y registra el resultado correcto. El jugador que informó también recibe el aviso y puede corregir su informe desde la web.
 
 No se puede completar la ronda ni finalizar el torneo mientras quede algún informe sin confirmar o discutido.

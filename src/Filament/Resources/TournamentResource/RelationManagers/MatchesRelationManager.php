@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationMana
 
 use App\Application\Services\TimezoneServiceInterface;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -64,16 +65,21 @@ final class MatchesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('round.round_number')
                     ->label(__('tournaments::messages.fields.round'))
-                    ->formatStateUsing(fn (int $state): string => __('tournaments::messages.table.round_number', ['number' => $state])),
+                    ->formatStateUsing(fn (int $state): string => __('tournaments::messages.table.round_number', ['number' => $state]))
+                    ->visibleFrom('xl')
+                    ->wrapHeader(),
 
                 TextColumn::make('table_number')
                     ->label(__('tournaments::messages.fields.table_number'))
                     ->sortable()
-                    ->default('-'),
+                    ->default('-')
+                    ->wrapHeader(),
 
                 TextColumn::make('player1.participant_name')
                     ->label(__('tournaments::messages.fields.player_1'))
-                    ->getStateUsing(fn (MatchModel $record): string => $record->player1->participant_name),
+                    ->getStateUsing(fn (MatchModel $record): string => $record->player1->participant_name)
+                    ->wrap()
+                    ->wrapHeader(),
 
                 TextColumn::make('player2.participant_name')
                     ->label(__('tournaments::messages.fields.player_2'))
@@ -83,24 +89,32 @@ final class MatchesRelationManager extends RelationManager
                         }
 
                         return $record->player2->participant_name ?? __('tournaments::messages.participants.unknown');
-                    }),
+                    })
+                    ->wrap()
+                    ->wrapHeader(),
 
                 TextColumn::make('result')
                     ->label(__('tournaments::messages.fields.status'))
                     ->badge()
                     ->color(fn (MatchResult $state): string => $state->color())
                     ->formatStateUsing(fn (MatchResult $state): string => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('sm')
+                    ->wrapHeader(),
 
                 TextColumn::make('player_1_score')
                     ->label(__('tournaments::messages.fields.player_1_score'))
                     ->default('-')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg')
+                    ->wrapHeader(),
 
                 TextColumn::make('player_2_score')
                     ->label(__('tournaments::messages.fields.player_2_score'))
                     ->default('-')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg')
+                    ->wrapHeader(),
 
                 // A players' report waiting for confirmation; the reason of a dispute on hover
                 TextColumn::make('report_status')
@@ -112,7 +126,9 @@ final class MatchesRelationManager extends RelationManager
                         default => (string) __('tournaments::messages.report_status.pending'),
                     })
                     ->color(fn (MatchModel $record): string => $record->report?->disputed_at !== null ? 'danger' : 'warning')
-                    ->tooltip(fn (MatchModel $record): ?string => $record->report?->dispute_reason),
+                    ->tooltip(fn (MatchModel $record): ?string => $record->report?->dispute_reason)
+                    ->visibleFrom('md')
+                    ->wrapHeader(),
             ])
             ->filters([
                 // The last round first: the one whose results are being recorded
@@ -136,192 +152,195 @@ final class MatchesRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('reportResult')
-                    ->label(__('tournaments::messages.actions.report_result'))
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('primary')
-                    ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
-                    ->authorize(fn (): bool => $this->canReportResults())
-                    // The official result replaces the players' report: say what is lost
-                    ->modalDescription(fn (MatchModel $record): ?string => $record->report instanceof MatchReportModel
-                        ? rtrim($this->reportSummary($record), '.').'. '.__('tournaments::messages.modal.report_discarded')
-                        : null)
-                    ->schema(function (MatchModel $record): array {
-                        $fields = [
-                            Select::make('result')
-                                ->label(__('tournaments::messages.fields.status'))
-                                ->options($this->getResultOptions($record))
-                                ->required()
-                                ->native(false),
-                        ];
+                // One menu: 4 labelled actions made the table overflow its container
+                ActionGroup::make([
+                    Action::make('reportResult')
+                        ->label(__('tournaments::messages.actions.report_result'))
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('primary')
+                        ->visible(fn (MatchModel $record): bool => $record->result === MatchResult::NotPlayed)
+                        ->authorize(fn (): bool => $this->canReportResults())
+                        // The official result replaces the players' report: say what is lost
+                        ->modalDescription(fn (MatchModel $record): ?string => $record->report instanceof MatchReportModel
+                            ? rtrim($this->reportSummary($record), '.').'. '.__('tournaments::messages.modal.report_discarded')
+                            : null)
+                        ->schema(function (MatchModel $record): array {
+                            $fields = [
+                                Select::make('result')
+                                    ->label(__('tournaments::messages.fields.status'))
+                                    ->options($this->getResultOptions($record))
+                                    ->required()
+                                    ->native(false),
+                            ];
 
-                        if ($record->player_2_id !== null) {
-                            $fields[] = TextInput::make('player_1_score')
-                                ->label(__('tournaments::messages.fields.player_1_score'))
-                                ->helperText(__('tournaments::messages.fields.score_help'))
-                                ->integer()
-                                ->minValue(0)
-                                ->nullable();
-                            $fields[] = TextInput::make('player_2_score')
-                                ->label(__('tournaments::messages.fields.player_2_score'))
-                                ->integer()
-                                ->minValue(0)
-                                ->nullable();
-                        }
-
-                        // Get tournament's stat_definitions through round relationship
-                        $tournament = $record->round->tournament;
-                        $statDefinitions = $tournament->stat_definitions ?? [];
-
-                        if (count($statDefinitions) > 0) {
-                            // Add section for Player 1 stats
-                            $player1Fields = [];
-
-                            foreach ($statDefinitions as $stat) {
-                                $player1Fields[] = $this->createStatField($stat, 'player_1_stats');
+                            if ($record->player_2_id !== null) {
+                                $fields[] = TextInput::make('player_1_score')
+                                    ->label(__('tournaments::messages.fields.player_1_score'))
+                                    ->helperText(__('tournaments::messages.fields.score_help'))
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->nullable();
+                                $fields[] = TextInput::make('player_2_score')
+                                    ->label(__('tournaments::messages.fields.player_2_score'))
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->nullable();
                             }
 
-                            $fields[] = Section::make('player_1_section')
-                                ->heading($record->player1->participant_name)
-                                ->schema($player1Fields)
-                                ->columns(2);
+                            // Get tournament's stat_definitions through round relationship
+                            $tournament = $record->round->tournament;
+                            $statDefinitions = $tournament->stat_definitions ?? [];
 
-                            // Only add Player 2 section if it's not a bye
-                            if ($record->player_2_id !== null) {
-                                $player2Fields = [];
+                            if (count($statDefinitions) > 0) {
+                                // Add section for Player 1 stats
+                                $player1Fields = [];
 
                                 foreach ($statDefinitions as $stat) {
-                                    $player2Fields[] = $this->createStatField($stat, 'player_2_stats');
+                                    $player1Fields[] = $this->createStatField($stat, 'player_1_stats');
                                 }
 
-                                $fields[] = Section::make('player_2_section')
-                                    ->heading($record->player2->participant_name ?? __('tournaments::messages.fields.player_2'))
-                                    ->schema($player2Fields)
+                                $fields[] = Section::make('player_1_section')
+                                    ->heading($record->player1->participant_name)
+                                    ->schema($player1Fields)
                                     ->columns(2);
+
+                                // Only add Player 2 section if it's not a bye
+                                if ($record->player_2_id !== null) {
+                                    $player2Fields = [];
+
+                                    foreach ($statDefinitions as $stat) {
+                                        $player2Fields[] = $this->createStatField($stat, 'player_2_stats');
+                                    }
+
+                                    $fields[] = Section::make('player_2_section')
+                                        ->heading($record->player2->participant_name ?? __('tournaments::messages.fields.player_2'))
+                                        ->schema($player2Fields)
+                                        ->columns(2);
+                                }
                             }
-                        }
 
-                        return $fields;
-                    })
-                    ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
-                        try {
-                            $results->recordResult(new RecordMatchResultDTO(
-                                matchId: $record->id,
-                                result: MatchResult::from($data['result']),
-                                reportedById: (string) auth()->id(),
-                                player1Stats: ($data['player_1_stats'] ?? null) ?: null,
-                                player2Stats: ($data['player_2_stats'] ?? null) ?: null,
-                                player1Score: is_numeric($data['player_1_score'] ?? null) ? (int) $data['player_1_score'] : null,
-                                player2Score: is_numeric($data['player_2_score'] ?? null) ? (int) $data['player_2_score'] : null,
-                            ));
-                        } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                            return $fields;
+                        })
+                        ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
+                            try {
+                                $results->recordResult(new RecordMatchResultDTO(
+                                    matchId: $record->id,
+                                    result: MatchResult::from($data['result']),
+                                    reportedById: (string) auth()->id(),
+                                    player1Stats: ($data['player_1_stats'] ?? null) ?: null,
+                                    player2Stats: ($data['player_2_stats'] ?? null) ?: null,
+                                    player1Score: is_numeric($data['player_1_score'] ?? null) ? (int) $data['player_1_score'] : null,
+                                    player2Score: is_numeric($data['player_2_score'] ?? null) ? (int) $data['player_2_score'] : null,
+                                ));
+                            } catch (InvalidMatchResultException|MatchResultLockedException $exception) {
+                                Notification::make()
+                                    ->title($exception instanceof MatchResultLockedException
+                                        ? __('tournaments::messages.errors.result_locked_by_next_round')
+                                        : InvalidMatchResultMessage::for($exception))
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
                             Notification::make()
-                                ->title($exception instanceof MatchResultLockedException
-                                    ? __('tournaments::messages.errors.result_locked_by_next_round')
-                                    : InvalidMatchResultMessage::for($exception))
-                                ->danger()
+                                ->title(__('tournaments::messages.messages.result_reported'))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        }
+                    Action::make('confirmReport')
+                        ->label(__('tournaments::messages.actions.confirm_report'))
+                        ->icon('heroicon-o-check-badge')
+                        ->color('success')
+                        ->visible(fn (MatchModel $record): bool => $record->report instanceof MatchReportModel && $record->result === MatchResult::NotPlayed)
+                        ->authorize(fn (): bool => $this->canReportResults())
+                        ->requiresConfirmation()
+                        ->modalDescription(fn (MatchModel $record): string => $this->reportSummary($record))
+                        // What the modal shows: a correction made while it is open is not confirmed blindly
+                        ->fillForm(fn (MatchModel $record, MatchReportRepositoryInterface $reports): array => [
+                            'report' => $reports->find($record->id)?->fingerprint(),
+                        ])
+                        ->schema([Hidden::make('report')])
+                        ->action(function (MatchModel $record, array $data, MatchReportingServiceInterface $reporting): void {
+                            try {
+                                $reporting->confirmAsOrganizer($record->id, (string) auth()->id(), (string) ($data['report'] ?? ''));
+                            } catch (MatchReportClosedException) {
+                                Notification::make()
+                                    ->title(__('tournaments::messages.errors.no_pending_report'))
+                                    ->danger()
+                                    ->send();
 
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.result_reported'))
-                            ->success()
-                            ->send();
-                    }),
+                                return;
+                            } catch (ResultNotConfirmedException $exception) {
+                                Notification::make()
+                                    ->title($exception->reportWasChanged()
+                                        ? __('tournaments::messages.errors.report_changed')
+                                        : __('tournaments::messages.errors.no_pending_report'))
+                                    ->danger()
+                                    ->send();
 
-                Action::make('confirmReport')
-                    ->label(__('tournaments::messages.actions.confirm_report'))
-                    ->icon('heroicon-o-check-badge')
-                    ->color('success')
-                    ->visible(fn (MatchModel $record): bool => $record->report instanceof MatchReportModel && $record->result === MatchResult::NotPlayed)
-                    ->authorize(fn (): bool => $this->canReportResults())
-                    ->requiresConfirmation()
-                    ->modalDescription(fn (MatchModel $record): string => $this->reportSummary($record))
-                    // What the modal shows: a correction made while it is open is not confirmed blindly
-                    ->fillForm(fn (MatchModel $record, MatchReportRepositoryInterface $reports): array => [
-                        'report' => $reports->find($record->id)?->fingerprint(),
-                    ])
-                    ->schema([Hidden::make('report')])
-                    ->action(function (MatchModel $record, array $data, MatchReportingServiceInterface $reporting): void {
-                        try {
-                            $reporting->confirmAsOrganizer($record->id, (string) auth()->id(), (string) ($data['report'] ?? ''));
-                        } catch (MatchReportClosedException) {
+                                return;
+                            }
+
                             Notification::make()
-                                ->title(__('tournaments::messages.errors.no_pending_report'))
-                                ->danger()
+                                ->title(__('tournaments::messages.messages.report_confirmed'))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        } catch (ResultNotConfirmedException $exception) {
+                    // Not irreversible: the result can be recorded again and the history keeps both
+                    Action::make('resetResult')
+                        ->label(__('tournaments::messages.actions.reset_result'))
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('danger')
+                        ->visible(fn (MatchModel $record): bool => $record->player_2_id !== null
+                            && ($record->result !== MatchResult::NotPlayed || $record->report instanceof MatchReportModel))
+                        ->authorize(fn (): bool => $this->canReportResults())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('tournaments::messages.modal.reset_result'))
+                        ->schema([
+                            Textarea::make('reason')
+                                ->label(__('tournaments::messages.fields.reset_reason'))
+                                ->required()
+                                ->maxLength(500),
+                        ])
+                        ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
+                            try {
+                                $results->resetResult($record->id, (string) auth()->id(), (string) $data['reason']);
+                            } catch (MatchResultLockedException) {
+                                Notification::make()
+                                    ->title(__('tournaments::messages.errors.result_locked_by_next_round'))
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
                             Notification::make()
-                                ->title($exception->reportWasChanged()
-                                    ? __('tournaments::messages.errors.report_changed')
-                                    : __('tournaments::messages.errors.no_pending_report'))
-                                ->danger()
+                                ->title(__('tournaments::messages.messages.result_reset'))
+                                ->success()
                                 ->send();
+                        }),
 
-                            return;
-                        }
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.report_confirmed'))
-                            ->success()
-                            ->send();
-                    }),
-
-                // Not irreversible: the result can be recorded again and the history keeps both
-                Action::make('resetResult')
-                    ->label(__('tournaments::messages.actions.reset_result'))
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->color('danger')
-                    ->visible(fn (MatchModel $record): bool => $record->player_2_id !== null
-                        && ($record->result !== MatchResult::NotPlayed || $record->report instanceof MatchReportModel))
-                    ->authorize(fn (): bool => $this->canReportResults())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('tournaments::messages.modal.reset_result'))
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label(__('tournaments::messages.fields.reset_reason'))
-                            ->required()
-                            ->maxLength(500),
-                    ])
-                    ->action(function (MatchModel $record, array $data, MatchResultServiceInterface $results): void {
-                        try {
-                            $results->resetResult($record->id, (string) auth()->id(), (string) $data['reason']);
-                        } catch (MatchResultLockedException) {
-                            Notification::make()
-                                ->title(__('tournaments::messages.errors.result_locked_by_next_round'))
-                                ->danger()
-                                ->send();
-
-                            return;
-                        }
-
-                        Notification::make()
-                            ->title(__('tournaments::messages.messages.result_reset'))
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('history')
-                    ->label(__('tournaments::messages.actions.history'))
-                    ->icon('heroicon-o-clock')
-                    ->color('gray')
-                    ->visible(fn (MatchModel $record): bool => $record->history()->exists())
-                    ->authorize(fn (): bool => $this->canReportResults())
-                    ->modalSubmitAction(false)
-                    ->schema(fn (MatchModel $record, MatchQueryServiceInterface $queries): array => array_map(
-                        fn (MatchHistoryResponseDTO $entry): TextEntry => TextEntry::make('history_'.$entry->id)
-                            ->label(implode(' · ', [
-                                app(TimezoneServiceInterface::class)->format($entry->changedAt),
-                                $entry->action->label(),
-                                $entry->changedByName,
-                            ]))
-                            ->state($this->historySummary($entry)),
-                        $queries->getHistory($record->id),
-                    )),
+                    Action::make('history')
+                        ->label(__('tournaments::messages.actions.history'))
+                        ->icon('heroicon-o-clock')
+                        ->color('gray')
+                        ->visible(fn (MatchModel $record): bool => $record->history()->exists())
+                        ->authorize(fn (): bool => $this->canReportResults())
+                        ->modalSubmitAction(false)
+                        ->schema(fn (MatchModel $record, MatchQueryServiceInterface $queries): array => array_map(
+                            fn (MatchHistoryResponseDTO $entry): TextEntry => TextEntry::make('history_'.$entry->id)
+                                ->label(implode(' · ', [
+                                    app(TimezoneServiceInterface::class)->format($entry->changedAt),
+                                    $entry->action->label(),
+                                    $entry->changedByName,
+                                ]))
+                                ->state($this->historySummary($entry)),
+                            $queries->getHistory($record->id),
+                        )),
+                ]),
             ])
             // Without the round filter, the last round first and its tables in order
             ->defaultSort(fn (Builder $query): Builder => $query

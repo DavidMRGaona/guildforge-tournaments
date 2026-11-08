@@ -631,17 +631,23 @@ final class TournamentResource extends BaseResource
                     ->label(__('tournaments::messages.fields.image'))
                     ->square()
                     ->disk('images')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
 
                 TextColumn::make('name')
                     ->label(__('tournaments::messages.config.name'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->wrapHeader(),
 
                 TextColumn::make('event.title')
                     ->label(__('tournaments::messages.resource.fields.event'))
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl')
+                    ->wrapHeader(),
 
                 TextColumn::make('status')
                     ->label(__('tournaments::messages.fields.status'))
@@ -653,14 +659,18 @@ final class TournamentResource extends BaseResource
                 TextColumn::make('participants_count')
                     ->label(__('tournaments::messages.resource.fields.participants_count'))
                     ->counts('participants')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md')
+                    ->wrapHeader(),
 
                 TextColumn::make('current_round')
                     ->label(__('tournaments::messages.resource.fields.current_round_display'))
                     ->formatStateUsing(fn (int $state): string => $state > 0
                         ? __('tournaments::messages.table.round_number', ['number' => $state])
                         : __('tournaments::messages.table.no_round'))
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
 
                 TextColumn::make('registration_opens_at')
                     ->label(__('tournaments::messages.config.registration_opens_at'))
@@ -687,7 +697,10 @@ final class TournamentResource extends BaseResource
                     ->searchable(),
             ])
             ->recordActions([
-                EditAction::make(),
+                // An icon below md: the row opens the edit page too
+                EditAction::make()
+                    ->button()
+                    ->labeledFrom('md'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

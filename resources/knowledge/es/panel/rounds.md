@@ -18,7 +18,7 @@ Las rondas de un torneo están en la pestaña **Rondas** de su ficha. Cada ronda
 1. Abre **Torneos** → **Torneos** y pulsa **Editar** en el torneo.
 2. Baja hasta la pestaña **Rondas**.
 
-Cada fila muestra el **Número de ronda**, el **Estado**, cuántas **Partidas** tiene, cuántas están **Completadas** («5/8») y las fechas **Iniciada** y **Completada**.
+Cada fila muestra el **Número de ronda**, el **Estado**, cuántas **Partidas** tiene, cuántas están **Completadas** («5/8») y las fechas **Iniciada** y **Completada**. En una pantalla estrecha ves solo el **Número de ronda** y el **Estado**; el resto aparece según el ancho. Las acciones de la ronda (**Gestionar partidas**, **Iniciar ronda**, **Confirmar informes pendientes** y **Completar ronda**) están en el menú **⋯** de cada fila.
 
 ## Generar una ronda
 
@@ -36,11 +36,11 @@ Para generar la siguiente, la anterior tiene que estar completada.
 
 ## Iniciar la ronda
 
-Pulsa **Iniciar ronda** en la fila y confirma. La ronda pasa a **En curso**. Desde ahora, si el torneo lo permite, los jugadores pueden informar de sus resultados desde la web.
+Abre el menú **⋯** de la fila, pulsa **Iniciar ronda** y confirma. La ronda pasa a **En curso**. Desde ahora, si el torneo lo permite, los jugadores pueden informar de sus resultados desde la web.
 
 ## Completar la ronda
 
-Cuando todas las partidas tienen resultado, pulsa **Completar ronda** y confirma. La ronda pasa a **Finalizada** y ya puedes generar la siguiente.
+Cuando todas las partidas tienen resultado, abre el menú **⋯** de la fila, pulsa **Completar ronda** y confirma. La ronda pasa a **Finalizada** y ya puedes generar la siguiente.
 
 Si quedan partidas sin resultado, sale «No se han completado todas las partidas» con cuántas faltan y cuántas tienen un resultado de los jugadores pendiente de confirmar o discutido. Regístralas antes: lo explica la guía «Registrar resultados y revisar los informes de los jugadores».
 

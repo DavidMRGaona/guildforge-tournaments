@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Filament\Resources\TournamentResource\RelationMana
 use App\Application\Services\TimezoneServiceInterface;
 use DomainException;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -325,7 +326,8 @@ final class ParticipantsRelationManager extends RelationManager
                         $q->whereHas('user', fn (Builder $uq): Builder => $uq->where('name', 'like', "%{$search}%"))
                             ->orWhere('guest_name', 'like', "%{$search}%");
                     }))
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('guest_name', $direction === 'desc' ? 'desc' : 'asc')),
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('guest_name', $direction === 'desc' ? 'desc' : 'asc'))
+                    ->wrap(),
                 TextColumn::make('user.email')
                     ->label(__('tournaments::messages.participants.email'))
                     ->getStateUsing(function (ParticipantModel $record): ?string {
@@ -336,7 +338,9 @@ final class ParticipantsRelationManager extends RelationManager
                         return $record->guest_email;
                     })
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('xl')
+                    ->wrapHeader(),
                 IconColumn::make('is_guest')
                     ->label(__('tournaments::messages.participants.guest'))
                     ->getStateUsing(fn (ParticipantModel $record): bool => $record->user_id === null)
@@ -345,38 +349,52 @@ final class ParticipantsRelationManager extends RelationManager
                     ->falseIcon('heroicon-o-user-circle')
                     ->trueColor('warning')
                     ->falseColor('success')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('md')
+                    ->wrapHeader(),
                 TextColumn::make('status')
                     ->label(__('tournaments::messages.participants.status'))
                     ->badge()
                     ->color(fn (ParticipantStatus $state): string => $state->color())
                     ->formatStateUsing(fn (ParticipantStatus $state): string => $state->label())
                     ->description(fn (ParticipantModel $record): ?string => $this->emailConfirmationNotice($record))
-                    ->sortable(),
+                    ->sortable()
+                    ->wrapHeader(),
                 IconColumn::make('possible_duplicate')
                     ->label(__('tournaments::messages.participants.possible_duplicate'))
                     ->getStateUsing(fn (ParticipantModel $record): bool => in_array($record->id, $this->possibleDuplicateIds(), true))
                     ->icon(fn (bool $state): ?string => $state ? 'heroicon-o-exclamation-triangle' : null)
                     ->color('warning')
                     ->tooltip(fn (bool $state): ?string => $state ? (string) __('tournaments::messages.participants.possible_duplicate_tooltip') : null)
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('sm')
+                    ->wrapHeader(),
                 IconColumn::make('has_received_bye')
                     ->label(__('tournaments::messages.participants.bye'))
                     ->boolean()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
                 TextColumn::make('seed')
                     ->label(__('tournaments::messages.participants.seed'))
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
                 TextColumn::make('checked_in_at')
                     ->label(__('tournaments::messages.participants.checked_in_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->wrap()
+                    ->visibleFrom('2xl')
+                    ->wrapHeader(),
                 TextColumn::make('created_at')
                     ->label(__('tournaments::messages.participants.registered_at'))
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('lg')
+                    ->wrapHeader(),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -397,93 +415,96 @@ final class ParticipantsRelationManager extends RelationManager
                     ->using(fn (array $data, CreateAction $action): Model => $this->addParticipant($data, $action)),
             ])
             ->recordActions([
-                Action::make('confirm')
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->label(__('tournaments::messages.participants.confirm'))
-                    ->icon('heroicon-o-check-badge')
-                    ->color('info')
-                    ->visible(function (ParticipantModel $record): bool {
-                        /** @var TournamentModel $tournament */
-                        $tournament = $this->getOwnerRecord();
+                // One menu: 6 labelled actions made the table overflow its container
+                ActionGroup::make([
+                    Action::make('confirm')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->label(__('tournaments::messages.participants.confirm'))
+                        ->icon('heroicon-o-check-badge')
+                        ->color('info')
+                        ->visible(function (ParticipantModel $record): bool {
+                            /** @var TournamentModel $tournament */
+                            $tournament = $this->getOwnerRecord();
 
-                        return $tournament->requires_manual_confirmation
-                            && $record->status === ParticipantStatus::Registered;
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading(__('tournaments::messages.participants.confirm_participant'))
-                    ->schema([
-                        $this->messageField('notes', __('tournaments::messages.participants.approval_notes'), __('tournaments::messages.participants.approval_notes_help')),
-                    ])
-                    ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
-                        $record,
-                        fn (string $id) => $this->participants()->confirm($id, $this->message($data, 'notes')),
-                        __('tournaments::messages.notifications.participant_confirmed'),
-                    )),
-                Action::make('confirm_email')
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->label(__('tournaments::messages.participants.confirm_email'))
-                    ->icon('heroicon-o-envelope-open')
-                    ->color('info')
-                    ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
-                    ->requiresConfirmation()
-                    ->modalDescription(__('tournaments::messages.modal.confirm_email_description'))
-                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
-                        $record,
-                        fn (string $id) => $this->participants()->confirmEmailByOrganization($id),
-                        __('tournaments::messages.notifications.email_confirmed'),
-                    )),
-                Action::make('check_in')
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->label(__('tournaments::messages.participants.check_in'))
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(function (ParticipantModel $record): bool {
-                        /** @var TournamentModel $tournament */
-                        $tournament = $this->getOwnerRecord();
+                            return $tournament->requires_manual_confirmation
+                                && $record->status === ParticipantStatus::Registered;
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading(__('tournaments::messages.participants.confirm_participant'))
+                        ->schema([
+                            $this->messageField('notes', __('tournaments::messages.participants.approval_notes'), __('tournaments::messages.participants.approval_notes_help')),
+                        ])
+                        ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
+                            $record,
+                            fn (string $id) => $this->participants()->confirm($id, $this->message($data, 'notes')),
+                            __('tournaments::messages.notifications.participant_confirmed'),
+                        )),
+                    Action::make('confirm_email')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->label(__('tournaments::messages.participants.confirm_email'))
+                        ->icon('heroicon-o-envelope-open')
+                        ->color('info')
+                        ->visible(fn (ParticipantModel $record): bool => $this->isAwaitingEmailConfirmation($record))
+                        ->requiresConfirmation()
+                        ->modalDescription(__('tournaments::messages.modal.confirm_email_description'))
+                        ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                            $record,
+                            fn (string $id) => $this->participants()->confirmEmailByOrganization($id),
+                            __('tournaments::messages.notifications.email_confirmed'),
+                        )),
+                    Action::make('check_in')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->label(__('tournaments::messages.participants.check_in'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(function (ParticipantModel $record): bool {
+                            /** @var TournamentModel $tournament */
+                            $tournament = $this->getOwnerRecord();
 
-                        // The rule self check-in follows too
-                        return $this->participants()->canCheckIn($record->status, $tournament->requires_manual_confirmation);
-                    })
-                    ->requiresConfirmation()
-                    ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
-                        $record,
-                        fn (string $id) => $this->participants()->checkIn($id),
-                        __('tournaments::messages.notifications.checked_in'),
-                    )),
-                Action::make('withdraw')
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->label(__('tournaments::messages.participants.withdraw'))
-                    ->icon('heroicon-o-arrow-right-start-on-rectangle')
-                    ->color('warning')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('tournaments::messages.modal.withdraw_description'))
-                    ->action(function (ParticipantModel $record): void {
-                        $record->update(['status' => ParticipantStatus::Withdrawn]);
+                            // The rule self check-in follows too
+                            return $this->participants()->canCheckIn($record->status, $tournament->requires_manual_confirmation);
+                        })
+                        ->requiresConfirmation()
+                        ->action(fn (ParticipantModel $record) => $this->runOnParticipant(
+                            $record,
+                            fn (string $id) => $this->participants()->checkIn($id),
+                            __('tournaments::messages.notifications.checked_in'),
+                        )),
+                    Action::make('withdraw')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->label(__('tournaments::messages.participants.withdraw'))
+                        ->icon('heroicon-o-arrow-right-start-on-rectangle')
+                        ->color('warning')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('tournaments::messages.modal.withdraw_description'))
+                        ->action(function (ParticipantModel $record): void {
+                            $record->update(['status' => ParticipantStatus::Withdrawn]);
 
-                        Notification::make()
-                            ->title(__('tournaments::messages.notifications.withdrawn'))
-                            ->success()
-                            ->send();
-                    }),
-                Action::make('disqualify')
-                    ->authorize(fn (): bool => $this->canManageParticipants())
-                    ->label(__('tournaments::messages.participants.disqualify'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
-                    ->requiresConfirmation()
-                    ->modalDescription(__('tournaments::messages.modal.disqualify_description'))
-                    ->schema([
-                        $this->messageField('reason', __('tournaments::messages.participants.disqualification_reason'), __('tournaments::messages.participants.disqualification_reason_help')),
-                    ])
-                    ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
-                        $record,
-                        fn (string $id) => $this->participants()->disqualify($id, $this->message($data, 'reason')),
-                        __('tournaments::messages.notifications.disqualified'),
-                    )),
-                DeleteAction::make()
-                    ->authorize(fn (): bool => $this->canManageParticipants()),
+                            Notification::make()
+                                ->title(__('tournaments::messages.notifications.withdrawn'))
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('disqualify')
+                        ->authorize(fn (): bool => $this->canManageParticipants())
+                        ->label(__('tournaments::messages.participants.disqualify'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn (ParticipantModel $record): bool => $record->status->isActive())
+                        ->requiresConfirmation()
+                        ->modalDescription(__('tournaments::messages.modal.disqualify_description'))
+                        ->schema([
+                            $this->messageField('reason', __('tournaments::messages.participants.disqualification_reason'), __('tournaments::messages.participants.disqualification_reason_help')),
+                        ])
+                        ->action(fn (ParticipantModel $record, array $data) => $this->runOnParticipant(
+                            $record,
+                            fn (string $id) => $this->participants()->disqualify($id, $this->message($data, 'reason')),
+                            __('tournaments::messages.notifications.disqualified'),
+                        )),
+                    DeleteAction::make()
+                        ->authorize(fn (): bool => $this->canManageParticipants()),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
