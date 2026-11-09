@@ -10,6 +10,7 @@ use App\Filament\Resources\BaseResource;
 use App\Filament\Support\PanelNavigationGroup;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Closure;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -700,12 +701,13 @@ final class TournamentResource extends BaseResource
                     )
                     ->searchable(),
             ])
+            // One menu: the details icon and the edit button made the table overflow at 375 px,
+            // and the row opens the edit page anyway
             ->recordActions([
-                RowDetailsAction::makeIconButton(),
-                // An icon below md: the row opens the edit page too
-                EditAction::make()
-                    ->button()
-                    ->labeledFrom('md'),
+                ActionGroup::make([
+                    RowDetailsAction::make(),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
