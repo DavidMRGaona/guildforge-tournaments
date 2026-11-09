@@ -15,7 +15,7 @@ Los participantes de un torneo están en la pestaña **Participantes** de su fic
 
 ## Ver los participantes
 
-1. Abre **Actividades** → **Torneos** y pulsa **Editar** en el torneo.
+1. Abre **Actividades** → **Torneos** y pulsa el torneo en la lista (o **Editar** en su menú **⋯**).
 2. Baja hasta la pestaña **Participantes**.
 
 Arriba de la lista ves un resumen, por ejemplo «12 total · 8 confirmados · 4 con check-in». Cada fila muestra el **Nombre**, el **Email**, si es **Invitado** (sin cuenta), el **Estado**, el **Bye recibido**, la **Semilla**, la **Hora de check-in** y la **Fecha de inscripción**. En una pantalla estrecha solo ves el **Nombre** y el **Estado**: el resto de columnas aparecen según el ancho de la pantalla (**Bye recibido**, **Semilla** y **Hora de check-in**, solo en pantallas muy anchas). Puedes filtrar por **Estado** y por **Email confirmado**.
