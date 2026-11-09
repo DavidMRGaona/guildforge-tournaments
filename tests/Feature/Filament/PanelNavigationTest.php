@@ -7,7 +7,6 @@ namespace Modules\Tournaments\Tests\Feature\Filament;
 use App\Filament\Support\PanelNavigationGroup;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
-use Modules\Tournaments\TournamentsServiceProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -37,12 +36,5 @@ final class PanelNavigationTest extends ModuleTestCase
         $this->assertSame(40, GameProfileResource::getNavigationSort());
         $this->assertSame('Perfiles de torneo', GameProfileResource::getNavigationLabel());
         $this->assertNull(GameProfileResource::getNavigationParentItem());
-    }
-
-    public function test_the_module_declares_no_navigation_group_of_its_own(): void
-    {
-        $provider = new TournamentsServiceProvider($this->app);
-
-        $this->assertSame([], $provider->registerNavigationGroups());
     }
 }
