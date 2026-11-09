@@ -16,7 +16,7 @@ El estado de un torneo se cambia con los botones de arriba de su ficha. Cada bot
 ## Abrir la ficha
 
 1. En el menú lateral, abre **Actividades** y elige **Torneos**.
-2. Pulsa **Editar** en el torneo. La página se llama **Editar torneo**.
+2. Pulsa el torneo en la lista (o **Editar** en su menú **⋯**). La página se llama **Editar torneo**.
 
 Desde aquí también cambias sus datos: modifica lo que necesites y pulsa **Guardar cambios**.
 

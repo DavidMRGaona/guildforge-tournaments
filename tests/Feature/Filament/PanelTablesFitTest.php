@@ -56,6 +56,7 @@ final class PanelTablesFitTest extends ModuleTestCase
     public static function tablesWithSeveralActions(): array
     {
         return [
+            'tournaments' => [ListTournaments::class],
             'game profiles' => [ListGameProfiles::class],
             'participants' => [ParticipantsRelationManager::class],
             'rounds' => [RoundsRelationManager::class],
@@ -75,16 +76,6 @@ final class PanelTablesFitTest extends ModuleTestCase
         $this->assertInstanceOf(ActionGroup::class, $actions[0]);
     }
 
-    public function test_the_tournament_list_keeps_its_edit_button_outside_a_menu(): void
-    {
-        $actions = $this->tableOf(ListTournaments::class)->getRecordActions();
-
-        // The labelled edit button stays outside; row details is an icon beside it
-        $this->assertCount(2, $actions);
-        $this->assertNotInstanceOf(ActionGroup::class, $actions[0]);
-        $this->assertNotInstanceOf(ActionGroup::class, $actions[1]);
-    }
-
     /**
      * @param  class-string<HasTable>  $page
      */
@@ -97,12 +88,16 @@ final class PanelTablesFitTest extends ModuleTestCase
         $this->assertSame(RowDetailsAction::NAME, array_key_first($group->getFlatActions()));
     }
 
-    public function test_the_tournament_list_offers_row_details_beside_edit(): void
+    /**
+     * At 375 px the name, the status, the details icon and the edit button measured 23 px
+     * wider than the container: edit moved into the menu, since the row opens it anyway.
+     */
+    public function test_the_tournament_list_offers_row_details_and_edit_in_its_menu(): void
     {
-        $table = $this->tableOf(ListTournaments::class);
+        $group = $this->tableOf(ListTournaments::class)->getRecordActions()[0];
 
-        $this->assertNotNull($table->getAction(RowDetailsAction::NAME));
-        $this->assertNotNull($table->getAction('edit'));
+        $this->assertInstanceOf(ActionGroup::class, $group);
+        $this->assertSame([RowDetailsAction::NAME, 'edit'], array_keys($group->getFlatActions()));
     }
 
     /**
@@ -204,9 +199,6 @@ final class PanelTablesFitTest extends ModuleTestCase
         }
     }
 
-    /**
-     * @param  class-string<HasTable>  $page
-     */
     /**
      * «Ver detalles» shows every column with its label, so a column without one read «Created at».
      */
