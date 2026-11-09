@@ -19,7 +19,6 @@ use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Listeners\Concerns\DescribesMatches;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
-use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\MatchResultReportedNotification;
 
 /**
@@ -52,7 +51,7 @@ final readonly class SendMatchResultReportedEmail
         $opponent = $opponentId !== null ? $this->participants->find(ParticipantId::fromString($opponentId)) : null;
         $recipient = $opponent instanceof Participant ? $this->recipient($opponent) : null;
 
-        if (! $opponent instanceof Participant || ! $recipient instanceof AnonymousNotifiable) {
+        if (! $opponent instanceof Participant || ! is_object($recipient)) {
             return;
         }
 

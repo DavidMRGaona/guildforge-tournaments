@@ -7,6 +7,7 @@ namespace Modules\Tournaments;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
+use App\Application\Mail\DTOs\MailCategoryDTO;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -129,6 +130,13 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class TournamentsServiceProvider extends ModuleServiceProvider
 {
+    /** Mail category keys: stored with each person's choice, so they never change. */
+    public const string MAIL_REGISTRATIONS = 'tournaments.registrations';
+
+    public const string MAIL_RESULTS = 'tournaments.results';
+
+    public const string MAIL_REMINDERS = 'tournaments.reminders';
+
     public function moduleName(): string
     {
         return 'tournaments';
@@ -718,6 +726,38 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             ->first(['id']);
 
         return $event?->id;
+    }
+
+    /**
+     * Mail categories people choose from in their profile (core ≥ 3.47). The mail to the
+     * organization's mailbox and to guests has none: there is no account to choose.
+     *
+     * @return list<MailCategoryDTO>
+     */
+    public function registerMailCategories(): array
+    {
+        return [
+            MailCategoryDTO::mandatory(
+                key: self::MAIL_REGISTRATIONS,
+                section: 'tournaments::mail.categories.section',
+                label: 'tournaments::mail.categories.registrations.label',
+                description: 'tournaments::mail.categories.registrations.description',
+                reason: 'tournaments::mail.categories.registrations.reason',
+            ),
+            MailCategoryDTO::mandatory(
+                key: self::MAIL_RESULTS,
+                section: 'tournaments::mail.categories.section',
+                label: 'tournaments::mail.categories.results.label',
+                description: 'tournaments::mail.categories.results.description',
+                reason: 'tournaments::mail.categories.results.reason',
+            ),
+            MailCategoryDTO::optional(
+                key: self::MAIL_REMINDERS,
+                section: 'tournaments::mail.categories.section',
+                label: 'tournaments::mail.categories.reminders.label',
+                description: 'tournaments::mail.categories.reminders.description',
+            ),
+        ];
     }
 
     /**

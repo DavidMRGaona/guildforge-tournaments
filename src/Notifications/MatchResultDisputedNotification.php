@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\TournamentsServiceProvider;
 
 /**
  * Tells the organization and the reporter that the opponent disputed a reported result. Names and
  * reason arrive escaped for Markdown.
  */
-final class MatchResultDisputedNotification extends Notification implements ShouldQueue
+final class MatchResultDisputedNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -26,6 +28,11 @@ final class MatchResultDisputedNotification extends Notification implements Shou
         private readonly string $reason,
         private readonly bool $toOrganization,
     ) {}
+
+    public function mailCategory(): string
+    {
+        return TournamentsServiceProvider::MAIL_RESULTS;
+    }
 
     /**
      * @return array<int, string>

@@ -12,7 +12,6 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
-use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantDisqualifiedNotification;
 
 /**
@@ -33,7 +32,7 @@ final readonly class SendParticipantDisqualifiedEmail
         $participant = $this->participantRepository->find(ParticipantId::fromString($event->participantId));
         $recipient = $participant instanceof Participant ? $this->recipient($participant) : null;
 
-        if (! $tournament instanceof Tournament || ! $participant instanceof Participant || ! $recipient instanceof AnonymousNotifiable) {
+        if (! $tournament instanceof Tournament || ! $participant instanceof Participant || ! is_object($recipient)) {
             return;
         }
 

@@ -17,12 +17,15 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantRegisteredToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantRegisteredToParticipant;
 
 final readonly class SendParticipantRegisteredEmails
 {
+    use MailsParticipants;
+
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
@@ -53,7 +56,7 @@ final readonly class SendParticipantRegisteredEmails
         $eventDate = $this->getEventDate($event->tournamentId);
 
         // Send to participant (include cancellation token for guests)
-        $participantNotifiable = new AnonymousNotifiable($participantEmail, $participantName);
+        $participantNotifiable = $this->accountOrAddress($event->userId, $participantEmail, $participantName);
         $participantNotifiable->notify(new ParticipantRegisteredToParticipant(
             tournamentName: $tournament->name(),
             participantName: $participantName,

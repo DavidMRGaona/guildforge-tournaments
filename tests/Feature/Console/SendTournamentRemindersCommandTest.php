@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Console;
 
+use App\Application\Mail\Services\MailPreferenceServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Carbon\CarbonImmutable;
@@ -19,6 +20,7 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\TournamentsServiceProvider;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mime\Email;
 use Tests\Support\Modules\ModuleTestCase;
@@ -102,6 +104,21 @@ final class SendTournamentRemindersCommandTest extends ModuleTestCase
         $this->sendReminders();
 
         $this->assertSame([], $this->mails());
+    }
+
+    public function test_an_account_that_turned_reminders_off_is_not_mailed_but_others_are(): void
+    {
+        $this->enable();
+        $tournament = $this->tournament($this->now->addHours(10));
+        $off = UserModel::factory()->create(['email' => 'no@example.com']);
+        $on = UserModel::factory()->create(['email' => 'si@example.com']);
+        $this->participant($tournament, ['user_id' => $off->id]);
+        $this->participant($tournament, ['user_id' => $on->id]);
+        $this->app->make(MailPreferenceServiceInterface::class)->update($off, [TournamentsServiceProvider::MAIL_REMINDERS => false]);
+
+        $this->sendReminders();
+
+        $this->assertSame(['si@example.com'], array_column($this->mails(), 'to'));
     }
 
     public function test_the_lead_time_is_configurable(): void

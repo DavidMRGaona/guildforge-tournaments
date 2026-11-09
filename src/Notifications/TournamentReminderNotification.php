@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\TournamentsServiceProvider;
 
-final class TournamentReminderNotification extends Notification implements ShouldQueue
+final class TournamentReminderNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -23,6 +25,11 @@ final class TournamentReminderNotification extends Notification implements Shoul
         private readonly ?string $cancellationToken = null,
         private readonly ?bool $selfCheckInAllowed = null,
     ) {}
+
+    public function mailCategory(): string
+    {
+        return TournamentsServiceProvider::MAIL_REMINDERS;
+    }
 
     /**
      * @return array<int, string>

@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\TournamentsServiceProvider;
 
 /**
  * Tells the opponent that a player reported the result of their match. Names arrive escaped for
  * Markdown; the score summary is built by the module.
  */
-final class MatchResultReportedNotification extends Notification implements ShouldQueue
+final class MatchResultReportedNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -34,6 +36,11 @@ final class MatchResultReportedNotification extends Notification implements Shou
         private readonly string $result,
         private readonly string $mode,
     ) {}
+
+    public function mailCategory(): string
+    {
+        return TournamentsServiceProvider::MAIL_RESULTS;
+    }
 
     /**
      * @return array<int, string>

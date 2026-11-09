@@ -16,12 +16,15 @@ use Modules\Tournaments\Domain\Repositories\TournamentRepositoryInterface;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToParticipant;
 
 final readonly class SendParticipantWithdrawnEmail
 {
+    use MailsParticipants;
+
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
@@ -49,7 +52,7 @@ final readonly class SendParticipantWithdrawnEmail
 
         // Send confirmation to participant if we have their email
         if ($participantEmail !== '') {
-            $participantNotifiable = new AnonymousNotifiable($participantEmail, $participantName);
+            $participantNotifiable = $this->accountOrAddress($event->userId, $participantEmail, $participantName);
             $participantNotifiable->notify(new ParticipantWithdrawnToParticipant(
                 participantName: $participantName,
                 tournamentName: $tournament->name(),
