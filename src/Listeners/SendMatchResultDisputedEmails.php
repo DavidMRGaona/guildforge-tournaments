@@ -70,7 +70,7 @@ final readonly class SendMatchResultDisputedEmails
         }
 
         $recipient = $reporter instanceof Participant ? $this->recipient($reporter) : null;
-        if ($recipient instanceof AnonymousNotifiable) {
+        if (is_object($recipient)) {
             $recipient->notify($notification($this->nameOf($reporter), false));
         }
     }

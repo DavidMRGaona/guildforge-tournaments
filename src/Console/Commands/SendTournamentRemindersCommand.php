@@ -20,7 +20,6 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantMo
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
-use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\TournamentReminderNotification;
 
 /**
@@ -81,7 +80,7 @@ final class SendTournamentRemindersCommand extends Command
                 $recipient = $participant instanceof Participant ? $this->recipient($participant) : null;
 
                 // An unconfirmed guest is skipped and stays pending: confirming later still gets the reminder
-                if (! $participant instanceof Participant || ! $recipient instanceof AnonymousNotifiable) {
+                if (! $participant instanceof Participant || ! is_object($recipient)) {
                     continue;
                 }
 

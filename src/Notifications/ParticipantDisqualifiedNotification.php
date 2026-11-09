@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Notifications;
 
+use App\Application\Mail\Contracts\HasMailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\TournamentsServiceProvider;
 
-final class ParticipantDisqualifiedNotification extends Notification implements ShouldQueue
+final class ParticipantDisqualifiedNotification extends Notification implements HasMailCategory, ShouldQueue
 {
     use Queueable;
 
@@ -18,6 +20,11 @@ final class ParticipantDisqualifiedNotification extends Notification implements 
         private readonly string $tournamentName,
         private readonly ?string $reason = null,
     ) {}
+
+    public function mailCategory(): string
+    {
+        return TournamentsServiceProvider::MAIL_REGISTRATIONS;
+    }
 
     /**
      * @return array<int, string>

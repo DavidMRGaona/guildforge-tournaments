@@ -18,7 +18,10 @@ trait MailsParticipants
      * of an anonymised account), or a guest email only once confirmed (never an address nobody
      * has vouched for).
      */
-    private function recipient(Participant $participant): ?AnonymousNotifiable
+    /**
+     * @return UserModel|AnonymousNotifiable|null
+     */
+    private function recipient(Participant $participant): ?object
     {
         $userId = $participant->userId();
 
@@ -27,7 +30,7 @@ trait MailsParticipants
 
             // An anonymised account keeps only a placeholder address
             return $user !== null && $user->email !== '' && $user->anonymized_at === null
-                ? new AnonymousNotifiable($user->email, $user->name)
+                ? $user
                 : null;
         }
 
@@ -40,9 +43,24 @@ trait MailsParticipants
         return new AnonymousNotifiable($email, $participant->guestName());
     }
 
-    private function participantName(Participant $participant, AnonymousNotifiable $recipient): string
+    /**
+     * The account to notify as an account (so the person's mail choices count), or a plain
+     * address when there is no usable account: a guest or an anonymised one.
+     */
+    private function accountOrAddress(?string $userId, string $email, ?string $name): UserModel|AnonymousNotifiable
     {
-        return $recipient->getName() ?? $participant->guestName() ?? __('tournaments::messages.participants.unknown');
+        $user = $userId !== null ? UserModel::find($userId) : null;
+
+        return $user !== null && $user->anonymized_at === null && $user->email !== ''
+            ? $user
+            : new AnonymousNotifiable($email, $name);
+    }
+
+    private function participantName(Participant $participant, UserModel|AnonymousNotifiable $recipient): string
+    {
+        $name = $recipient instanceof UserModel ? $recipient->name : $recipient->getName();
+
+        return $name ?? $participant->guestName() ?? __('tournaments::messages.participants.unknown');
     }
 
     private function eventDate(string $tournamentId): ?string
