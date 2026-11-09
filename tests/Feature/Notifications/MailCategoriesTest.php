@@ -91,7 +91,7 @@ final class MailCategoriesTest extends ModuleTestCase
     public function test_notifications_without_category_do_not_declare_one(): void
     {
         foreach (self::WITHOUT_CATEGORY as $class) {
-            $this->assertNotInstanceOf(HasMailCategory::class, (new ReflectionClass($class))->newInstanceWithoutConstructor(), $class);
+            $this->assertNotContains(HasMailCategory::class, (new ReflectionClass($class))->getInterfaceNames(), $class);
         }
     }
 
