@@ -13,6 +13,16 @@ return [
         'past' => 'Finalizado',
     ],
 
+    // Panel media library (core): origin and role of a tournament's image
+    'media' => [
+        'sources' => [
+            'tournaments' => 'Torneos',
+        ],
+        'roles' => [
+            'image' => 'Imagen',
+        ],
+    ],
+
     // Standalone resource labels
     'resource' => [
         'navigation' => 'Torneos',
