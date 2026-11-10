@@ -16,6 +16,9 @@ final class CreateTournament extends CreateRecord
 
     protected static string $resource = TournamentResource::class;
 
+    /** One transaction per save, so a released image waits for it (the library shares files). */
+    protected ?bool $hasDatabaseTransactions = true;
+
     public function getTitle(): string
     {
         return __('tournaments::messages.resource.actions.create');
