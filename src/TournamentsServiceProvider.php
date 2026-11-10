@@ -8,6 +8,7 @@ use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
 use App\Application\Mail\DTOs\MailCategoryDTO;
+use App\Application\Media\Contracts\MediaUsageSourceInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
 use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
@@ -18,6 +19,7 @@ use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
+use App\Infrastructure\Media\Observers\RefreshMediaUsagesObserver;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Modules\ModuleServiceProvider;
 use Filament\Forms\Components\Select;
@@ -27,6 +29,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -81,6 +84,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\M
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
 use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
+use Modules\Tournaments\Infrastructure\Media\TournamentMediaSource;
 use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
@@ -309,10 +313,28 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
         });
     }
 
+    /**
+     * Keeps the media library's index of uses up to date when a tournament is saved or deleted. A
+     * save that leaves the image alone refreshes nothing.
+     */
+    private function refreshMediaUsagesOnChange(): void
+    {
+        $observer = new RefreshMediaUsagesObserver(
+            TournamentMediaSource::TYPE,
+            static fn (Model $tournament): array => $tournament->wasRecentlyCreated || $tournament->wasChanged('image_public_id')
+                ? [(string) $tournament->getKey()]
+                : [],
+        );
+
+        TournamentModel::saved($observer->saved(...));
+        TournamentModel::deleted($observer->deleted(...));
+    }
+
     private function registerModelObservers(): void
     {
         TournamentModel::observe(TournamentObserver::class);
         RefreshesSearchDocuments::register();
+        $this->refreshMediaUsagesOnChange();
 
         // The database would drop an event's tournament by cascade, unseen: delete it as a model
         // first, so it is told to the surveys (and its image removed)
@@ -782,6 +804,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentAttendanceSource::class,
+        ];
+    }
+
+    /**
+     * The image of each tournament in the panel media library (core ≥ 3.53).
+     *
+     * @return array<class-string<MediaUsageSourceInterface>>
+     */
+    public function registerMediaSources(): array
+    {
+        return [
+            TournamentMediaSource::class,
         ];
     }
 
