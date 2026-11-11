@@ -6,6 +6,7 @@ namespace Modules\Tournaments\Filament\Resources;
 
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Forms\Components\EndSurveyField;
+use App\Filament\Forms\Components\MediaLibraryPicker;
 use App\Filament\Resources\BaseResource;
 use App\Filament\Support\PanelNavigationGroup;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -116,17 +117,19 @@ final class TournamentResource extends BaseResource
                                     ->label(__('tournaments::messages.config.description'))
                                     ->maxLength(1000),
 
-                                FileUpload::make('image_public_id')
-                                    ->label(__('tournaments::messages.fields.image'))
-                                    ->image()
-                                    ->disk('images')
-                                    ->directory(fn (): string => 'tournaments/'.now()->format('Y/m'))
-                                    ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
-                                    )
-                                    ->maxSize(2048)
-                                    ->nullable()
-                                    ->columnSpanFull(),
+                                MediaLibraryPicker::attachTo(
+                                    FileUpload::make('image_public_id')
+                                        ->label(__('tournaments::messages.fields.image'))
+                                        ->image()
+                                        ->disk('images')
+                                        ->directory(fn (): string => 'tournaments/'.now()->format('Y/m'))
+                                        ->getUploadedFileNameForStorageUsing(
+                                            fn (TemporaryUploadedFile $file): string => Str::uuid()->toString().'.'.$file->getClientOriginalExtension()
+                                        )
+                                        ->maxSize(2048)
+                                        ->nullable()
+                                        ->columnSpanFull(),
+                                ),
 
                                 Select::make('game_profile_id')
                                     ->label(__('tournaments::messages.game_profile.select'))
