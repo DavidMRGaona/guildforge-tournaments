@@ -45,7 +45,7 @@ function loadMore(): void {
                         {{ t('tournaments.my_tournaments.title') }}
                         <HelpLink guide="tournaments.follow-tournament" class="ml-1 align-middle" />
                     </h1>
-                    <p class="mt-1 text-base-muted">
+                    <p class="mt-2 text-lg text-base-secondary">
                         {{ t('tournaments.my_tournaments.subtitle') }}
                     </p>
                 </div>
