@@ -44,7 +44,7 @@ function handleNext(): void {
                 {{ t('tournaments.title') }}
                 <HelpLink guide="tournaments.overview" class="ml-1 align-middle" />
             </h1>
-            <p class="mt-2 text-lg text-base-muted">
+            <p class="mt-2 text-lg text-base-secondary">
                 {{ t('tournaments.listing.subtitle') }}
             </p>
         </div>
