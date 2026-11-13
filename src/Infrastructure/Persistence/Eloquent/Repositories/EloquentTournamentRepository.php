@@ -148,7 +148,8 @@ final readonly class EloquentTournamentRepository implements TournamentRepositor
 
     public function delete(TournamentId $id): void
     {
-        TournamentModel::where('id', $id->value)->delete();
+        // As a model, so the observers run (surveys, notices, media, search)
+        TournamentModel::find($id->value)?->delete();
     }
 
     /**

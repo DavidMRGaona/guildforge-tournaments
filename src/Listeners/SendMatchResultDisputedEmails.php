@@ -63,6 +63,8 @@ final readonly class SendMatchResultDisputedEmails
             result: $this->resultSummary($report->result(), $report->player1Score(), $report->player2Score(), $this->nameOf($one), $this->nameOf($two)),
             reason: EscapesMarkdown::escape((string) $report->disputeReason()),
             toOrganization: $toOrganization,
+            tournamentId: $event->tournamentId,
+            disputerId: $event->disputedByUserId,
         );
 
         if ($tournament->notificationEmail() !== '') {

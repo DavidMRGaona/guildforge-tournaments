@@ -58,6 +58,7 @@ final readonly class SendParticipantWithdrawnEmail
                 tournamentName: $tournament->name(),
                 eventDate: $eventDate,
                 tournamentSlug: $tournament->slug(),
+                tournamentId: $event->tournamentId,
             ));
         }
 

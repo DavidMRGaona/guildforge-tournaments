@@ -28,7 +28,7 @@ Puedes informar mientras la ronda está en curso y la partida aún no tiene resu
 
 Antes de enviar, la tarjeta te dice qué pasará: «El resultado contará en cuanto lo envíes.», «… tendrá que confirmarlo.» o, si tu rival no tiene cuenta, «… no tiene cuenta: la organización confirmará el resultado.».
 
-Tu rival recibe el correo «Resultado informado en …».
+Tu rival recibe el correo «Resultado informado en …» y, si tiene cuenta, un aviso en la campana.
 
 ## Si tu rival tiene que confirmarlo
 

@@ -40,6 +40,7 @@ final readonly class SendParticipantDisqualifiedEmail
             participantName: $this->participantName($participant, $recipient),
             tournamentName: $tournament->name(),
             reason: $event->reason,
+            tournamentId: $event->tournamentId,
         ));
     }
 }

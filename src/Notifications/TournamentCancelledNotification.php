@@ -5,20 +5,27 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Notifications\Concerns\NoticesTournamentOnTheSite;
 use Modules\Tournaments\TournamentsServiceProvider;
 
-final class TournamentCancelledNotification extends Notification implements HasMailCategory, ShouldQueue
+final class TournamentCancelledNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
+    use NoticesTournamentOnTheSite;
     use Queueable;
 
     public function __construct(
         private readonly string $participantName,
         private readonly string $tournamentName,
         private readonly ?string $eventDate,
+        private readonly ?string $tournamentId = null,
     ) {}
 
     public function mailCategory(): string
@@ -31,7 +38,7 @@ final class TournamentCancelledNotification extends Notification implements HasM
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', HasSiteNotification::CHANNEL];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -52,5 +59,20 @@ final class TournamentCancelledNotification extends Notification implements HasM
         }
 
         return $message->line(__('tournaments::messages.emails.tournament_cancelled.outro'));
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $tournament = $this->visibleTournamentFor($notifiable);
+
+        if (! $tournament instanceof TournamentResponseDTO) {
+            return null;
+        }
+
+        return new SiteNotificationDTO(
+            title: __('tournaments::messages.site.cancelled', ['tournament' => $this->tournamentName]),
+            url: $this->tournamentPath($tournament),
+            icon: 'trophy',
+        );
     }
 }

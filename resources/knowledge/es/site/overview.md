@@ -82,9 +82,9 @@ Si tu web tiene encuestas, al terminar un torneo en el que has jugado puede lleg
 | Con cuenta | Inscribirse, cancelar su inscripción, hacer el check-in, informar de sus resultados y seguir sus torneos en **Mis torneos** |
 | La organización | Crear los torneos, abrir y cerrar la inscripción, aprobar inscripciones, generar las rondas, registrar resultados y cerrar el torneo, desde el panel |
 
-## Qué correos recibes
+## Qué correos y avisos recibes
 
-Si tienes cuenta, en la pestaña **Correos** de tu perfil eliges qué correos de torneos quieres recibir:
+Si tienes cuenta, en la pestaña **Correos** de tu perfil eliges qué correos de torneos quieres recibir y cuáles ver también en la campana de la web (**En la web** y **Por correo**):
 
 | Categoría | Qué incluye | ¿Se puede apagar? |
 |---|---|---|
@@ -92,6 +92,8 @@ Si tienes cuenta, en la pestaña **Correos** de tu perfil eliges qué correos de
 | **Resultados de mis partidas** | Resultado comunicado por tu rival o discutido | No: te piden que confirmes o corrijas |
 | **Recordatorios antes del torneo** | El aviso antes de que empiece, si la organización lo tiene activado | Sí, desde el pie del propio correo o desde tu perfil |
 
-Quien se inscribe como invitado recibe los correos de su inscripción siempre, porque no tiene perfil donde elegir.
+Cada aviso de la campana te lleva a la página del torneo; el del recordatorio, al check-in mientras está abierto. Los avisos de resultados de un mismo torneo se juntan en uno solo. Las dos primeras categorías se ven siempre en la campana, con el candado del perfil. Si borran el torneo, desaparecen sus avisos.
+
+Quien se inscribe como invitado recibe los correos de su inscripción siempre, porque no tiene perfil donde elegir ni campana donde verlos.
 
 [[action:tournaments.index|Ver los torneos]]

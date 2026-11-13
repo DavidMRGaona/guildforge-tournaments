@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
+use Modules\Tournaments\Notifications\Concerns\NoticesTournamentOnTheSite;
 use Modules\Tournaments\TournamentsServiceProvider;
 
-final class ParticipantRegisteredToParticipant extends Notification implements HasMailCategory, ShouldQueue
+final class ParticipantRegisteredToParticipant extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
+    use NoticesTournamentOnTheSite;
     use Queueable;
 
     public function __construct(
@@ -26,6 +32,7 @@ final class ParticipantRegisteredToParticipant extends Notification implements H
         private readonly ?string $notes = null,
         private readonly ?bool $awaitingApproval = null,
         private readonly ?bool $selfCheckInAllowed = null,
+        private readonly ?string $tournamentId = null,
     ) {}
 
     public function mailCategory(): string
@@ -38,7 +45,7 @@ final class ParticipantRegisteredToParticipant extends Notification implements H
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', HasSiteNotification::CHANNEL];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -104,5 +111,20 @@ final class ParticipantRegisteredToParticipant extends Notification implements H
         return $awaitingApproval
             ? $message
             : $message->line(__('tournaments::messages.emails.registration_confirmed.closing'));
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $tournament = $this->visibleTournamentFor($notifiable);
+
+        if (! $tournament instanceof TournamentResponseDTO) {
+            return null;
+        }
+
+        return new SiteNotificationDTO(
+            title: __('tournaments::messages.site.registered', ['tournament' => $this->tournamentName]),
+            url: $this->tournamentPath($tournament),
+            icon: 'user-plus',
+        );
     }
 }

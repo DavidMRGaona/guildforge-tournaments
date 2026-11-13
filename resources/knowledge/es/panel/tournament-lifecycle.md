@@ -60,7 +60,7 @@ Mientras no esté finalizado ni cancelado, pulsa **Cancelar torneo**. Marca la c
 
 ## Borrar el torneo
 
-Con el permiso **Eliminar torneo**, el botón **Borrar** quita el torneo con todas sus inscripciones, rondas y resultados. No avisa a nadie: si el torneo tenía participantes, cancélalo antes para que les llegue el correo.
+Con el permiso **Eliminar torneo**, el botón **Borrar** quita el torneo con todas sus inscripciones, rondas y resultados. No avisa a nadie: si el torneo tenía participantes, cancélalo antes para que les llegue el correo. Los avisos de la campana sobre ese torneo sí desaparecen, para que no enlacen a una página que ya no existe.
 
 ## Si algo no sale bien
 

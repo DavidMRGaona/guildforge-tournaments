@@ -45,6 +45,7 @@ final readonly class SendTournamentCancelledEmails
                 participantName: $this->participantName($participant, $recipient),
                 tournamentName: $tournament->name(),
                 eventDate: $eventDate,
+                tournamentId: $event->tournamentId,
             ));
         }
     }

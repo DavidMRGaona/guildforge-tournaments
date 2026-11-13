@@ -748,6 +748,24 @@ return [
         'gdpr_consent' => 'Acepto el tratamiento de mis datos según la',
     ],
 
+    // Notices in the bell of the site
+    'site' => [
+        'registered' => 'Tu inscripción en «:tournament» está registrada',
+        'confirmed' => 'Tu inscripción en «:tournament» está confirmada',
+        'disqualified' => 'Te han descalificado de «:tournament»',
+        'withdrawn' => 'Te has retirado de «:tournament»',
+        'cancelled' => 'Se ha cancelado «:tournament»',
+        'reminder' => '«:tournament» es el :date',
+        'check_in_open' => 'El check-in está abierto',
+        'result_reported' => [
+            'to_confirm' => ':reporter ha comunicado el resultado de tu partida en «:tournament»: confírmalo o discútelo',
+            'trusted' => ':reporter ha comunicado el resultado de tu partida en «:tournament»',
+            'organization_confirms' => ':reporter ha comunicado el resultado de tu partida en «:tournament»',
+        ],
+        'result_disputed' => ':disputer ha discutido el resultado que comunicaste en «:tournament»',
+        'results_grouped' => '{1} :count aviso sobre resultados en «:tournament»|[2,*] :count avisos sobre resultados en «:tournament»',
+    ],
+
     // Email notifications
     'emails' => [
         'view_tournament' => 'Ver torneo',
