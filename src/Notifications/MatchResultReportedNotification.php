@@ -19,7 +19,8 @@ use Modules\Tournaments\TournamentsServiceProvider;
 
 /**
  * Tells the opponent that a player reported the result of their match. Names arrive escaped for
- * Markdown; the score summary is built by the module.
+ * Markdown, for the mail, and as people wrote them, for the bell; the score summary is built by
+ * the module.
  */
 final class MatchResultReportedNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
@@ -44,6 +45,8 @@ final class MatchResultReportedNotification extends Notification implements HasM
         private readonly string $mode,
         private readonly ?string $tournamentId = null,
         private readonly ?string $reporterId = null,
+        private readonly ?string $plainReporterName = null,
+        private readonly ?string $plainResult = null,
     ) {}
 
     public function mailCategory(): string
@@ -90,13 +93,14 @@ final class MatchResultReportedNotification extends Notification implements HasM
             return null;
         }
 
+        // The bell is not Markdown. A notice queued before the plain names existed keeps the escaped ones
         return new SiteNotificationDTO(
             title: __('tournaments::messages.site.result_reported.'.$this->mode, [
-                'reporter' => $this->reporterName,
+                'reporter' => $this->plainReporterName ?? $this->reporterName,
                 'tournament' => $this->tournamentName,
             ]),
             url: $this->tournamentPath($tournament),
-            body: $this->result,
+            body: $this->plainResult ?? $this->result,
             icon: 'swords',
             groupKey: self::SUBJECT_TYPE.':'.$tournament->id,
             actorId: $this->reporterId ?? null,

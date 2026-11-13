@@ -80,6 +80,18 @@ final class MatchResultEmailsTest extends ModuleTestCase
         $this->assertStringContainsString(route('tournaments.show', $this->tournament->slug), $mails[0]['text']);
     }
 
+    public function test_the_mail_keeps_escaping_the_names_for_markdown(): void
+    {
+        $this->reporter->update(['name' => 'Ana_B']);
+        $rival = UserModel::factory()->create(['name' => 'Luis', 'email' => 'luis@example.com']);
+        $match = $this->match($this->entry(['user_id' => $rival->id]));
+
+        $this->report($match, 20, 15);
+
+        $mails = $this->mails();
+        $this->assertStringContainsString('Gana Ana\_B (20-15)', $mails[0]['text']);
+    }
+
     public function test_trusted_mode_mail_tells_rival_to_talk_to_the_organizer(): void
     {
         $this->tournament->update(['result_reporting' => 'players_trusted']);

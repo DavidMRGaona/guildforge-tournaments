@@ -207,6 +207,57 @@ final class SiteNoticesTest extends ModuleTestCase
         $this->assertStringContainsString('Luis', $service->latest($this->user, 1)[0]->title);
     }
 
+    public function test_a_reported_result_shows_the_names_on_the_bell_as_people_wrote_them(): void
+    {
+        $this->user->update(['name' => 'Ana_B']);
+        $reporter = UserModel::factory()->create(['name' => 'Luis *el* [rápido]', 'email' => 'luis@example.com']);
+        $reporterEntry = $this->enter($reporter);
+        $this->tournament->update(['status' => 'in_progress']);
+        $round = RoundModel::create(['tournament_id' => $this->tournament->id, 'round_number' => 1, 'status' => 'in_progress']);
+        $match = MatchModel::create(['round_id' => $round->id, 'player_1_id' => $reporterEntry->id, 'player_2_id' => $this->entry->id, 'result' => 'not_played']);
+
+        app(MatchReportingServiceInterface::class)->report(new ReportMatchResultDTO(
+            matchId: $match->id,
+            result: MatchResult::PlayerTwoWin,
+            reportedById: $reporter->id,
+            player1Score: 10,
+            player2Score: 20,
+        ));
+
+        $notice = app(SiteNotificationServiceInterface::class)->latest($this->user, 1)[0];
+        $this->assertStringContainsString('Luis *el* [rápido]', $notice->title);
+        $this->assertSame('Gana Ana_B (10-20)', $notice->body);
+    }
+
+    public function test_a_dispute_shows_the_names_on_the_bell_as_people_wrote_them(): void
+    {
+        $this->user->update(['name' => 'Ana_B']);
+        $rival = UserModel::factory()->create(['name' => 'Luis_C', 'email' => 'luis@example.com']);
+        $rivalEntry = $this->enter($rival);
+        $this->tournament->update(['status' => 'in_progress']);
+        $round = RoundModel::create(['tournament_id' => $this->tournament->id, 'round_number' => 1, 'status' => 'in_progress']);
+        $match = MatchModel::create(['round_id' => $round->id, 'player_1_id' => $this->entry->id, 'player_2_id' => $rivalEntry->id, 'result' => 'not_played']);
+        app(MatchReportingServiceInterface::class)->report(new ReportMatchResultDTO(matchId: $match->id, result: MatchResult::PlayerOneWin, reportedById: $this->user->id));
+        $report = app(MatchReportRepositoryInterface::class)->find($match->id);
+        $this->assertNotNull($report);
+
+        app(MatchReportingServiceInterface::class)->dispute($match->id, $rival->id, 'Fue empate', $report->fingerprint());
+
+        $notice = app(SiteNotificationServiceInterface::class)->latest($this->user, 1)[0];
+        $this->assertStringContainsString('Luis_C', $notice->title);
+        $this->assertStringNotContainsString('\\', $notice->title);
+        $this->assertSame('Gana Ana_B', $notice->body);
+    }
+
+    public function test_a_result_notice_without_plain_names_falls_back_to_the_mail_ones(): void
+    {
+        $reported = new MatchResultReportedNotification('Ana', 'Luis', 'Torneo de prueba', $this->tournament->slug, 'Gana Luis', MatchResultReportedNotification::TO_CONFIRM, $this->tournament->id, 'other');
+        $disputed = new MatchResultDisputedNotification('Ana', 'Luis', 'Torneo de prueba', $this->tournament->slug, 'Gana Ana', 'Fue empate', false, $this->tournament->id, 'other');
+
+        $this->assertSame('Gana Luis', $reported->toSiteNotification($this->user)?->body);
+        $this->assertSame('Gana Ana', $disputed->toSiteNotification($this->user)?->body);
+    }
+
     public function test_deleting_the_tournament_forgets_its_notices(): void
     {
         $service = app(SiteNotificationServiceInterface::class);

@@ -32,7 +32,8 @@ trait DescribesMatches
     }
 
     /**
-     * "Gana Ana (20-15)" or "Empate (15-15)", with escaped names.
+     * "Gana Ana (20-15)" or "Empate (15-15)", with the names it is given: escaped for the mail,
+     * plain for the bell.
      */
     private function resultSummary(MatchResult $result, ?int $player1Score, ?int $player2Score, string $player1Name, string $player2Name): string
     {
