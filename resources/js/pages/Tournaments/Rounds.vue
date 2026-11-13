@@ -139,7 +139,7 @@ const sortedRounds = computed(() => {
                                 {{ t('tournaments.public.no_matches') }}
                             </div>
 
-                            <div v-else class="divide-y divide-default">
+                            <div v-else class="divide-y divide-[var(--color-border)]">
                                 <div
                                     v-for="match in roundData.matches"
                                     :key="match.id"

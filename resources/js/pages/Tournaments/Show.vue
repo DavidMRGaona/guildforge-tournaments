@@ -745,7 +745,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-border-default">
+                        <table class="min-w-full divide-y divide-[var(--color-border)]">
                             <thead>
                                 <tr
                                     class="text-left text-xs font-medium uppercase tracking-wider text-base-muted"
@@ -760,7 +760,7 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-border-default">
+                            <tbody class="divide-y divide-[var(--color-border)]">
                                 <tr
                                     v-for="standing in topStandings"
                                     :key="standing.participant_id"

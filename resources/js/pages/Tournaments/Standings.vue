@@ -42,7 +42,7 @@ const { formatPoints, formatPercentage } = useTournaments();
                 </div>
 
                 <div v-else class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-default">
+                    <table class="min-w-full divide-y divide-[var(--color-border)]">
                         <thead>
                             <tr
                                 class="text-left text-xs font-medium uppercase tracking-wider text-base-muted"
@@ -72,7 +72,7 @@ const { formatPoints, formatPercentage } = useTournaments();
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-default">
+                        <tbody class="divide-y divide-[var(--color-border)]">
                             <tr
                                 v-for="standing in standings"
                                 :key="standing.participant_id"
