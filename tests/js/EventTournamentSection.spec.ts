@@ -246,4 +246,20 @@ describe('EventTournamentSection', () => {
             });
         });
     });
+
+    it('draws the site box for the guest privacy consent', async () => {
+        const wrapper = mountSection({ tournament: tournament({ allow_guests: true }) });
+
+        await button(wrapper, 'Inscribirse')?.trigger('click');
+
+        const consent = openDialog()?.querySelector<HTMLInputElement>('#event-guest-gdpr');
+        expect(consent?.classList.contains('sr-only')).toBe(true);
+        expect(consent?.hasAttribute('required')).toBe(true);
+        expect(
+            openDialog()?.querySelector(
+                'label[for="event-guest-gdpr"] [data-testid="checkbox-box"]'
+            )
+        ).not.toBeNull();
+        wrapper.unmount();
+    });
 });

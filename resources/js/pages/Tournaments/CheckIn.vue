@@ -10,6 +10,7 @@ import type {
 } from '../../types/tournaments';
 import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import CheckboxField from '../../components/form/CheckboxField.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { useNotifications } from '@/composables/useNotifications';
@@ -338,22 +339,17 @@ const handleEmailCheckIn = async (): Promise<void> => {
 
                             <!-- GDPR Consent -->
                             <div>
-                                <div class="flex items-start gap-2">
-                                    <input
-                                        id="checkin-gdpr"
-                                        v-model="emailForm.gdpr_consent"
-                                        type="checkbox"
-                                        required
-                                        :disabled="isProcessing"
-                                        :aria-invalid="!!formErrors.gdpr_consent"
-                                        :aria-describedby="
-                                            formErrors.gdpr_consent
-                                                ? 'checkin-gdpr-error'
-                                                : undefined
-                                        "
-                                        class="mt-1 h-4 w-4 rounded border-default text-primary focus:ring-primary-500 disabled:cursor-not-allowed bg-surface"
-                                    />
-                                    <label for="checkin-gdpr" class="text-sm text-base-muted">
+                                <CheckboxField
+                                    id="checkin-gdpr"
+                                    v-model="emailForm.gdpr_consent"
+                                    required
+                                    :disabled="isProcessing"
+                                    :aria-invalid="!!formErrors.gdpr_consent"
+                                    :aria-describedby="
+                                        formErrors.gdpr_consent ? 'checkin-gdpr-error' : undefined
+                                    "
+                                >
+                                    <span class="text-base-muted">
                                         {{ t('tournaments.check_in.gdpr_consent') }}
                                         <a
                                             :href="routes.legal.privacy"
@@ -363,8 +359,8 @@ const handleEmailCheckIn = async (): Promise<void> => {
                                             {{ t('tournaments.public.privacy_policy') }}
                                         </a>
                                         <span class="text-error" aria-label="required">*</span>
-                                    </label>
-                                </div>
+                                    </span>
+                                </CheckboxField>
                                 <p
                                     v-if="formErrors.gdpr_consent"
                                     id="checkin-gdpr-error"

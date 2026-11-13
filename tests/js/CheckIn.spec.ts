@@ -35,4 +35,16 @@ describe('CheckIn', () => {
         expect(wrapper.text()).not.toContain('Introduce tu email');
         expect(wrapper.text()).toContain('Pulsa el botón para confirmar que estás aquí.');
     });
+
+    it('draws the site box for the privacy consent, keeping it required', () => {
+        const wrapper = mountPage();
+
+        const consent = wrapper.get('input#checkin-gdpr');
+        expect(consent.classes()).toContain('sr-only');
+        expect(consent.attributes('required')).toBeDefined();
+        expect(wrapper.get('label[for="checkin-gdpr"]').text()).toContain('política de privacidad');
+        expect(
+            wrapper.find('label[for="checkin-gdpr"] [data-testid="checkbox-box"]').exists()
+        ).toBe(true);
+    });
 });

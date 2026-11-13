@@ -133,6 +133,118 @@ describe('MyMatchCard', () => {
         expect(wrapper.find(`#${errorId}`).text()).toBe('Demasiados puntos');
     });
 
+    it('draws the site radio for each result, keeping the native one focusable', () => {
+        const wrapper = mountCard();
+
+        const radios = wrapper.findAll('input[type="radio"]');
+        expect(radios).toHaveLength(3);
+        for (const radio of radios) {
+            expect(radio.classes()).toContain('sr-only');
+            expect(radio.attributes('required')).toBeDefined();
+            const label = wrapper.get(`label[for="${radio.attributes('id')}"]`);
+            expect(label.find('[data-testid="radio-dot"]').exists()).toBe(true);
+            expect(label.classes()).toContain('min-h-[44px]');
+        }
+    });
+
+    it('uses the site number field, with buttons, for scores and number stats', () => {
+        const wrapper = mountCard();
+
+        for (const name of ['player_1_score', 'player_2_score', 'player_1_stats.vp']) {
+            const input = wrapper.get(`input[name="${name}"]`);
+            expect(input.attributes('type')).toBe('number');
+            expect(input.element.parentElement?.querySelectorAll('button')).toHaveLength(2);
+        }
+        const stat = wrapper.get('input[name="player_1_stats.vp"]');
+        expect(stat.attributes('min')).toBe('0');
+        expect(stat.attributes('max')).toBe('100');
+    });
+
+    it('sends no score once a typed one is cleared', async () => {
+        const wrapper = mountCard();
+
+        await wrapper.findAll('input[type="radio"]')[1].setValue(true);
+        await wrapper.find('input[name="player_1_score"]').setValue('10');
+        await wrapper.find('input[name="player_1_score"]').setValue('');
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        expect(body.player_1_score).toBeNull();
+    });
+
+    it('steps a decimal stat by hundredths without float noise', async () => {
+        const wrapper = mountCard({
+            stat_definitions: [
+                {
+                    key: 'margin',
+                    name: 'Margen',
+                    type: 'float',
+                    min_value: null,
+                    max_value: null,
+                    per_player: true,
+                    required: false,
+                    description: null,
+                },
+            ],
+        });
+
+        const input = wrapper.get('input[name="player_1_stats.margin"]');
+        expect(input.attributes('step')).toBe('0.01');
+        await input.setValue('0.2');
+        const plus = input.element.parentElement?.querySelectorAll('button')[1];
+        plus?.dispatchEvent(new Event('click'));
+        await flushPromises();
+        plus?.dispatchEvent(new Event('click'));
+        await flushPromises();
+        await wrapper.findAll('input[type="radio"]')[1].setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        expect(body.player_1_stats).toEqual({ margin: 0.22 });
+    });
+
+    it('draws the site box for a yes-or-no stat, with its error attached', async () => {
+        fetchSpy.mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    message: 'Error',
+                    errors: { 'player_1_stats.painted': ['Hace falta'] },
+                }),
+                { status: 422, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+        const wrapper = mountCard({
+            stat_definitions: [
+                {
+                    key: 'painted',
+                    name: 'Ejército pintado',
+                    type: 'boolean',
+                    min_value: null,
+                    max_value: null,
+                    per_player: true,
+                    required: true,
+                    description: null,
+                },
+            ],
+        });
+
+        const box = wrapper.get('input[name="player_1_stats.painted"]');
+        expect(box.classes()).toContain('sr-only');
+        expect(wrapper.get(`label[for="${box.attributes('id')}"]`).text()).toBe('Ejército pintado');
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue(true);
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        const invalid = wrapper.get('input[name="player_1_stats.painted"]');
+        expect(invalid.attributes('aria-invalid')).toBe('true');
+        expect(wrapper.get(`#${invalid.attributes('aria-describedby')}`).text()).toBe('Hace falta');
+    });
+
     it('shows confirm and dispute to the rival only', () => {
         const rival = mountCard({
             report: matchReport(),

@@ -238,4 +238,34 @@ describe('Show', () => {
             expect(wrapper.text()).not.toContain('Inicia sesión');
         });
     });
+
+    it('draws the site box for the guest privacy consent', async () => {
+        const wrapper = mount(Show, {
+            props: {
+                tournament: tournament({ allow_guests: true }),
+                standings: [],
+                participants: [],
+                currentRound: null,
+                userRegistration: null,
+                canRegister: true,
+                canCheckIn: false,
+                checkInWindow: { status: 'not_available', opens_at: null, closes_at: null },
+                guestConfirmation: null,
+            },
+            attachTo: document.body,
+        });
+
+        await wrapper
+            .findAll('button')
+            .find((candidate) => candidate.text() === 'Inscribirse')
+            ?.trigger('click');
+
+        const consent = document.getElementById('guest-gdpr');
+        expect(consent?.classList.contains('sr-only')).toBe(true);
+        expect(consent?.hasAttribute('required')).toBe(true);
+        expect(
+            document.querySelector('label[for="guest-gdpr"] [data-testid="checkbox-box"]')
+        ).not.toBeNull();
+        wrapper.unmount();
+    });
 });

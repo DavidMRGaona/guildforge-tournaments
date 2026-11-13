@@ -12,6 +12,7 @@ import type {
 } from '../../types/tournaments';
 import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import CheckboxField from '../../components/form/CheckboxField.vue';
 import MyMatchCard from '../../components/MyMatchCard.vue';
 import { useTournaments } from '../../composables/useTournaments';
 import { statusBadgeClasses } from '../../utils/statusColors';
@@ -919,22 +920,17 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
 
                         <!-- GDPR Consent -->
                         <div>
-                            <div class="flex items-start gap-2">
-                                <input
-                                    id="guest-gdpr"
-                                    v-model="guestForm.gdpr_consent"
-                                    type="checkbox"
-                                    required
-                                    :disabled="guestFormProcessing"
-                                    :aria-invalid="!!guestFormErrors.gdpr_consent"
-                                    :aria-describedby="
-                                        guestFormErrors.gdpr_consent
-                                            ? 'guest-gdpr-error'
-                                            : undefined
-                                    "
-                                    class="mt-1 h-4 w-4 rounded border-strong text-primary focus:ring-primary-500 disabled:cursor-not-allowed"
-                                />
-                                <label for="guest-gdpr" class="text-sm text-base-muted">
+                            <CheckboxField
+                                id="guest-gdpr"
+                                v-model="guestForm.gdpr_consent"
+                                required
+                                :disabled="guestFormProcessing"
+                                :aria-invalid="!!guestFormErrors.gdpr_consent"
+                                :aria-describedby="
+                                    guestFormErrors.gdpr_consent ? 'guest-gdpr-error' : undefined
+                                "
+                            >
+                                <span class="text-base-muted">
                                     {{ t('tournaments.public.gdpr_consent') }}
                                     <a
                                         :href="routes.legal.privacy"
@@ -944,8 +940,8 @@ const handleWithdrawKeydown = (event: KeyboardEvent): void => {
                                         {{ t('tournaments.public.privacy_policy') }}
                                     </a>
                                     <span class="text-error" aria-label="required">*</span>
-                                </label>
-                            </div>
+                                </span>
+                            </CheckboxField>
                             <p
                                 v-if="guestFormErrors.gdpr_consent"
                                 id="guest-gdpr-error"
