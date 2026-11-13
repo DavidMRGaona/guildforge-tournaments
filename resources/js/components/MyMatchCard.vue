@@ -2,11 +2,13 @@
 import { computed, nextTick, reactive, ref, useId } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { FormNumberInput } from '@/components/form';
 import HelpLink from '@/components/knowledge/HelpLink.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useNotifications } from '@/composables/useNotifications';
 import { useVerificationGate } from '@/composables/useVerificationGate';
 import { csrfHeaders, isCsrfFailure } from '@/utils/csrf';
+import CheckboxField from './form/CheckboxField.vue';
 import type {
     MatchResult,
     PlayerMatch,
@@ -25,7 +27,7 @@ const gate = useVerificationGate();
 const id = useId();
 
 type Side = 1 | 2;
-// Vue's v-model gives number inputs a number, or '' when empty
+// Number fields give a number, or '' when empty; yes-or-no stats a boolean
 type StatInput = string | number | boolean;
 
 const match = computed(() => props.playerMatch.match);
@@ -322,8 +324,29 @@ async function sendDispute(): Promise<void> {
     }
 }
 
-function statStep(stat: StatDefinition): string {
-    return stat.type === 'float' ? '0.01' : '1';
+function statStep(stat: StatDefinition): number {
+    return stat.type === 'float' ? 0.01 : 1;
+}
+
+/** What a number field shows for a stored input: null when empty */
+function numberOf(value: StatInput | undefined): number | null {
+    return typeof value === 'number' || typeof value === 'string' ? score(value) : null;
+}
+
+/** Keeps a stepped decimal at hundredths: 0.2 + 0.01 would otherwise give 0.21000000000000002 */
+function setNumberStat(side: Side, stat: StatDefinition, value: number | null): void {
+    form.stats[side][stat.key] =
+        value === null ? '' : stat.type === 'float' ? Math.round(value * 100) / 100 : value;
+}
+
+function radioClass(value: ReportableResult): string {
+    if (form.result === value) {
+        return 'border-primary-600 dark:border-primary-500';
+    }
+
+    return errors.value.result !== undefined
+        ? 'border-error'
+        : 'border-neutral-300 group-hover:border-primary-400 dark:border-neutral-600 dark:group-hover:border-primary-500';
 }
 
 const inputClass =
@@ -518,12 +541,15 @@ const inputClass =
                 <legend class="mb-2 text-sm font-medium text-base-secondary">
                     {{ t('tournaments.my_match.result') }}
                 </legend>
-                <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
-                    <div
+                <div class="flex flex-col sm:flex-row sm:gap-4">
+                    <label
                         v-for="option in resultOptions"
                         :key="option.value"
-                        class="flex items-center gap-2"
+                        :for="fieldId(`result-${option.value}`)"
+                        class="group flex min-h-[44px] items-center gap-3"
+                        :class="processing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
                     >
+                        <!-- The native radio stays focusable; the site draws the circle -->
                         <input
                             :id="fieldId(`result-${option.value}`)"
                             v-model="form.result"
@@ -533,15 +559,21 @@ const inputClass =
                             required
                             :disabled="processing"
                             :aria-invalid="errors.result !== undefined"
-                            class="h-4 w-4 border-strong text-primary focus:ring-primary-500"
+                            class="peer sr-only"
                         />
-                        <label
-                            :for="fieldId(`result-${option.value}`)"
-                            class="text-sm text-base-primary"
+                        <span
+                            data-testid="radio-dot"
+                            aria-hidden="true"
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-surface transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-neutral-900"
+                            :class="radioClass(option.value)"
                         >
-                            {{ option.label }}
-                        </label>
-                    </div>
+                            <span
+                                class="h-2.5 w-2.5 rounded-full bg-primary-600 transition-transform duration-150 dark:bg-primary-500"
+                                :class="form.result === option.value ? 'scale-100' : 'scale-0'"
+                            />
+                        </span>
+                        <span class="text-sm text-base-primary">{{ option.label }}</span>
+                    </label>
                 </div>
                 <p
                     v-if="errors.result !== undefined"
@@ -565,18 +597,16 @@ const inputClass =
                                 >({{ t('tournaments.my_match.optional') }})</span
                             >
                         </label>
-                        <input
+                        <FormNumberInput
                             :id="fieldId(`player_${side}_score`)"
-                            v-model="form.scores[side]"
+                            :model-value="numberOf(form.scores[side])"
                             :name="`player_${side}_score`"
-                            type="number"
-                            inputmode="numeric"
-                            min="0"
-                            step="1"
+                            :min="0"
+                            :step="1"
                             :disabled="processing"
-                            :aria-invalid="errors[`player_${side}_score`] !== undefined"
-                            :aria-describedby="errorId(`player_${side}_score`)"
-                            :class="inputClass"
+                            :error="errors[`player_${side}_score`]"
+                            :described-by="errorId(`player_${side}_score`)"
+                            @update:model-value="form.scores[side] = $event ?? ''"
                         />
                         <p
                             v-if="errors[`player_${side}_score`] !== undefined"
@@ -594,28 +624,19 @@ const inputClass =
                         </legend>
                         <div v-for="stat in playerMatch.stat_definitions" :key="stat.key">
                             <template v-if="stat.type === 'boolean'">
-                                <div class="flex items-center gap-2">
-                                    <input
-                                        :id="fieldId(`player_${side}_stats.${stat.key}`)"
-                                        v-model="form.stats[side][stat.key]"
-                                        :name="`player_${side}_stats.${stat.key}`"
-                                        type="checkbox"
-                                        :disabled="processing"
-                                        :aria-invalid="
-                                            errors[`player_${side}_stats.${stat.key}`] !== undefined
-                                        "
-                                        :aria-describedby="
-                                            errorId(`player_${side}_stats.${stat.key}`)
-                                        "
-                                        class="h-4 w-4 rounded border-strong text-primary focus:ring-primary-500"
-                                    />
-                                    <label
-                                        :for="fieldId(`player_${side}_stats.${stat.key}`)"
-                                        class="text-sm text-base-primary"
-                                    >
-                                        {{ stat.name }}
-                                    </label>
-                                </div>
+                                <CheckboxField
+                                    :id="fieldId(`player_${side}_stats.${stat.key}`)"
+                                    :model-value="form.stats[side][stat.key] === true"
+                                    :name="`player_${side}_stats.${stat.key}`"
+                                    :disabled="processing"
+                                    :aria-invalid="
+                                        errors[`player_${side}_stats.${stat.key}`] !== undefined
+                                    "
+                                    :aria-describedby="errorId(`player_${side}_stats.${stat.key}`)"
+                                    @update:model-value="form.stats[side][stat.key] = $event"
+                                >
+                                    <span class="text-base-primary">{{ stat.name }}</span>
+                                </CheckboxField>
                             </template>
                             <template v-else>
                                 <label
@@ -627,21 +648,18 @@ const inputClass =
                                         >*</span
                                     >
                                 </label>
-                                <input
+                                <FormNumberInput
                                     :id="fieldId(`player_${side}_stats.${stat.key}`)"
-                                    v-model="form.stats[side][stat.key]"
+                                    :model-value="numberOf(form.stats[side][stat.key])"
                                     :name="`player_${side}_stats.${stat.key}`"
-                                    type="number"
                                     :step="statStep(stat)"
                                     :min="stat.min_value ?? undefined"
                                     :max="stat.max_value ?? undefined"
                                     :required="stat.required"
                                     :disabled="processing"
-                                    :aria-invalid="
-                                        errors[`player_${side}_stats.${stat.key}`] !== undefined
-                                    "
-                                    :aria-describedby="errorId(`player_${side}_stats.${stat.key}`)"
-                                    :class="inputClass"
+                                    :error="errors[`player_${side}_stats.${stat.key}`]"
+                                    :described-by="errorId(`player_${side}_stats.${stat.key}`)"
+                                    @update:model-value="setNumberStat(side, stat, $event)"
                                 />
                             </template>
                             <p
