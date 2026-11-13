@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Filament\Resources;
 
+use App\Domain\Proposals\Enums\ProposalStatus;
 use App\Filament\Actions\RowDetailsAction;
 use App\Filament\Forms\Components\EndSurveyField;
 use App\Filament\Forms\Components\MediaLibraryPicker;
@@ -55,6 +56,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\R
 use Modules\Tournaments\Filament\TournamentFormDefaults;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
+use Modules\Tournaments\Infrastructure\Services\TournamentDefaultRules;
 use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 
 final class TournamentResource extends BaseResource
@@ -97,7 +99,7 @@ final class TournamentResource extends BaseResource
                                 Select::make('event_id')
                                     ->label(__('tournaments::messages.resource.fields.event'))
                                     ->options(
-                                        EventModel::query()
+                                        self::realEvents()
                                             ->where('is_published', true)
                                             ->orderBy('start_date', 'desc')
                                             ->pluck('title', 'id')
@@ -552,60 +554,26 @@ final class TournamentResource extends BaseResource
     }
 
     /**
+     * Events a tournament can belong to: never a proposal still to be approved (in review,
+     * returned or rejected), which is not an event of the guild yet and gets its tournament, if
+     * it asked for one, when it is approved.
+     *
+     * @return Builder<EventModel>
+     */
+    private static function realEvents(): Builder
+    {
+        return EventModel::query()->where(static function (Builder $query): void {
+            $query->whereNull('proposal_status')
+                ->orWhere('proposal_status', ProposalStatus::Approved->value);
+        });
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     private static function getDefaultScoringRules(): array
     {
-        return [
-            [
-                'name' => __('tournaments::messages.condition_result.win'),
-                'points' => 3,
-                'priority' => 5,
-                'condition' => [
-                    'type' => ConditionType::Result->value,
-                    'result_value' => 'win',
-                    'stat' => null,
-                    'operator' => null,
-                    'value' => null,
-                ],
-            ],
-            [
-                'name' => __('tournaments::messages.condition_result.draw'),
-                'points' => 1,
-                'priority' => 5,
-                'condition' => [
-                    'type' => ConditionType::Result->value,
-                    'result_value' => 'draw',
-                    'stat' => null,
-                    'operator' => null,
-                    'value' => null,
-                ],
-            ],
-            [
-                'name' => __('tournaments::messages.condition_result.loss'),
-                'points' => 0,
-                'priority' => 5,
-                'condition' => [
-                    'type' => ConditionType::Result->value,
-                    'result_value' => 'loss',
-                    'stat' => null,
-                    'operator' => null,
-                    'value' => null,
-                ],
-            ],
-            [
-                'name' => __('tournaments::messages.condition_result.bye'),
-                'points' => 3,
-                'priority' => 5,
-                'condition' => [
-                    'type' => ConditionType::Result->value,
-                    'result_value' => 'bye',
-                    'stat' => null,
-                    'operator' => null,
-                    'value' => null,
-                ],
-            ],
-        ];
+        return TournamentDefaultRules::scoringRules();
     }
 
     /**
@@ -613,20 +581,7 @@ final class TournamentResource extends BaseResource
      */
     private static function getDefaultTiebreakerConfig(): array
     {
-        return [
-            [
-                'key' => 'buchholz',
-                'name' => __('tournaments::messages.tiebreaker.buchholz'),
-                'type' => TiebreakerType::Buchholz->value,
-                'direction' => SortDirection::Descending->value,
-            ],
-            [
-                'key' => 'progressive',
-                'name' => __('tournaments::messages.tiebreaker.progressive'),
-                'type' => TiebreakerType::Progressive->value,
-                'direction' => SortDirection::Descending->value,
-            ],
-        ];
+        return TournamentDefaultRules::tiebreakers();
     }
 
     public static function table(Table $table): Table
@@ -698,7 +653,7 @@ final class TournamentResource extends BaseResource
                 SelectFilter::make('event_id')
                     ->label(__('tournaments::messages.resource.fields.event'))
                     ->options(
-                        EventModel::query()
+                        self::realEvents()
                             ->orderBy('start_date', 'desc')
                             ->pluck('title', 'id')
                     )

@@ -926,6 +926,23 @@ return [
         'guest_registrations_duration' => '90 días',
     ],
 
+    // Request in event proposals (core#581)
+    'proposal_request' => [
+        'label' => 'Torneo',
+        'question' => '¿Habrá torneo?',
+        'game_profile' => 'Perfil de juego',
+        'game_profile_help' => 'Reglas de puntuación y emparejamientos. Si lo dejas vacío, la organización lo elegirá.',
+        'places' => 'Plazas',
+        'places_help' => 'Número máximo de participantes. Vacío para no limitarlo todavía.',
+        'describe' => 'Torneo con perfil :profile y :places plazas',
+        'describe_plain' => 'Torneo, con el perfil y las plazas por decidir',
+        'no_profile' => 'por decidir',
+        'no_limit' => 'sin límite de',
+        'already_configured' => 'El evento ya tiene un torneo.',
+        'event_missing' => 'El evento de la propuesta ya no existe.',
+        'profile_missing' => 'El perfil de juego elegido ya no existe.',
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'surveys' => [
         'source_label' => 'Torneo',
