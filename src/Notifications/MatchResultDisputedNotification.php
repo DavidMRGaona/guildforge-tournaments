@@ -19,7 +19,7 @@ use Modules\Tournaments\TournamentsServiceProvider;
 
 /**
  * Tells the organization and the reporter that the opponent disputed a reported result. Names and
- * reason arrive escaped for Markdown.
+ * reason arrive escaped for Markdown, for the mail; the bell gets the names as people wrote them.
  */
 final class MatchResultDisputedNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
@@ -36,6 +36,8 @@ final class MatchResultDisputedNotification extends Notification implements HasM
         private readonly bool $toOrganization,
         private readonly ?string $tournamentId = null,
         private readonly ?string $disputerId = null,
+        private readonly ?string $plainDisputerName = null,
+        private readonly ?string $plainResult = null,
     ) {}
 
     public function mailCategory(): string
@@ -94,13 +96,14 @@ final class MatchResultDisputedNotification extends Notification implements HasM
             return null;
         }
 
+        // The bell is not Markdown. A notice queued before the plain names existed keeps the escaped ones
         return new SiteNotificationDTO(
             title: __('tournaments::messages.site.result_disputed', [
-                'disputer' => $this->disputerName,
+                'disputer' => $this->plainDisputerName ?? $this->disputerName,
                 'tournament' => $this->tournamentName,
             ]),
             url: $this->tournamentPath($tournament),
-            body: $this->result,
+            body: $this->plainResult ?? $this->result,
             icon: 'swords',
             groupKey: self::SUBJECT_TYPE.':'.$tournament->id,
             actorId: $this->disputerId ?? null,

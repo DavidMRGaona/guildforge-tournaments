@@ -60,16 +60,21 @@ final readonly class SendMatchResultDisputedEmails
         $reporter = $this->participants->findByUserAndTournament($report->reportedById(), $event->tournamentId);
         $disputer = $this->participants->findByUserAndTournament($event->disputedByUserId, $event->tournamentId);
 
+        $summary = fn (string $player1Name, string $player2Name): string => $this->resultSummary($report->result(), $report->player1Score(), $report->player2Score(), $player1Name, $player2Name);
+
         $notification = fn (?string $recipientName, bool $toOrganization): MatchResultDisputedNotification => new MatchResultDisputedNotification(
             recipientName: $recipientName,
             disputerName: $this->nameOf($disputer),
             tournamentName: $tournament->name(),
             tournamentSlug: $tournament->slug(),
-            result: $this->resultSummary($report->result(), $report->player1Score(), $report->player2Score(), $this->nameOf($one), $this->nameOf($two)),
+            result: $summary($this->nameOf($one), $this->nameOf($two)),
             reason: EscapesMarkdown::escape((string) $report->disputeReason()),
             toOrganization: $toOrganization,
             tournamentId: $event->tournamentId,
             disputerId: $event->disputedByUserId,
+            // The bell is not Markdown: plain names there
+            plainDisputerName: $this->plainNameOf($disputer),
+            plainResult: $summary($this->plainNameOf($one), $this->plainNameOf($two)),
         );
 
         if ($tournament->notificationEmail() !== '') {
@@ -83,7 +88,7 @@ final readonly class SendMatchResultDisputedEmails
             tournamentName: $tournament->name(),
             actorName: $this->plainNameOf($disputer),
             actorId: $event->disputedByUserId,
-            body: $this->resultSummary($report->result(), $report->player1Score(), $report->player2Score(), $this->plainNameOf($one), $this->plainNameOf($two)),
+            body: $summary($this->plainNameOf($one), $this->plainNameOf($two)),
         ));
 
         $recipient = $reporter instanceof Participant ? $this->recipient($reporter) : null;

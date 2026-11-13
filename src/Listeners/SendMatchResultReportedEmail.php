@@ -62,19 +62,20 @@ final readonly class SendMatchResultReportedEmail
         }
 
         [$one, $two] = $match->player1Id() === $reporter->id()->value ? [$reporter, $opponent] : [$opponent, $reporter];
+        $summary = fn (string $player1Name, string $player2Name): string => $this->resultSummary(
+            $report?->result() ?? $match->result(),
+            $report instanceof MatchReport ? $report->player1Score() : $match->player1Score(),
+            $report instanceof MatchReport ? $report->player2Score() : $match->player2Score(),
+            $player1Name,
+            $player2Name,
+        );
 
         $recipient->notify(new MatchResultReportedNotification(
             recipientName: $this->nameOf($opponent),
             reporterName: $this->nameOf($reporter),
             tournamentName: $tournament->name(),
             tournamentSlug: $tournament->slug(),
-            result: $this->resultSummary(
-                $report?->result() ?? $match->result(),
-                $report instanceof MatchReport ? $report->player1Score() : $match->player1Score(),
-                $report instanceof MatchReport ? $report->player2Score() : $match->player2Score(),
-                $this->nameOf($one),
-                $this->nameOf($two),
-            ),
+            result: $summary($this->nameOf($one), $this->nameOf($two)),
             mode: match (true) {
                 ! $event->requiresConfirmation => MatchResultReportedNotification::TRUSTED,
                 $opponent->userId() === null => MatchResultReportedNotification::ORGANIZATION_CONFIRMS,
@@ -82,6 +83,9 @@ final readonly class SendMatchResultReportedEmail
             },
             tournamentId: $event->tournamentId,
             reporterId: $event->reportedByUserId,
+            // The bell is not Markdown: plain names there
+            plainReporterName: $this->plainNameOf($reporter),
+            plainResult: $summary($this->plainNameOf($one), $this->plainNameOf($two)),
         ));
     }
 }
