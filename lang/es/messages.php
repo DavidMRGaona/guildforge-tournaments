@@ -764,6 +764,14 @@ return [
         ],
         'result_disputed' => ':disputer ha discutido el resultado que comunicaste en «:tournament»',
         'results_grouped' => '{1} :count aviso sobre resultados en «:tournament»|[2,*] :count avisos sobre resultados en «:tournament»',
+        // For the accounts that manage tournaments (the address of the tournament gets them by mail)
+        'management' => [
+            'registered' => ':name se ha inscrito en «:tournament»',
+            'withdrawn' => ':name se ha retirado de «:tournament»',
+            'disputed' => ':name ha discutido un resultado en «:tournament»',
+            'participants_grouped' => '{1} :count cambio en los participantes de «:tournament»|[2,*] :count cambios en los participantes de «:tournament»',
+            'disputes_grouped' => '{1} :count resultado discutido en «:tournament»|[2,*] :count resultados discutidos en «:tournament»',
+        ],
     ],
 
     // Email notifications

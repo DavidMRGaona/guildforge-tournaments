@@ -56,7 +56,7 @@ Las pestañas **Estadísticas**, **Reglas de puntuación**, **Configuración de 
 | **Minutos antes para check-in** | Con check-in, cuántos minutos antes del inicio del evento se abre. |
 | **Permitir auto check-in** | Con check-in, si los participantes lo hacen desde la web. Si no, lo haces tú en la pestaña **Participantes**. |
 | **Requiere confirmación manual** | Si cada inscripción necesita tu aprobación antes de poder jugar. |
-| **Email de notificaciones** | Obligatorio. Recibe un aviso de cada inscripción y de cada baja, y de los resultados que los jugadores discuten. |
+| **Email de notificaciones** | Obligatorio. Recibe un aviso de cada inscripción y de cada baja, y de los resultados que los jugadores discuten. Quien puede gestionar participantes o registrar resultados los ve además en los avisos de la web (la campana), y puede apagarlos en su perfil (*Gestión de torneos*). |
 
 Los valores con que empiezan **Reporte de resultados**, **Permitir invitados**, **Requiere check-in** y **Minutos antes para check-in** salen de los ajustes del módulo.
 

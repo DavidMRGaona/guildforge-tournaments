@@ -18,6 +18,7 @@ use Modules\Tournaments\Notifications\ParticipantRegisteredToParticipant;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToParticipant;
 use Modules\Tournaments\Notifications\TournamentCancelledNotification;
+use Modules\Tournaments\Notifications\TournamentManagementNotification;
 use Modules\Tournaments\Notifications\TournamentReminderNotification;
 use Modules\Tournaments\TournamentsServiceProvider;
 use ReflectionClass;
@@ -60,6 +61,7 @@ final class MailCategoriesTest extends ModuleTestCase
             MatchResultReportedNotification::class => TournamentsServiceProvider::MAIL_RESULTS,
             MatchResultDisputedNotification::class => TournamentsServiceProvider::MAIL_RESULTS,
             TournamentReminderNotification::class => TournamentsServiceProvider::MAIL_REMINDERS,
+            TournamentManagementNotification::class => TournamentsServiceProvider::MAIL_MANAGEMENT,
         ];
     }
 

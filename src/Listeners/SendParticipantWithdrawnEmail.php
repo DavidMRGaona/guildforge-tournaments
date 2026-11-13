@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Infrastructure\Authorization\Services\PermissionHolderFinder;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
@@ -17,18 +18,22 @@ use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Listeners\Concerns\NoticesTournamentManagers;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantWithdrawnToParticipant;
+use Modules\Tournaments\Notifications\TournamentManagementNotification;
 
 final readonly class SendParticipantWithdrawnEmail
 {
     use MailsParticipants;
+    use NoticesTournamentManagers;
 
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
         private UserDataProviderInterface $userDataProvider,
+        private PermissionHolderFinder $managers,
     ) {}
 
     public function handle(ParticipantWithdrawn $event): void
@@ -63,10 +68,9 @@ final readonly class SendParticipantWithdrawnEmail
         }
 
         // Send to organizer
+        $remainingCount = $this->participantRepository->countActiveByTournament($event->tournamentId);
         $organizerEmail = $tournament->notificationEmail();
         if ($organizerEmail !== '') {
-            $remainingCount = $this->participantRepository->countActiveByTournament($event->tournamentId);
-
             $organizerNotifiable = new AnonymousNotifiable($organizerEmail);
             $organizerNotifiable->notify(new ParticipantWithdrawnToOrganizer(
                 tournamentName: $tournament->name(),
@@ -75,6 +79,15 @@ final readonly class SendParticipantWithdrawnEmail
                 remainingParticipants: $remainingCount,
             ));
         }
+
+        $this->noticeManagers(new TournamentManagementNotification(
+            kind: TournamentManagementNotification::WITHDRAWN,
+            tournamentId: $event->tournamentId,
+            tournamentName: $tournament->name(),
+            actorName: $participantName,
+            actorId: $event->userId,
+            body: __('tournaments::messages.emails.withdrawal.remaining', ['count' => $remainingCount]),
+        ));
     }
 
     private function getParticipantName(

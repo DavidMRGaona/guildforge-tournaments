@@ -19,6 +19,10 @@ return [
             'label' => 'Recordatorios antes del torneo',
             'description' => 'Un aviso antes de que empiece un torneo en el que estás inscrito.',
         ],
+        'management' => [
+            'label' => 'Gestión de torneos',
+            'description' => 'Inscripciones, retiradas y resultados discutidos de los torneos que gestionas, solo en los avisos de la web.',
+        ],
     ],
     'subjects' => [
         'tournament' => 'Torneo',

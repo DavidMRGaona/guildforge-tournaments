@@ -16,11 +16,19 @@ trait DescribesMatches
 {
     private function nameOf(?Participant $participant): string
     {
+        return EscapesMarkdown::escape($this->plainNameOf($participant));
+    }
+
+    /**
+     * The name as the person wrote it, for the bell, which is not Markdown.
+     */
+    private function plainNameOf(?Participant $participant): string
+    {
         $name = $participant?->userId() !== null
             ? $this->users->getUserInfo($participant->userId())['name'] ?? null
             : $participant?->guestName();
 
-        return EscapesMarkdown::escape($name ?? (string) __('tournaments::messages.participants.unknown'));
+        return $name ?? (string) __('tournaments::messages.participants.unknown');
     }
 
     /**

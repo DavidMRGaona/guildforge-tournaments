@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments;
 
+use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
@@ -130,6 +131,7 @@ use Modules\Tournaments\Listeners\SendParticipantDisqualifiedEmail;
 use Modules\Tournaments\Listeners\SendParticipantRegisteredEmails;
 use Modules\Tournaments\Listeners\SendParticipantWithdrawnEmail;
 use Modules\Tournaments\Listeners\SendTournamentCancelledEmails;
+use Modules\Tournaments\Notifications\TournamentManagementNotification;
 use Modules\Tournaments\Policies\GameProfilePolicy;
 use Modules\Tournaments\Policies\TournamentPolicy;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -142,6 +144,9 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     public const string MAIL_RESULTS = 'tournaments.results';
 
     public const string MAIL_REMINDERS = 'tournaments.reminders';
+
+    /** Bell only: registrations, withdrawals and disputed results, for the accounts that manage tournaments. */
+    public const string MAIL_MANAGEMENT = 'tournaments.management';
 
     public function moduleName(): string
     {
@@ -783,6 +788,17 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 label: 'tournaments::mail.categories.reminders.label',
                 description: 'tournaments::mail.categories.reminders.description',
                 site: true,
+            ),
+            // The tournament's address keeps getting these by mail; the accounts see them in the bell
+            MailCategoryDTO::optional(
+                key: self::MAIL_MANAGEMENT,
+                section: 'tournaments::mail.categories.section',
+                label: 'tournaments::mail.categories.management.label',
+                description: 'tournaments::mail.categories.management.description',
+                audience: static fn (object $user): bool => app(AuthorizationServiceInterface::class)->can($user, TournamentManagementNotification::permissionFor(TournamentManagementNotification::REGISTERED))
+                    || app(AuthorizationServiceInterface::class)->can($user, TournamentManagementNotification::permissionFor(TournamentManagementNotification::DISPUTED)),
+                site: true,
+                mail: false,
             ),
         ];
     }

@@ -58,7 +58,7 @@ Abre **Gestionar partidas** en el menú **⋯** de la ronda, aunque esté comple
 Con **Jugadores con confirmación**, un resultado informado espera a que el rival lo confirme. En la página **Rondas** de la web sale como **Pendiente de confirmación**, o como **Discutido** si el rival no está de acuerdo.
 
 - **Confirmar los que nadie discute**: con la ronda en curso, abre el menú **⋯** de la fila de la ronda, pulsa **Confirmar informes pendientes** y confirma. Los resultados informados que nadie discute pasan a ser definitivos. Los discutidos se quedan para que los revises uno a uno.
-- **Resolver uno discutido**: cuando un rival discute, el **Email de notificaciones** del torneo recibe el correo «Resultado discutido en …», con el resultado informado y el motivo. Busca la partida en la pestaña **Partidas** (filtro **Informe** → **Discutido**) y decide qué pasó: **Confirmar informe** si el informe es correcto, o **Restablecer** y registra el resultado correcto. El jugador que informó también recibe el aviso y puede corregir su informe desde la web.
+- **Resolver uno discutido**: cuando un rival discute, el **Email de notificaciones** del torneo recibe el correo «Resultado discutido en …», con el resultado informado y el motivo, y quien puede registrar resultados lo ve también en los avisos de la web (la campana), con un enlace a la pestaña **Partidas**. Busca la partida en la pestaña **Partidas** (filtro **Informe** → **Discutido**) y decide qué pasó: **Confirmar informe** si el informe es correcto, o **Restablecer** y registra el resultado correcto. El jugador que informó también recibe el aviso y puede corregir su informe desde la web.
 
 No se puede completar la ronda ni finalizar el torneo mientras quede algún informe sin confirmar o discutido.
 
