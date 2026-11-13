@@ -8,7 +8,6 @@ use App\Application\Mail\Services\MailCategoryRegistryInterface;
 use App\Application\SiteNotifications\Services\SiteNotificationServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\Tournaments\Application\DTOs\ReportMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
@@ -146,14 +145,14 @@ final class SiteNoticesTest extends ModuleTestCase
     public function test_the_reminder_goes_to_the_check_in_when_it_is_open_and_to_the_tournament_otherwise(): void
     {
         $this->tournament->update(['requires_check_in' => true, 'self_check_in_allowed' => true, 'check_in_starts_before' => 60]);
-        $this->tournament->event->update(['start_date' => now()->addDays(3)]);
+        $this->eventOf()->update(['start_date' => now()->addDays(3)]);
         $reminder = fn (): TournamentReminderNotification => new TournamentReminderNotification('Ana', 'Torneo de prueba', $this->tournament->slug, '1 de enero', true, 60, selfCheckInAllowed: true, tournamentId: $this->tournament->id);
 
-        $this->assertSame(route('tournaments.show', $this->tournament->slug, absolute: false), $reminder()->toSiteNotification($this->user)?->url);
+        $this->assertSame(route('tournaments.show', $this->tournament->slug, absolute: false), $this->urlOf($reminder()));
 
-        $this->tournament->event->update(['start_date' => now()->addMinutes(30)]);
+        $this->eventOf()->update(['start_date' => now()->addMinutes(30)]);
 
-        $this->assertSame(route('tournaments.check-in.show', $this->tournament->slug, absolute: false), $reminder()->toSiteNotification($this->user)?->url);
+        $this->assertSame(route('tournaments.check-in.show', $this->tournament->slug, absolute: false), $this->urlOf($reminder()));
     }
 
     public function test_the_mail_subject_is_the_tournament(): void
@@ -217,6 +216,19 @@ final class SiteNoticesTest extends ModuleTestCase
         $this->tournament->delete();
 
         $this->assertSame(0, $service->total($this->user));
+    }
+
+    private function urlOf(TournamentReminderNotification $notification): ?string
+    {
+        return $notification->toSiteNotification($this->user)?->url;
+    }
+
+    private function eventOf(): EventModel
+    {
+        $event = EventModel::query()->find($this->tournament->event_id);
+        $this->assertInstanceOf(EventModel::class, $event);
+
+        return $event;
     }
 
     private function enter(UserModel $user): ParticipantModel

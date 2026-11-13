@@ -12,6 +12,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Notifications\Concerns\NoticesTournamentOnTheSite;
 use Modules\Tournaments\TournamentsServiceProvider;
 
@@ -82,14 +83,13 @@ final class ParticipantConfirmedNotification extends Notification implements Has
     {
         $tournament = $this->visibleTournamentFor($notifiable);
 
-        if ($tournament === null) {
+        if (! $tournament instanceof TournamentResponseDTO) {
             return null;
         }
 
         return new SiteNotificationDTO(
             title: __('tournaments::messages.site.confirmed', ['tournament' => $this->tournamentName]),
             url: $this->tournamentPath($tournament),
-            body: null,
             icon: 'trophy',
         );
     }
