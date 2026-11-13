@@ -12,6 +12,7 @@ use App\Domain\Proposals\Exceptions\ProposalRequestRefusedException;
 use App\Domain\ValueObjects\EventId;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use Filament\Forms\Components\Select;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\PairingMethod;
@@ -216,8 +217,10 @@ final class TournamentProposalRequestTest extends ModuleTestCase
                     && ! array_key_exists($proposal->id, $options);
             });
 
-        $filter = Livewire::test(ListTournaments::class)->instance()->getTable()->getFilter('event_id');
-        $this->assertNotNull($filter);
+        $list = Livewire::test(ListTournaments::class)->instance();
+        $this->assertInstanceOf(ListTournaments::class, $list);
+        $filter = $list->getTable()->getFilter('event_id');
+        $this->assertInstanceOf(SelectFilter::class, $filter);
         $options = $filter->getOptions();
 
         $this->assertArrayHasKey($real->id, $options);

@@ -21,8 +21,26 @@ final class TournamentDefaultRules
      */
     public static function scoringRules(): array
     {
-        return array_map(
-            static fn (string $result, int $points): array => [
+        return array_map(static fn (ScoringRule $rule): array => $rule->toArray(), self::scoringRuleObjects());
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function tiebreakers(): array
+    {
+        return array_map(static fn (TiebreakerDefinition $tiebreaker): array => $tiebreaker->toArray(), self::tiebreakerObjects());
+    }
+
+    /**
+     * @return list<ScoringRule>
+     */
+    public static function scoringRuleObjects(): array
+    {
+        $rules = [];
+
+        foreach (['win' => 3, 'draw' => 1, 'loss' => 0, 'bye' => 3] as $result => $points) {
+            $rules[] = ScoringRule::fromArray([
                 'name' => __("tournaments::messages.condition_result.{$result}"),
                 'points' => $points,
                 'priority' => 5,
@@ -33,39 +51,10 @@ final class TournamentDefaultRules
                     'operator' => null,
                     'value' => null,
                 ],
-            ],
-            ['win', 'draw', 'loss', 'bye'],
-            [3, 1, 0, 3],
-        );
-    }
+            ]);
+        }
 
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    public static function tiebreakers(): array
-    {
-        return [
-            [
-                'key' => 'buchholz',
-                'name' => __('tournaments::messages.tiebreaker.buchholz'),
-                'type' => TiebreakerType::Buchholz->value,
-                'direction' => SortDirection::Descending->value,
-            ],
-            [
-                'key' => 'progressive',
-                'name' => __('tournaments::messages.tiebreaker.progressive'),
-                'type' => TiebreakerType::Progressive->value,
-                'direction' => SortDirection::Descending->value,
-            ],
-        ];
-    }
-
-    /**
-     * @return list<ScoringRule>
-     */
-    public static function scoringRuleObjects(): array
-    {
-        return array_values(array_map(ScoringRule::fromArray(...), self::scoringRules()));
+        return $rules;
     }
 
     /**
@@ -73,6 +62,19 @@ final class TournamentDefaultRules
      */
     public static function tiebreakerObjects(): array
     {
-        return array_values(array_map(TiebreakerDefinition::fromArray(...), self::tiebreakers()));
+        return [
+            TiebreakerDefinition::fromArray([
+                'key' => 'buchholz',
+                'name' => __('tournaments::messages.tiebreaker.buchholz'),
+                'type' => TiebreakerType::Buchholz->value,
+                'direction' => SortDirection::Descending->value,
+            ]),
+            TiebreakerDefinition::fromArray([
+                'key' => 'progressive',
+                'name' => __('tournaments::messages.tiebreaker.progressive'),
+                'type' => TiebreakerType::Progressive->value,
+                'direction' => SortDirection::Descending->value,
+            ]),
+        ];
     }
 }
