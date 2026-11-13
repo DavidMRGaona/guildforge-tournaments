@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Listeners;
 
 use App\Application\Services\TimezoneServiceInterface;
+use App\Infrastructure\Authorization\Services\PermissionHolderFinder;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
@@ -18,18 +19,22 @@ use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Listeners\Concerns\NoticesTournamentManagers;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\ParticipantRegisteredToOrganizer;
 use Modules\Tournaments\Notifications\ParticipantRegisteredToParticipant;
+use Modules\Tournaments\Notifications\TournamentManagementNotification;
 
 final readonly class SendParticipantRegisteredEmails
 {
     use MailsParticipants;
+    use NoticesTournamentManagers;
 
     public function __construct(
         private TournamentRepositoryInterface $tournamentRepository,
         private ParticipantRepositoryInterface $participantRepository,
         private UserDataProviderInterface $userDataProvider,
+        private PermissionHolderFinder $managers,
     ) {}
 
     public function handle(ParticipantRegistered $event): void
@@ -71,11 +76,15 @@ final readonly class SendParticipantRegisteredEmails
             tournamentId: $event->tournamentId,
         ));
 
-        // Send to organizer, unless the registration is not news to them
-        $organizerEmail = $tournament->notificationEmail();
-        if ($event->notifyOrganizer && $organizerEmail !== '') {
-            $currentCount = $this->participantRepository->countActiveByTournament($event->tournamentId);
+        // Tell the organization, unless the registration is not news to them (added from the panel)
+        if (! $event->notifyOrganizer) {
+            return;
+        }
 
+        $currentCount = $this->participantRepository->countActiveByTournament($event->tournamentId);
+
+        $organizerEmail = $tournament->notificationEmail();
+        if ($organizerEmail !== '') {
             $organizerNotifiable = new AnonymousNotifiable($organizerEmail);
             $organizerNotifiable->notify(new ParticipantRegisteredToOrganizer(
                 tournamentName: $tournament->name(),
@@ -86,6 +95,17 @@ final readonly class SendParticipantRegisteredEmails
                 maxParticipants: $tournament->maxParticipants(),
             ));
         }
+
+        $this->noticeManagers(new TournamentManagementNotification(
+            kind: TournamentManagementNotification::REGISTERED,
+            tournamentId: $event->tournamentId,
+            tournamentName: $tournament->name(),
+            actorName: $participantName,
+            actorId: $event->userId,
+            body: $tournament->maxParticipants() !== null
+                ? __('tournaments::messages.emails.new_registration.capacity', ['current' => $currentCount, 'max' => $tournament->maxParticipants()])
+                : __('tournaments::messages.emails.new_registration.participants', ['count' => $currentCount]),
+        ));
     }
 
     private function getParticipantName(ParticipantRegistered $event): string

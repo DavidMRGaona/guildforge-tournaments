@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Listeners;
 
+use App\Infrastructure\Authorization\Services\PermissionHolderFinder;
 use App\Notifications\Support\EscapesMarkdown;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Entities\MatchReport;
@@ -20,17 +21,20 @@ use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
 use Modules\Tournaments\Listeners\Concerns\DescribesMatches;
 use Modules\Tournaments\Listeners\Concerns\MailsParticipants;
+use Modules\Tournaments\Listeners\Concerns\NoticesTournamentManagers;
 use Modules\Tournaments\Notifications\AnonymousNotifiable;
 use Modules\Tournaments\Notifications\MatchResultDisputedNotification;
+use Modules\Tournaments\Notifications\TournamentManagementNotification;
 
 /**
- * Tells the organization, which decides, and the reporter, who may correct the report, that
- * the opponent disputed it.
+ * Tells the organization, which decides (its address by mail, the accounts that record results in
+ * the bell), and the reporter, who may correct the report, that the opponent disputed it.
  */
 final readonly class SendMatchResultDisputedEmails
 {
     use DescribesMatches;
     use MailsParticipants;
+    use NoticesTournamentManagers;
 
     public function __construct(
         private TournamentRepositoryInterface $tournaments,
@@ -38,6 +42,7 @@ final readonly class SendMatchResultDisputedEmails
         private ParticipantRepositoryInterface $participants,
         private MatchReportRepositoryInterface $reports,
         private UserDataProviderInterface $users,
+        private PermissionHolderFinder $managers,
     ) {}
 
     public function handle(MatchResultDisputed $event): void
@@ -70,6 +75,16 @@ final readonly class SendMatchResultDisputedEmails
         if ($tournament->notificationEmail() !== '') {
             (new AnonymousNotifiable($tournament->notificationEmail()))->notify($notification(null, true));
         }
+
+        // The bell is not Markdown: plain names there
+        $this->noticeManagers(new TournamentManagementNotification(
+            kind: TournamentManagementNotification::DISPUTED,
+            tournamentId: $event->tournamentId,
+            tournamentName: $tournament->name(),
+            actorName: $this->plainNameOf($disputer),
+            actorId: $event->disputedByUserId,
+            body: $this->resultSummary($report->result(), $report->player1Score(), $report->player2Score(), $this->plainNameOf($one), $this->plainNameOf($two)),
+        ));
 
         $recipient = $reporter instanceof Participant ? $this->recipient($reporter) : null;
         if (is_object($recipient)) {
