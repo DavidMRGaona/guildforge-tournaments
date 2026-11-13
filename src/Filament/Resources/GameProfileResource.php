@@ -118,7 +118,7 @@ final class GameProfileResource extends BaseResource
                                             ->label(__('tournaments::messages.stat_definitions.key'))
                                             ->helperText(__('tournaments::messages.stat_definitions.key_help'))
                                             ->required()
-                                            ->regex('/^[a-z_]+$/'),
+                                            ->regex('/^[a-z_]+\z/'),
 
                                         TextInput::make('name')
                                             ->label(__('tournaments::messages.stat_definitions.name'))
@@ -262,7 +262,7 @@ final class GameProfileResource extends BaseResource
                                         TextInput::make('key')
                                             ->label(__('tournaments::messages.tiebreaker_config.key'))
                                             ->required()
-                                            ->regex('/^[a-z_]+$/'),
+                                            ->regex('/^[a-z_]+\z/'),
 
                                         TextInput::make('name')
                                             ->label(__('tournaments::messages.tiebreaker_config.name'))
