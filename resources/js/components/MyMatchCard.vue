@@ -341,12 +341,12 @@ function setNumberStat(side: Side, stat: StatDefinition, value: number | null): 
 
 function radioClass(value: ReportableResult): string {
     if (form.result === value) {
-        return 'border-primary-600 dark:border-primary-500';
+        return 'border-primary';
     }
 
     return errors.value.result !== undefined
         ? 'border-error'
-        : 'border-neutral-300 group-hover:border-primary-400 dark:border-neutral-600 dark:group-hover:border-primary-500';
+        : 'border-strong group-hover:border-primary-400';
 }
 
 const inputClass =
@@ -564,11 +564,11 @@ const inputClass =
                         <span
                             data-testid="radio-dot"
                             aria-hidden="true"
-                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-surface transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-neutral-900"
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-surface transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"
                             :class="radioClass(option.value)"
                         >
                             <span
-                                class="h-2.5 w-2.5 rounded-full bg-primary-600 transition-transform duration-150 dark:bg-primary-500"
+                                class="h-2.5 w-2.5 rounded-full bg-primary transition-transform duration-150"
                                 :class="form.result === option.value ? 'scale-100' : 'scale-0'"
                             />
                         </span>

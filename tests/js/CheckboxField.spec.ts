@@ -61,7 +61,7 @@ describe('CheckboxField', () => {
         expect(wrapper.emitted('update:modelValue')).toEqual([[true]]);
         await wrapper.setProps({ modelValue: true });
         expect((wrapper.get('input#consent').element as HTMLInputElement).checked).toBe(true);
-        expect(wrapper.get('[data-testid="checkbox-box"]').classes()).toContain('bg-primary-600');
+        expect(wrapper.get('[data-testid="checkbox-box"]').classes()).toContain('bg-primary');
     });
 
     it('cannot be changed while disabled', () => {
