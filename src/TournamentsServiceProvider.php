@@ -765,6 +765,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 label: 'tournaments::mail.categories.registrations.label',
                 description: 'tournaments::mail.categories.registrations.description',
                 reason: 'tournaments::mail.categories.registrations.reason',
+                site: true,
             ),
             MailCategoryDTO::mandatory(
                 key: self::MAIL_RESULTS,
@@ -772,12 +773,14 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 label: 'tournaments::mail.categories.results.label',
                 description: 'tournaments::mail.categories.results.description',
                 reason: 'tournaments::mail.categories.results.reason',
+                site: true,
             ),
             MailCategoryDTO::optional(
                 key: self::MAIL_REMINDERS,
                 section: 'tournaments::mail.categories.section',
                 label: 'tournaments::mail.categories.reminders.label',
                 description: 'tournaments::mail.categories.reminders.description',
+                site: true,
             ),
         ];
     }

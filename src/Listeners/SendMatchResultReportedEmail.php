@@ -80,6 +80,8 @@ final readonly class SendMatchResultReportedEmail
                 $opponent->userId() === null => MatchResultReportedNotification::ORGANIZATION_CONFIRMS,
                 default => MatchResultReportedNotification::TO_CONFIRM,
             },
+            tournamentId: $event->tournamentId,
+            reporterId: $event->reportedByUserId,
         ));
     }
 }

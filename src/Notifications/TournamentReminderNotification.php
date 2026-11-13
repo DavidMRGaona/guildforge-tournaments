@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\Http\CheckInWindow;
+use Modules\Tournaments\Notifications\Concerns\NoticesTournamentOnTheSite;
 use Modules\Tournaments\TournamentsServiceProvider;
 
-final class TournamentReminderNotification extends Notification implements HasMailCategory, ShouldQueue
+final class TournamentReminderNotification extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
+    use NoticesTournamentOnTheSite;
     use Queueable;
 
     public function __construct(
@@ -24,6 +30,7 @@ final class TournamentReminderNotification extends Notification implements HasMa
         private readonly ?int $checkInStartsBefore,
         private readonly ?string $cancellationToken = null,
         private readonly ?bool $selfCheckInAllowed = null,
+        private readonly ?string $tournamentId = null,
     ) {}
 
     public function mailCategory(): string
@@ -36,7 +43,7 @@ final class TournamentReminderNotification extends Notification implements HasMa
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', HasSiteNotification::CHANNEL];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -69,5 +76,27 @@ final class TournamentReminderNotification extends Notification implements HasMa
         }
 
         return $message->line(__('tournaments::messages.emails.tournament_reminder.closing'));
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $tournament = $this->visibleTournamentFor($notifiable);
+
+        if ($tournament === null) {
+            return null;
+        }
+
+        // Straight to the check-in when people can do it themselves and it is open right now
+        $checkInIsOpen = $this->requiresCheckIn
+            && app(CheckInWindow::class)->calculate($tournament, $tournament->eventStartsAt)['status'] === 'open';
+
+        return new SiteNotificationDTO(
+            title: __('tournaments::messages.site.reminder', ['tournament' => $this->tournamentName, 'date' => $this->eventDate]),
+            url: $checkInIsOpen
+                ? route('tournaments.check-in.show', $tournament->slug, absolute: false)
+                : $this->tournamentPath($tournament),
+            body: $checkInIsOpen ? __('tournaments::messages.site.check_in_open') : null,
+            icon: 'calendar-check',
+        );
     }
 }

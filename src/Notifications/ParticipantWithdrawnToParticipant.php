@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Notifications;
 
 use App\Application\Mail\Contracts\HasMailCategory;
+use App\Application\Mail\Contracts\HasMailSubject;
+use App\Application\SiteNotifications\Contracts\HasSiteNotification;
+use App\Application\SiteNotifications\DTOs\SiteNotificationDTO;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Modules\Tournaments\Notifications\Concerns\NoticesTournamentOnTheSite;
 use Modules\Tournaments\TournamentsServiceProvider;
 
-final class ParticipantWithdrawnToParticipant extends Notification implements HasMailCategory, ShouldQueue
+final class ParticipantWithdrawnToParticipant extends Notification implements HasMailCategory, HasMailSubject, HasSiteNotification, ShouldQueue
 {
+    use NoticesTournamentOnTheSite;
     use Queueable;
 
     public function __construct(
@@ -20,6 +25,7 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Ha
         private readonly string $tournamentName,
         private readonly ?string $eventDate,
         private readonly ?string $tournamentSlug = null,
+        private readonly ?string $tournamentId = null,
     ) {}
 
     public function mailCategory(): string
@@ -32,7 +38,7 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Ha
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', HasSiteNotification::CHANNEL];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -62,5 +68,21 @@ final class ParticipantWithdrawnToParticipant extends Notification implements Ha
         }
 
         return $message;
+    }
+
+    public function toSiteNotification(object $notifiable): ?SiteNotificationDTO
+    {
+        $tournament = $this->visibleTournamentFor($notifiable);
+
+        if ($tournament === null) {
+            return null;
+        }
+
+        return new SiteNotificationDTO(
+            title: __('tournaments::messages.site.withdrawn', ['tournament' => $this->tournamentName]),
+            url: $this->tournamentPath($tournament),
+            body: null,
+            icon: 'trophy',
+        );
     }
 }

@@ -20,4 +20,7 @@ return [
             'description' => 'Un aviso antes de que empiece un torneo en el que estás inscrito.',
         ],
     ],
+    'subjects' => [
+        'tournament' => 'Torneo',
+    ],
 ];
