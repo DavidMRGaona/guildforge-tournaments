@@ -434,6 +434,7 @@ Con la confirmación por email, el email de inscripción (`ParticipantRegistered
 | `tournaments.update` | — | Editar torneos |
 | `tournaments.delete` | — | Eliminar torneos |
 | `tournaments.manage_config` | — | Gestionar perfiles de torneo |
+| `tournaments.manage_settings` | — | Editar los ajustes del módulo en **Sistema** → **Configuración** → **Torneos** |
 | `tournaments.report_results` | — | Registrar resultados: **Gestionar partidas** en las rondas y **Reportar resultado** en las partidas |
 | `tournaments.manage_participants` | — | Gestionar participantes: añadir, confirmar, check-in, retirar, descalificar y eliminar, también en bloque |
 

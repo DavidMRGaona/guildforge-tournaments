@@ -76,7 +76,7 @@ return [
         'create' => 'Crear torneo',
         'update' => 'Actualizar torneo',
         'delete' => 'Eliminar torneo',
-        'manage_config' => 'Gestionar configuración de torneos',
+        'manage_config' => 'Gestionar perfiles de torneo',
         'report_results' => 'Reportar resultados',
         'manage_participants' => 'Gestionar participantes',
         'manage_settings' => 'Gestionar los ajustes de torneos',

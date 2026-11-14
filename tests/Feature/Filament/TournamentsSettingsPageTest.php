@@ -8,6 +8,7 @@ use App\Application\Authorization\Services\PermissionRegistryInterface;
 use App\Application\Modules\Services\ModuleSettingsStoreInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Filament\Clusters\SettingsCluster;
+use App\Filament\Support\ModuleSettingsPages;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
 use App\Infrastructure\Persistence\Eloquent\Models\SettingModel;
@@ -46,6 +47,11 @@ final class TournamentsSettingsPageTest extends ModuleTestCase
         $this->assertSame(TournamentsSettings::class, $provider->getSettingsPage());
         $this->assertContains(TournamentsSettings::class, $provider->registerFilamentPages());
         $this->assertSame([], $provider->getSettingsSchema());
+    }
+
+    public function test_the_core_accepts_the_declared_page(): void
+    {
+        $this->assertNotNull(app(ModuleSettingsPages::class)->pageUrl('tournaments'));
     }
 
     public function test_the_page_is_in_the_settings_cluster_with_its_slot(): void

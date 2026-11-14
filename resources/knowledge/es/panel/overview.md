@@ -83,7 +83,8 @@ Ninguno de estos permisos se concede solo: se dan a cada rol en **Roles**. La ad
 | **Eliminar torneo** | Borrar torneos |
 | **Gestionar participantes** | Añadir, confirmar, hacer el check-in, retirar, descalificar y borrar participantes |
 | **Reportar resultados** | Registrar y corregir los resultados de las partidas y confirmar los que informan los jugadores |
-| **Gestionar configuración de torneos** | Crear y cambiar los **Perfiles de torneo** |
+| **Gestionar perfiles de torneo** | Crear y cambiar los **Perfiles de torneo** |
+| **Gestionar los ajustes de torneos** | Cambiar los ajustes del módulo en **Sistema** → **Configuración** → **Torneos** |
 | **Editar evento** (del núcleo) | Configurar el torneo de un evento en su pestaña **Configuración del torneo** |
 
 Los ajustes generales del módulo están en **Sistema** → **Configuración** → **Torneos** y necesitan el permiso **Gestionar los ajustes de torneos**.
