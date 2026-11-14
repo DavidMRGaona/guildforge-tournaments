@@ -110,7 +110,7 @@ final class TournamentLinkableRecordSourceTest extends ModuleTestCase
     public function test_a_listed_tournament_of_an_unpublished_event_is_hidden_without_view_any(): void
     {
         $tournament = $this->tournament();
-        $tournament->event->update(['is_published' => false]);
+        EventModel::query()->whereKey($tournament->event_id)->update(['is_published' => false]);
         $plain = $this->userWith([]);
         $manager = $this->userWith([self::VIEW_ANY]);
 
