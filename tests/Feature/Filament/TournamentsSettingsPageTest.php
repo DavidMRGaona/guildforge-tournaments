@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
 use App\Application\Authorization\Services\PermissionRegistryInterface;
+use App\Application\Modules\Services\ModuleSettingsStoreInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Filament\Clusters\SettingsCluster;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
@@ -15,7 +16,6 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Modules\Tournaments\Filament\Pages\TournamentsSettings;
 use Modules\Tournaments\TournamentsServiceProvider;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
 
@@ -86,24 +86,21 @@ final class TournamentsSettingsPageTest extends ModuleTestCase
 
         $this->actingAs($this->userWith([]));
 
-        try {
-            $component->call('save');
-            $this->fail('Saving without the permission must be refused');
-        } catch (HttpException $exception) {
-            $this->assertSame(403, $exception->getStatusCode());
-        }
+        $component->call('save')->assertForbidden();
 
         $this->assertNull(SettingModel::query()->where('key', 'module_settings:tournaments')->first());
     }
 
     public function test_values_saved_before_load_on_the_page_and_round_trip_through_the_same_row(): void
     {
+        // Booted settings come from config; the stored row is merged over the shipped defaults at boot
         app(SettingsServiceInterface::class)->set('module_settings:tournaments', json_encode([
             'default_result_reporting' => 'players_trusted',
             'default_check_in_starts_before' => 45,
             'guest_rate_limit' => ['per_minute' => 7, 'per_hour' => 30],
             'reminders' => ['enabled' => true, 'hours_before' => 12],
         ], JSON_THROW_ON_ERROR));
+        config()->set('modules.settings.tournaments', app(ModuleSettingsStoreInterface::class)->effective('tournaments', base_path('modules/tournaments')));
 
         $this->actingAs($this->userWith([self::PERMISSION]));
         Filament::setCurrentPanel(Filament::getPanel('admin'));
