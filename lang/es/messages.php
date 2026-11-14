@@ -79,6 +79,7 @@ return [
         'manage_config' => 'Gestionar configuración de torneos',
         'report_results' => 'Reportar resultados',
         'manage_participants' => 'Gestionar participantes',
+        'manage_settings' => 'Gestionar los ajustes de torneos',
     ],
 
     'tournament_status' => [
@@ -481,7 +482,8 @@ return [
         'final_results_body' => 'El torneo :tournament ha finalizado. Tu posición final es :position.',
     ],
 
-    // Module settings page
+    'settings' => [
+        'title' => 'Ajustes de torneos',
     'settings' => [
         'general' => 'Configuración general',
         'scoring' => 'Puntuación',

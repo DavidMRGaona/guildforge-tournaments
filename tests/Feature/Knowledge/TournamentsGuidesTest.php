@@ -127,7 +127,7 @@ final class TournamentsGuidesTest extends ModuleTestCase
             'tournaments.panel.overview',
         ], $this->visiblePanelGuides($this->userWith('events.update', 'tournaments:tournaments.view_any')));
 
-        $this->assertSame(['tournaments.panel.settings'], $this->visiblePanelGuides($this->userWith('modules.configure')));
+        $this->assertSame(['tournaments.panel.settings'], $this->visiblePanelGuides($this->userWith('tournaments:tournaments.manage_settings')));
 
         $this->assertSame([], $this->visiblePanelGuides(UserModel::factory()->editor()->create()));
     }

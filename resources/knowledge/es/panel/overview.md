@@ -86,7 +86,7 @@ Ninguno de estos permisos se concede solo: se dan a cada rol en **Roles**. La ad
 | **Gestionar configuración de torneos** | Crear y cambiar los **Perfiles de torneo** |
 | **Editar evento** (del núcleo) | Configurar el torneo de un evento en su pestaña **Configuración del torneo** |
 
-Los ajustes generales del módulo están en **Sistema** → **Módulos** y necesitan el permiso **Configurar módulos** (del núcleo).
+Los ajustes generales del módulo están en **Sistema** → **Configuración** → **Torneos** y necesitan el permiso **Gestionar los ajustes de torneos**.
 
 ## Dónde está cada cosa
 

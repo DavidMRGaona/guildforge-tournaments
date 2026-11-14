@@ -58,7 +58,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración del módulo
 
-En **Módulos**, la acción **Configuración** del módulo guarda los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
+En **Sistema** → **Configuración** → **Torneos** (permiso **Gestionar los ajustes de torneos**, que se concede a mano en el editor de roles) se guardan los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
 
 | Opción | Descripción | Por defecto |
 |--------|-------------|-------------|
