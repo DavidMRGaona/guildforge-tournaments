@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
-use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\SettingModel;
@@ -14,12 +13,12 @@ use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\GuestAccountPolicy;
 use Modules\Tournaments\Domain\Enums\GuestConfirmationMode;
+use Modules\Tournaments\Filament\Pages\TournamentsSettings;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource;
 use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\CreateTournament;
 use Modules\Tournaments\Infrastructure\Services\GuestRegistrationSettings;
-use Modules\Tournaments\TournamentsServiceProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\Modules\InteractsWithModulePanel;
 use Tests\Support\Modules\ModuleTestCase;
@@ -46,7 +45,7 @@ final class SettingsDefaultsTest extends ModuleTestCase
     {
         parent::setUp();
 
-        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class]);
+        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class], [TournamentsSettings::class]);
         $this->actingAsPanelAdmin();
     }
 
@@ -118,7 +117,7 @@ final class SettingsDefaultsTest extends ModuleTestCase
                 }
             }
         };
-        $collect((new TournamentsServiceProvider(app()))->getSettingsSchema());
+        $collect(TournamentsSettings::getFormSchemaComponents());
 
         foreach ([
             'guest_confirmation.mode', 'guest_confirmation.hold_hours', 'guest_confirmation.max_unconfirmed_held',
@@ -130,7 +129,7 @@ final class SettingsDefaultsTest extends ModuleTestCase
 
     public function test_the_settings_page_shows_the_guest_section_in_spanish(): void
     {
-        Livewire::test(ModuleSettingsPage::class, ['module' => 'tournaments'])
+        Livewire::test(TournamentsSettings::class)
             ->assertSee('Inscripciones de invitados')
             ->assertSee('Plaza mientras no confirma')
             ->assertSee('Plazo de confirmación')
@@ -197,11 +196,11 @@ final class SettingsDefaultsTest extends ModuleTestCase
 
     /**
      * @param  array<string, mixed>  $values
-     * @return Testable<ModuleSettingsPage>
+     * @return Testable<TournamentsSettings>
      */
     private function save(array $values): Testable
     {
-        return Livewire::test(ModuleSettingsPage::class, ['module' => 'tournaments'])
+        return Livewire::test(TournamentsSettings::class)
             ->fillForm($values)
             ->call('save');
     }

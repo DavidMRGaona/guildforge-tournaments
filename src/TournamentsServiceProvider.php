@@ -25,11 +25,8 @@ use App\Filament\Resources\EventResource;
 use App\Infrastructure\Media\Observers\RefreshMediaUsagesObserver;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Modules\ModuleServiceProvider;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
+use Filament\Pages\Page;
 use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\Section;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Eloquent\Model;
@@ -76,6 +73,7 @@ use Modules\Tournaments\Domain\Services\Clock;
 use Modules\Tournaments\Domain\Services\StandingCalculatorServiceInterface;
 use Modules\Tournaments\Domain\Services\SwissPairingServiceInterface;
 use Modules\Tournaments\Domain\Services\TiebreakerCalculatorInterface;
+use Modules\Tournaments\Filament\Pages\TournamentsSettings;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\EditGameProfile;
@@ -122,7 +120,6 @@ use Modules\Tournaments\Infrastructure\Services\TiebreakerCalculator;
 use Modules\Tournaments\Infrastructure\Services\TournamentLifecycleService;
 use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
-use Modules\Tournaments\Infrastructure\Services\TournamentReminderSettings;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
 use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
@@ -970,6 +967,12 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 module: 'tournaments',
             ),
             new PermissionDTO(
+                name: 'tournaments.manage_settings',
+                label: __('tournaments::messages.permissions.manage_settings'),
+                group: __('tournaments::messages.navigation'),
+                module: 'tournaments',
+            ),
+            new PermissionDTO(
                 name: 'tournaments.report_results',
                 label: __('tournaments::messages.permissions.report_results'),
                 group: __('tournaments::messages.navigation'),
@@ -985,118 +988,30 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
+     * The settings are edited on the module's own page in the settings cluster, not on the generic one.
+     *
      * @return array<Component>
      */
     public function getSettingsSchema(): array
     {
+        return [];
+    }
+
+    /**
+     * @return class-string<Page>
+     */
+    public function getSettingsPage(): string
+    {
+        return TournamentsSettings::class;
+    }
+
+    /**
+     * @return array<class-string<Page>>
+     */
+    public function registerFilamentPages(): array
+    {
         return [
-            Section::make(__('tournaments::messages.settings.defaults'))
-                ->schema([
-                    Select::make('default_result_reporting')
-                        ->label(__('tournaments::messages.settings.default_result_reporting'))
-                        ->options([
-                            'admin_only' => __('tournaments::messages.result_reporting.admin_only'),
-                            'players_with_confirmation' => __('tournaments::messages.result_reporting.players_with_confirmation'),
-                            'players_trusted' => __('tournaments::messages.result_reporting.players_trusted'),
-                        ])
-                        ->default('admin_only'),
-                    Toggle::make('default_allow_guests')
-                        ->label(__('tournaments::messages.settings.default_allow_guests'))
-                        ->default(false),
-                    Toggle::make('default_requires_check_in')
-                        ->label(__('tournaments::messages.settings.default_requires_check_in'))
-                        ->default(false),
-                    TextInput::make('default_check_in_starts_before')
-                        ->label(__('tournaments::messages.settings.default_check_in_starts_before'))
-                        ->helperText(__('tournaments::messages.settings.default_check_in_starts_before_help'))
-                        ->numeric()
-                        ->suffix(__('tournaments::messages.settings.minutes'))
-                        ->default(30),
-                ]),
-            Section::make(__('tournaments::messages.settings.guest_registrations'))
-                ->schema([
-                    Select::make('guest_confirmation.mode')
-                        ->label(__('tournaments::messages.settings.guest_confirmation_mode'))
-                        ->options([
-                            'hold' => __('tournaments::messages.settings.guest_confirmation_modes.hold'),
-                            'wait' => __('tournaments::messages.settings.guest_confirmation_modes.wait'),
-                        ])
-                        ->in(['hold', 'wait'])
-                        ->native(false)
-                        ->default('hold')
-                        ->required(),
-                    TextInput::make('guest_confirmation.hold_hours')
-                        ->label(__('tournaments::messages.settings.guest_hold_hours'))
-                        ->suffix(__('tournaments::messages.settings.hours'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(1)
-                        ->maxValue(168)
-                        ->default(2)
-                        ->required(),
-                    TextInput::make('guest_confirmation.max_unconfirmed_held')
-                        ->label(__('tournaments::messages.settings.guest_max_unconfirmed_held'))
-                        ->helperText(__('tournaments::messages.settings.guest_max_unconfirmed_held_help'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(0)
-                        ->maxValue(50)
-                        ->default(2)
-                        ->required(),
-                    Select::make('guest_accounts.mode')
-                        ->label(__('tournaments::messages.settings.guest_accounts_mode'))
-                        ->options([
-                            'require_login' => __('tournaments::messages.settings.guest_accounts_modes.require_login'),
-                            'allow_guest' => __('tournaments::messages.settings.guest_accounts_modes.allow_guest'),
-                        ])
-                        ->in(['require_login', 'allow_guest'])
-                        ->native(false)
-                        ->default('require_login')
-                        ->required(),
-                    TextInput::make('guest_rate_limit.per_minute')
-                        ->label(__('tournaments::messages.settings.guest_rate_per_minute'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(1)
-                        ->maxValue(100)
-                        ->default(5)
-                        ->required(),
-                    TextInput::make('guest_rate_limit.per_hour')
-                        ->label(__('tournaments::messages.settings.guest_rate_per_hour'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(1)
-                        ->maxValue(1000)
-                        ->default(20)
-                        ->required(),
-                    TextInput::make('duplicate_signal.window_hours')
-                        ->label(__('tournaments::messages.settings.duplicate_window_hours'))
-                        ->suffix(__('tournaments::messages.settings.hours'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(1)
-                        ->maxValue(720)
-                        ->default(24)
-                        ->required(),
-                ])
-                ->columns(2),
-            Section::make(__('tournaments::messages.settings.reminders'))
-                ->schema([
-                    Toggle::make('reminders.enabled')
-                        ->label(__('tournaments::messages.settings.reminders_enabled'))
-                        ->helperText(__('tournaments::messages.settings.reminders_enabled_help'))
-                        ->default(false),
-                    TextInput::make('reminders.hours_before')
-                        ->label(__('tournaments::messages.settings.reminders_hours_before'))
-                        ->suffix(__('tournaments::messages.settings.hours'))
-                        ->numeric()
-                        ->integer()
-                        ->minValue(1)
-                        ->maxValue(TournamentReminderSettings::MAX_HOURS_BEFORE)
-                        ->default(TournamentReminderSettings::DEFAULT_HOURS_BEFORE)
-                        ->required(),
-                ])
-                ->columns(2),
+            TournamentsSettings::class,
         ];
     }
 

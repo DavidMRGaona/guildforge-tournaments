@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Tests\Feature\Filament;
 
-use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Resources\EventResource\Pages\EditEvent;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
@@ -14,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Filament\Pages\TournamentsSettings;
 use Modules\Tournaments\Filament\RelationManagers\TournamentConfigRelationManager;
 use Modules\Tournaments\Filament\Resources\GameProfileResource;
 use Modules\Tournaments\Filament\Resources\GameProfileResource\Pages\CreateGameProfile;
@@ -45,7 +45,7 @@ final class TournamentsPanelTest extends ModuleTestCase
     {
         parent::setUp();
 
-        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class]);
+        $this->registerOnAdminPanel([GameProfileResource::class, TournamentResource::class], [TournamentsSettings::class]);
         $this->actingAsPanelAdmin();
     }
 
@@ -248,7 +248,7 @@ final class TournamentsPanelTest extends ModuleTestCase
 
     public function test_settings_page_renders(): void
     {
-        Livewire::test(ModuleSettingsPage::class, ['module' => 'tournaments'])->assertOk();
+        Livewire::test(TournamentsSettings::class)->assertOk();
     }
 
     public function test_registration_cannot_close_after_the_event_starts(): void

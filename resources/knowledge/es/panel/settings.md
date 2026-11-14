@@ -9,15 +9,16 @@ keywords: [ajustes, configuración, configurar torneos, ajustes del módulo, val
 related: [tournaments.panel.create-tournament, tournaments.panel.participants, core.panel.modules]
 conditions:
   permissions:
-    all: ['modules.configure']
+    all: ['tournaments:tournaments.manage_settings']
 ---
 La configuración del módulo decide los valores con que empieza cada torneo nuevo, cómo funcionan las inscripciones de personas sin cuenta y el recordatorio por correo.
 
 ## Abrir la configuración
 
-1. En el menú lateral, abre **Sistema** y elige **Módulos**.
-2. En la tarjeta de **Torneos**, pulsa **Configuración**.
-3. Al terminar, pulsa **Guardar configuración**.
+1. En el menú lateral, abre **Sistema** → **Configuración** y elige **Torneos**.
+2. Cambia lo que necesites y pulsa **Guardar**.
+
+Solo la administración y los roles con el permiso **Gestionar los ajustes de torneos** ven esta página: se concede a mano en el editor de roles.
 
 ## Valores por defecto
 
@@ -52,6 +53,6 @@ Este interruptor manda sobre las preferencias personales: si lo apagas, nadie re
 
 ## Si algo no sale bien
 
-- **No ves Configuración en la tarjeta de Torneos**: el módulo no está habilitado, o no tienes el permiso **Configurar módulos**.
+- **No ves «Torneos» en Configuración**: el módulo no está habilitado, o tu rol no tiene el permiso **Gestionar los ajustes de torneos**.
 
-[[action:filament.admin.pages.modules-page|Ver los módulos]]
+[[action:filament.admin.configuracion.pages.tournaments-settings|Abrir los ajustes de torneos]]

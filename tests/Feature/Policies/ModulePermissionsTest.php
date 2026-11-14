@@ -36,7 +36,7 @@ final class ModulePermissionsTest extends ModuleTestCase
     {
         $registry = app(PermissionRegistryInterface::class);
 
-        foreach (['view_any', 'view', 'create', 'update', 'delete', 'manage_config', 'report_results', 'manage_participants'] as $action) {
+        foreach (['view_any', 'view', 'create', 'update', 'delete', 'manage_config', 'manage_settings', 'report_results', 'manage_participants'] as $action) {
             $this->assertTrue($registry->has("tournaments:tournaments.{$action}"), $action);
         }
     }

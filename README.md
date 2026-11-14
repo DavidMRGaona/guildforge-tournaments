@@ -58,7 +58,7 @@ En las releases los assets los compila el CI y van dentro del ZIP.
 
 ## Configuración del módulo
 
-En **Módulos**, la acción **Configuración** del módulo guarda los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
+En **Sistema** → **Configuración** → **Torneos** (permiso **Gestionar los ajustes de torneos**, que se concede a mano en el editor de roles) se guardan los valores iniciales de los formularios que crean un torneo (**Torneos** → **Crear torneo** y la pestaña **Configuración del torneo** del evento). Cada torneo puede cambiarlos después.
 
 | Opción | Descripción | Por defecto |
 |--------|-------------|-------------|
@@ -434,6 +434,7 @@ Con la confirmación por email, el email de inscripción (`ParticipantRegistered
 | `tournaments.update` | — | Editar torneos |
 | `tournaments.delete` | — | Eliminar torneos |
 | `tournaments.manage_config` | — | Gestionar perfiles de torneo |
+| `tournaments.manage_settings` | — | Editar los ajustes del módulo en **Sistema** → **Configuración** → **Torneos** |
 | `tournaments.report_results` | — | Registrar resultados: **Gestionar partidas** en las rondas y **Reportar resultado** en las partidas |
 | `tournaments.manage_participants` | — | Gestionar participantes: añadir, confirmar, check-in, retirar, descalificar y eliminar, también en bloque |
 
