@@ -7,6 +7,10 @@ return [
     'minutes' => 'minutos',
 
     // Site search (core): group, one result and the tag of results that are over
+    'linking' => [
+        'label' => 'Torneo',
+    ],
+
     'search' => [
         'label' => 'Torneos',
         'item' => 'Torneo',

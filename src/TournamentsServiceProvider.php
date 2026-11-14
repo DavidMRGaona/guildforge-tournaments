@@ -8,6 +8,7 @@ use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
 use App\Application\Cookies\Services\CookieDeclarationRegistryInterface;
+use App\Application\Linking\Contracts\LinkableRecordSourceInterface;
 use App\Application\Mail\DTOs\MailCategoryDTO;
 use App\Application\Media\Contracts\MediaUsageSourceInterface;
 use App\Application\Modules\DTOs\ModuleRouteDTO;
@@ -86,6 +87,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\M
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
 use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
+use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Media\TournamentMediaSource;
 use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
@@ -861,6 +863,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentSearchSource::class,
+        ];
+    }
+
+    /**
+     * Tournaments as records other modules can link to (core ≥ 3.68).
+     *
+     * @return array<class-string<LinkableRecordSourceInterface>>
+     */
+    public function registerLinkableRecordSources(): array
+    {
+        return [
+            TournamentLinkableRecordSource::class,
         ];
     }
 
