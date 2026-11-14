@@ -107,6 +107,42 @@ final class TournamentLinkableRecordSourceTest extends ModuleTestCase
         );
     }
 
+    public function test_a_listed_tournament_of_an_unpublished_event_is_hidden_without_view_any(): void
+    {
+        $tournament = $this->tournament();
+        $tournament->event->update(['is_published' => false]);
+        $plain = $this->userWith([]);
+        $manager = $this->userWith([self::VIEW_ANY]);
+
+        $this->assertNull($this->source->find($tournament->id, $plain->id));
+        $this->assertNull($this->source->find($tournament->id, (string) Str::uuid()));
+        $this->assertSame([], $this->source->search('', $plain->id, 10));
+        $this->assertNotNull($this->source->find($tournament->id, $manager->id));
+        $this->assertSame([$tournament->id], $this->ids($this->source->search('', $manager->id, 10)));
+    }
+
+    public function test_a_deactivated_viewer_sees_what_a_visitor_sees(): void
+    {
+        $draft = $this->tournament(['status' => 'draft']);
+        $viewer = $this->userWith([self::VIEW_ANY]);
+        $this->assertNotNull($this->source->find($draft->id, $viewer->id));
+
+        $viewer->delete();
+
+        $this->assertNull($this->source->find($draft->id, $viewer->id));
+        $this->assertSame([], $this->source->search('', $viewer->id, 10));
+    }
+
+    public function test_an_anonymized_viewer_sees_what_a_visitor_sees(): void
+    {
+        $draft = $this->tournament(['status' => 'draft']);
+        $viewer = $this->userWith([self::VIEW_ANY]);
+        $viewer->forceFill(['anonymized_at' => now()])->save();
+
+        $this->assertNull($this->source->find($draft->id, $viewer->id));
+        $this->assertSame([], $this->source->search('', $viewer->id, 10));
+    }
+
     public function test_an_unknown_or_malformed_id_finds_nothing(): void
     {
         $viewer = $this->userWith([self::VIEW_ANY]);
