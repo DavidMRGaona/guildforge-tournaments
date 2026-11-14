@@ -18,8 +18,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 /**
  * The module's tournaments as linkable records.
  *
- * Tournaments of the public listing (neither drafts nor cancelled) are public, so every viewer
- * finds them. Drafts and cancelled ones only for who lists tournaments in the panel (the policy's
+ * Tournaments of the public listing (neither drafts nor cancelled) on a published event are
+ * public, so every viewer finds them. Drafts and cancelled ones only for who lists tournaments in the panel (the policy's
  * viewAny). The panel URL is the edit page, given only to who has panel access and may edit it.
  */
 final readonly class TournamentLinkableRecordSource implements LinkableRecordSourceInterface
@@ -90,7 +90,8 @@ final readonly class TournamentLinkableRecordSource implements LinkableRecordSou
         $tournaments = TournamentModel::query()->with('event');
 
         if (! $viewer instanceof UserModel || ! Gate::forUser($viewer)->allows('viewAny', TournamentModel::class)) {
-            $tournaments->publiclyListed();
+            // Listed, and on a published event (a proposal under review or a hidden event stays hidden)
+            $tournaments->publiclyListed()->whereHas('event', static fn (Builder $event): Builder => $event->where('is_published', true));
         }
 
         return $tournaments;
@@ -102,9 +103,10 @@ final readonly class TournamentLinkableRecordSource implements LinkableRecordSou
             return null;
         }
 
+        // Deactivated (soft-deleted) accounts are not found; anonymized ones count as visitors
         $viewer = UserModel::query()->find($viewerId);
 
-        return $viewer instanceof UserModel ? $viewer : null;
+        return $viewer instanceof UserModel && $viewer->anonymized_at === null ? $viewer : null;
     }
 
     private function toRecord(TournamentModel $tournament, ?UserModel $viewer): LinkableRecordDTO
