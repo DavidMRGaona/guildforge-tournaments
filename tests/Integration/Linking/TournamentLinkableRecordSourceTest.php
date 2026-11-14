@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Tournaments\Tests\Integration\Linking;
 
 use App\Application\Linking\Contracts\LinkableRecordSourceInterface;
+use App\Application\Linking\DTOs\LinkableRecordDTO;
 use App\Application\Linking\Services\LinkableRecordLookupInterface;
 use App\Application\Linking\Services\LinkableRecordSourceRegistryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
@@ -155,7 +156,7 @@ final class TournamentLinkableRecordSourceTest extends ModuleTestCase
     }
 
     /**
-     * @param  list<\App\Application\Linking\DTOs\LinkableRecordDTO>  $records
+     * @param  list<LinkableRecordDTO>  $records
      * @return list<string>
      */
     private function ids(array $records): array
@@ -164,7 +165,7 @@ final class TournamentLinkableRecordSourceTest extends ModuleTestCase
     }
 
     /**
-     * @param  list<\App\Application\Linking\DTOs\LinkableRecordDTO>  $records
+     * @param  list<LinkableRecordDTO>  $records
      * @return list<string>
      */
     private function titles(array $records): array

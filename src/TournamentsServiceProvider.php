@@ -87,6 +87,7 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\M
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
 use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
+use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Media\TournamentMediaSource;
 use Modules\Tournaments\Infrastructure\Observers\TournamentObserver;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
@@ -101,7 +102,6 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Proposals\TournamentProposalRequest;
 use Modules\Tournaments\Infrastructure\Search\RefreshesSearchDocuments;
-use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Search\TournamentSearchSource;
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
