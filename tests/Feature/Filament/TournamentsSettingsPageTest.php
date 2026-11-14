@@ -8,6 +8,7 @@ use App\Application\Authorization\Services\PermissionRegistryInterface;
 use App\Application\Modules\Services\ModuleSettingsStoreInterface;
 use App\Application\Services\SettingsServiceInterface;
 use App\Filament\Clusters\SettingsCluster;
+use App\Filament\Pages\ModuleSettingsPage;
 use App\Filament\Support\ModuleSettingsPages;
 use App\Infrastructure\Persistence\Eloquent\Models\PermissionModel;
 use App\Infrastructure\Persistence\Eloquent\Models\RoleModel;
@@ -132,6 +133,19 @@ final class TournamentsSettingsPageTest extends ModuleTestCase
         $this->assertSame('players_trusted', $stored['default_result_reporting']);
         $this->assertEquals(50, $stored['default_check_in_starts_before']);
         $this->assertSame(['enabled' => true, 'hours_before' => 12], $stored['reminders']);
+    }
+
+    public function test_the_generic_settings_page_hands_over_to_the_module_page(): void
+    {
+        // Since core#666 the generic page of «Módulos» no longer edits the module: it redirects here
+        $this->actingAsPanelAdmin();
+
+        Livewire::test(ModuleSettingsPage::class, ['module' => 'tournaments'])
+            ->assertRedirect(TournamentsSettings::getUrl());
+
+        $page = app(ModuleSettingsPage::class);
+        $page->module = 'tournaments';
+        $this->assertFalse($page->hasSettings());
     }
 
     /**
