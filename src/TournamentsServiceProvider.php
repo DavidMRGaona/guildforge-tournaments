@@ -16,6 +16,7 @@ use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
 use App\Application\Proposals\Contracts\EventProposalRequestInterface;
+use App\Application\Linking\Contracts\LinkableRecordSourceInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
@@ -100,6 +101,7 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
 use Modules\Tournaments\Infrastructure\Proposals\TournamentProposalRequest;
 use Modules\Tournaments\Infrastructure\Search\RefreshesSearchDocuments;
+use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Search\TournamentSearchSource;
 use Modules\Tournaments\Infrastructure\Services\DatabaseRegistrationLock;
 use Modules\Tournaments\Infrastructure\Services\GuestConfirmationQuery;
@@ -861,6 +863,18 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentSearchSource::class,
+        ];
+    }
+
+    /**
+     * Tournaments as records other modules can link to (core ≥ 3.68).
+     *
+     * @return array<class-string<LinkableRecordSourceInterface>>
+     */
+    public function registerLinkableRecordSources(): array
+    {
+        return [
+            TournamentLinkableRecordSource::class,
         ];
     }
 
