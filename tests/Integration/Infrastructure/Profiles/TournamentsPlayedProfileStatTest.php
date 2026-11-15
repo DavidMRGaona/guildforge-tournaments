@@ -61,10 +61,43 @@ final class TournamentsPlayedProfileStatTest extends ModuleTestCase
         $this->enroll($this->tournament(TournamentStatus::Cancelled), $owner);
         $this->enroll($this->tournament(TournamentStatus::Finished, [], EventModel::factory()->draft()->create()), $owner, rank: 1);
         foreach ([ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
-            $this->enroll($this->tournament(TournamentStatus::Finished), $owner, $status, rank: 1);
+            $this->enroll($this->tournament(TournamentStatus::Finished), $owner, $status);
         }
 
         $this->assertNull($this->stat($owner));
+    }
+
+    public function test_only_who_is_in_the_standings_played(): void
+    {
+        $owner = UserModel::factory()->create();
+        $hidden = ['show_participants' => false];
+
+        // Never approved: not in the standings
+        $pending = $this->tournament(TournamentStatus::Finished, $hidden);
+        $this->enroll($pending, $owner, ParticipantStatus::Registered);
+        $this->enroll($pending, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->recalculateStandings($pending);
+
+        // Finished without any standings
+        $this->enroll($this->tournament(TournamentStatus::Finished, $hidden), $owner, ParticipantStatus::Confirmed);
+
+        // Withdrawn before playing anything
+        $early = $this->tournament(TournamentStatus::Finished, $hidden);
+        $this->enroll($early, $owner, ParticipantStatus::Withdrawn);
+        $this->enroll($early, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->recalculateStandings($early);
+
+        $this->assertNull($this->stat($owner));
+
+        // Withdrawn after playing: still in the standings
+        $late = $this->tournament(TournamentStatus::Finished, $hidden);
+        $leaver = $this->enroll($late, $owner, ParticipantStatus::Withdrawn);
+        $this->enroll($late, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->playMatch($late, $leaver, null);
+        $this->recalculateStandings($late);
+
+        $this->assertSame(1, $this->stat($owner)?->value);
+        $this->assertSame(1, $this->app->make(TournamentsPlayedProfileStat::class)->stat($this->ownerDto($owner), $owner)?->value);
     }
 
     public function test_nothing_played_is_left_out_rather_than_shown_as_zero(): void

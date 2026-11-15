@@ -10,10 +10,12 @@ use Modules\Tournaments\Application\DTOs\ProfileTournamentEntryDTO;
  * The tournaments of a person as another person may see them on the owner's public profile.
  *
  * The rule is the one of the tournament's own page, never a looser one: a draft or cancelled
- * tournament, one whose event is not published and a registration that is not active are left out;
- * the standings of a tournament under way or over are public, and the registrations of one not
- * started yet only when the organisation shows its participants, or to the person themselves.
- * Only the official results count: a player's report waiting for confirmation is never read.
+ * tournament and one whose event is not published are left out. Before it starts, a registration shows
+ * only when the organisation shows its participants, or to the person themselves. Once started, the
+ * page shows only its standings, so the person shows only if they are in them (the same rows the page
+ * reads: whoever can play and anybody who already played, a withdrawn player included), for everybody
+ * and for the owner alike; «played» counts exactly those. Only the official results count: a player's
+ * report waiting for confirmation is never read.
  */
 interface ProfileTournamentQueryServiceInterface
 {

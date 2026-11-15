@@ -115,7 +115,7 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
         $this->enroll($this->tournament(TournamentStatus::InProgress, [], EventModel::factory()->draft()->create()), $owner, rank: 1);
         $this->enroll($this->tournament(TournamentStatus::Finished, [], EventModel::factory()->draft()->create()), $owner, rank: 1);
         $shown = $this->tournament(TournamentStatus::InProgress, ['name' => 'Publicado']);
-        $this->enroll($shown, $owner);
+        $this->enroll($shown, $owner, rank: 1);
 
         $props = $this->props($owner, null);
 
@@ -124,16 +124,109 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
         $this->assertSame([], $props['recent']);
     }
 
-    public function test_only_active_registrations_count(): void
+    public function test_before_it_starts_only_active_registrations_count(): void
     {
         $owner = UserModel::factory()->create();
         foreach ([ParticipantStatus::Withdrawn, ParticipantStatus::Disqualified, ParticipantStatus::Expired] as $status) {
-            $this->enroll($this->tournament(TournamentStatus::InProgress), $owner, $status, rank: 1);
+            $this->enroll($this->tournament(TournamentStatus::RegistrationOpen), $owner, $status);
         }
 
         $this->expectException(NothingToDrawException::class);
 
         $this->props($owner, null);
+    }
+
+    // Once started the page shows only the standings, whoever hides the participants, and only the
+    // people in them. The standings are the module's own (recalculated, never written by hand here).
+
+    #[DataProvider('startedStatuses')]
+    public function test_a_registration_never_approved_is_not_in_the_standings_so_it_does_not_show(TournamentStatus $status): void
+    {
+        $owner = UserModel::factory()->create();
+        $tournament = $this->tournament($status, ['show_participants' => false]);
+        $this->enroll($tournament, $owner, ParticipantStatus::Registered);
+        $this->enroll($tournament, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->recalculateStandings($tournament);
+
+        $this->assertNothingToDraw($owner, null);
+        $this->assertNothingToDraw($owner, UserModel::factory()->create());
+        $this->assertNothingToDraw($owner, $owner);
+    }
+
+    #[DataProvider('startedStatuses')]
+    public function test_a_tournament_without_standings_yet_shows_nobody(TournamentStatus $status): void
+    {
+        $owner = UserModel::factory()->create();
+        $tournament = $this->tournament($status, ['show_participants' => false]);
+        $this->enroll($tournament, $owner, ParticipantStatus::Confirmed);
+
+        $this->assertNothingToDraw($owner, null);
+        $this->assertNothingToDraw($owner, $owner);
+
+        $this->recalculateStandings($tournament);
+
+        $this->assertNotSame([], $this->profileUrls($owner, null));
+        $this->assertNotSame([], $this->profileUrls($owner, $owner));
+    }
+
+    /**
+     * @return array<string, array{TournamentStatus}>
+     */
+    public static function startedStatuses(): array
+    {
+        return [
+            'under way' => [TournamentStatus::InProgress],
+            'finished' => [TournamentStatus::Finished],
+        ];
+    }
+
+    public function test_a_withdrawn_or_disqualified_player_who_already_played_keeps_their_place(): void
+    {
+        $withdrawn = UserModel::factory()->create();
+        $disqualified = UserModel::factory()->create();
+        $tournament = $this->tournament(TournamentStatus::InProgress, ['show_participants' => false, 'name' => 'Con baja']);
+        $one = $this->enroll($tournament, $withdrawn, ParticipantStatus::Withdrawn);
+        $two = $this->enroll($tournament, $disqualified, ParticipantStatus::Disqualified);
+        $other = $this->enroll($tournament, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->playMatch($tournament, $one, $other);
+        $this->playMatch($tournament, $two, null);
+        $this->recalculateStandings($tournament);
+
+        $this->assertSame(['Con baja'], array_column($this->props($withdrawn, null)['ongoing'], 'name'));
+        $this->assertSame(['Con baja'], array_column($this->props($disqualified, null)['ongoing'], 'name'));
+    }
+
+    public function test_a_withdrawn_player_who_never_played_does_not_show(): void
+    {
+        $owner = UserModel::factory()->create();
+        $tournament = $this->tournament(TournamentStatus::InProgress, ['show_participants' => false]);
+        $this->enroll($tournament, $owner, ParticipantStatus::Withdrawn);
+        $this->enroll($tournament, UserModel::factory()->create(), ParticipantStatus::Confirmed);
+        $this->recalculateStandings($tournament);
+
+        $this->assertNothingToDraw($owner, null);
+        $this->assertNothingToDraw($owner, $owner);
+    }
+
+    public function test_the_profile_and_the_page_agree_on_who_is_in_the_standings(): void
+    {
+        $approved = UserModel::factory()->create();
+        $pending = UserModel::factory()->create();
+        $tournament = $this->tournament(TournamentStatus::InProgress, ['show_participants' => false]);
+        $this->enroll($tournament, $approved, ParticipantStatus::Confirmed);
+        $this->enroll($tournament, $pending, ParticipantStatus::Registered);
+        $this->recalculateStandings($tournament);
+
+        $onThePage = [];
+        $this->get(route('tournaments.show', $tournament->slug))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) use (&$onThePage): void {
+                $onThePage = $page->toArray()['props'];
+            });
+
+        $this->assertCount(1, $onThePage['standings']);
+        $this->assertNotSame([], $this->profileUrls($approved, null));
+        $this->assertSame([], $this->profileUrls($pending, null));
     }
 
     public function test_nothing_to_show_draws_nothing(): void
@@ -317,7 +410,7 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
         }
 
         $this->assertSame($few, $this->queriesOfProps($owner));
-        $this->assertLessThanOrEqual(10, $few);
+        $this->assertLessThanOrEqual(6, $few);
     }
 
     public function test_the_section_is_offered_in_the_main_column_and_drawn_by_the_core_for_the_viewer(): void

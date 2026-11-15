@@ -56,13 +56,19 @@ describe('PublicProfileTournamentsSection', () => {
 
         expect(wrapper.find('[data-field="round"]').text()).toBe('Ronda 3');
         expect(wrapper.find('[data-field="position"]').text()).toBe('Puesto 2');
-        expect(wrapper.find('[data-field="points"]').text()).toBe('7 puntos');
+        expect(wrapper.find('[data-field="points"]').text()).toBe('7.0 puntos');
     });
 
     it('says one point in the singular', () => {
         const wrapper = mountSection({ recent: [entry({ position: 5, points: 1 })] });
 
-        expect(wrapper.find('[data-field="points"]').text()).toBe('1 punto');
+        expect(wrapper.find('[data-field="points"]').text()).toBe('1.0 punto');
+    });
+
+    it('keeps fractions of a point in the plural', () => {
+        const wrapper = mountSection({ recent: [entry({ position: 5, points: 0.5 })] });
+
+        expect(wrapper.find('[data-field="points"]').text()).toBe('0.5 puntos');
     });
 
     it('draws neither round, place nor points when the server sends none', () => {

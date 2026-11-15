@@ -9,9 +9,14 @@ use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Tournaments\Application\Services\StandingsServiceInterface;
+use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
+use Modules\Tournaments\Domain\Enums\RoundStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\RoundModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
@@ -61,6 +66,33 @@ trait BuildsProfileTournaments
         }
 
         return $participant;
+    }
+
+    /**
+     * A match of the first round, with its official result (a bye when there is no opponent).
+     */
+    private function playMatch(TournamentModel $tournament, ParticipantModel $first, ?ParticipantModel $second): void
+    {
+        $round = RoundModel::query()->firstOrCreate(
+            ['tournament_id' => $tournament->id, 'round_number' => 1],
+            ['id' => (string) Str::uuid(), 'status' => RoundStatus::InProgress->value],
+        );
+
+        MatchModel::create([
+            'id' => (string) Str::uuid(),
+            'round_id' => $round->id,
+            'player_1_id' => $first->id,
+            'player_2_id' => $second?->id,
+            'result' => ($second instanceof ParticipantModel ? MatchResult::PlayerOneWin : MatchResult::Bye)->value,
+        ]);
+    }
+
+    /**
+     * The standings as the module computes them: the rows the tournament's page reads.
+     */
+    private function recalculateStandings(TournamentModel $tournament): void
+    {
+        app(StandingsServiceInterface::class)->recalculate($tournament->id);
     }
 
     private function organize(TournamentModel $tournament, UserModel $user): void

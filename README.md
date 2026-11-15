@@ -418,11 +418,11 @@ El módulo ofrece al perfil público de cada persona (`/miembros/<dirección>`, 
 
 Solo entra lo que quien mira ya vería en la página del torneo, con la misma regla y nunca una más laxa (`ProfileTournamentQueryService`):
 
-- Fuera los torneos en borrador o cancelados, los de un evento sin publicar y las inscripciones retiradas, descalificadas o caducadas.
-- Con el torneo en curso o terminado, la clasificación es pública y entra para todo el mundo, también con los participantes ocultos.
-- Con el torneo sin empezar, la inscripción solo entra si la organización muestra los participantes; la propia persona siempre ve la suya en su perfil. Ser organizador del torneo no da más vista que la de cualquier visitante.
+- Fuera los torneos en borrador o cancelados, los de un evento sin publicar y, antes de empezar, las inscripciones retiradas, descalificadas o caducadas.
+- Sin empezar, la inscripción solo entra si la organización muestra los participantes; la propia persona siempre ve la suya. Ser organizador del torneo no da más vista que la de cualquier visitante.
+- Empezado el torneo, la página solo enseña la clasificación, así que el perfil solo lo enseña si la persona aparece en ella, para todo el mundo y también para ella misma, tenga o no ocultos los participantes. Son las mismas filas que lee la página: quien puede jugar y quien ya jugó, aunque se haya retirado o lo hayan descalificado. Una inscripción nunca aprobada, un torneo sin rondas todavía o un retirado que no llegó a jugar no entran. «Torneos jugados» cuenta exactamente esos.
 - Solo cuentan los resultados oficiales: un informe de jugador pendiente de confirmar o discutido nunca se lee. Las props no llevan correos, nombres de otras personas ni datos de las inscripciones.
-- Las fechas son las del evento, en la zona de visualización. Cada lista es acotada y se lee con un número constante de consultas.
+- Las fechas son las del evento, en la zona de visualización. Cada lista es acotada y se lee con un número constante de consultas (tres por lista).
 
 ## Correos
 

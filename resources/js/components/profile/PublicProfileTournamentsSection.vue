@@ -7,10 +7,12 @@ import type {
     PublicProfileTournament,
     PublicProfileTournamentsProps,
 } from '../../types/tournaments';
+import { useTournaments } from '../../composables/useTournaments';
 import { VENUE_TIMEZONE } from '@/utils/datetime';
 
 const props = defineProps<PublicProfileTournamentsProps>();
 const { t, locale } = useI18n();
+const { formatPoints } = useTournaments();
 
 interface Group {
     key: 'ongoing' | 'upcoming' | 'recent';
@@ -40,6 +42,11 @@ const groups = computed<Group[]>(() =>
         ] satisfies Group[]
     ).filter((group) => group.tournaments.length > 0)
 );
+
+// One point is the only singular: 0,5 or 1,5 points are plural, whatever the decimals
+function pluralCount(points: number): number {
+    return points === 1 ? 1 : 2;
+}
 
 function formattedDate(startsAt: string | null): string | null {
     if (startsAt === null) return null;
@@ -106,8 +113,8 @@ function formattedDate(startsAt: string | null): string | null {
                             {{
                                 t(
                                     'tournaments.public_profile.points',
-                                    { points: tournament.points },
-                                    tournament.points
+                                    { points: formatPoints(tournament.points) },
+                                    pluralCount(tournament.points)
                                 )
                             }}
                         </span>
