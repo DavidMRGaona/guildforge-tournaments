@@ -934,6 +934,13 @@ return [
         'tabLabel' => 'Torneos',
     ],
 
+    // Public profile of a member (core ≥ 3.79)
+    'public_profile' => [
+        'section_label' => 'Torneos',
+        'section_description' => 'Los torneos en curso y los próximos, con tu puesto o tu ronda, y los últimos resultados.',
+        'played_label' => 'Torneos jugados',
+    ],
+
     // Cookies declared to cookie-consent
     'cookies' => [
         'guest_registrations_purpose' => 'Recuerda en este navegador los torneos a los que te has apuntado como invitado, para avisarte si intentas apuntarte otra vez.',

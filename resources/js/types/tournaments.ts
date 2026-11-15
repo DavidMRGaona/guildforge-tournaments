@@ -457,3 +457,26 @@ export interface ProfileTournamentsData {
     past: UserTournament[];
     total: number;
 }
+
+/**
+ * A tournament on someone's public profile, as the server decides to show it to the person looking.
+ */
+export interface PublicProfileTournament {
+    id: string;
+    name: string;
+    url: string;
+    eventTitle: string | null;
+    startsAt: string | null;
+    round: number | null;
+    position: number | null;
+    points: number | null;
+}
+
+/**
+ * Props of the «Torneos» section of the public profile.
+ */
+export interface PublicProfileTournamentsProps {
+    ongoing: PublicProfileTournament[];
+    upcoming: PublicProfileTournament[];
+    recent: PublicProfileTournament[];
+}

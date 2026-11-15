@@ -77,6 +77,16 @@ export default {
             load_more: 'Cargar más ({count})',
         },
 
+        // Public profile of a member
+        public_profile: {
+            ongoing: 'En curso',
+            upcoming: 'Próximos',
+            recent: 'Últimos resultados',
+            round: 'Ronda {round}',
+            position: 'Puesto {position}',
+            points: '{points} punto | {points} puntos',
+        },
+
         // Profile section
         profile: {
             tabLabel: 'Torneos',
