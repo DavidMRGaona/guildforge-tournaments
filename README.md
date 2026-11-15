@@ -18,11 +18,11 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción; al participante, cuando la organización aprueba su inscripción (con notas opcionales) o lo descalifica (con el motivo opcional); al rival cuando un jugador informa del resultado, y a la organización y a quien informó cuando se discute.
 - **Avisos en la campana** (core ≥ 3.58): las categorías `tournaments.registrations`, `tournaments.results` y `tournaments.reminders` declaran `site: true`. Las notificaciones a participantes con cuenta (inscripción, confirmación, descalificación, retirada, torneo cancelado, recordatorio, resultado comunicado a su rival y resultado discutido a quien lo comunicó) implementan `HasSiteNotification`; las de la organización, las de invitados y la copia de la disputa a la dirección del torneo siguen solo por correo, y a una dirección suelta el canal `site` no le guarda nada. Todas llevan el `tournamentId` y reciben el aviso solo si, al entregarlo, el torneo sigue publicado y la persona sigue inscrita (si no, `toSiteNotification()` devuelve `null`). El enlace es relativo a la página del torneo; el recordatorio va al check-in cuando está abierto. Los resultados se agrupan por torneo (`tournaments.tournament:<id>`) y `actorId` es quien comunica o discute, para olvidarlo al anonimizarlo. El asunto (`HasMailSubject`, tipo `tournaments.tournament`) permite silenciar un torneo, y borrarlo olvida sus avisos y silencios (`TournamentObserver`).
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve una persona (emails, panel, web) se muestra en la zona de visualización del sitio (por defecto Europe/Madrid).
-- **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, página «Mis torneos» y página enlazable desde el editor de menús.
+- **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, sección y contador en el perfil público, página «Mis torneos» y página enlazable desde el editor de menús.
 
 ## Requisitos
 
-- GuildForge core `^3.31` (almacenamiento de fechas en UTC, zona horaria de visualización, contrato de encuestas y campo «Encuesta al terminar»)
+- GuildForge core `^3.79` (perfil público con secciones y contadores de módulos; antes, almacenamiento de fechas en UTC, zona horaria de visualización, contrato de encuestas y campo «Encuesta al terminar»)
 - PHP >= 8.5, Laravel >= 13, Filament 5
 
 El core rechaza el módulo si no se cumplen (`module.json` → `requires`).
@@ -405,8 +405,24 @@ Las tres rutas de partidas piden sesión (y la verificación de email cuando el 
 | `EventTournamentSection` | Sección del torneo en la página del evento (slot `event-detail-actions`) |
 | `profile/ProfileTournamentsSection` | Pestaña «Torneos» del perfil (slot `profile-sections`) |
 | `profile/ProfileTournamentCard` | Tarjeta de la pestaña del perfil |
+| `profile/PublicProfileTournamentsSection` | Sección «Torneos» del perfil público `/miembros/<dirección>` |
 
 El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts` acompañan a estos componentes; los textos están en `resources/js/locales/`.
+
+## Perfil público
+
+El módulo ofrece al perfil público de cada persona (`/miembros/<dirección>`, núcleo ≥ 3.79) una sección y un contador; la persona elige en el editor del perfil si se muestran y en qué orden.
+
+- **Sección «Torneos»** (`tournaments.tournaments`, columna principal): los torneos en curso (con su puesto y puntos en la clasificación y la ronda) y los próximos, hasta 10, y los 5 últimos resultados (puesto y puntos finales).
+- **Contador «Torneos jugados»** (`tournaments.played`): torneos terminados en los que ha participado. No se muestra si es 0 y no enlaza a ningún sitio, porque el listado de torneos no filtra por persona.
+
+Solo entra lo que quien mira ya vería en la página del torneo, con la misma regla y nunca una más laxa (`ProfileTournamentQueryService`):
+
+- Fuera los torneos en borrador o cancelados y los de un evento sin publicar.
+- Antes de empezar, solo cuentan las inscripciones activas (inscrita, confirmada o con check-in; no las retiradas, descalificadas o caducadas), y solo entran si la organización muestra los participantes; la propia persona siempre ve la suya. Ser organizador del torneo no da más vista que la de cualquier visitante.
+- Después de empezar, la inscripción ya no decide: la página solo enseña la clasificación, así que el perfil solo lo enseña si la persona aparece en ella (puesto y puntos salen de esa fila), para todo el mundo y también para ella misma, tenga o no ocultos los participantes. Son las mismas filas que lee la página: quien puede jugar y quien ya jugó, aunque se haya retirado o lo hayan descalificado. Una inscripción nunca aprobada, un torneo sin rondas todavía o un retirado que no llegó a jugar no entran. «Torneos jugados» cuenta exactamente esos.
+- Solo cuentan los resultados oficiales: un informe de jugador pendiente de confirmar o discutido nunca se lee. Las props no llevan correos, nombres de otras personas ni datos de las inscripciones.
+- Las fechas son las del evento, en la zona de visualización. Cada lista es acotada y se lee con un número constante de consultas (tres por lista).
 
 ## Correos
 

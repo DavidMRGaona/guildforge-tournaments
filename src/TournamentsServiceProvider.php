@@ -16,6 +16,8 @@ use App\Application\Modules\DTOs\NavigationItemDTO;
 use App\Application\Modules\DTOs\PagePrefixDTO;
 use App\Application\Modules\DTOs\PermissionDTO;
 use App\Application\Modules\DTOs\SlotRegistrationDTO;
+use App\Application\Profiles\Contracts\ProfileSectionInterface;
+use App\Application\Profiles\Contracts\ProfileStatInterface;
 use App\Application\Proposals\Contracts\EventProposalRequestInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
@@ -42,6 +44,7 @@ use Modules\Tournaments\Application\Services\MatchQueryServiceInterface;
 use Modules\Tournaments\Application\Services\MatchReportingServiceInterface;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
+use Modules\Tournaments\Application\Services\ProfileTournamentQueryServiceInterface;
 use Modules\Tournaments\Application\Services\RegistrationLockInterface;
 use Modules\Tournaments\Application\Services\RoundManagementServiceInterface;
 use Modules\Tournaments\Application\Services\RoundQueryServiceInterface;
@@ -98,6 +101,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\Eloquen
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentRoundRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentStandingRepository;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Repositories\EloquentTournamentRepository;
+use Modules\Tournaments\Infrastructure\Profiles\TournamentsPlayedProfileStat;
+use Modules\Tournaments\Infrastructure\Profiles\TournamentsProfileSection;
 use Modules\Tournaments\Infrastructure\Proposals\TournamentProposalRequest;
 use Modules\Tournaments\Infrastructure\Search\RefreshesSearchDocuments;
 use Modules\Tournaments\Infrastructure\Search\TournamentSearchSource;
@@ -108,6 +113,7 @@ use Modules\Tournaments\Infrastructure\Services\MatchQueryService;
 use Modules\Tournaments\Infrastructure\Services\MatchReportingService;
 use Modules\Tournaments\Infrastructure\Services\MatchResultService;
 use Modules\Tournaments\Infrastructure\Services\ParticipantManagementService;
+use Modules\Tournaments\Infrastructure\Services\ProfileTournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\ProfileTournamentsDataProvider;
 use Modules\Tournaments\Infrastructure\Services\RoundManagementService;
 use Modules\Tournaments\Infrastructure\Services\RoundQueryService;
@@ -496,6 +502,11 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
             TournamentLifecycleServiceInterface::class,
             TournamentLifecycleService::class
         );
+
+        $this->app->bind(
+            ProfileTournamentQueryServiceInterface::class,
+            ProfileTournamentQueryService::class
+        );
     }
 
     private function registerLivewireComponents(): void
@@ -872,6 +883,30 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         return [
             TournamentLinkableRecordSource::class,
+        ];
+    }
+
+    /**
+     * The «Torneos» section of the public profile (core ≥ 3.79).
+     *
+     * @return array<class-string<ProfileSectionInterface>>
+     */
+    public function registerProfileSections(): array
+    {
+        return [
+            TournamentsProfileSection::class,
+        ];
+    }
+
+    /**
+     * The «Torneos jugados» counter of the public profile (core ≥ 3.79).
+     *
+     * @return array<class-string<ProfileStatInterface>>
+     */
+    public function registerProfileStats(): array
+    {
+        return [
+            TournamentsPlayedProfileStat::class,
         ];
     }
 

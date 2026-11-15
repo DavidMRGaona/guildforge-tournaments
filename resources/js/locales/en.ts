@@ -52,6 +52,16 @@ export default {
             error: 'It could not be sent. Please try again.',
         },
 
+        // Public profile of a member
+        public_profile: {
+            ongoing: 'Under way',
+            upcoming: 'Coming up',
+            recent: 'Latest results',
+            round: 'Round {round}',
+            position: 'Place {position}',
+            points: '{points} point | {points} points',
+        },
+
         // Status labels
         status: {
             draft: 'Draft',
