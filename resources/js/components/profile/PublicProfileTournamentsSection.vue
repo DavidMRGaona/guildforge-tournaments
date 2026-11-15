@@ -43,7 +43,8 @@ const groups = computed<Group[]>(() =>
     ).filter((group) => group.tournaments.length > 0)
 );
 
-// One point is the only singular: 0,5 or 1,5 points are plural, whatever the decimals
+// The number is drawn as the standings draw it (one decimal: "0.5", "1.0"); only exactly one point
+// is singular, so a fraction such as 0.5 stays plural
 function pluralCount(points: number): number {
     return points === 1 ? 1 : 2;
 }

@@ -65,6 +65,17 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
         $this->assertSame(12.0, $props['recent'][0]['points']);
     }
 
+    public function test_a_tournament_not_started_shows_no_place_even_with_a_stray_standing(): void
+    {
+        $owner = UserModel::factory()->create();
+        $this->enroll($this->tournament(TournamentStatus::RegistrationClosed), $owner, rank: 1, points: 4.0);
+
+        $item = $this->props($owner, null)['upcoming'][0];
+
+        $this->assertNull($item['position']);
+        $this->assertNull($item['points']);
+    }
+
     public function test_a_tournament_links_to_its_public_page_and_names_its_event_and_date(): void
     {
         $owner = UserModel::factory()->create();
@@ -213,20 +224,32 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
         $approved = UserModel::factory()->create();
         $pending = UserModel::factory()->create();
         $tournament = $this->tournament(TournamentStatus::InProgress, ['show_participants' => false]);
-        $this->enroll($tournament, $approved, ParticipantStatus::Confirmed);
+        $approvedRegistration = $this->enroll($tournament, $approved, ParticipantStatus::Confirmed);
         $this->enroll($tournament, $pending, ParticipantStatus::Registered);
         $this->recalculateStandings($tournament);
 
-        $onThePage = [];
-        $this->get(route('tournaments.show', $tournament->slug))
-            ->assertOk()
-            ->assertInertia(function (Assert $page) use (&$onThePage): void {
-                $onThePage = $page->toArray()['props'];
-            });
+        $onThePage = $this->pageProps($tournament);
 
-        $this->assertCount(1, $onThePage['standings']);
+        $this->assertSame([$approvedRegistration->id], array_column($onThePage['standings'], 'participant_id'));
         $this->assertNotSame([], $this->profileUrls($approved, null));
         $this->assertSame([], $this->profileUrls($pending, null));
+    }
+
+    public function test_the_profile_and_the_page_agree_about_a_withdrawn_player_who_already_played(): void
+    {
+        $leaver = UserModel::factory()->create();
+        $stayer = UserModel::factory()->create();
+        $tournament = $this->tournament(TournamentStatus::InProgress, ['show_participants' => false]);
+        $leaving = $this->enroll($tournament, $leaver, ParticipantStatus::Withdrawn);
+        $staying = $this->enroll($tournament, $stayer, ParticipantStatus::Confirmed);
+        $this->playMatch($tournament, $leaving, $staying);
+        $this->recalculateStandings($tournament);
+
+        $onThePage = $this->pageProps($tournament);
+
+        $this->assertEqualsCanonicalizing([$leaving->id, $staying->id], array_column($onThePage['standings'], 'participant_id'));
+        $this->assertNotSame([], $this->profileUrls($leaver, null));
+        $this->assertNotSame([], $this->profileUrls($stayer, null));
     }
 
     public function test_nothing_to_show_draws_nothing(): void
@@ -317,7 +340,11 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
             'over and hidden' => $this->tournament(TournamentStatus::Finished, ['show_participants' => false]),
         ];
         foreach ($cases as $tournament) {
-            $this->enroll($tournament, $owner, rank: 1);
+            $this->enroll($tournament, $owner);
+            // A tournament that has not started has no standings: only the ones started are computed
+            if (in_array($tournament->status, [TournamentStatus::InProgress, TournamentStatus::Finished], true)) {
+                $this->recalculateStandings($tournament);
+            }
         }
 
         $onTheProfile = $this->profileUrls($owner, null);
@@ -455,6 +482,23 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
     {
         /** @var array{ongoing: list<array<string, mixed>>, upcoming: list<array<string, mixed>>, recent: list<array<string, mixed>>} $props */
         $props = $this->app->make(TournamentsProfileSection::class)->props($this->ownerDto($owner), $viewer);
+
+        return $props;
+    }
+
+    /**
+     * The props of the tournament's public page, as a guest gets them.
+     *
+     * @return array<string, mixed>
+     */
+    private function pageProps(TournamentModel $tournament): array
+    {
+        $props = [];
+        $this->get(route('tournaments.show', $tournament->slug))
+            ->assertOk()
+            ->assertInertia(function (Assert $page) use (&$props): void {
+                $props = $page->toArray()['props'];
+            });
 
         return $props;
     }

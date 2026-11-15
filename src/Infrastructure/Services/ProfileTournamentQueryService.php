@@ -19,7 +19,8 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentMod
 final readonly class ProfileTournamentQueryService implements ProfileTournamentQueryServiceInterface
 {
     /**
-     * The registrations that are still on: the ones the page lists among the participants.
+     * Before a tournament starts, the registrations that count: the ones still on. Once started
+     * they no longer decide: the person's row in the standings does (see visibleTo()).
      *
      * @var list<string>
      */
@@ -165,7 +166,8 @@ final readonly class ProfileTournamentQueryService implements ProfileTournamentQ
 
     private function entry(TournamentModel $tournament): ProfileTournamentEntryDTO
     {
-        $standing = $tournament->standings->first();
+        // Place and points are the standings', which the page shows only once started
+        $standing = $this->hasStarted($tournament) ? $tournament->standings->first() : null;
 
         return new ProfileTournamentEntryDTO(
             id: $tournament->id,
@@ -180,5 +182,10 @@ final readonly class ProfileTournamentQueryService implements ProfileTournamentQ
             position: $standing !== null && $standing->rank > 0 ? $standing->rank : null,
             points: $standing?->points,
         );
+    }
+
+    private function hasStarted(TournamentModel $tournament): bool
+    {
+        return in_array($tournament->status->value, self::STARTED, true);
     }
 }
