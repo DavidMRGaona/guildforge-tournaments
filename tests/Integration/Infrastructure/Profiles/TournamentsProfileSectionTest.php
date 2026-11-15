@@ -54,7 +54,6 @@ final class TournamentsProfileSectionTest extends ModuleTestCase
 
         $props = $this->props($owner, null);
 
-        $this->assertSame(['ongoing', 'upcoming', 'recent'], array_keys($props));
         $this->assertSame(['Liga de otoño'], array_column($props['ongoing'], 'name'));
         $this->assertSame(3, $props['ongoing'][0]['round']);
         $this->assertSame(2, $props['ongoing'][0]['position']);

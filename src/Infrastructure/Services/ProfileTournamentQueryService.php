@@ -105,6 +105,7 @@ final readonly class ProfileTournamentQueryService implements ProfileTournamentQ
 
     /**
      * @param  Builder<TournamentModel>  $query
+     * @param  'asc'|'desc'  $direction
      * @return Builder<TournamentModel>
      */
     private function orderByEventStart(Builder $query, string $direction): Builder
@@ -136,10 +137,11 @@ final readonly class ProfileTournamentQueryService implements ProfileTournamentQ
             ])
             ->get();
 
-        return $tournaments
-            ->map(fn (TournamentModel $tournament): ProfileTournamentEntryDTO => $this->entry($tournament))
-            ->values()
-            ->all();
+        return array_values(
+            $tournaments
+                ->map(fn (TournamentModel $tournament): ProfileTournamentEntryDTO => $this->entry($tournament))
+                ->all(),
+        );
     }
 
     private function entry(TournamentModel $tournament): ProfileTournamentEntryDTO
