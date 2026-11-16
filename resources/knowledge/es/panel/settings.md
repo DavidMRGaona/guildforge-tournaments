@@ -49,7 +49,7 @@ Las inscripciones sin confirmar se revisan cada cinco minutos.
 - **Enviar recordatorio antes del torneo**: viene desactivado. Activado, cada inscripción activa (con cuenta, o de invitado con el correo confirmado) recibe un correo antes del inicio del evento.
 - **Antelación del recordatorio**: cuántas horas antes sale (de 1 a 168; 24 si no lo cambias).
 
-Este interruptor manda sobre las preferencias personales: si lo apagas, nadie recibe el recordatorio. Si lo activas, cada persona con cuenta puede dejar de recibirlo en la pestaña **Correos** de su perfil (categoría «Recordatorios antes del torneo»); las inscripciones de invitados siempre lo reciben.
+Este interruptor manda sobre las preferencias personales: si lo apagas, nadie recibe el recordatorio. Si lo activas, cada persona con cuenta puede dejar de recibirlo en la pestaña **Avisos** de **Ajustes de la cuenta** (categoría «Recordatorios antes del torneo»); las inscripciones de invitados siempre lo reciben.
 
 ## Si algo no sale bien
 

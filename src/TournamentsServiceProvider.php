@@ -612,7 +612,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Share profile tournaments data via Inertia for the profile page.
+     * Share profile tournaments data via Inertia for the account settings page.
      */
     private function shareProfileTournamentsData(): void
     {
@@ -768,7 +768,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Mail categories people choose from in their profile (core ≥ 3.47). The mail to the
+     * Mail categories people choose from in their account settings (core ≥ 3.47). The mail to the
      * organization's mailbox and to guests has none: there is no account to choose.
      *
      * @return list<MailCategoryDTO>

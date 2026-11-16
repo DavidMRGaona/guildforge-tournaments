@@ -18,7 +18,7 @@ Módulo de GuildForge para organizar torneos vinculados a eventos: inscripción 
 - **Correos**: aviso al participante y al organizador al inscribirse y al cancelar la inscripción; al participante, cuando la organización aprueba su inscripción (con notas opcionales) o lo descalifica (con el motivo opcional); al rival cuando un jugador informa del resultado, y a la organización y a quien informó cuando se discute.
 - **Avisos en la campana** (core ≥ 3.58): las categorías `tournaments.registrations`, `tournaments.results` y `tournaments.reminders` declaran `site: true`. Las notificaciones a participantes con cuenta (inscripción, confirmación, descalificación, retirada, torneo cancelado, recordatorio, resultado comunicado a su rival y resultado discutido a quien lo comunicó) implementan `HasSiteNotification`; las de la organización, las de invitados y la copia de la disputa a la dirección del torneo siguen solo por correo, y a una dirección suelta el canal `site` no le guarda nada. Todas llevan el `tournamentId` y reciben el aviso solo si, al entregarlo, el torneo sigue publicado y la persona sigue inscrita (si no, `toSiteNotification()` devuelve `null`). El enlace es relativo a la página del torneo; el recordatorio va al check-in cuando está abierto. Los resultados se agrupan por torneo (`tournaments.tournament:<id>`) y `actorId` es quien comunica o discute, para olvidarlo al anonimizarlo. El asunto (`HasMailSubject`, tipo `tournaments.tournament`) permite silenciar un torneo, y borrarlo olvida sus avisos y silencios (`TournamentObserver`).
 - **Zonas horarias**: las fechas se guardan en la zona de almacenamiento del sitio (UTC cuando el sitio lo usa) y todo lo que ve una persona (emails, panel, web) se muestra en la zona de visualización del sitio (por defecto Europe/Madrid).
-- **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en el perfil, sección y contador en el perfil público, página «Mis torneos» y página enlazable desde el editor de menús.
+- **Integración con el sitio**: pestaña de torneo en el formulario de eventos, sección en la página del evento, pestaña en Ajustes de la cuenta, sección y contador en el perfil público, página «Mis torneos» y página enlazable desde el editor de menús.
 
 ## Requisitos
 
@@ -403,8 +403,8 @@ Las tres rutas de partidas piden sesión (y la verificación de email cuando el 
 | `MyTournamentCard` | Tarjeta de «Mis torneos» |
 | `MyMatchCard` | «Tu partida» en la ficha: mesa y rival, formulario de resultado (con las estadísticas del torneo), confirmar o discutir el informe del rival, corregir el propio |
 | `EventTournamentSection` | Sección del torneo en la página del evento (slot `event-detail-actions`) |
-| `profile/ProfileTournamentsSection` | Pestaña «Torneos» del perfil (slot `profile-sections`) |
-| `profile/ProfileTournamentCard` | Tarjeta de la pestaña del perfil |
+| `profile/ProfileTournamentsSection` | Pestaña «Torneos» de Ajustes de la cuenta (slot `profile-sections`) |
+| `profile/ProfileTournamentCard` | Tarjeta de la pestaña de Ajustes de la cuenta |
 | `profile/PublicProfileTournamentsSection` | Sección «Torneos» del perfil público `/miembros/<dirección>` |
 
 El composable `useTournaments` y los tipos de `resources/js/types/tournaments.ts` acompañan a estos componentes; los textos están en `resources/js/locales/`.
