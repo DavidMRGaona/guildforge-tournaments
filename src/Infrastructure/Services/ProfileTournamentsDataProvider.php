@@ -26,7 +26,7 @@ final readonly class ProfileTournamentsDataProvider
     ) {}
 
     /**
-     * Get tournament participation data for a user's profile page.
+     * Get tournament participation data for a user's account settings page.
      *
      * @return array{upcoming: array<array<string, mixed>>, inProgress: array<array<string, mixed>>, past: array<array<string, mixed>>, total: int}|null
      */

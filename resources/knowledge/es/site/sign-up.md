@@ -35,7 +35,7 @@ Si tienes cuenta, lo mismo te aparece como aviso en la campana de la web.
 - **Inscripción aprobada**: la organización ha aprobado tu inscripción. Puede traer **Notas de la organización**.
 - Si la web lo tiene activado, un recordatorio unas horas antes de que empiece el evento.
 
-Tus torneos están en **Mis torneos** y en la pestaña **Torneos** de tu perfil.
+Tus torneos están en **Mis torneos** y en la pestaña **Torneos** de **Ajustes de la cuenta**.
 
 Cuando tu inscripción está **Confirmada** o ya has hecho el check-in, el evento del torneo aparece en tu calendario personal (el filtro **Solo en lo que estoy inscrito** del calendario). Mientras figure como **Inscrito**, o si la cancelas, no aparece. Quien organiza un torneo también lo ve ahí.
 

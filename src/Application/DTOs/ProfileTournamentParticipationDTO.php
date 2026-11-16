@@ -10,7 +10,7 @@ use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 
 /**
- * DTO for displaying tournament participation in user profiles and "My Tournaments" page.
+ * DTO for displaying tournament participation in the account settings tab and "My Tournaments" page.
  */
 final readonly class ProfileTournamentParticipationDTO
 {

@@ -5,7 +5,7 @@ summary: Consulta la ronda en curso, los emparejamientos, la clasificación y lo
 category: tournaments
 audience: site
 order: 60
-keywords: [mis torneos, mis inscripciones, clasificación, ranking, tabla, posición, puntos, rondas, ronda actual, emparejamientos, contra quién juego, mi rival, mesa, próxima partida, historial, resultados, desempates, buchholz, omw, perfil, pestaña torneos, clasificacion]
+keywords: [mis torneos, mis inscripciones, clasificación, ranking, tabla, posición, puntos, rondas, ronda actual, emparejamientos, contra quién juego, mi rival, mesa, próxima partida, historial, resultados, desempates, buchholz, omw, perfil, ajustes de la cuenta, pestaña torneos, clasificacion]
 related: [tournaments.overview, tournaments.report-result, tournaments.check-in]
 ---
 Todo lo que pasa en un torneo está en su página: quién se ha inscrito, la ronda que se está jugando y la clasificación. Tus propios torneos están reunidos en **Mis torneos**.
@@ -37,9 +37,9 @@ La clasificación se recalcula con cada resultado. Al finalizar el torneo queda 
 - **Próximos**: los que aún no han empezado. Si el check-in está abierto, verás **Hacer check-in** y hasta qué hora puedes hacerlo.
 - **Historial**: los que ya han terminado, con tu posición final.
 
-Para llegar, abre tu perfil, entra en la pestaña **Torneos** y pulsa **Ver todos mis torneos**. La pestaña muestra lo mismo en corto.
+Para llegar, abre **Ajustes de la cuenta**, entra en la pestaña **Torneos** y pulsa **Ver todos mis torneos**. La pestaña muestra lo mismo en corto.
 
 No aparecen los torneos de los que te has retirado o en los que te han descalificado, ni los cancelados, y tampoco las inscripciones que hiciste como invitado, sin cuenta.
 
 [[action:tournaments.my-tournaments|Ir a mis torneos]]
-[[action:profile.show?tab=tournaments|Ver la pestaña Torneos de mi perfil]]
+[[action:profile.show?tab=tournaments|Ver la pestaña Torneos de Ajustes de la cuenta]]
