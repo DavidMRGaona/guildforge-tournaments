@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments\Infrastructure\Services;
 
+use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 
 final readonly class UserDataProvider implements UserDataProviderInterface
 {
+    public function __construct(
+        private AuthorizationServiceInterface $authorization,
+    ) {}
+
     /**
      * @return array{name: string, email: string}|null
      */
@@ -50,6 +55,9 @@ final readonly class UserDataProvider implements UserDataProviderInterface
     }
 
     /**
+     * The roles in force, as the core decides them: a role paused because it requires
+     * membership or two-factor authentication the account lacks is left out.
+     *
      * @return array<string>
      */
     public function getUserRoles(string $userId): array
@@ -60,7 +68,7 @@ final readonly class UserDataProvider implements UserDataProviderInterface
             return [];
         }
 
-        return $user->roles()->pluck('name')->toArray();
+        return $this->authorization->getRoles($user);
     }
 
     /**

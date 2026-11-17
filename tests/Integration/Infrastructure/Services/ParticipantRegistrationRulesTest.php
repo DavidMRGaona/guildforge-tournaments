@@ -47,7 +47,7 @@ final class ParticipantRegistrationRulesTest extends TestCase
         $this->service = new ParticipantManagementService(
             new EloquentTournamentRepository,
             new EloquentParticipantRepository,
-            new UserDataProvider,
+            $this->app->make(UserDataProvider::class),
         );
     }
 
