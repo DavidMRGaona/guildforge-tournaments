@@ -14,6 +14,7 @@ use Modules\Tournaments\Application\DTOs\Response\ParticipantResponseDTO;
 use Modules\Tournaments\Application\DTOs\Response\TournamentResponseDTO;
 use Modules\Tournaments\Application\Services\ParticipantManagementServiceInterface;
 use Modules\Tournaments\Application\Services\TournamentQueryServiceInterface;
+use Modules\Tournaments\Application\Services\UserDataProviderInterface;
 use Modules\Tournaments\Domain\Exceptions\AlreadyRegisteredException;
 use Modules\Tournaments\Domain\Exceptions\CannotWithdrawException;
 use Modules\Tournaments\Domain\Exceptions\GuestEmailBelongsToAccountException;
@@ -31,6 +32,7 @@ final class TournamentRegistrationController extends Controller
     public function __construct(
         private readonly TournamentQueryServiceInterface $tournamentQuery,
         private readonly ParticipantManagementServiceInterface $participantService,
+        private readonly UserDataProviderInterface $userDataProvider,
     ) {}
 
     /**
@@ -79,7 +81,7 @@ final class TournamentRegistrationController extends Controller
         $canRegister = $this->tournamentQuery->canUserRegister(
             $tournamentId,
             (string) $user->id,
-            $user->roles()->pluck('name')->toArray()
+            $this->userDataProvider->getUserRoles((string) $user->id)
         );
 
         return response()->json([
