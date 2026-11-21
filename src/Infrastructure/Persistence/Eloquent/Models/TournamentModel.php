@@ -23,6 +23,7 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
 use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Pivots\TournamentOrganizerPivot;
 
 /**
  * @phpstan-import-type StatDefinitionData from StatDefinition
@@ -158,6 +159,22 @@ final class TournamentModel extends Model
         return $query->whereNotIn('status', [TournamentStatus::Draft->value, TournamentStatus::Cancelled->value]);
     }
 
+    /**
+     * Finished tournaments any member can see: the public listing's rule, with its event published
+     * (the rule of the profile's counters and of the linkable records). What the activity source
+     * reports and describes (core#774).
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeFinishedAndShown(Builder $query): Builder
+    {
+        return $query
+            ->publiclyListed()
+            ->where('status', TournamentStatus::Finished->value)
+            ->whereHas('event', static fn (Builder $event): Builder => $event->where('is_published', true));
+    }
+
     public function getSlugEntityType(): string
     {
         return 'tournament';
@@ -225,6 +242,7 @@ final class TournamentModel extends Model
      */
     public function organizers(): BelongsToMany
     {
-        return $this->belongsToMany(UserModel::class, 'tournaments_organizers', 'tournament_id', 'user_id');
+        return $this->belongsToMany(UserModel::class, 'tournaments_organizers', 'tournament_id', 'user_id')
+            ->using(TournamentOrganizerPivot::class);
     }
 }

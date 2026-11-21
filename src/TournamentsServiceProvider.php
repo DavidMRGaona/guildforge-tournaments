@@ -21,6 +21,7 @@ use App\Application\Profiles\Contracts\ProfileStatInterface;
 use App\Application\Proposals\Contracts\EventProposalRequestInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
+use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
@@ -127,6 +128,8 @@ use Modules\Tournaments\Infrastructure\Services\TournamentLifecycleService;
 use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
+use Modules\Tournaments\Infrastructure\Activity\AnnouncesActivityChanges;
+use Modules\Tournaments\Infrastructure\Activity\TournamentActivitySource;
 use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendMatchResultDisputedEmails;
@@ -346,6 +349,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         TournamentModel::observe(TournamentObserver::class);
         RefreshesSearchDocuments::register();
+        AnnouncesActivityChanges::register();
         $this->refreshMediaUsagesOnChange();
 
         // The database would drop an event's tournament by cascade, unseen: delete it as a model
@@ -810,6 +814,19 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 site: true,
                 mail: false,
             ),
+        ];
+    }
+
+    /**
+     * Finished tournaments as activity (core contract, #774): who played, with where they finished,
+     * and who organized, for whoever keeps a record of it (the achievements module).
+     *
+     * @return array<class-string<ActivitySourceInterface>>
+     */
+    public function registerActivitySources(): array
+    {
+        return [
+            TournamentActivitySource::class,
         ];
     }
 

@@ -13,6 +13,7 @@ use Modules\Tournaments\Domain\Entities\Tournament;
 use Modules\Tournaments\Domain\Entities\TournamentMatch;
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\TiebreakerType;
+use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\MatchRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
@@ -24,6 +25,7 @@ use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TournamentId;
+use Modules\Tournaments\Infrastructure\Activity\AnnouncesActivityChanges;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 final readonly class StandingsService implements StandingsServiceInterface
@@ -68,9 +70,14 @@ final readonly class StandingsService implements StandingsServiceInterface
             $usesRandom ? $this->randomSeed($tournamentId) : '',
         );
 
-        DB::transaction(function () use ($tournamentId, $standings): void {
+        DB::transaction(function () use ($tournament, $tournamentId, $standings): void {
             $this->standings->deleteByTournament($tournamentId);
             $this->standings->saveMany($standings);
+
+            // After the end, a recalculation is a corrected result or table: what was reported changes
+            if ($tournament->status() === TournamentStatus::Finished) {
+                AnnouncesActivityChanges::tournament($tournamentId);
+            }
         });
 
         return $standings;
