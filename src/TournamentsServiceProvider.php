@@ -818,8 +818,8 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     }
 
     /**
-     * Finished tournaments as activity (core contract, #774): who played, with where they finished,
-     * and who organized, for whoever keeps a record of it (the achievements module).
+     * Finished tournaments as activity (core contract, #774): who played and where they
+     * finished, for whoever keeps a record of it (the achievements module).
      *
      * @return array<class-string<ActivitySourceInterface>>
      */

@@ -14,8 +14,9 @@ use Modules\Tournaments\Domain\ValueObjects\FinalStanding;
  * same points and the same tiebreaker values share it (1, 1, 3), and the next row skips as many
  * places as there were rows in the tie. 1 is the winner.
  *
- * The caller passes only the rows that count (a withdrawn or disqualified player is not placed, so
- * the next one moves up).
+ * The caller passes every row of the final standings, whoever it belongs to and whatever their
+ * status now (a player who withdrew or was disqualified still holds their place, so nobody moves
+ * up); the rule places exactly the rows it receives, sorted by their stored rank.
  */
 final class FinalPlacementRule
 {

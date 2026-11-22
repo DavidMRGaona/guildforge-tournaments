@@ -66,7 +66,7 @@ final class FinalPlacementRuleTest extends TestCase
 
     public function test_the_placement_only_counts_the_standings_given(): void
     {
-        // The rows of withdrawn or disqualified players are left out by the caller: the next one is first
+        // Only the rows received are placed: the first of them is the winner, whatever rank it was stored at
         $placements = (new FinalPlacementRule)->placements([
             new FinalStanding('b', 2, 6.0, []),
             new FinalStanding('c', 3, 3.0, []),
