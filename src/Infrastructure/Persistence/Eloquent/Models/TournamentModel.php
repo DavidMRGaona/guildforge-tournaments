@@ -23,7 +23,6 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Domain\ValueObjects\ScoringRule;
 use Modules\Tournaments\Domain\ValueObjects\StatDefinition;
 use Modules\Tournaments\Domain\ValueObjects\TiebreakerDefinition;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Pivots\TournamentOrganizerPivot;
 
 /**
  * @phpstan-import-type StatDefinitionData from StatDefinition
@@ -238,11 +237,10 @@ final class TournamentModel extends Model
     /**
      * Who organizes the tournament: they manage its surveys on the public site.
      *
-     * @return BelongsToMany<UserModel, $this, TournamentOrganizerPivot, 'pivot'>
+     * @return BelongsToMany<UserModel, $this>
      */
     public function organizers(): BelongsToMany
     {
-        return $this->belongsToMany(UserModel::class, 'tournaments_organizers', 'tournament_id', 'user_id')
-            ->using(TournamentOrganizerPivot::class);
+        return $this->belongsToMany(UserModel::class, 'tournaments_organizers', 'tournament_id', 'user_id');
     }
 }

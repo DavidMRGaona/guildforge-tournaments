@@ -9,13 +9,14 @@ use App\Application\Activity\Contracts\OffersActivityAttributes;
 use App\Application\Activity\DTOs\ActivityFactDTO;
 use App\Application\Activity\Services\ActivityReaderInterface;
 use App\Domain\Activity\ActivityKind;
-use App\Domain\Activity\ActivityRole;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
 use InvalidArgumentException;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Activity\TournamentActivitySource;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel;
+use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 use Modules\Tournaments\Tests\Support\BuildsFinishedTournaments;
 use Tests\Support\Activity\ActivitySourceTestCase;
 
@@ -39,7 +40,6 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         $tournament = $this->finishedTournament(['game_profile_id' => $this->gameProfile('Warhammer')->id]);
         $this->player($tournament, 1, 9.0);
         $this->player($tournament, 2, 6.0);
-        $this->organize($tournament, UserModel::factory()->create());
 
         return $tournament->id;
     }
@@ -67,23 +67,20 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         $this->assertInstanceOf(OffersActivityAttributes::class, $source);
     }
 
-    public function test_players_get_their_placement_and_the_organization_is_the_organizer(): void
+    public function test_players_get_their_placement(): void
     {
         $profile = $this->gameProfile('Warhammer');
         $tournament = $this->finishedTournament(['game_profile_id' => $profile->id]);
         $winner = UserModel::factory()->create();
         $second = UserModel::factory()->create();
-        $organizer = UserModel::factory()->create();
         $this->player($tournament, 1, 9.0, user: $winner);
         $this->player($tournament, 2, 6.0, user: $second);
-        $this->organize($tournament, $organizer);
 
         $facts = $this->factsByKey($tournament->id);
 
-        $this->assertCount(3, $facts);
+        $this->assertCount(2, $facts);
         $this->assertSame(1, $facts["{$winner->id}|player"]->placement);
         $this->assertSame(2, $facts["{$second->id}|player"]->placement);
-        $this->assertNull($facts["{$organizer->id}|organizer"]->placement);
 
         foreach ($facts as $fact) {
             $this->assertSame($profile->id, $fact->attributes['tournament_profile']->id);
@@ -131,21 +128,74 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         $this->assertSame(2, $facts[0]->placement);
     }
 
-    public function test_withdrawn_and_disqualified_players_are_not_reported_even_when_they_played(): void
+    public function test_withdrawn_and_disqualified_players_are_not_reported_and_nobody_moves_up(): void
     {
         $tournament = $this->finishedTournament();
-        $disqualified = $this->player($tournament, 1, 9.0, ParticipantStatus::Disqualified);
-        $withdrawn = $this->player($tournament, 2, 6.0, ParticipantStatus::Withdrawn);
+        $this->player($tournament, 1, 9.0, ParticipantStatus::Disqualified);
+        $this->player($tournament, 2, 6.0, ParticipantStatus::Withdrawn);
         $kept = $this->player($tournament, 3, 3.0);
 
         $facts = $this->activitySource()->facts($tournament->id);
 
         $this->assertCount(1, $facts);
         $this->assertSame($kept->user_id, $facts[0]->userId);
-        // Those left out do not hold a place: the one who finished is the winner
-        $this->assertSame(1, $facts[0]->placement);
-        $this->assertNotSame($disqualified->user_id, $facts[0]->userId);
-        $this->assertNotSame($withdrawn->user_id, $facts[0]->userId);
+        // The place is the public table's: the ones left out still hold theirs
+        $this->assertSame(3, $facts[0]->placement);
+    }
+
+    public function test_the_winner_who_withdrew_gets_nothing_and_the_runner_up_stays_second(): void
+    {
+        $tournament = $this->finishedTournament();
+        $this->player($tournament, 1, 9.0, ParticipantStatus::Withdrawn);
+        $bob = $this->player($tournament, 2, 6.0);
+
+        $facts = $this->activitySource()->facts($tournament->id);
+
+        $this->assertCount(1, $facts);
+        $this->assertSame($bob->user_id, $facts[0]->userId);
+        $this->assertSame(2, $facts[0]->placement);
+    }
+
+    public function test_only_the_points_and_the_configured_tiebreakers_tell_two_rows_apart(): void
+    {
+        $tournament = $this->finishedTournament();
+        $a = $this->player($tournament, 1, 6.0);
+        $b = $this->player($tournament, 2, 6.0);
+        // Level on what the table orders by; the columns that are only shown differ
+        StandingModel::query()->where('participant_id', $a->id)->update(['calculated_tiebreakers' => ['buchholz' => 4.0], 'median_buchholz' => 2.0]);
+        StandingModel::query()->where('participant_id', $b->id)->update(['calculated_tiebreakers' => ['buchholz' => 4.0], 'median_buchholz' => 3.5]);
+
+        $placements = [];
+        foreach ($this->activitySource()->facts($tournament->id) as $fact) {
+            $placements[] = $fact->placement;
+        }
+
+        $this->assertSame([1, 1], $placements);
+    }
+
+    public function test_a_configured_tiebreaker_that_differs_is_not_a_tie(): void
+    {
+        $tournament = $this->finishedTournament();
+        $a = $this->player($tournament, 1, 6.0);
+        $b = $this->player($tournament, 2, 6.0);
+        StandingModel::query()->where('participant_id', $a->id)->update(['calculated_tiebreakers' => ['buchholz' => 5.0]]);
+        StandingModel::query()->where('participant_id', $b->id)->update(['calculated_tiebreakers' => ['buchholz' => 4.0]]);
+
+        $placements = [];
+        foreach ($this->activitySource()->facts($tournament->id) as $fact) {
+            $placements[] = $fact->placement;
+        }
+
+        $this->assertSame([1, 2], $placements);
+    }
+
+    public function test_a_finished_tournament_without_an_end_date_reports_nothing(): void
+    {
+        $tournament = $this->finishedTournament();
+        $this->player($tournament, 1, 3.0);
+        TournamentModel::query()->whereKey($tournament->id)->update(['completed_at' => null]);
+
+        $this->assertSame([], $this->activitySource()->facts($tournament->id));
     }
 
     public function test_somebody_who_never_played_a_match_is_not_reported(): void
@@ -161,25 +211,11 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         $this->assertSame($played->user_id, $facts[0]->userId);
     }
 
-    public function test_a_tournament_nobody_played_counts_for_nothing_not_even_the_organizer(): void
+    public function test_a_tournament_nobody_played_counts_for_nothing(): void
     {
         $tournament = $this->finishedTournament();
-        $this->organize($tournament, UserModel::factory()->create());
 
         $this->assertSame([], $this->activitySource()->facts($tournament->id));
-    }
-
-    public function test_an_organizer_who_also_played_has_a_fact_for_each_role(): void
-    {
-        $tournament = $this->finishedTournament();
-        $both = UserModel::factory()->create();
-        $this->player($tournament, 1, 3.0, user: $both);
-        $this->organize($tournament, $both);
-
-        $facts = $this->factsByKey($tournament->id);
-
-        $this->assertSame(['player', 'organizer'], array_map(static fn (ActivityFactDTO $fact): string => $fact->role->value, array_values($facts)));
-        $this->assertSame(ActivityRole::Organizer, $facts["{$both->id}|organizer"]->role);
     }
 
     public function test_only_finished_tournaments_of_a_published_event_count(): void

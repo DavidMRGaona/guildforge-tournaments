@@ -27,25 +27,28 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\StandingModel
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
 
 /**
- * Who took part in each finished tournament, for whoever builds on it (core#774, the achievements
- * module): the people who played, with where they finished, and the organization.
+ * Who played each finished tournament and where they finished, for whoever builds on it (core#774,
+ * the achievements module).
  *
  * What counts (only what any signed-in member can know exists, the same answer for everybody: it
  * runs in queued jobs, where nobody is signed in):
  *
- * - a finished tournament of the public listing whose event is published; never a draft, a
- *   cancelled one or one of an unpublished event;
- * - a player is a participant who can play (confirmed or checked in), is in the final standings
- *   and took part in a match that was not left unplayed (a bye counts: it is a round). A player
- *   who withdrew or was disqualified is never reported, even after playing rounds: they left the
- *   competition and their record says nothing about how they did. Neither is a guest without an
- *   account. Somebody registered who never played a match is not a player;
- * - a tournament nobody played (no round was ever played) counts for nothing, the organization
- *   included: nothing took place;
- * - the placement is the table's (FinalPlacementRule): 1 is the winner, rows level on points and
- *   tiebreakers share it. Those left out above hold no place, so the next one moves up; a guest
- *   who played does, since they really finished there;
- * - the organization is whoever the panel lists as the tournament's organizers.
+ * - a finished tournament of the public listing whose event is published, and that has an end
+ *   date; never a draft, a cancelled one or one of an unpublished event;
+ * - a player is a participant with an account who is confirmed or checked in now and took part in
+ *   a match that was not left unplayed (a bye counts: it is a round). One who withdrew or was
+ *   disqualified is not reported, even after playing rounds, and neither is a guest without an
+ *   account or somebody registered who never played a match;
+ * - the placement is the public table's (FinalPlacementRule), worked out over every row of the
+ *   final standings whoever it belongs to and whatever their status now: 1 is the winner, rows
+ *   level on points and on the configured tiebreakers share it. Nobody moves up because another
+ *   player withdrew or was disqualified, and a guest who played holds their place too: if the
+ *   player leading the table withdrew, the second one is still second and the first gets nothing;
+ * - a tournament with nobody to report counts for nothing.
+ *
+ * Only players are reported. Who organizes a tournament is chosen in the panel and no page shows
+ * it, so it is not something a member can know: an organizer role can be added when the tournament
+ * shows its organization in public.
  *
  * Every fact carries the tournament's game profile (its stable id and its name) as the attribute
  * `tournament_profile`, when it has one. The moment is the tournament's end.
@@ -129,7 +132,8 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
 
     public function describe(array $subjectIds, ?Authenticatable $viewer): array
     {
-        // The public page is the same for everybody, guests included: the viewer changes nothing
+        // Stricter than the public page (finished tournaments of a published event only) and the
+        // same for everybody, guests included: the viewer changes nothing
         $ids = array_values(array_unique(array_map(Str::lower(...), array_filter($subjectIds, Str::isUuid(...)))));
         if ($ids === []) {
             return [];
@@ -171,10 +175,10 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
     }
 
     /**
-     * The facts of each tournament, in batch: four queries however many there are.
+     * The facts of each tournament, in batch: three queries however many there are.
      *
      * @param  list<TournamentModel>  $tournaments
-     * @return array<string, list<ActivityFactDTO>> By tournament id; a tournament nobody played has none
+     * @return array<string, list<ActivityFactDTO>> By tournament id; one with nobody to report has none
      */
     private function factsOf(array $tournaments): array
     {
@@ -183,36 +187,37 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
         }
 
         $ids = array_map(static fn (TournamentModel $tournament): string => $tournament->id, $tournaments);
-        $played = $this->participantsWhoPlayed($ids);
-        $standings = $this->standingsOfThoseWhoPlayed($ids, $played);
-        $organizers = $this->organizersOf($ids);
+        $standings = $this->standingsOf($ids, $this->participantsWhoPlayed($ids));
 
         $facts = [];
         foreach ($tournaments as $tournament) {
-            $rows = $standings[$tournament->id] ?? [];
-            $facts[$tournament->id] = $rows === [] ? [] : $this->build($tournament, $rows, $organizers[$tournament->id] ?? []);
+            $facts[$tournament->id] = $this->build($tournament, $standings[$tournament->id] ?? []);
         }
 
         return $facts;
     }
 
     /**
-     * @param  list<array{standing: FinalStanding, userId: string|null}>  $rows
-     * @param  list<string>  $organizerIds
+     * @param  list<array{standing: FinalStanding, userId: string|null, reported: bool}>  $rows
      * @return list<ActivityFactDTO>
      */
-    private function build(TournamentModel $tournament, array $rows, array $organizerIds): array
+    private function build(TournamentModel $tournament, array $rows): array
     {
+        // Without an end date there is no moment to report: never made up from the last save
+        $occurredAt = $tournament->completed_at?->toDateTimeImmutable();
+        if ($occurredAt === null) {
+            return [];
+        }
+
         $placements = $this->placements->placements(array_map(static fn (array $row): FinalStanding => $row['standing'], $rows));
         $profile = $tournament->gameProfile;
         $attributes = $profile instanceof GameProfileModel
             ? [self::ATTRIBUTE_PROFILE => new ActivityAttributeValueDTO($profile->id, $profile->name)]
             : [];
-        $occurredAt = ($tournament->completed_at ?? $tournament->updated_at ?? $tournament->created_at)?->toDateTimeImmutable() ?? throw new InvalidArgumentException('A finished tournament has no date.');
 
         $players = [];
         foreach ($rows as $row) {
-            if ($row['userId'] !== null) {
+            if ($row['reported'] && $row['userId'] !== null) {
                 $players[] = new ActivityFactDTO(
                     $row['userId'],
                     ActivityRole::Player,
@@ -224,12 +229,7 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
         }
         usort($players, static fn (ActivityFactDTO $a, ActivityFactDTO $b): int => [$a->placement, $a->userId] <=> [$b->placement, $b->userId]);
 
-        $organization = array_map(
-            static fn (string $userId): ActivityFactDTO => new ActivityFactDTO($userId, ActivityRole::Organizer, $occurredAt, $attributes),
-            $organizerIds,
-        );
-
-        return [...$players, ...$organization];
+        return $players;
     }
 
     /**
@@ -259,65 +259,40 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
     }
 
     /**
-     * The final standings of the participants who can play and played, by tournament.
+     * Every row of the final standings by tournament, and whether it is reported: the participant
+     * is confirmed or checked in and played. The rest still hold their place in the table.
+     *
+     * The ties are told by what the table orders by: the points and the tiebreakers the tournament
+     * configures (`calculated_tiebreakers`); the other columns are only shown.
      *
      * @param  list<string>  $tournamentIds
      * @param  array<string, true>  $played
-     * @return array<string, list<array{standing: FinalStanding, userId: string|null}>>
+     * @return array<string, list<array{standing: FinalStanding, userId: string|null, reported: bool}>>
      */
-    private function standingsOfThoseWhoPlayed(array $tournamentIds, array $played): array
+    private function standingsOf(array $tournamentIds, array $played): array
     {
         $rows = [];
+        $reportable = [ParticipantStatus::Confirmed, ParticipantStatus::CheckedIn];
 
         $standings = StandingModel::query()
             ->whereIn('tournament_id', $tournamentIds)
-            ->whereHas('participant', static fn ($participant) => $participant->whereIn('status', [ParticipantStatus::Confirmed->value, ParticipantStatus::CheckedIn->value]))
             ->with('participant')
             ->get();
 
         foreach ($standings as $standing) {
-            if (! isset($played[$standing->participant_id])) {
-                continue;
-            }
-
             $rows[$standing->tournament_id][] = [
                 'standing' => new FinalStanding(
                     $standing->participant_id,
                     $standing->rank,
                     $standing->points,
-                    [
-                        ...array_map(floatval(...), $standing->calculated_tiebreakers ?? []),
-                        '_buchholz' => $standing->buchholz,
-                        '_median_buchholz' => $standing->median_buchholz,
-                        '_progressive' => $standing->progressive,
-                        '_opponent_win_percentage' => $standing->opponent_win_percentage,
-                    ],
+                    array_map(floatval(...), $standing->calculated_tiebreakers ?? []),
                 ),
                 'userId' => $standing->participant->user_id,
+                'reported' => isset($played[$standing->participant_id]) && in_array($standing->participant->status, $reportable, true),
             ];
         }
 
         return $rows;
-    }
-
-    /**
-     * @param  list<string>  $tournamentIds
-     * @return array<string, list<string>> Organizer account ids by tournament, in order
-     */
-    private function organizersOf(array $tournamentIds): array
-    {
-        $organizers = [];
-
-        $rows = DB::table('tournaments_organizers')
-            ->whereIn('tournament_id', $tournamentIds)
-            ->orderBy('user_id')
-            ->get(['tournament_id', 'user_id']);
-
-        foreach ($rows as $row) {
-            $organizers[(string) $row->tournament_id][] = (string) $row->user_id;
-        }
-
-        return $organizers;
     }
 
     private function encode(string $tournamentId): string

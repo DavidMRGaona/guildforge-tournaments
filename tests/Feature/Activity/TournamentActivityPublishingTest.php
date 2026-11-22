@@ -17,7 +17,9 @@ use Modules\Tournaments\Application\Services\TournamentLifecycleServiceInterface
 use Modules\Tournaments\Domain\Enums\MatchResult;
 use Modules\Tournaments\Domain\Enums\ParticipantStatus;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
+use Modules\Tournaments\Domain\Repositories\GameProfileRepositoryInterface;
 use Modules\Tournaments\Domain\Repositories\ParticipantRepositoryInterface;
+use Modules\Tournaments\Domain\ValueObjects\GameProfileId;
 use Modules\Tournaments\Domain\ValueObjects\ParticipantId;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\MatchModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -102,7 +104,21 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
         $this->assertRecorded($tournament);
     }
 
-    public function test_starting_or_cancelling_a_tournament_publishes_nothing(): void
+    public function test_starting_a_tournament_publishes_nothing(): void
+    {
+        $tournament = $this->tournament(TournamentStatus::RegistrationClosed);
+        $this->player($tournament, 1, 0.0);
+        $this->player($tournament, 2, 0.0);
+        Event::fake([ActivityRecorded::class]);
+        $this->app->forgetInstance(ActivityPublisherInterface::class);
+
+        $this->app->make(TournamentLifecycleServiceInterface::class)->start($tournament->id);
+
+        $this->assertSame(TournamentStatus::InProgress, $tournament->refresh()->status);
+        $this->assertNothingRecorded();
+    }
+
+    public function test_cancelling_a_tournament_that_is_not_finished_publishes_nothing(): void
     {
         $tournament = $this->tournament(TournamentStatus::RegistrationClosed);
         $this->player($tournament, 1, 0.0);
@@ -290,14 +306,26 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
         $this->assertRecorded($tournament);
     }
 
-    public function test_deleting_an_account_for_good_publishes_what_it_played_or_organized(): void
+    public function test_deleting_the_game_profile_through_its_repository_is_heard_too(): void
+    {
+        $profile = $this->gameProfile();
+        $tournament = $this->finishedTournament(['game_profile_id' => $profile->id]);
+        $this->player($tournament, 1, 3.0);
+        Event::fake([ActivityRecorded::class]);
+        $this->app->forgetInstance(ActivityPublisherInterface::class);
+
+        $this->app->make(GameProfileRepositoryInterface::class)->delete(GameProfileId::fromString($profile->id));
+
+        $this->assertRecorded($tournament);
+    }
+
+    public function test_deleting_an_account_for_good_publishes_what_it_played(): void
     {
         $user = UserModel::factory()->create();
         $played = $this->finishedTournament();
         $this->player($played, 1, 3.0, user: $user);
-        $organized = $this->finishedTournament();
-        $this->player($organized, 1, 3.0);
-        $this->organize($organized, $user);
+        $another = $this->finishedTournament();
+        $this->player($another, 1, 3.0, user: $user);
         $unrelated = $this->finishedTournament();
         $this->player($unrelated, 1, 3.0);
         Event::fake([ActivityRecorded::class]);
@@ -307,33 +335,7 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
 
         Event::assertDispatchedTimes(ActivityRecorded::class, 2);
         Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->subjectId === $played->id);
-        Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->subjectId === $organized->id);
-    }
-
-    public function test_changing_the_organizers_of_a_finished_tournament_publishes_it(): void
-    {
-        [$tournament] = $this->settled();
-        $one = UserModel::factory()->create();
-        $two = UserModel::factory()->create();
-
-        // The panel saves inside a transaction: the changes of one save are announced once
-        DB::transaction(fn () => $tournament->organizers()->sync([$one->id]));
-        $this->assertRecorded($tournament);
-
-        Event::fake([ActivityRecorded::class]);
-        $this->app->forgetInstance(ActivityPublisherInterface::class);
-        // One organizer removed and another added
-        DB::transaction(fn () => $tournament->organizers()->sync([$two->id]));
-        $this->assertRecorded($tournament);
-    }
-
-    public function test_the_organizers_of_a_tournament_not_finished_publish_nothing(): void
-    {
-        $tournament = $this->tournament(TournamentStatus::InProgress);
-
-        $tournament->organizers()->sync([UserModel::factory()->create()->id]);
-
-        $this->assertNothingRecorded();
+        Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->subjectId === $another->id);
     }
 
     public function test_an_unpublished_event_does_not_stop_the_publishing(): void

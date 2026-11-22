@@ -12,7 +12,6 @@ use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\TournamentModel;
-use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Pivots\TournamentOrganizerPivot;
 
 /**
  * Tells the core (ActivityPublisherInterface, core#774) whenever the facts of a finished
@@ -25,11 +24,10 @@ use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Pivots\TournamentOrg
  *   table reaches the facts (StandingsService);
  * - a participant saved with another status or account, or removed, on a finished tournament
  *   (withdrawn, disqualified, reinstated);
- * - its organizers added or removed;
  * - its event published or unpublished (it is deleted with the tournament, which is its own case);
  * - a game profile renamed or deleted, since facts carry its name;
- * - an account deleted for good (its registrations and organizer places go with it, through the
- *   foreign keys, without model events).
+ * - an account deleted for good (its registrations go with it, through the foreign keys, without
+ *   model events).
  *
  * The publisher announces after the commit, once per subject and transaction; publishing a
  * subject whose facts did not change is harmless. Changes to tournaments that are not finished
@@ -67,9 +65,6 @@ final class AnnouncesActivityChanges
             }
         });
         ParticipantModel::deleted(static fn (ParticipantModel $participant) => self::tournamentIfFinished($participant->tournament_id));
-
-        TournamentOrganizerPivot::created(static fn (TournamentOrganizerPivot $pivot) => self::tournamentIfFinished($pivot->tournament_id));
-        TournamentOrganizerPivot::deleted(static fn (TournamentOrganizerPivot $pivot) => self::tournamentIfFinished($pivot->tournament_id));
 
         EventModel::saved(static function (EventModel $event): void {
             if ($event->wasChanged('is_published')) {
@@ -147,14 +142,13 @@ final class AnnouncesActivityChanges
     }
 
     /**
-     * The finished tournaments an account played or organized.
+     * The finished tournaments an account played.
      *
      * @return list<string>
      */
     private static function finishedTournamentsOf(string $userId): array
     {
-        return self::finishedTournamentsWhere(static fn ($query) => $query->where(static fn ($any) => $any
-            ->whereHas('participants', static fn ($participant) => $participant->where('user_id', $userId))
-            ->orWhereHas('organizers', static fn ($organizer) => $organizer->where('users.id', $userId))));
+        return self::finishedTournamentsWhere(static fn ($query) => $query
+            ->whereHas('participants', static fn ($participant) => $participant->where('user_id', $userId)));
     }
 }
