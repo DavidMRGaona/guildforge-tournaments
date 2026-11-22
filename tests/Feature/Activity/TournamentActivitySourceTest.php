@@ -88,7 +88,7 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         foreach ($facts as $fact) {
             $this->assertSame($profile->id, $fact->attributes['tournament_profile']->id);
             $this->assertSame('Warhammer', $fact->attributes['tournament_profile']->label);
-            $this->assertSame($tournament->completed_at->getTimestamp(), $fact->occurredAt->getTimestamp());
+            $this->assertSame($tournament->completed_at?->getTimestamp(), $fact->occurredAt->getTimestamp());
         }
     }
 
@@ -97,7 +97,7 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
         $tournament = $this->finishedTournament();
         $this->player($tournament, 1, 3.0);
 
-        $this->assertSame([], array_values($this->activitySource()->facts($tournament->id))[0]->attributes);
+        $this->assertSame([], $this->activitySource()->facts($tournament->id)[0]->attributes);
     }
 
     public function test_players_with_the_same_points_and_tiebreakers_share_the_placement(): void
@@ -109,11 +109,11 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
 
         $placements = [];
         foreach ($this->activitySource()->facts($tournament->id) as $fact) {
-            $placements[$fact->userId] = $fact->placement;
+            $placements[] = [$fact->userId, $fact->placement];
         }
 
-        $this->assertSame(
-            [$a->user_id => 1, $b->user_id => 1, $c->user_id => 3],
+        $this->assertEqualsCanonicalizing(
+            [[$a->user_id, 1], [$b->user_id, 1], [$c->user_id, 3]],
             $placements,
         );
     }
@@ -279,7 +279,7 @@ final class TournamentActivitySourceTest extends ActivitySourceTestCase
     {
         $this->gameProfile('Bolt Action');
         $this->gameProfile('Age of Sigmar');
-        $source = $this->activitySource();
+        $source = $this->app->make(TournamentActivitySource::class);
 
         $this->assertSame(['tournament_profile'], array_map(static fn ($attribute): string => $attribute->key, $source->attributes()));
         $this->assertSame(

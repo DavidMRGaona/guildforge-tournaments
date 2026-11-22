@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments;
 
+use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
@@ -21,7 +22,6 @@ use App\Application\Profiles\Contracts\ProfileStatInterface;
 use App\Application\Proposals\Contracts\EventProposalRequestInterface;
 use App\Application\Search\Contracts\IndexedSearchSourceInterface;
 use App\Application\Services\SiteBrandingServiceInterface;
-use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Surveys\Contracts\SurveySubjectSourceInterface;
 use App\Domain\Navigation\Enums\MenuLocation;
 use App\Filament\Resources\EventResource;
@@ -88,6 +88,8 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Infrastructure\Activity\AnnouncesActivityChanges;
+use Modules\Tournaments\Infrastructure\Activity\TournamentActivitySource;
 use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
 use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Media\TournamentMediaSource;
@@ -128,8 +130,6 @@ use Modules\Tournaments\Infrastructure\Services\TournamentLifecycleService;
 use Modules\Tournaments\Infrastructure\Services\TournamentOrganizers;
 use Modules\Tournaments\Infrastructure\Services\TournamentQueryService;
 use Modules\Tournaments\Infrastructure\Services\UserDataProvider;
-use Modules\Tournaments\Infrastructure\Activity\AnnouncesActivityChanges;
-use Modules\Tournaments\Infrastructure\Activity\TournamentActivitySource;
 use Modules\Tournaments\Infrastructure\Surveys\TournamentSurveySubjectSource;
 use Modules\Tournaments\Listeners\SendGuestConfirmationRequest;
 use Modules\Tournaments\Listeners\SendMatchResultDisputedEmails;

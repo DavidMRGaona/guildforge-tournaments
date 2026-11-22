@@ -55,6 +55,11 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
         Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->sourceType === self::TYPE && $event->subjectId === $tournament->id);
     }
 
+    private function eventOf(TournamentModel $tournament): EventModel
+    {
+        return EventModel::query()->findOrFail($tournament->event_id);
+    }
+
     private function assertNothingRecorded(): void
     {
         Event::assertNotDispatched(ActivityRecorded::class);
@@ -74,7 +79,11 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
         $this->app->forgetInstance(ActivityPublisherInterface::class);
 
         // Fresh copies, as a request would load them: the ones just created still say they were created
-        return [$tournament->fresh(), $first->fresh(), $second->fresh()];
+        return [
+            TournamentModel::query()->findOrFail($tournament->id),
+            ParticipantModel::query()->findOrFail($first->id),
+            ParticipantModel::query()->findOrFail($second->id),
+        ];
     }
 
     public function test_finishing_a_tournament_publishes_it_once_after_the_commit(): void
@@ -242,11 +251,11 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
     public function test_unpublishing_or_deleting_the_event_publishes_its_finished_tournament(): void
     {
         [$tournament] = $this->settled();
-        $tournament->event->update(['is_published' => false]);
+        $this->eventOf($tournament)->update(['is_published' => false]);
         $this->assertRecorded($tournament);
 
         [$other] = $this->settled();
-        $other->event->delete();
+        $this->eventOf($other)->delete();
         $this->assertRecorded($other);
     }
 
@@ -254,7 +263,7 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
     {
         [$tournament] = $this->settled();
 
-        $tournament->event->update(['title' => 'Otro título']);
+        $this->eventOf($tournament)->update(['title' => 'Otro título']);
 
         $this->assertNothingRecorded();
     }
@@ -334,7 +343,7 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
         Event::fake([ActivityRecorded::class]);
         $this->app->forgetInstance(ActivityPublisherInterface::class);
 
-        $tournament->event->update(['is_published' => true]);
+        $this->eventOf($tournament)->update(['is_published' => true]);
 
         $this->assertRecorded($tournament);
     }

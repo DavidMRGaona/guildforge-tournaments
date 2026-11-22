@@ -7,6 +7,7 @@ namespace Modules\Tournaments\Infrastructure\Activity;
 use App\Application\Activity\Services\ActivityPublisherInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\Tournaments\Domain\Enums\TournamentStatus;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\GameProfileModel;
 use Modules\Tournaments\Infrastructure\Persistence\Eloquent\Models\ParticipantModel;
@@ -126,7 +127,7 @@ final class AnnouncesActivityChanges
     }
 
     /**
-     * @param  callable(\Illuminate\Database\Eloquent\Builder<TournamentModel>): mixed  $constraint
+     * @param  callable(Builder<TournamentModel>): mixed  $constraint
      * @return list<string>
      */
     private static function finishedTournamentsWhere(callable $constraint): array

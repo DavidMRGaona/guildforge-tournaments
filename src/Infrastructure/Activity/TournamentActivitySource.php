@@ -84,7 +84,7 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
 
         $tournaments = TournamentModel::query()->finishedAndShown()->with('gameProfile')->whereKey(Str::lower($subjectId))->get();
 
-        return $this->factsOf($tournaments->all())[Str::lower($subjectId)] ?? [];
+        return $this->factsOf(array_values($tournaments->all()))[Str::lower($subjectId)] ?? [];
     }
 
     public function history(?string $cursor, int $limit): ActivityHistoryPageDTO
@@ -96,14 +96,14 @@ final readonly class TournamentActivitySource implements ActivitySourceInterface
         // the page holds, so the last page says it is the last
         $subjects = [];
         while (count($subjects) <= $limit) {
-            $tournaments = TournamentModel::query()
+            $tournaments = array_values(TournamentModel::query()
                 ->finishedAndShown()
                 ->with('gameProfile')
                 ->when($after !== null, static fn ($query) => $query->where('id', '>', $after))
                 ->orderBy('id')
                 ->limit($limit + 1)
                 ->get()
-                ->all();
+                ->all());
 
             if ($tournaments === []) {
                 break;

@@ -238,7 +238,7 @@ final class TournamentModel extends Model
     /**
      * Who organizes the tournament: they manage its surveys on the public site.
      *
-     * @return BelongsToMany<UserModel, $this>
+     * @return BelongsToMany<UserModel, $this, TournamentOrganizerPivot, 'pivot'>
      */
     public function organizers(): BelongsToMany
     {
