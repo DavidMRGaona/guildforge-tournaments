@@ -223,7 +223,8 @@ final readonly class EloquentParticipantRepository implements ParticipantReposit
 
     public function delete(ParticipantId $id): void
     {
-        ParticipantModel::where('id', $id->value)->delete();
+        // As a model, so that it is heard (the activity source): a query delete raises no events
+        ParticipantModel::query()->find($id->value)?->delete();
     }
 
     public function findByCancellationToken(string $token): ?Participant

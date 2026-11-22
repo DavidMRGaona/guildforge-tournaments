@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tournaments;
 
+use App\Application\Activity\Contracts\ActivitySourceInterface;
 use App\Application\Authorization\Services\AuthorizationServiceInterface;
 use App\Application\Calendar\Contracts\CalendarAttendanceSourceInterface;
 use App\Application\Cookies\DTOs\DeclaredCookieDTO;
@@ -87,6 +88,8 @@ use Modules\Tournaments\Filament\Resources\TournamentResource\Pages\ListTourname
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\MatchesRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\ParticipantsRelationManager as TournamentParticipantsRelationManager;
 use Modules\Tournaments\Filament\Resources\TournamentResource\RelationManagers\RoundsRelationManager;
+use Modules\Tournaments\Infrastructure\Activity\AnnouncesActivityChanges;
+use Modules\Tournaments\Infrastructure\Activity\TournamentActivitySource;
 use Modules\Tournaments\Infrastructure\Calendar\TournamentAttendanceSource;
 use Modules\Tournaments\Infrastructure\Linking\TournamentLinkableRecordSource;
 use Modules\Tournaments\Infrastructure\Media\TournamentMediaSource;
@@ -346,6 +349,7 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
     {
         TournamentModel::observe(TournamentObserver::class);
         RefreshesSearchDocuments::register();
+        AnnouncesActivityChanges::register();
         $this->refreshMediaUsagesOnChange();
 
         // The database would drop an event's tournament by cascade, unseen: delete it as a model
@@ -810,6 +814,19 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
                 site: true,
                 mail: false,
             ),
+        ];
+    }
+
+    /**
+     * Finished tournaments as activity (core contract, #774): who played and where they
+     * finished, for whoever keeps a record of it (the achievements module).
+     *
+     * @return array<class-string<ActivitySourceInterface>>
+     */
+    public function registerActivitySources(): array
+    {
+        return [
+            TournamentActivitySource::class,
         ];
     }
 

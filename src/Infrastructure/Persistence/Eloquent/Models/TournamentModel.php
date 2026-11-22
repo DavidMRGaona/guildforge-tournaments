@@ -158,6 +158,22 @@ final class TournamentModel extends Model
         return $query->whereNotIn('status', [TournamentStatus::Draft->value, TournamentStatus::Cancelled->value]);
     }
 
+    /**
+     * Finished tournaments any member can see: the public listing's rule, with its event published
+     * (the rule of the profile's counters and of the linkable records). What the activity source
+     * reports and describes (core#774).
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeFinishedAndShown(Builder $query): Builder
+    {
+        return $query
+            ->publiclyListed()
+            ->where('status', TournamentStatus::Finished->value)
+            ->whereHas('event', static fn (Builder $event): Builder => $event->where('is_published', true));
+    }
+
     public function getSlugEntityType(): string
     {
         return 'tournament';

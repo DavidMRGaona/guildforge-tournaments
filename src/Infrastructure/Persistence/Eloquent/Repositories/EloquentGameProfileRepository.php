@@ -97,7 +97,8 @@ final readonly class EloquentGameProfileRepository implements GameProfileReposit
 
     public function delete(GameProfileId $id): void
     {
-        GameProfileModel::where('id', $id->value)->delete();
+        // As a model, so that it is heard (the activity source): a query delete raises no events
+        GameProfileModel::query()->find($id->value)?->delete();
     }
 
     private function toEntity(GameProfileModel $model): GameProfile

@@ -964,6 +964,14 @@ return [
         'profile_missing' => 'El perfil de juego elegido ya no existe.',
     ],
 
+    // What the module tells whoever keeps a record of the activity (core activity sources)
+    'activity' => [
+        'source_label' => 'Torneos',
+        'attributes' => [
+            'tournament_profile' => 'Juego del torneo',
+        ],
+    ],
+
     // Server-rendered page metadata (link previews and search engines)
     'surveys' => [
         'source_label' => 'Torneo',
