@@ -37,13 +37,13 @@ final class TournamentMediaIndexTest extends ModuleTestCase
         $this->app->instance(MediaCatalogInterface::class, $this->catalog);
     }
 
-    private function tournament(?string $image): TournamentModel
+    private function tournament(?string $image, string $status = 'registration_open'): TournamentModel
     {
         return TournamentModel::create([
             'event_id' => EventModel::factory()->published()->create()->id,
             'name' => 'Torneo de ejemplo',
             'slug' => 'torneo-'.Str::lower(Str::random(8)),
-            'status' => 'registration_open',
+            'status' => $status,
             'result_reporting' => 'admin_only',
             'image_public_id' => $image,
         ]);
@@ -90,5 +90,38 @@ final class TournamentMediaIndexTest extends ModuleTestCase
         $this->app->call([new RefreshMediaUsagesJob('tournaments.tournaments', $tournament->id), 'handle']);
 
         $this->assertFalse(MediaUsageModel::query()->where('record_id', $tournament->id)->exists());
+    }
+
+    public function test_changing_the_status_or_the_name_queues_a_refresh(): void
+    {
+        Bus::fake();
+        $id = $this->tournament('tournaments/2026/a.jpg', 'draft')->id;
+
+        // Fresh copies: the created instance would count as just created on every save
+        TournamentModel::query()->findOrFail($id)->update(['status' => 'registration_open']);
+        TournamentModel::query()->findOrFail($id)->update(['name' => 'Otro nombre']);
+        TournamentModel::query()->findOrFail($id)->update(['max_rounds' => 5]);
+
+        $this->assertRefreshQueued(TournamentModel::query()->findOrFail($id), 3);
+    }
+
+    public function test_publishing_a_draft_shows_its_image_after_the_refresh(): void
+    {
+        Bus::fake();
+        $tournament = $this->tournament('tournaments/2026/a.jpg', 'draft');
+        $this->catalog->add('tournaments/2026/a', bytes: 4096);
+
+        $this->app->call([new RefreshMediaUsagesJob('tournaments.tournaments', $tournament->id), 'handle']);
+
+        $usage = MediaUsageModel::query()->where('record_id', $tournament->id)->firstOrFail();
+        $this->assertTrue($usage->is_hidden);
+        $this->assertSame('Torneo sin publicar', $usage->title);
+
+        TournamentModel::query()->findOrFail($tournament->id)->update(['status' => 'registration_open']);
+        $this->app->call([new RefreshMediaUsagesJob('tournaments.tournaments', $tournament->id), 'handle']);
+
+        $usage = MediaUsageModel::query()->where('record_id', $tournament->id)->firstOrFail();
+        $this->assertFalse($usage->is_hidden);
+        $this->assertSame('Torneo de ejemplo', $usage->title);
     }
 }

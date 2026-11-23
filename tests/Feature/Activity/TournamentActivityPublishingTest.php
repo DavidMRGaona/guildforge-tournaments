@@ -8,8 +8,10 @@ use App\Application\Activity\Services\ActivityPublisherInterface;
 use App\Domain\Activity\Events\ActivityRecorded;
 use App\Infrastructure\Persistence\Eloquent\Models\EventModel;
 use App\Infrastructure\Persistence\Eloquent\Models\UserModel;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Testing\Fakes\EventFake;
 use Modules\Tournaments\Application\DTOs\RecordMatchResultDTO;
 use Modules\Tournaments\Application\Services\MatchResultServiceInterface;
 use Modules\Tournaments\Application\Services\StandingsServiceInterface;
@@ -53,8 +55,23 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
 
     private function assertRecorded(TournamentModel $tournament, int $times = 1): void
     {
-        Event::assertDispatchedTimes(ActivityRecorded::class, $times);
+        $this->assertSame($times, $this->recorded()->count());
         Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->sourceType === self::TYPE && $event->subjectId === $tournament->id);
+    }
+
+    /**
+     * What this module published: the core publishes its own sources too (accounts, core#777).
+     *
+     * @return Collection<int, ActivityRecorded>
+     */
+    private function recorded(): Collection
+    {
+        $events = Event::getFacadeRoot();
+        $this->assertInstanceOf(EventFake::class, $events);
+
+        return $events->dispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->sourceType === self::TYPE)
+            ->map(fn (array $arguments): ActivityRecorded => $arguments[0])
+            ->values();
     }
 
     private function eventOf(TournamentModel $tournament): EventModel
@@ -64,7 +81,7 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
 
     private function assertNothingRecorded(): void
     {
-        Event::assertNotDispatched(ActivityRecorded::class);
+        $this->assertSame(0, $this->recorded()->count());
     }
 
     /**
@@ -333,9 +350,7 @@ final class TournamentActivityPublishingTest extends ModuleTestCase
 
         $user->forceDelete();
 
-        Event::assertDispatchedTimes(ActivityRecorded::class, 2);
-        Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->subjectId === $played->id);
-        Event::assertDispatched(ActivityRecorded::class, fn (ActivityRecorded $event): bool => $event->subjectId === $another->id);
+        $this->assertEqualsCanonicalizing([$played->id, $another->id], $this->recorded()->map(fn (ActivityRecorded $event): string => $event->subjectId)->all());
     }
 
     public function test_an_unpublished_event_does_not_stop_the_publishing(): void

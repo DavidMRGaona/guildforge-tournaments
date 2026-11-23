@@ -25,6 +25,7 @@ return [
         'roles' => [
             'image' => 'Imagen',
         ],
+        'unpublished_tournament' => 'Torneo sin publicar',
     ],
 
     // Standalone resource labels

@@ -330,13 +330,14 @@ final class TournamentsServiceProvider extends ModuleServiceProvider
 
     /**
      * Keeps the media library's index of uses up to date when a tournament is saved or deleted. A
-     * save that leaves the image alone refreshes nothing.
+     * save that leaves the image, the status (a draft's image is hidden) and the name (its title)
+     * alone refreshes nothing.
      */
     private function refreshMediaUsagesOnChange(): void
     {
         $observer = new RefreshMediaUsagesObserver(
             TournamentMediaSource::TYPE,
-            static fn (Model $tournament): array => $tournament->wasRecentlyCreated || $tournament->wasChanged('image_public_id')
+            static fn (Model $tournament): array => $tournament->wasRecentlyCreated || $tournament->wasChanged(['image_public_id', 'status', 'name'])
                 ? [(string) $tournament->getKey()]
                 : [],
         );
